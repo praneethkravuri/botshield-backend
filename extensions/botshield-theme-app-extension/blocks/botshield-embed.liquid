@@ -1,0 +1,16 @@
+<div
+  id="botshield-storefront-root"
+  data-decision-url="/apps/botshield/decision"
+  data-blocked-url="/apps/botshield/blocked"
+  data-path="{{ request.path }}"
+></div>
+
+{% schema %}
+{
+  "name": "BotShield",
+  "target": "body",
+  "stylesheet": "botshield.css",
+  "javascript": "botshield.js",
+  "settings": []
+}
+{% endschema %}

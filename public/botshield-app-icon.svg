@@ -1,0 +1,42 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="146" y1="128" x2="878" y2="896" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07152B"/>
+      <stop offset="0.55" stop-color="#103664"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="278" y1="210" x2="746" y2="782" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0.04)"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="350" y1="270" x2="690" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E0F2FE"/>
+      <stop offset="0.52" stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <filter id="shadow" x="188" y="162" width="648" height="700" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="28"/>
+      <feGaussianBlur stdDeviation="36"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0156863 0 0 0 0 0.0901961 0 0 0 0 0.184314 0 0 0 0.32 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <circle cx="215" cy="212" r="162" fill="#38BDF8" fill-opacity="0.12"/>
+  <circle cx="818" cy="180" r="176" fill="#1D4ED8" fill-opacity="0.16"/>
+  <circle cx="792" cy="816" r="214" fill="#10B981" fill-opacity="0.10"/>
+
+  <g filter="url(#shadow)">
+    <path d="M512 214L720 290V450C720 598 635 727 512 790C389 727 304 598 304 450V290L512 214Z" fill="url(#panel)" stroke="rgba(255,255,255,0.26)" stroke-width="2"/>
+    <path d="M512 278L666 334V456C666 570 604 674 512 728C420 674 358 570 358 456V334L512 278Z" fill="url(#shield)"/>
+    <path d="M431 502L487 558L604 429" stroke="#07152B" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <rect x="278" y="760" width="468" height="40" rx="20" fill="rgba(224,242,254,0.26)"/>
+  <rect x="336" y="828" width="352" height="24" rx="12" fill="rgba(224,242,254,0.18)"/>
+</svg>
