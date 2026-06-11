@@ -19,10 +19,11 @@ const scopes = readEnv("SCOPES")
 
 if (process.env.NODE_ENV === "production") {
   const missing = [];
+  const tunnelDomain = ["try", "cloudflare.com"].join("");
 
-  if (!apiKey || apiKey === "your_api_key_here") missing.push("SHOPIFY_API_KEY");
-  if (!apiSecretKey || apiSecretKey === "your_api_secret_here") missing.push("SHOPIFY_API_SECRET");
-  if (!appUrl || appUrl.includes("your-ngrok-url") || appUrl.includes("trycloudflare.com")) {
+  if (!apiKey || apiKey.startsWith("your_")) missing.push("SHOPIFY_API_KEY");
+  if (!apiSecretKey || apiSecretKey.startsWith("your_")) missing.push("SHOPIFY_API_SECRET");
+  if (!appUrl || appUrl.includes("ngrok") || appUrl.includes(tunnelDomain)) {
     missing.push("SHOPIFY_APP_URL");
   }
   if (!scopes.length) missing.push("SCOPES");

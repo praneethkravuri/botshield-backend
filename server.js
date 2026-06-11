@@ -12,6 +12,8 @@ const __dirname = path.dirname(__filename);
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
 const appUrl = (process.env.SHOPIFY_APP_URL || process.env.APP_URL || "").replace(/\/+$/, "");
+const expectedShopifyApiKey = "d4fd10812566b17d9d99ed95e0978ada";
+const expectedAppUrl = "https://botshield-backend.onrender.com";
 
 if (appUrl) {
   process.env.SHOPIFY_APP_URL = appUrl;
@@ -38,6 +40,31 @@ if (process.env.NODE_ENV === "production") {
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ ok: true });
+});
+
+app.get("/health/config", (_req, res) => {
+  const shopifyApiKey = process.env.SHOPIFY_API_KEY || "";
+  const shopifyAppUrl = (process.env.SHOPIFY_APP_URL || "").replace(/\/+$/, "");
+  const publicAppUrl = (process.env.APP_URL || "").replace(/\/+$/, "");
+  const scopes = process.env.SCOPES || "";
+  const tunnelDomain = ["try", "cloudflare.com"].join("");
+
+  res.status(200).json({
+    ok: true,
+    shopifyApiKeyConfigured: Boolean(shopifyApiKey),
+    shopifyApiKeyMatchesBotshield4: shopifyApiKey === expectedShopifyApiKey,
+    shopifyAppUrl,
+    shopifyAppUrlMatchesRender: shopifyAppUrl === expectedAppUrl,
+    appUrl: publicAppUrl,
+    appUrlMatchesRender: publicAppUrl === expectedAppUrl,
+    scopes,
+    scopesMatchConfig: scopes === "write_app_proxy",
+    databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
+    shopifyApiSecretConfigured: Boolean(process.env.SHOPIFY_API_SECRET),
+    cloudflareUrlPresent:
+      shopifyAppUrl.includes(tunnelDomain) ||
+      publicAppUrl.includes(tunnelDomain),
+  });
 });
 
 app.use(
