@@ -2,7 +2,7 @@
 
 client_id = "d4fd10812566b17d9d99ed95e0978ada"
 name = "BotShield"
-application_url = "https://botshield.your-domain.com"
+application_url = "https://botshield-backend.onrender.com"
 embedded = true
 
 [build]
@@ -42,4 +42,4 @@ subpath = "botshield"
 prefix = "apps"
 
 [auth]
-redirect_urls = [ "https://botshield.your-domain.com/auth/callback" ]
+redirect_urls = [ "https://botshield-backend.onrender.com/auth/callback" ]
