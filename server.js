@@ -11,10 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const port = Number(process.env.PORT || 3000);
 const host = process.env.HOST || "0.0.0.0";
-const appUrl = (process.env.APP_URL || process.env.SHOPIFY_APP_URL || "").replace(/\/$/, "");
+const appUrl = (process.env.SHOPIFY_APP_URL || process.env.APP_URL || "").replace(/\/+$/, "");
 
-if (appUrl && !process.env.SHOPIFY_APP_URL) {
+if (appUrl) {
   process.env.SHOPIFY_APP_URL = appUrl;
+  process.env.APP_URL = process.env.APP_URL || appUrl;
 }
 
 const buildPath = path.resolve(__dirname, "build/server/index.js");

@@ -7,12 +7,39 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+const readEnv = (name) => process.env[name]?.trim() || "";
+
+const apiKey = readEnv("SHOPIFY_API_KEY");
+const apiSecretKey = readEnv("SHOPIFY_API_SECRET");
+const appUrl = (readEnv("SHOPIFY_APP_URL") || readEnv("APP_URL")).replace(/\/+$/, "");
+const scopes = readEnv("SCOPES")
+  .split(",")
+  .map((scope) => scope.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === "production") {
+  const missing = [];
+
+  if (!apiKey || apiKey === "your_api_key_here") missing.push("SHOPIFY_API_KEY");
+  if (!apiSecretKey || apiSecretKey === "your_api_secret_here") missing.push("SHOPIFY_API_SECRET");
+  if (!appUrl || appUrl.includes("your-ngrok-url") || appUrl.includes("trycloudflare.com")) {
+    missing.push("SHOPIFY_APP_URL");
+  }
+  if (!scopes.length) missing.push("SCOPES");
+
+  if (missing.length) {
+    throw new Error(
+      `Missing or placeholder Shopify production env vars: ${missing.join(", ")}`,
+    );
+  }
+}
+
 const shopify = shopifyApp({
-  apiKey: process.env.SHOPIFY_API_KEY,
-  apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
+  apiKey,
+  apiSecretKey,
   apiVersion: ApiVersion.October25,
-  scopes: process.env.SCOPES?.split(","),
-  appUrl: process.env.SHOPIFY_APP_URL || "",
+  scopes,
+  appUrl,
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
