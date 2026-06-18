@@ -7,19 +7,22 @@ import {
 import { authenticate } from "../shopify.server";
 
 function normalizeShop(shop) {
-  return String(shop || "").trim().toLowerCase();
+  return String(shop || "")
+    .trim()
+    .toLowerCase();
 }
 
 async function readSettings(shop) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT key, value
-      FROM AppSetting
-      WHERE shop = ${normalizedShop}
-        AND key IN ('autoBlock', 'blockLevel', 'strictMode')
-    `;
+    const rows = await db.appSetting.findMany({
+      where: {
+        shop: normalizedShop,
+        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+      },
+      select: { key: true, value: true },
+    });
     return buildDetectionSettings(rows);
   } catch {
     return buildDetectionSettings([]);
@@ -30,14 +33,9 @@ async function readWhitelist(shop, ipAddress) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT ipAddress, label, notes, active
-      FROM WhitelistIP
-      WHERE shop = ${normalizedShop}
-        AND ipAddress = ${ipAddress}
-      LIMIT 1
-    `;
-    return rows[0] ?? null;
+    return await db.whitelistIP.findUnique({
+      where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+    });
   } catch {
     return null;
   }
@@ -47,14 +45,9 @@ async function readBlocked(shop, ipAddress) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT ipAddress, reason, source, hits, active, expiresAt, lastSeenAt
-      FROM BlockedIP
-      WHERE shop = ${normalizedShop}
-        AND ipAddress = ${ipAddress}
-      LIMIT 1
-    `;
-    return rows[0] ?? null;
+    return await db.blockedIP.findUnique({
+      where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+    });
   } catch {
     return null;
   }
@@ -139,20 +132,21 @@ export async function action({ request }) {
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
-  const [recentEvents, settings, whitelistEntry, blockedEntry] = await Promise.all([
-    db.botEvent.findMany({
-      where: {
-        shop,
-        ipAddress,
-        createdAt: { gte: oneHourAgo },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 25,
-    }),
-    readSettings(shop),
-    readWhitelist(shop, ipAddress),
-    readBlocked(shop, ipAddress),
-  ]);
+  const [recentEvents, settings, whitelistEntry, blockedEntry] =
+    await Promise.all([
+      db.botEvent.findMany({
+        where: {
+          shop,
+          ipAddress,
+          createdAt: { gte: oneHourAgo },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 25,
+      }),
+      readSettings(shop),
+      readWhitelist(shop, ipAddress),
+      readBlocked(shop, ipAddress),
+    ]);
 
   const result = detectBotThreat({
     ipAddress,
@@ -164,67 +158,42 @@ export async function action({ request }) {
     blockedEntry,
   });
 
-  const createdRows = await db.$queryRaw`
-    INSERT INTO BotEvent (
+  const createdEvent = await db.botEvent.create({
+    data: {
       shop,
       ipAddress,
       userAgent,
-      threatLevel,
-      action,
-      path,
-      riskScore,
-      reasonSummary,
-      source
-    )
-    VALUES (
-      ${shop},
-      ${ipAddress},
-      ${userAgent},
-      ${result.threatLevel},
-      ${result.actionTaken},
-      ${pathVisited},
-      ${result.riskScore},
-      ${result.reasons.join(" | ")},
-      ${body.source ? String(body.source) : "dashboard-live-scan"}
-    )
-    RETURNING id, createdAt
-  `;
-  const createdEvent = createdRows[0];
+      threatLevel: result.threatLevel,
+      action: result.actionTaken,
+      path: pathVisited,
+      riskScore: result.riskScore,
+      reasonSummary: result.reasons.join(" | "),
+      source: body.source ? String(body.source) : "dashboard-live-scan",
+    },
+  });
 
   if (result.actionTaken === "blocked") {
     try {
-      const now = new Date().toISOString();
-      await db.$executeRaw`
-        INSERT INTO BlockedIP (
+      const now = new Date();
+      await db.blockedIP.upsert({
+        where: { shop_ipAddress: { shop, ipAddress } },
+        create: {
           shop,
           ipAddress,
-          reason,
-          source,
-          hits,
-          active,
-          lastSeenAt,
-          createdAt,
-          updatedAt
-        )
-        VALUES (
-          ${shop},
-          ${ipAddress},
-          ${result.reasons.join(" | ")},
-          ${"local-engine"},
-          ${1},
-          ${true},
-          ${now},
-          ${now},
-          ${now}
-        )
-        ON CONFLICT(shop, ipAddress) DO UPDATE SET
-          reason = excluded.reason,
-          source = excluded.source,
-          hits = BlockedIP.hits + 1,
-          active = 1,
-          lastSeenAt = excluded.lastSeenAt,
-          updatedAt = excluded.updatedAt
-      `;
+          reason: result.reasons.join(" | "),
+          source: "local-engine",
+          hits: 1,
+          active: true,
+          lastSeenAt: now,
+        },
+        update: {
+          reason: result.reasons.join(" | "),
+          source: "local-engine",
+          hits: { increment: 1 },
+          active: true,
+          lastSeenAt: now,
+        },
+      });
     } catch {
       // Ignore until migration / generate is applied.
     }

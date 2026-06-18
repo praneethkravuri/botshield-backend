@@ -3,22 +3,11 @@ import { authenticate } from "../shopify.server";
 
 export async function loader({ request }) {
   const { session } = await authenticate.admin(request);
-  const rows = await db.$queryRaw`
-    SELECT
-      id,
-      ipAddress,
-      threatLevel,
-      action,
-      path,
-      createdAt,
-      riskScore,
-      reasonSummary,
-      source
-    FROM BotEvent
-    WHERE shop = ${session.shop}
-    ORDER BY createdAt DESC
-    LIMIT 100
-  `;
+  const rows = await db.botEvent.findMany({
+    where: { shop: session.shop },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
   const scans = rows.map((r) => ({
     id: r.id,
     ipAddress: r.ipAddress,

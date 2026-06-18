@@ -1,15 +1,25 @@
 import crypto from "node:crypto";
 import db from "../db.server";
-import { buildDetectionSettings, detectBotThreat, normalizeIpAddress } from "./bot-detection.server";
+import {
+  buildDetectionSettings,
+  detectBotThreat,
+  normalizeIpAddress,
+} from "./bot-detection.server";
 
 const CHALLENGE_TTL_MS = 15 * 60 * 1000;
 
 function getSigningSecret() {
-  return process.env.BOTSHIELD_SIGNING_SECRET || process.env.SHOPIFY_API_SECRET || "botshield-dev-secret";
+  return (
+    process.env.BOTSHIELD_SIGNING_SECRET ||
+    process.env.SHOPIFY_API_SECRET ||
+    "botshield-dev-secret"
+  );
 }
 
 function normalizeShop(shop) {
-  return String(shop || "").trim().toLowerCase();
+  return String(shop || "")
+    .trim()
+    .toLowerCase();
 }
 
 export function getRequestHeader(request, name) {
@@ -37,12 +47,13 @@ export function extractClientIp(request) {
 
 async function readSettings(shop) {
   try {
-    const rows = await db.$queryRaw`
-      SELECT key, value
-      FROM AppSetting
-      WHERE shop = ${shop}
-        AND key IN ('autoBlock', 'blockLevel', 'strictMode')
-    `;
+    const rows = await db.appSetting.findMany({
+      where: {
+        shop,
+        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+      },
+      select: { key: true, value: true },
+    });
 
     return buildDetectionSettings(rows);
   } catch {
@@ -52,15 +63,9 @@ async function readSettings(shop) {
 
 async function readWhitelist(shop, ipAddress) {
   try {
-    const rows = await db.$queryRaw`
-      SELECT ipAddress, label, notes, active
-      FROM WhitelistIP
-      WHERE shop = ${shop}
-        AND ipAddress = ${ipAddress}
-      LIMIT 1
-    `;
-
-    return rows[0] ?? null;
+    return await db.whitelistIP.findUnique({
+      where: { shop_ipAddress: { shop, ipAddress } },
+    });
   } catch {
     return null;
   }
@@ -68,15 +73,9 @@ async function readWhitelist(shop, ipAddress) {
 
 async function readBlocked(shop, ipAddress) {
   try {
-    const rows = await db.$queryRaw`
-      SELECT ipAddress, reason, source, hits, active, expiresAt, lastSeenAt
-      FROM BlockedIP
-      WHERE shop = ${shop}
-        AND ipAddress = ${ipAddress}
-      LIMIT 1
-    `;
-
-    return rows[0] ?? null;
+    return await db.blockedIP.findUnique({
+      where: { shop_ipAddress: { shop, ipAddress } },
+    });
   } catch {
     return null;
   }
@@ -97,14 +96,21 @@ function createChallengeToken({ shop, ipAddress, userAgent, pathVisited }) {
     .update(payload)
     .digest("hex");
 
-  return Buffer.from(JSON.stringify({ payload, signature }), "utf8").toString("base64url");
+  return Buffer.from(JSON.stringify({ payload, signature }), "utf8").toString(
+    "base64url",
+  );
 }
 
-function verifyChallengeToken(token, { shop, ipAddress, userAgent, pathVisited }) {
+function verifyChallengeToken(
+  token,
+  { shop, ipAddress, userAgent, pathVisited },
+) {
   if (!token) return false;
 
   try {
-    const decoded = JSON.parse(Buffer.from(String(token), "base64url").toString("utf8"));
+    const decoded = JSON.parse(
+      Buffer.from(String(token), "base64url").toString("utf8"),
+    );
     const payload = String(decoded.payload || "");
     const signature = String(decoded.signature || "");
 
@@ -146,76 +152,53 @@ async function writeBotEvent({
   reasons,
   source,
 }) {
-  const createdRows = await db.$queryRaw`
-    INSERT INTO BotEvent (
+  return db.botEvent.create({
+    data: {
       shop,
       ipAddress,
       userAgent,
       threatLevel,
       action,
-      path,
+      path: pathVisited,
       riskScore,
-      reasonSummary,
-      source
-    )
-    VALUES (
-      ${shop},
-      ${ipAddress},
-      ${userAgent},
-      ${threatLevel},
-      ${action},
-      ${pathVisited},
-      ${riskScore},
-      ${reasons.join(" | ")},
-      ${source}
-    )
-    RETURNING id, createdAt
-  `;
-
-  return createdRows[0];
+      reasonSummary: reasons.join(" | "),
+      source,
+    },
+  });
 }
 
 async function upsertBlockedIp({ shop, ipAddress, reasons }) {
-  const now = new Date().toISOString();
+  const now = new Date();
 
-  await db.$executeRaw`
-    INSERT INTO BlockedIP (
+  await db.blockedIP.upsert({
+    where: { shop_ipAddress: { shop, ipAddress } },
+    create: {
       shop,
       ipAddress,
-      reason,
-      source,
-      hits,
-      active,
-      lastSeenAt,
-      createdAt,
-      updatedAt
-    )
-    VALUES (
-      ${shop},
-      ${ipAddress},
-      ${reasons.join(" | ")},
-      ${"storefront-proxy"},
-      ${1},
-      ${true},
-      ${now},
-      ${now},
-      ${now}
-    )
-    ON CONFLICT(shop, ipAddress) DO UPDATE SET
-      reason = excluded.reason,
-      source = excluded.source,
-      hits = BlockedIP.hits + 1,
-      active = 1,
-      lastSeenAt = excluded.lastSeenAt,
-      updatedAt = excluded.updatedAt
-  `;
+      reason: reasons.join(" | "),
+      source: "storefront-proxy",
+      hits: 1,
+      active: true,
+      lastSeenAt: now,
+    },
+    update: {
+      reason: reasons.join(" | "),
+      source: "storefront-proxy",
+      hits: { increment: 1 },
+      active: true,
+      lastSeenAt: now,
+    },
+  });
 }
 
 function buildBlockedProxyUrl(request, { reason, eventId, ipAddress }) {
   const url = new URL(request.url);
   url.pathname = "/apps/botshield/blocked";
   url.search = "";
-  url.searchParams.set("reason", reason || "Suspicious traffic was detected from this session.");
+  url.searchParams.set(
+    "reason",
+    reason || "Suspicious traffic was detected from this session.",
+  );
   url.searchParams.set("ref", `BS-${String(eventId).padStart(6, "0")}`);
   url.searchParams.set("ip", ipAddress);
   return `${url.pathname}?${url.searchParams.toString()}`;
@@ -232,20 +215,21 @@ export async function evaluateStorefrontRequest(request, shop) {
   const source = "storefront-proxy";
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const [recentEvents, settings, whitelistEntry, blockedEntry] = await Promise.all([
-    db.botEvent.findMany({
-      where: {
-        shop: normalizedShop,
-        ipAddress,
-        createdAt: { gte: oneHourAgo },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 25,
-    }),
-    readSettings(normalizedShop),
-    readWhitelist(normalizedShop, ipAddress),
-    readBlocked(normalizedShop, ipAddress),
-  ]);
+  const [recentEvents, settings, whitelistEntry, blockedEntry] =
+    await Promise.all([
+      db.botEvent.findMany({
+        where: {
+          shop: normalizedShop,
+          ipAddress,
+          createdAt: { gte: oneHourAgo },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 25,
+      }),
+      readSettings(normalizedShop),
+      readWhitelist(normalizedShop, ipAddress),
+      readBlocked(normalizedShop, ipAddress),
+    ]);
 
   const detection = detectBotThreat({
     ipAddress,
@@ -278,8 +262,8 @@ export async function evaluateStorefrontRequest(request, shop) {
     decision === "block"
       ? "blocked"
       : decision === "challenge"
-      ? "challenged"
-      : "allowed";
+        ? "challenged"
+        : "allowed";
 
   const event = await writeBotEvent({
     shop: normalizedShop,

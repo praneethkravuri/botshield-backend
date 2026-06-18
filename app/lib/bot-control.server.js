@@ -1,5 +1,8 @@
 import db from "../db.server";
-import { buildDetectionSettings, normalizeIpAddress } from "./bot-detection.server";
+import {
+  buildDetectionSettings,
+  normalizeIpAddress,
+} from "./bot-detection.server";
 
 function toBooleanString(value, fallback = false) {
   if (typeof value === "boolean") return value ? "true" : "false";
@@ -21,7 +24,9 @@ function parseDbBoolean(value, fallback = false) {
 }
 
 function normalizeShop(shop) {
-  const normalized = String(shop || "").trim().toLowerCase();
+  const normalized = String(shop || "")
+    .trim()
+    .toLowerCase();
   if (!normalized) {
     throw new Error("A valid shop is required");
   }
@@ -32,12 +37,13 @@ export async function getAppSettings(shop) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT key, value
-      FROM AppSetting
-      WHERE shop = ${normalizedShop}
-        AND key IN ('autoBlock', 'blockLevel', 'strictMode')
-    `;
+    const rows = await db.appSetting.findMany({
+      where: {
+        shop: normalizedShop,
+        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+      },
+      select: { key: true, value: true },
+    });
     return buildDetectionSettings(rows);
   } catch {
     return buildDetectionSettings([]);
@@ -52,31 +58,15 @@ export async function saveAppSettings(shop, input = {}) {
     ? input.blockLevel
     : "Medium";
 
-  const now = new Date().toISOString();
-
-  await db.$executeRaw`
-    INSERT INTO AppSetting (shop, key, value, createdAt, updatedAt)
-    VALUES (${normalizedShop}, 'autoBlock', ${autoBlock}, ${now}, ${now})
-    ON CONFLICT(shop, key) DO UPDATE SET
-      value = excluded.value,
-      updatedAt = excluded.updatedAt
-  `;
-
-  await db.$executeRaw`
-    INSERT INTO AppSetting (shop, key, value, createdAt, updatedAt)
-    VALUES (${normalizedShop}, 'strictMode', ${strictMode}, ${now}, ${now})
-    ON CONFLICT(shop, key) DO UPDATE SET
-      value = excluded.value,
-      updatedAt = excluded.updatedAt
-  `;
-
-  await db.$executeRaw`
-    INSERT INTO AppSetting (shop, key, value, createdAt, updatedAt)
-    VALUES (${normalizedShop}, 'blockLevel', ${blockLevel}, ${now}, ${now})
-    ON CONFLICT(shop, key) DO UPDATE SET
-      value = excluded.value,
-      updatedAt = excluded.updatedAt
-  `;
+  await db.$transaction(
+    Object.entries({ autoBlock, strictMode, blockLevel }).map(([key, value]) =>
+      db.appSetting.upsert({
+        where: { shop_key: { shop: normalizedShop, key } },
+        create: { shop: normalizedShop, key, value },
+        update: { value },
+      }),
+    ),
+  );
 
   return getAppSettings(normalizedShop);
 }
@@ -85,22 +75,10 @@ export async function getBlockedIps(shop) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT
-        id,
-        ipAddress,
-        reason,
-        source,
-        hits,
-        active,
-        expiresAt,
-        lastSeenAt,
-        createdAt,
-        updatedAt
-      FROM BlockedIP
-      WHERE shop = ${normalizedShop}
-      ORDER BY updatedAt DESC
-    `;
+    const rows = await db.blockedIP.findMany({
+      where: { shop: normalizedShop },
+      orderBy: { updatedAt: "desc" },
+    });
 
     return rows.map((row) => ({
       id: row.id,
@@ -126,69 +104,33 @@ export async function upsertBlockedIp(shop, input = {}) {
     throw new Error("A valid IP address is required");
   }
 
-  const now = new Date().toISOString();
+  const now = new Date();
   const reason = input.reason ? String(input.reason) : "Manual block";
   const source = input.source ? String(input.source) : "dashboard";
-  const active = input.active === false ? 0 : 1;
-  const expiresAt = input.expiresAt ? new Date(input.expiresAt).toISOString() : null;
+  const active = input.active !== false;
+  const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
 
-  await db.$executeRaw`
-    INSERT INTO BlockedIP (
-      shop,
+  const row = await db.blockedIP.upsert({
+    where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+    create: {
+      shop: normalizedShop,
       ipAddress,
       reason,
       source,
-      hits,
+      hits: 1,
       active,
       expiresAt,
-      lastSeenAt,
-      createdAt,
-      updatedAt
-    )
-    VALUES (
-      ${normalizedShop},
-      ${ipAddress},
-      ${reason},
-      ${source},
-      ${1},
-      ${active},
-      ${expiresAt},
-      ${now},
-      ${now},
-      ${now}
-    )
-    ON CONFLICT(shop, ipAddress) DO UPDATE SET
-      reason = excluded.reason,
-      source = excluded.source,
-      active = excluded.active,
-      expiresAt = excluded.expiresAt,
-      hits = CASE
-        WHEN excluded.source = 'dashboard' THEN BlockedIP.hits
-        ELSE BlockedIP.hits + 1
-      END,
-      lastSeenAt = excluded.lastSeenAt,
-      updatedAt = excluded.updatedAt
-  `;
-
-  const rows = await db.$queryRaw`
-    SELECT
-      id,
-      ipAddress,
+      lastSeenAt: now,
+    },
+    update: {
       reason,
       source,
-      hits,
       active,
       expiresAt,
-      lastSeenAt,
-      createdAt,
-      updatedAt
-    FROM BlockedIP
-    WHERE shop = ${normalizedShop}
-      AND ipAddress = ${ipAddress}
-    LIMIT 1
-  `;
-
-  const row = rows[0];
+      hits: source === "dashboard" ? undefined : { increment: 1 },
+      lastSeenAt: now,
+    },
+  });
   return {
     id: row.id,
     ipAddress: row.ipAddress,
@@ -210,11 +152,9 @@ export async function removeBlockedIp(shop, ipAddress) {
     throw new Error("A valid IP address is required");
   }
 
-  await db.$executeRaw`
-    DELETE FROM BlockedIP
-    WHERE shop = ${normalizedShop}
-      AND ipAddress = ${normalized}
-  `;
+  await db.blockedIP.deleteMany({
+    where: { shop: normalizedShop, ipAddress: normalized },
+  });
 
   return { ok: true, ipAddress: normalized };
 }
@@ -223,19 +163,10 @@ export async function getWhitelistIps(shop) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    const rows = await db.$queryRaw`
-      SELECT
-        id,
-        ipAddress,
-        label,
-        notes,
-        active,
-        createdAt,
-        updatedAt
-      FROM WhitelistIP
-      WHERE shop = ${normalizedShop}
-      ORDER BY updatedAt DESC
-    `;
+    const rows = await db.whitelistIP.findMany({
+      where: { shop: normalizedShop },
+      orderBy: { updatedAt: "desc" },
+    });
 
     return rows.map((row) => ({
       id: row.id,
@@ -260,57 +191,24 @@ export async function upsertWhitelistIp(shop, input = {}) {
 
   const label = input.label ? String(input.label) : "";
   const notes = input.notes ? String(input.notes) : "";
-  const active = input.active === false ? 0 : 1;
-  const now = new Date().toISOString();
+  const active = input.active !== false;
 
-  await db.$executeRaw`
-    INSERT INTO WhitelistIP (
-      shop,
-      ipAddress,
-      label,
-      notes,
-      active,
-      createdAt,
-      updatedAt
-    )
-    VALUES (
-      ${normalizedShop},
-      ${ipAddress},
-      ${label},
-      ${notes},
-      ${active},
-      ${now},
-      ${now}
-    )
-    ON CONFLICT(shop, ipAddress) DO UPDATE SET
-      label = excluded.label,
-      notes = excluded.notes,
-      active = excluded.active,
-      updatedAt = excluded.updatedAt
-  `;
-
-  await db.$executeRaw`
-    DELETE FROM BlockedIP
-    WHERE shop = ${normalizedShop}
-      AND ipAddress = ${ipAddress}
-  `;
-
-  const rows = await db.$queryRaw`
-    SELECT
-      id,
-      ipAddress,
-      label,
-      notes,
-      active,
-      createdAt,
-      updatedAt
-    FROM WhitelistIP
-    WHERE shop = ${normalizedShop}
-      AND ipAddress = ${ipAddress}
-    LIMIT 1
-  `;
-
-  const row = rows[0];
+  const [row] = await db.$transaction([
+    db.whitelistIP.upsert({
+      where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+      create: {
+        shop: normalizedShop,
+        ipAddress,
+        label,
+        notes,
+        active,
+      },
+      update: { label, notes, active },
+    }),
+    db.blockedIP.deleteMany({
+      where: { shop: normalizedShop, ipAddress },
+    }),
+  ]);
   return {
     id: row.id,
     ipAddress: row.ipAddress,
@@ -329,11 +227,9 @@ export async function removeWhitelistIp(shop, ipAddress) {
     throw new Error("A valid IP address is required");
   }
 
-  await db.$executeRaw`
-    DELETE FROM WhitelistIP
-    WHERE shop = ${normalizedShop}
-      AND ipAddress = ${normalized}
-  `;
+  await db.whitelistIP.deleteMany({
+    where: { shop: normalizedShop, ipAddress: normalized },
+  });
 
   return { ok: true, ipAddress: normalized };
 }

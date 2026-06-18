@@ -18,21 +18,10 @@ export async function action({ request }) {
   await db.botEvent.deleteMany({
     where: { shop: session.shop },
   });
-  try {
-    await db.$executeRaw`
-      DELETE FROM BlockedIP
-      WHERE shop = ${session.shop}
-    `;
-    await db.$executeRaw`
-      DELETE FROM WhitelistIP
-      WHERE shop = ${session.shop}
-    `;
-    await db.$executeRaw`
-      DELETE FROM AppSetting
-      WHERE shop = ${session.shop}
-    `;
-  } catch {
-    // Ignore when new tables are not available yet.
-  }
+  await db.$transaction([
+    db.blockedIP.deleteMany({ where: { shop: session.shop } }),
+    db.whitelistIP.deleteMany({ where: { shop: session.shop } }),
+    db.appSetting.deleteMany({ where: { shop: session.shop } }),
+  ]);
   return Response.json({ ok: true });
 }
