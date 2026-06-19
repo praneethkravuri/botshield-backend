@@ -5,6 +5,8 @@ import {
   detectBotThreat,
   normalizeIpAddress,
 } from "./bot-detection.server";
+import { recordStorefrontHeartbeat } from "./bot-control.server";
+import { resolveStorefrontDecision } from "./storefront-decision.server";
 
 const CHALLENGE_TTL_MS = 15 * 60 * 1000;
 
@@ -50,7 +52,14 @@ async function readSettings(shop) {
     const rows = await db.appSetting.findMany({
       where: {
         shop,
-        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+        key: {
+          in: [
+            "autoBlock",
+            "blockLevel",
+            "strictMode",
+            "protectionPausedUntil",
+          ],
+        },
       },
       select: { key: true, value: true },
     });
@@ -150,6 +159,7 @@ async function writeBotEvent({
   pathVisited,
   riskScore,
   reasons,
+  reasonCodes = [],
   source,
 }) {
   return db.botEvent.create({
@@ -161,7 +171,10 @@ async function writeBotEvent({
       action,
       path: pathVisited,
       riskScore,
-      reasonSummary: reasons.join(" | "),
+      reasonSummary: [
+        ...reasonCodes.map((code) => `[${code}]`),
+        ...reasons,
+      ].join(" | "),
       source,
     },
   });
@@ -211,8 +224,12 @@ export async function evaluateStorefrontRequest(request, shop) {
   const pathVisited = url.searchParams.get("path") || "/";
   const challengeToken = url.searchParams.get("challenge_token") || "";
   const referer = getRequestHeader(request, "referer");
-  const userAgent = getRequestHeader(request, "user-agent");
+  const userAgent =
+    getRequestHeader(request, "user-agent") ||
+    url.searchParams.get("client_user_agent") ||
+    "";
   const source = "storefront-proxy";
+  const receivedAt = new Date();
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const [recentEvents, settings, whitelistEntry, blockedEntry] =
@@ -248,20 +265,23 @@ export async function evaluateStorefrontRequest(request, shop) {
     pathVisited,
   });
 
-  let decision = "allow";
-  if (detection.actionTaken === "blocked" || blockedEntry?.active) {
-    decision = "block";
-  } else if (
-    (detection.threatLevel === "medium" || detection.threatLevel === "high") &&
-    !challengePassed
-  ) {
-    decision = "challenge";
-  }
+  const resolution = resolveStorefrontDecision({
+    detection,
+    blockedEntry,
+    whitelistEntry,
+    challengePassed,
+    autoBlock: settings.autoBlock,
+    protectionPausedUntil: settings.protectionPausedUntil,
+  });
+  const decision = resolution.decision;
+  const reasonCodes = [
+    ...new Set([...(detection.reasonCodes || []), ...resolution.reasonCodes]),
+  ];
 
   const actionForLog =
-    decision === "block"
+    decision === "blocked"
       ? "blocked"
-      : decision === "challenge"
+      : decision === "challenged"
         ? "challenged"
         : "allowed";
 
@@ -274,10 +294,11 @@ export async function evaluateStorefrontRequest(request, shop) {
     pathVisited,
     riskScore: detection.riskScore,
     reasons: detection.reasons,
+    reasonCodes,
     source,
   });
 
-  if (decision === "block") {
+  if (decision === "blocked" && !resolution.protectionPaused) {
     await upsertBlockedIp({
       shop: normalizedShop,
       ipAddress,
@@ -285,18 +306,40 @@ export async function evaluateStorefrontRequest(request, shop) {
     });
   }
 
+  await db.$transaction([
+    db.appSetting.upsert({
+      where: {
+        shop_key: {
+          shop: normalizedShop,
+          key: "lastStorefrontDecisionAt",
+        },
+      },
+      create: {
+        shop: normalizedShop,
+        key: "lastStorefrontDecisionAt",
+        value: receivedAt.toISOString(),
+      },
+      update: { value: receivedAt.toISOString() },
+    }),
+  ]);
+  await recordStorefrontHeartbeat(normalizedShop, receivedAt);
+
   return {
     decision,
+    action: decision,
+    eventId: event.id,
     ipAddress,
     settings,
     riskScore: detection.riskScore,
     threatLevel: detection.threatLevel,
     reasons: detection.reasons,
+    reasonCodes,
     summary: detection.summary,
     createdAt: event.createdAt,
+    protectionPaused: resolution.protectionPaused,
     referer,
     challengeToken:
-      decision === "challenge"
+      decision === "challenged"
         ? createChallengeToken({
             shop: normalizedShop,
             ipAddress,
@@ -305,7 +348,7 @@ export async function evaluateStorefrontRequest(request, shop) {
           })
         : null,
     blockPageUrl:
-      decision === "block"
+      decision === "blocked"
         ? buildBlockedProxyUrl(request, {
             reason: detection.reasons[0],
             eventId: event.id,

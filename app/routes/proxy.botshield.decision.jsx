@@ -10,5 +10,8 @@ export async function loader({ request }) {
   }
 
   const decision = await evaluateStorefrontRequest(request, shop);
+  console.log(
+    `[botshield-storefront] decision=${decision.decision} shop=${shop} ip=${decision.ipAddress} path=${new URL(request.url).searchParams.get("path") || "/"} risk=${decision.riskScore} event=${decision.eventId} reasons=${decision.reasonCodes.join(",")}`,
+  );
   return Response.json(decision);
 }

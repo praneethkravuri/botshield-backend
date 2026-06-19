@@ -19,7 +19,14 @@ async function readSettings(shop) {
     const rows = await db.appSetting.findMany({
       where: {
         shop: normalizedShop,
-        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+        key: {
+          in: [
+            "autoBlock",
+            "blockLevel",
+            "strictMode",
+            "protectionPausedUntil",
+          ],
+        },
       },
       select: { key: true, value: true },
     });
@@ -167,7 +174,10 @@ export async function action({ request }) {
       action: result.actionTaken,
       path: pathVisited,
       riskScore: result.riskScore,
-      reasonSummary: result.reasons.join(" | "),
+      reasonSummary: [
+        ...(result.reasonCodes || []).map((code) => `[${code}]`),
+        ...result.reasons,
+      ].join(" | "),
       source: body.source ? String(body.source) : "dashboard-live-scan",
     },
   });
@@ -208,6 +218,7 @@ export async function action({ request }) {
     pathVisited,
     riskScore: result.riskScore,
     reasons: result.reasons,
+    reasonCodes: result.reasonCodes,
     summary: result.summary,
     settings,
     createdAt: createdEvent.createdAt,

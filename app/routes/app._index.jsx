@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { partitionSecurityEvents } from "../lib/event-classification";
 
 function getWeekStart(dateInput) {
   const date = new Date(dateInput);
@@ -126,7 +127,7 @@ function getAssistantReply(question, context) {
   }
 
   if (q.includes("money") || q.includes("saved") || q.includes("revenue")) {
-    return `Estimated revenue protected so far is $${moneySaved}, based on blocked suspicious traffic.`;
+    return `BotShield does not estimate revenue without verified commerce attribution. The defensible evidence currently available is ${blockedCount} blocked storefront events.`;
   }
 
   if (q.includes("risk") || q.includes("threat")) {
@@ -423,9 +424,9 @@ function getAssistantCopilotReply(question, context, history = []) {
 
   if (intent === "revenue") {
     return createAssistantMessage({
-      badge: "Commerce Impact",
-      title: "Revenue Protection View",
-      text: `Estimated revenue protected is $${context.moneySaved}. That figure tracks against ${context.blockedCount} blocked events and gives operators a simple commerce-impact view of how much suspicious traffic has been intercepted.`,
+      badge: "Protection Evidence",
+      title: "Verified Storefront Impact",
+      text: `BotShield has recorded ${context.blockedCount} blocked storefront events. Revenue attribution is intentionally not estimated until verified commerce data is available.`,
       bullets: [
         `Blocked events: ${context.blockedCount}`,
         `Blocked today: ${context.blockedToday}`,
@@ -1018,6 +1019,16 @@ export default function Index() {
   const [highRiskAlertsOnly, setHighRiskAlertsOnly] = useState(false);
   const [alertEmail, setAlertEmail] = useState("owner@store.com");
   const [pauseUntil, setPauseUntil] = useState(null);
+  const [protectionStatus, setProtectionStatus] = useState({
+    appInstalled: true,
+    themeEmbedDetected: false,
+    lastStorefrontDecisionAt: null,
+    protectionActive: false,
+    protectionPaused: false,
+    blocklistCount: 0,
+    whitelistCount: 0,
+    realEventsToday: 0,
+  });
   const [notification, setNotification] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
@@ -1068,6 +1079,8 @@ export default function Index() {
   });
 
   const protectionPaused = pauseUntil && new Date(pauseUntil).getTime() > Date.now();
+  const protectionReady =
+    protectionStatus.themeEmbedDetected && protectionOn && !protectionPaused;
 
   useEffect(() => {
     if (threatLevel === "high") {
@@ -1443,8 +1456,27 @@ export default function Index() {
       setAutoBlock(Boolean(settings.autoBlock));
       setStrictMode(Boolean(settings.strictMode));
       setBlockLevel(settings.blockLevel || "Medium");
+      setPauseUntil(settings.protectionPausedUntil || null);
+      setProtectionOn(
+        !settings.protectionPausedUntil ||
+          new Date(settings.protectionPausedUntil).getTime() <= Date.now(),
+      );
     } catch (err) {
       console.error("Failed to load settings", err);
+    }
+  };
+
+  const loadProtectionStatus = async () => {
+    try {
+      const res = await fetch("/api/status");
+      if (!res.ok) return;
+      const data = await res.json();
+      const status = data.status || {};
+      setProtectionStatus((previous) => ({ ...previous, ...status }));
+      setPauseUntil(status.protectionPausedUntil || null);
+      setProtectionOn(Boolean(status.protectionActive));
+    } catch (err) {
+      console.error("Failed to load protection status", err);
     }
   };
 
@@ -1504,6 +1536,7 @@ export default function Index() {
       loadSettings(),
       loadBlocklist(),
       loadWhitelist(),
+      loadProtectionStatus(),
     ]);
   };
 
@@ -1547,6 +1580,7 @@ export default function Index() {
       autoBlock,
       strictMode,
       blockLevel,
+      protectionPausedUntil: pauseUntil,
       ...overrides,
     };
 
@@ -1567,6 +1601,11 @@ export default function Index() {
     setAutoBlock(Boolean(settings.autoBlock));
     setStrictMode(Boolean(settings.strictMode));
     setBlockLevel(settings.blockLevel || "Medium");
+    setPauseUntil(settings.protectionPausedUntil || null);
+    setProtectionOn(
+      !settings.protectionPausedUntil ||
+        new Date(settings.protectionPausedUntil).getTime() <= Date.now(),
+    );
 
     await refreshBackendState();
 
@@ -1855,9 +1894,9 @@ export default function Index() {
         break;
       case "protection":
         if (protectionPaused || !protectionOn) {
-          resumeProtectionNow();
+          await resumeProtectionNow();
         } else {
-          handlePauseProtection(10);
+          await handlePauseProtection(10);
         }
         break;
       case "automation":
@@ -1883,74 +1922,56 @@ export default function Index() {
     }
   };
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!protectionOn || protectionPaused) {
       triggerAlert("Protection is paused. Resume runtime protection before running a simulated scan.");
       return;
     }
 
-    const effectiveBlockLevel = strictMode ? "High" : blockLevel;
     const risks = ["low", "medium", "high"];
     const risk = risks[Math.floor(Math.random() * 3)];
     const fakeIP =
-      "192.168." +
+      "198.51.100." +
       Math.floor(Math.random() * 255) +
-      "." +
-      Math.floor(Math.random() * 255);
-    const time = new Date().toLocaleTimeString();
+      Math.max(1, Math.floor(Math.random() * 254));
+    const simulatedUserAgent =
+      risk === "high"
+        ? "python-requests/2.32 BotShield-Simulation"
+        : risk === "medium"
+          ? "HeadlessChrome BotShield-Simulation"
+          : "Mozilla/5.0 BotShield-Simulation";
+    const simulatedPath =
+      risk === "low" ? "/products/test" : risk === "medium" ? "/cart" : "/account/login";
 
-    let action = "Allowed";
-    let message = "";
-
-    if (risk === "low") {
-      message = "No bots detected";
-    } else if (risk === "medium") {
-      message = "1 suspicious visitor detected";
-    } else {
-      message = "High-risk visitor detected";
-    }
-
-    if (whitelist.includes(fakeIP)) {
-      action = "Whitelisted";
-      message = "Whitelisted IP bypassed blocking";
-    } else {
-      const shouldBlock =
-        autoBlock &&
-        ((effectiveBlockLevel === "Low" && risk !== "low") ||
-          (effectiveBlockLevel === "Medium" && risk === "high") ||
-          (effectiveBlockLevel === "High" && risk !== "low"));
-
-      if (shouldBlock) {
-        action = "Blocked";
-        setBlocked((prev) => prev + 1);
-        if (emailAlerts && (!highRiskAlertsOnly || risk === "high")) {
-          triggerAlert(`Email alert sent to ${alertEmail} for blocked IP ${fakeIP}.`);
-        }
+    try {
+      const response = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ipAddress: fakeIP,
+          userAgent: simulatedUserAgent,
+          pathVisited: simulatedPath,
+          source: "dashboard-simulation",
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Simulation failed.");
       }
+
+      await loadScans();
+      setThreatLevel(String(data.threatLevel || risk).toLowerCase());
+      setLastScanTime(new Date().toLocaleTimeString());
+      setResult(
+        `Simulation: ${data.threatLevel || risk} risk, ${data.actionTaken || data.action}`,
+      );
+      triggerAlert(
+        `Simulation recorded. It is excluded from real storefront metrics.`,
+      );
+    } catch (err) {
+      console.error("Failed to generate test traffic", err);
+      triggerAlert("Failed to generate backend test traffic.");
     }
-
-    const riskLabel = risk.charAt(0).toUpperCase() + risk.slice(1);
-    const newRow = { ip: fakeIP, risk: riskLabel, time, action };
-    const historyText = `${message} (${riskLabel}) - ${fakeIP} - ${time}`;
-
-    setBlockedIPs((prev) => [newRow, ...prev].slice(0, 10));
-    setHistory((prev) => [historyText, ...prev].slice(0, 5));
-    setTotalScans((prev) => prev + 1);
-    setThreatLevel(risk);
-    setLastScanTime(time);
-    setResult(historyText);
-
-    setThreatCounts((prev) => ({
-      ...prev,
-      [riskLabel]: prev[riskLabel] + 1,
-    }));
-
-    setActionCounts((prev) => ({
-      ...prev,
-      [action]: prev[action] + 1,
-    }));
-
-    triggerAlert(`Simulated ${riskLabel.toLowerCase()}-risk traffic. Result: ${action}.`);
   };
 
   const handleManualAction = async (index) => {
@@ -2111,17 +2132,31 @@ export default function Index() {
     triggerAlert("Trusted tag editor closed.");
   };
 
-  const handlePauseProtection = (minutes) => {
+  const handlePauseProtection = async (minutes) => {
     const resumeAt = new Date(Date.now() + minutes * 60 * 1000).toISOString();
-    setPauseUntil(resumeAt);
-    setProtectionOn(false);
-    triggerAlert(`Protection paused for ${minutes} minutes.`);
+    try {
+      await persistProtectionSettings(
+        { protectionPausedUntil: resumeAt },
+        {
+          message: `Protection paused for ${minutes} minutes. Storefront decisions will still be logged but not blocked.`,
+        },
+      );
+    } catch (err) {
+      console.error("Failed to pause protection", err);
+      triggerAlert("Failed to pause protection.");
+    }
   };
 
-  const resumeProtectionNow = () => {
-    setPauseUntil(null);
-    setProtectionOn(true);
-    triggerAlert("Protection resumed and runtime enforcement is active again.");
+  const resumeProtectionNow = async () => {
+    try {
+      await persistProtectionSettings(
+        { protectionPausedUntil: null },
+        { message: "Protection resumed." },
+      );
+    } catch (err) {
+      console.error("Failed to resume protection", err);
+      triggerAlert("Failed to resume protection.");
+    }
   };
 
   const enableStrictMode = async () => {
@@ -2332,7 +2367,8 @@ export default function Index() {
     const timer = setTimeout(() => {
       setPauseUntil(null);
       setProtectionOn(true);
-      triggerAlert("Protection has been automatically re-enabled.");
+      refreshBackendState();
+      triggerAlert("The protection pause expired.");
     }, remaining);
 
     return () => clearTimeout(timer);
@@ -2350,58 +2386,70 @@ export default function Index() {
     );
   }, [blockedIPs, searchTerm]);
 
-  const blockedCount = scans.filter((scan) => scan.actionTaken === "blocked").length;
-  const allowedCount = scans.filter((scan) => scan.actionTaken === "allowed").length;
-  const moneySaved = blockedCount * 5;
+  const { storefront: storefrontScans, simulated: simulatedScans } =
+    partitionSecurityEvents(scans);
+  const blockedCount = storefrontScans.filter(
+    (scan) => scan.actionTaken === "blocked",
+  ).length;
+  const allowedCount = storefrontScans.filter(
+    (scan) => scan.actionTaken === "allowed",
+  ).length;
+  const moneySaved = 0;
 
-  const blockedToday = scans.filter(
+  const blockedToday = storefrontScans.filter(
     (scan) =>
       scan.actionTaken === "blocked" &&
       scan.createdAt &&
       new Date(scan.createdAt).toDateString() === new Date().toDateString(),
   ).length;
 
-  const scansToday = scans.filter(
+  const scansToday = storefrontScans.filter(
     (scan) =>
       scan.createdAt &&
       new Date(scan.createdAt).toDateString() === new Date().toDateString(),
   ).length;
 
-  const recentBlocks = scans.filter((scan) => {
+  const recentBlocks = storefrontScans.filter((scan) => {
     if (!scan.createdAt) return false;
     const diff = Date.now() - new Date(scan.createdAt).getTime();
     return scan.actionTaken === "blocked" && diff <= 60 * 60 * 1000;
   }).length;
 
-  const lastScan = scans[0];
+  const lastScan = storefrontScans[0];
   const latestKnownIp = blockedIPs[0]?.ip || scans[0]?.ipAddress || "";
   const lastScanLabel =
     lastScan?.createdAt
       ? new Date(lastScan.createdAt).toLocaleTimeString()
       : "No scans yet";
 
-  const highRiskCount = scans.filter((scan) => scan.threatLevel === "high").length;
-  const mediumRiskCount = scans.filter((scan) => scan.threatLevel === "medium").length;
-  const percentHigh = scans.length ? Math.round((highRiskCount / scans.length) * 100) : 0;
-  const threatTrendWidth = `${Math.min(Math.max(scans.length * 10, 8), 100)}%`;
-  const recentThreats = scans.slice(0, 5);
+  const highRiskCount = storefrontScans.filter(
+    (scan) => scan.threatLevel === "high",
+  ).length;
+  const mediumRiskCount = storefrontScans.filter(
+    (scan) => scan.threatLevel === "medium",
+  ).length;
+  const percentHigh = storefrontScans.length
+    ? Math.round((highRiskCount / storefrontScans.length) * 100)
+    : 0;
+  const threatTrendWidth = `${Math.min(Math.max(storefrontScans.length * 10, 8), 100)}%`;
+  const recentThreats = storefrontScans.slice(0, 5);
 
-  const currentWeekScans = scans.filter(
+  const currentWeekScans = storefrontScans.filter(
     (scan) => scan.createdAt && isSameWeek(scan.createdAt, new Date()),
   ).length;
 
-  const previousWeekScans = scans.filter(
+  const previousWeekScans = storefrontScans.filter(
     (scan) => scan.createdAt && isPreviousWeek(scan.createdAt, new Date()),
   ).length;
 
-  const currentWeekBlocked = scans.filter(
+  const currentWeekBlocked = storefrontScans.filter(
     (scan) =>
       scan.createdAt &&
       scan.actionTaken === "blocked" &&
       isSameWeek(scan.createdAt, new Date()),
   ).length;
 
-  const previousWeekBlocked = scans.filter(
+  const previousWeekBlocked = storefrontScans.filter(
     (scan) =>
       scan.createdAt &&
       scan.actionTaken === "blocked" &&
@@ -2422,28 +2470,37 @@ export default function Index() {
       ? "Elevated"
       : "Stable";
 
+  const lowRiskCount = storefrontScans.filter(
+    (scan) => scan.threatLevel === "low",
+  ).length;
+  const challengedCount = storefrontScans.filter(
+    (scan) => scan.actionTaken === "challenged",
+  ).length;
+  const whitelistedCount = storefrontScans.filter(
+    (scan) => scan.actionTaken === "whitelisted",
+  ).length;
   const maxThreatCount = Math.max(
-    threatCounts.Low,
-    threatCounts.Medium,
-    threatCounts.High,
+    lowRiskCount,
+    mediumRiskCount,
+    highRiskCount,
     1,
   );
 
   const maxActionCount = Math.max(
-    actionCounts.Allowed,
-    actionCounts.Blocked,
-    actionCounts.Whitelisted,
+    allowedCount,
+    blockedCount,
+    challengedCount + whitelistedCount,
     1,
   );
 
-  const lowThreatWidth = (threatCounts.Low / maxThreatCount) * 100 + "%";
-  const mediumThreatWidth = (threatCounts.Medium / maxThreatCount) * 100 + "%";
-  const highThreatWidth = (threatCounts.High / maxThreatCount) * 100 + "%";
+  const lowThreatWidth = (lowRiskCount / maxThreatCount) * 100 + "%";
+  const mediumThreatWidth = (mediumRiskCount / maxThreatCount) * 100 + "%";
+  const highThreatWidth = (highRiskCount / maxThreatCount) * 100 + "%";
 
-  const allowedActionWidth = (actionCounts.Allowed / maxActionCount) * 100 + "%";
-  const blockedActionWidth = (actionCounts.Blocked / maxActionCount) * 100 + "%";
+  const allowedActionWidth = (allowedCount / maxActionCount) * 100 + "%";
+  const blockedActionWidth = (blockedCount / maxActionCount) * 100 + "%";
   const whitelistedActionWidth =
-    (actionCounts.Whitelisted / maxActionCount) * 100 + "%";
+    ((challengedCount + whitelistedCount) / maxActionCount) * 100 + "%";
 
   const riskBadgeLabel =
     threatLevel === "low"
@@ -2471,19 +2528,19 @@ export default function Index() {
     recentBlocks,
     blockedIpCount: blockedIPs.length,
     whitelistCount: whitelist.length,
-    moneySaved,
+    moneySaved: 0,
     lastScanLabel,
     botPressureScore,
     botPressureLabel,
     currentWeekScans,
     currentWeekBlocked,
     pauseCountdown,
-    latestThreat: scans[0]
+    latestThreat: storefrontScans[0]
       ? {
-          ipAddress: scans[0].ipAddress,
-          threatLevel: scans[0].threatLevel,
-          actionTaken: scans[0].actionTaken,
-          pathVisited: scans[0].pathVisited,
+          ipAddress: storefrontScans[0].ipAddress,
+          threatLevel: storefrontScans[0].threatLevel,
+          actionTaken: storefrontScans[0].actionTaken,
+          pathVisited: storefrontScans[0].pathVisited,
         }
       : null,
     storeProtectionModeLabel: strictMode
@@ -2498,24 +2555,29 @@ export default function Index() {
   };
 
   const liveSecurityLogs =
-    scans.length > 0
-      ? scans.slice(0, 3).map((scan) => ({
+    storefrontScans.length > 0
+      ? storefrontScans.slice(0, 3).map((scan) => ({
           status: scan.actionTaken === "blocked" ? "🔴" : "🟢",
           message: `${scan.ipAddress} ${scan.actionTaken} (${scan.threatLevel})`,
         }))
       : [
-          { status: "🟢", message: "System initialized" },
-          { status: "🟢", message: "Monitoring traffic" },
-          { status: "🟡", message: "Waiting for activity..." },
+          { status: "🟡", message: "No storefront traffic received yet" },
+          {
+            status: protectionStatus.themeEmbedDetected ? "🟢" : "🔴",
+            message: protectionStatus.themeEmbedDetected
+              ? "Theme embed heartbeat detected"
+              : "Theme embed not detected",
+          },
         ];
 
   const recentThreatFeed =
-    scans.length > 0
-      ? scans.slice(0, 3).map((scan) => `• ${scan.threatLevel} threat from ${scan.ipAddress}`)
+    storefrontScans.length > 0
+      ? storefrontScans
+          .slice(0, 3)
+          .map((scan) => `• ${scan.threatLevel} threat from ${scan.ipAddress}`)
       : [
-          "• Suspicious IP detected (simulated)",
-          "• Bot pattern flagged",
-          "• Rate limit triggered",
+          "• No real storefront events received",
+          `• ${simulatedScans.length} simulation event${simulatedScans.length === 1 ? "" : "s"} excluded`,
         ];
 
   const storeProtectionMode = strictMode
@@ -2544,21 +2606,55 @@ export default function Index() {
 
   const systemStatusItems = [
     {
-      label: "🟢 System Healthy",
-      active: protectionOn,
-      detail: protectionOn && !protectionPaused ? "runtime online" : "limited runtime",
+      label: "🟢 Shopify App Installed",
+      active: protectionStatus.appInstalled,
+      detail: "authenticated admin connection",
       actionKey: "runtime",
     },
     {
-      label: "⚡ Auto Protection Active",
-      active: autoBlock,
-      detail: autoBlock ? "real-time enforcement" : "manual enforcement",
+      label: protectionStatus.themeEmbedDetected
+        ? "🟢 Theme Embed Detected"
+        : "🔴 Theme Embed Not Detected",
+      active: protectionStatus.themeEmbedDetected,
+      detail: protectionStatus.lastStorefrontDecisionAt
+        ? `last event ${new Date(protectionStatus.lastStorefrontDecisionAt).toLocaleTimeString()}`
+        : "enable the app embed to start protection",
+      actionKey: "runtime",
+    },
+    {
+      label: protectionPaused ? "⏸ Protection Paused" : "⚡ Protection Policy Ready",
+      active: protectionStatus.themeEmbedDetected && !protectionPaused,
+      detail: protectionPaused
+        ? `resumes in ${pauseCountdown}m`
+        : autoBlock
+          ? "auto-block enabled"
+          : "monitoring without auto-block",
       actionKey: "autoblock",
     },
     {
-      label: highRiskCount > 0 ? "🚨 Threats Detected" : "🛡️ No Threats Detected",
-      active: highRiskCount === 0,
-      detail: highRiskCount > 0 ? `${highRiskCount} high-risk events` : "no critical pressure",
+      label:
+        storefrontScans.length === 0
+          ? "🟡 No Storefront Traffic Yet"
+          : highRiskCount > 0
+            ? "🚨 Threats Detected"
+            : "🛡️ No High-Risk Events",
+      active: storefrontScans.length > 0,
+      detail:
+        storefrontScans.length > 0
+          ? `${protectionStatus.realEventsToday} real events today`
+          : `${simulatedScans.length} simulations excluded`,
+      actionKey: "evidence",
+    },
+    {
+      label: `🧱 ${protectionStatus.blocklistCount} Blocklisted`,
+      active: true,
+      detail: `${protectionStatus.whitelistCount} whitelisted`,
+      actionKey: "evidence",
+    },
+    {
+      label: `📡 ${protectionStatus.realEventsToday} Real Events Today`,
+      active: protectionStatus.realEventsToday > 0,
+      detail: `${simulatedScans.length} simulations excluded`,
       actionKey: "evidence",
     },
   ];
@@ -2607,9 +2703,9 @@ export default function Index() {
       actionKey: "pressure",
     },
     {
-      label: "Revenue Shielded",
-      value: `$${moneySaved}`,
-      detail: `${blockedCount} threats intercepted`,
+      label: "Storefront Events",
+      value: `${storefrontScans.length}`,
+      detail: `${blockedCount} blocked, ${simulatedScans.length} simulations excluded`,
       actionKey: "revenue",
     },
     {
@@ -3200,10 +3296,10 @@ export default function Index() {
                     </span>
                     <span
                       style={{
-                        background:
-                          protectionOn && !protectionPaused ? theme.successBg : theme.dangerBg,
-                        color:
-                          protectionOn && !protectionPaused
+                        background: protectionReady
+                          ? theme.successBg
+                          : theme.dangerBg,
+                        color: protectionReady
                             ? theme.successText
                             : theme.dangerText,
                         padding: "9px 14px",
@@ -3212,9 +3308,11 @@ export default function Index() {
                         fontSize: "12px",
                       }}
                     >
-                      {protectionPaused
+                      {!protectionStatus.themeEmbedDetected
+                        ? "Protection pending setup"
+                        : protectionPaused
                         ? `Protection paused ${pauseCountdown}m`
-                        : protectionOn
+                        : protectionReady
                         ? "Protection active"
                         : "Protection disabled"}
                     </span>
@@ -3272,8 +3370,10 @@ export default function Index() {
                   {blockedToday > 0
                     ? `BotShield stopped ${blockedToday} suspicious threat${blockedToday === 1 ? "" : "s"} today before they could create storefront noise.`
                     : scansToday > 0
-                    ? `BotShield monitored ${scansToday} live request${scansToday === 1 ? "" : "s"} today and your store is operating from a controlled security posture.`
-                    : "BotShield is live, synced, and ready to turn storefront traffic into visible protection proof."}
+                    ? `BotShield evaluated ${scansToday} real storefront request${scansToday === 1 ? "" : "s"} today.`
+                    : protectionStatus.themeEmbedDetected
+                      ? "Theme embed detected. Waiting for the first real storefront decision."
+                      : "Protection pending setup: enable the BotShield theme app embed."}
                 </div>
                 <div style={{ color: theme.muted, fontSize: "14px", lineHeight: 1.8, marginTop: "12px", maxWidth: "880px" }}>
                   {percentHigh > 0
@@ -3377,7 +3477,7 @@ export default function Index() {
                   </p>
                   <h2 style={{ ...displayHeadingStyle, margin: "6px 0 0 0", fontSize: "34px" }}>Runtime Overview</h2>
                   <p style={{ margin: "10px 0 0 0", color: theme.muted, fontSize: "14px", lineHeight: 1.8, maxWidth: "540px" }}>
-                    A cleaner operating view for policy state, revenue protection, and live sync confidence without forcing merchants into analyst-level detail.
+                    A cleaner operating view for policy state, verified storefront events, and setup confidence without forcing merchants into analyst-level detail.
                   </p>
                 </div>
 
@@ -3412,10 +3512,10 @@ export default function Index() {
 
                     <span
                       style={{
-                        background:
-                          protectionOn && !protectionPaused ? theme.successBg : theme.dangerBg,
-                        color:
-                          protectionOn && !protectionPaused
+                        background: protectionReady
+                          ? theme.successBg
+                          : theme.dangerBg,
+                        color: protectionReady
                             ? theme.successText
                             : theme.dangerText,
                         padding: "8px 12px",
@@ -3424,9 +3524,11 @@ export default function Index() {
                         fontSize: "13px",
                       }}
                     >
-                      {protectionPaused
+                      {!protectionStatus.themeEmbedDetected
+                        ? "Protection Pending Setup"
+                        : protectionPaused
                         ? `Paused ${pauseCountdown}m`
-                        : protectionOn
+                        : protectionReady
                         ? "Protection Active"
                         : "Protection Disabled"}
                     </span>
@@ -3703,15 +3805,15 @@ export default function Index() {
                     </svg>
                   </div>
                   <p style={{ margin: 0, color: theme.muted, fontSize: "12px", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
-                    Business Impact
+                    Verified Protection Evidence
                   </p>
-                  <h3 style={{ margin: "10px 0 0 0", fontSize: "22px", letterSpacing: "-0.04em" }}>Protected Revenue Estimate</h3>
+                  <h3 style={{ margin: "10px 0 0 0", fontSize: "22px", letterSpacing: "-0.04em" }}>Real Storefront Events</h3>
                   <p style={{ fontSize: "42px", fontWeight: "bold", margin: "14px 0 0 0", letterSpacing: "-0.06em" }}>
-                    <AnimatedNumber value={moneySaved} prefix="$" />
+                    <AnimatedNumber value={storefrontScans.length} />
                   </p>
                   <p style={{ fontSize: "14px", color: theme.muted, marginTop: "10px", maxWidth: "420px", lineHeight: 1.7 }}>
-                    Estimated storefront value preserved by intercepting abusive
-                    traffic before it reached conversion-critical flows.
+                    Decisions received through the Shopify storefront app proxy.
+                    Simulated dashboard traffic is excluded.
                   </p>
                   <div style={{ marginTop: "18px", display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "10px" }}>
                     <button type="button" onClick={(event) => { event.stopPropagation(); handleDashboardSurfaceAction("threatsStopped"); }} style={interactiveCardButtonStyle({ padding: "12px 14px", borderRadius: "16px", background: theme.surfaceAlt, border: `1px solid ${theme.border}` })}>
@@ -3967,16 +4069,16 @@ export default function Index() {
                         Live threat distribution
                       </h3>
                       <p style={{ margin: "10px 0 0 0", color: theme.muted, fontSize: "13px", lineHeight: 1.7, maxWidth: "460px" }}>
-                        A compact view of how risky traffic is distributing across the current runtime sample.
+                        Real storefront events only. Dashboard simulations are excluded.
                       </p>
                     </div>
-                    <span style={{ color: theme.text, fontWeight: 700, fontSize: "13px" }}>{scans.length} scans</span>
+                    <span style={{ color: theme.text, fontWeight: 700, fontSize: "13px" }}>{storefrontScans.length} events</span>
                   </div>
                   <div style={{ marginTop: "18px", display: "grid", gap: "14px" }}>
                     {[
-                      { label: "Low risk", value: threatCounts.Low, width: lowThreatWidth, color: "#22c55e" },
-                      { label: "Medium risk", value: threatCounts.Medium, width: mediumThreatWidth, color: "#f59e0b" },
-                      { label: "High risk", value: threatCounts.High, width: highThreatWidth, color: "#ef4444" },
+                      { label: "Low risk", value: lowRiskCount, width: lowThreatWidth, color: "#22c55e" },
+                      { label: "Medium risk", value: mediumRiskCount, width: mediumThreatWidth, color: "#f59e0b" },
+                      { label: "High risk", value: highRiskCount, width: highThreatWidth, color: "#ef4444" },
                     ].map((row) => (
                       <div key={row.label}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
@@ -4141,13 +4243,17 @@ export default function Index() {
                       style={{
                         padding: "8px 12px",
                         borderRadius: "999px",
-                        background: protectionOn && !protectionPaused ? theme.successBg : theme.dangerBg,
-                        color: protectionOn && !protectionPaused ? theme.successText : theme.dangerText,
+                        background: protectionReady ? theme.successBg : theme.dangerBg,
+                        color: protectionReady ? theme.successText : theme.dangerText,
                         fontSize: "12px",
                         fontWeight: 700,
                       }}
                     >
-                      {protectionOn && !protectionPaused ? "Operational" : "Limited"}
+                      {protectionReady
+                        ? "Active"
+                        : protectionStatus.themeEmbedDetected
+                          ? "Paused"
+                          : "Setup Required"}
                     </span>
                   </div>
 
@@ -4190,7 +4296,11 @@ export default function Index() {
                         Protection
                       </div>
                       <div style={{ marginTop: "8px", color: theme.text, fontWeight: 700 }}>
-                        {protectionOn && !protectionPaused ? "Fully Active" : "Paused"}
+                        {protectionReady
+                          ? "Active"
+                          : protectionStatus.themeEmbedDetected
+                            ? "Paused"
+                            : "Embed Missing"}
                       </div>
                     </button>
                     <button
@@ -4679,9 +4789,9 @@ export default function Index() {
                 }}
               >
                 <div style={{ ...statCardStyle, ...getRevealStyle(19) }} {...cardHoverHandlers}>
-                  <p style={statLabelStyle}>Total Traffic</p>
+                  <p style={statLabelStyle}>Real Storefront Events</p>
                   <h2 style={statValueStyle}>
-                    <AnimatedNumber value={scans.length} />
+                    <AnimatedNumber value={storefrontScans.length} />
                   </h2>
                 </div>
 
@@ -4754,7 +4864,7 @@ export default function Index() {
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>Low</span>
-                      <span style={{ color: theme.text }}>{threatCounts.Low}</span>
+                      <span style={{ color: theme.text }}>{lowRiskCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: lowThreatWidth, height: "100%", backgroundColor: "#22c55e", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -4764,7 +4874,7 @@ export default function Index() {
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>Medium</span>
-                      <span style={{ color: theme.text }}>{threatCounts.Medium}</span>
+                      <span style={{ color: theme.text }}>{mediumRiskCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: mediumThreatWidth, height: "100%", backgroundColor: "#f59e0b", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -4774,7 +4884,7 @@ export default function Index() {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>High</span>
-                      <span style={{ color: theme.text }}>{threatCounts.High}</span>
+                      <span style={{ color: theme.text }}>{highRiskCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: highThreatWidth, height: "100%", backgroundColor: "#ef4444", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -4788,7 +4898,7 @@ export default function Index() {
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>Allowed</span>
-                      <span style={{ color: theme.text }}>{actionCounts.Allowed}</span>
+                      <span style={{ color: theme.text }}>{allowedCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: allowedActionWidth, height: "100%", backgroundColor: "#22c55e", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -4798,7 +4908,7 @@ export default function Index() {
                   <div style={{ marginBottom: "14px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>Blocked</span>
-                      <span style={{ color: theme.text }}>{actionCounts.Blocked}</span>
+                      <span style={{ color: theme.text }}>{blockedCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: blockedActionWidth, height: "100%", backgroundColor: "#ef4444", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -4808,7 +4918,7 @@ export default function Index() {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                       <span style={{ color: theme.text }}>Whitelisted</span>
-                      <span style={{ color: theme.text }}>{actionCounts.Whitelisted}</span>
+                      <span style={{ color: theme.text }}>{challengedCount + whitelistedCount}</span>
                     </div>
                     <div style={{ width: "100%", height: "12px", backgroundColor: theme.track, borderRadius: "999px", overflow: "hidden" }}>
                       <div style={{ width: whitelistedActionWidth, height: "100%", backgroundColor: "#3b82f6", animation: "trendSweep 0.8s ease both", transformOrigin: "left center" }} />
@@ -5157,7 +5267,7 @@ export default function Index() {
                   {scans.length === 0 ? (
                     <div>
                       <p style={{ color: theme.muted }}>
-                        No threats detected yet. Run a live scan or generate test traffic to start building evidence.
+                        No real storefront events received yet. Enable the theme embed and visit the storefront. Test traffic is labeled as simulation.
                       </p>
                       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                         <button onClick={handleBackendScan} style={getPrimaryButtonStyle()} {...pressHandlers}>
@@ -5189,6 +5299,9 @@ export default function Index() {
                           </th>
                           <th style={{ padding: "12px 10px", fontSize: "14px", color: theme.text }}>
                             Path
+                          </th>
+                          <th style={{ padding: "12px 10px", fontSize: "14px", color: theme.text }}>
+                            Source
                           </th>
                         </tr>
                       </thead>
@@ -5224,6 +5337,11 @@ export default function Index() {
                             </td>
                             <td style={{ padding: "12px 10px", fontSize: "14px", color: theme.text }}>
                               {scan.pathVisited}
+                            </td>
+                            <td style={{ padding: "12px 10px", fontSize: "12px", color: theme.muted }}>
+                              {scan.source === "storefront-proxy"
+                                ? "STOREFRONT"
+                                : "SIMULATION"}
                             </td>
                           </tr>
                         ))}

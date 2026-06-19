@@ -16,6 +16,9 @@
 
   var params = new URLSearchParams();
   params.set("path", currentPath);
+  params.set("timestamp", String(Date.now()));
+  params.set("client_user_agent", navigator.userAgent || "");
+  params.set("shop_domain", window.Shopify && window.Shopify.shop ? window.Shopify.shop : window.location.hostname);
   if (document.referrer) {
     params.set("referrer", document.referrer);
   }
@@ -40,12 +43,19 @@
     .then(function (payload) {
       if (!payload || !payload.decision) return;
 
-      if (payload.decision === "block" && payload.blockPageUrl) {
+      console.info(
+        "[botshield] storefront decision",
+        payload.decision,
+        payload.eventId || "",
+        payload.reasonCodes || []
+      );
+
+      if (payload.decision === "blocked" && payload.blockPageUrl) {
         window.location.assign(payload.blockPageUrl);
         return;
       }
 
-      if (payload.decision === "challenge") {
+      if (payload.decision === "challenged") {
         renderChallenge(payload);
       }
     })

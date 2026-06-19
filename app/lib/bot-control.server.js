@@ -40,7 +40,14 @@ export async function getAppSettings(shop) {
     const rows = await db.appSetting.findMany({
       where: {
         shop: normalizedShop,
-        key: { in: ["autoBlock", "blockLevel", "strictMode"] },
+        key: {
+          in: [
+            "autoBlock",
+            "blockLevel",
+            "strictMode",
+            "protectionPausedUntil",
+          ],
+        },
       },
       select: { key: true, value: true },
     });
@@ -57,9 +64,21 @@ export async function saveAppSettings(shop, input = {}) {
   const blockLevel = ["Low", "Medium", "High"].includes(input.blockLevel)
     ? input.blockLevel
     : "Medium";
+  const protectionPausedUntil = input.protectionPausedUntil
+    ? new Date(input.protectionPausedUntil)
+    : null;
+  const normalizedPause =
+    protectionPausedUntil && !Number.isNaN(protectionPausedUntil.getTime())
+      ? protectionPausedUntil.toISOString()
+      : "";
 
   await db.$transaction(
-    Object.entries({ autoBlock, strictMode, blockLevel }).map(([key, value]) =>
+    Object.entries({
+      autoBlock,
+      strictMode,
+      blockLevel,
+      protectionPausedUntil: normalizedPause,
+    }).map(([key, value]) =>
       db.appSetting.upsert({
         where: { shop_key: { shop: normalizedShop, key } },
         create: { shop: normalizedShop, key, value },
@@ -69,6 +88,81 @@ export async function saveAppSettings(shop, input = {}) {
   );
 
   return getAppSettings(normalizedShop);
+}
+
+export async function recordStorefrontHeartbeat(shop, occurredAt = new Date()) {
+  const normalizedShop = normalizeShop(shop);
+  const value = occurredAt.toISOString();
+
+  await db.appSetting.upsert({
+    where: {
+      shop_key: { shop: normalizedShop, key: "lastStorefrontHeartbeatAt" },
+    },
+    create: {
+      shop: normalizedShop,
+      key: "lastStorefrontHeartbeatAt",
+      value,
+    },
+    update: { value },
+  });
+
+  return value;
+}
+
+export async function getProtectionStatus(shop) {
+  const normalizedShop = normalizeShop(shop);
+  const [settings, metadata, blocklistCount, whitelistCount, realEventsToday] =
+    await Promise.all([
+      getAppSettings(normalizedShop),
+      db.appSetting.findMany({
+        where: {
+          shop: normalizedShop,
+          key: {
+            in: ["lastStorefrontHeartbeatAt", "lastStorefrontDecisionAt"],
+          },
+        },
+        select: { key: true, value: true },
+      }),
+      db.blockedIP.count({
+        where: { shop: normalizedShop, active: true },
+      }),
+      db.whitelistIP.count({
+        where: { shop: normalizedShop, active: true },
+      }),
+      db.botEvent.count({
+        where: {
+          shop: normalizedShop,
+          source: "storefront-proxy",
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
+        },
+      }),
+    ]);
+
+  const metadataMap = new Map(metadata.map((row) => [row.key, row.value]));
+  const lastHeartbeatAt = metadataMap.get("lastStorefrontHeartbeatAt") || null;
+  const lastDecisionAt = metadataMap.get("lastStorefrontDecisionAt") || null;
+  const heartbeatAge = lastHeartbeatAt
+    ? Date.now() - new Date(lastHeartbeatAt).getTime()
+    : Number.POSITIVE_INFINITY;
+  const themeEmbedDetected = heartbeatAge <= 15 * 60 * 1000;
+  const protectionPaused =
+    Boolean(settings.protectionPausedUntil) &&
+    new Date(settings.protectionPausedUntil).getTime() > Date.now();
+
+  return {
+    appInstalled: true,
+    themeEmbedDetected,
+    lastStorefrontHeartbeatAt: lastHeartbeatAt,
+    lastStorefrontDecisionAt: lastDecisionAt,
+    protectionActive: themeEmbedDetected && !protectionPaused,
+    protectionPaused,
+    protectionPausedUntil: settings.protectionPausedUntil,
+    blocklistCount,
+    whitelistCount,
+    realEventsToday,
+  };
 }
 
 export async function getBlockedIps(shop) {
