@@ -1020,6 +1020,7 @@ export default function Index() {
   const [alertEmail, setAlertEmail] = useState("owner@store.com");
   const [pauseUntil, setPauseUntil] = useState(null);
   const [protectionStatus, setProtectionStatus] = useState({
+    shop: "",
     appInstalled: true,
     themeEmbedDetected: false,
     lastStorefrontDecisionAt: null,
@@ -1797,6 +1798,20 @@ export default function Index() {
   const handleSystemStatusAction = async (actionKey) => {
     switch (actionKey) {
       case "runtime":
+        if (
+          !protectionStatus.themeEmbedDetected &&
+          protectionStatus.shop
+        ) {
+          window.open(
+            `https://${protectionStatus.shop}/admin/themes/current/editor?context=apps&activateAppId=d4fd10812566b17d9d99ed95e0978ada/botshield-theme-embed`,
+            "_blank",
+            "noopener,noreferrer",
+          );
+          triggerAlert(
+            "Shopify theme app embeds opened. Enable BotShield and click Save.",
+          );
+          break;
+        }
         await refreshBackendState();
         triggerAlert("Runtime refreshed from the live backend.");
         break;

@@ -152,6 +152,7 @@ export async function getProtectionStatus(shop) {
     new Date(settings.protectionPausedUntil).getTime() > Date.now();
 
   return {
+    shop: normalizedShop,
     appInstalled: true,
     themeEmbedDetected,
     lastStorefrontHeartbeatAt: lastHeartbeatAt,
