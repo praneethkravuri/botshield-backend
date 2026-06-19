@@ -50,12 +50,15 @@
         payload.reasonCodes || []
       );
 
-      if (payload.decision === "blocked" && payload.blockPageUrl) {
+      if (
+        (payload.decision === "block" || payload.action === "blocked") &&
+        payload.blockPageUrl
+      ) {
         window.location.assign(payload.blockPageUrl);
         return;
       }
 
-      if (payload.decision === "challenged") {
+      if (payload.decision === "challenge" || payload.action === "challenged") {
         renderChallenge(payload);
       }
     })

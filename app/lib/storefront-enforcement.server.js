@@ -279,9 +279,9 @@ export async function evaluateStorefrontRequest(request, shop) {
   ];
 
   const actionForLog =
-    decision === "blocked"
+    decision === "block"
       ? "blocked"
-      : decision === "challenged"
+      : decision === "challenge"
         ? "challenged"
         : "allowed";
 
@@ -298,7 +298,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     source,
   });
 
-  if (decision === "blocked" && !resolution.protectionPaused) {
+  if (decision === "block" && !resolution.protectionPaused) {
     await upsertBlockedIp({
       shop: normalizedShop,
       ipAddress,
@@ -326,7 +326,7 @@ export async function evaluateStorefrontRequest(request, shop) {
 
   return {
     decision,
-    action: decision,
+    action: actionForLog,
     eventId: event.id,
     ipAddress,
     settings,
@@ -339,7 +339,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     protectionPaused: resolution.protectionPaused,
     referer,
     challengeToken:
-      decision === "challenged"
+      decision === "challenge"
         ? createChallengeToken({
             shop: normalizedShop,
             ipAddress,
@@ -348,7 +348,7 @@ export async function evaluateStorefrontRequest(request, shop) {
           })
         : null,
     blockPageUrl:
-      decision === "blocked"
+      decision === "block"
         ? buildBlockedProxyUrl(request, {
             reason: detection.reasons[0],
             eventId: event.id,

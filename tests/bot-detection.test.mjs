@@ -29,7 +29,7 @@ test("whitelisted IP is always allowed", () => {
   });
 
   assert.equal(detection.actionTaken, "whitelisted");
-  assert.equal(result.decision, "allowed");
+  assert.equal(result.decision, "allow");
   assert.ok(detection.reasonCodes.includes("WHITELIST_MATCH"));
 });
 
@@ -43,7 +43,7 @@ test("blocklisted IP is blocked", () => {
     blockedEntry: { active: true },
   });
 
-  assert.equal(result.decision, "blocked");
+  assert.equal(result.decision, "block");
   assert.ok(detection.reasonCodes.includes("BLOCKLIST_MATCH"));
 });
 
@@ -103,7 +103,7 @@ test("pause logs but disables blocking", () => {
     protectionPausedUntil: new Date(Date.now() + 60_000).toISOString(),
   });
 
-  assert.equal(result.decision, "allowed");
+  assert.equal(result.decision, "allow");
   assert.equal(result.protectionPaused, true);
   assert.ok(result.reasonCodes.includes("PROTECTION_PAUSED"));
 });
@@ -120,7 +120,7 @@ test("disabled auto-block monitors suspicious traffic without enforcement", () =
     autoBlock: false,
   });
 
-  assert.equal(result.decision, "allowed");
+  assert.equal(result.decision, "allow");
   assert.ok(result.reasonCodes.includes("AUTO_BLOCK_DISABLED"));
 });
 

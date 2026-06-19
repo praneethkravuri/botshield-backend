@@ -14,7 +14,7 @@ export function resolveStorefrontDecision({
 
   if (whitelistEntry?.active) {
     return {
-      decision: "allowed",
+      decision: "allow",
       protectionPaused,
       reasonCodes: ["WHITELIST_MATCH"],
     };
@@ -22,7 +22,7 @@ export function resolveStorefrontDecision({
 
   if (protectionPaused) {
     return {
-      decision: "allowed",
+      decision: "allow",
       protectionPaused: true,
       reasonCodes: ["PROTECTION_PAUSED"],
     };
@@ -30,7 +30,7 @@ export function resolveStorefrontDecision({
 
   if (detection.actionTaken === "blocked" || blockedEntry?.active) {
     return {
-      decision: "blocked",
+      decision: "block",
       protectionPaused: false,
       reasonCodes: blockedEntry?.active ? ["BLOCKLIST_MATCH"] : [],
     };
@@ -38,7 +38,7 @@ export function resolveStorefrontDecision({
 
   if (!autoBlock) {
     return {
-      decision: "allowed",
+      decision: "allow",
       protectionPaused: false,
       reasonCodes: ["AUTO_BLOCK_DISABLED"],
     };
@@ -49,14 +49,14 @@ export function resolveStorefrontDecision({
     !challengePassed
   ) {
     return {
-      decision: "challenged",
+      decision: "challenge",
       protectionPaused: false,
       reasonCodes: ["CHALLENGE_REQUIRED"],
     };
   }
 
   return {
-    decision: "allowed",
+    decision: "allow",
     protectionPaused: false,
     reasonCodes: [],
   };
