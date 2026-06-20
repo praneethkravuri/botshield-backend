@@ -92,6 +92,12 @@ app.get("/health/config", (_req, res) => {
     resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
     alertFromEmailConfigured: Boolean(process.env.ALERT_FROM_EMAIL?.trim()),
     networkIntelligenceKeyConfigured: Boolean(process.env.IPAPI_IS_KEY?.trim()),
+    shopifyAppHandleConfigured: Boolean(
+      process.env.SHOPIFY_APP_HANDLE?.trim(),
+    ),
+    supportEmailConfigured: Boolean(process.env.VITE_SUPPORT_EMAIL?.trim()),
+    billingEnforcementEnabled:
+      process.env.BILLING_ENFORCEMENT_ENABLED === "true",
     cloudflareUrlPresent:
       shopifyAppUrl.includes(tunnelDomain) ||
       publicAppUrl.includes(tunnelDomain),

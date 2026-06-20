@@ -1,9 +1,10 @@
 export const publicInfo = {
   appName: "BotShield",
   companyName: "BotShield",
-  supportEmail: "support@your-domain.com",
+  supportEmail:
+    import.meta.env.VITE_SUPPORT_EMAIL || "SUPPORT_EMAIL_NOT_CONFIGURED",
   supportUrl: "/support",
   privacyUrl: "/privacy",
   termsUrl: "/terms",
-  effectiveDate: "May 26, 2026",
+  effectiveDate: "June 20, 2026",
 };

@@ -170,7 +170,11 @@ export default function BlockedPage() {
           }}
         >
           <a
-            href={`mailto:${publicInfo.supportEmail}?subject=BotShield%20access%20review`}
+            href={
+              publicInfo.supportEmail === "SUPPORT_EMAIL_NOT_CONFIGURED"
+                ? "/support"
+                : `mailto:${publicInfo.supportEmail}?subject=BotShield%20access%20review`
+            }
             style={{
               padding: "12px 18px",
               borderRadius: "14px",

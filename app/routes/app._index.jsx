@@ -1297,6 +1297,7 @@ export default function Index() {
   const [lastWeeklyReportAt, setLastWeeklyReportAt] = useState(null);
   const [lastWeeklyReportError, setLastWeeklyReportError] = useState(null);
   const [securityPosture, setSecurityPosture] = useState(null);
+  const [billingStatus, setBillingStatus] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
     real: 0,
@@ -1819,6 +1820,17 @@ export default function Index() {
     }
   };
 
+  const loadBillingStatus = async () => {
+    try {
+      const response = await fetch("/api/billing-status");
+      if (!response.ok) return;
+      const data = await response.json();
+      setBillingStatus(data.billing || null);
+    } catch (error) {
+      console.error("Failed to load billing status", error);
+    }
+  };
+
   const loadBlocklist = async () => {
     try {
       const res = await fetch("/api/blocklist");
@@ -1933,6 +1945,7 @@ export default function Index() {
       loadProtectionStatus(),
       loadIncidents(),
       loadSecurityPosture(),
+      loadBillingStatus(),
       loadMerchantMetadata(),
     ]);
   };
@@ -2234,6 +2247,20 @@ export default function Index() {
       case "evidence":
         openDashboardWorkspace("deepDive", "Evidence workspace opened.");
         break;
+      case "billing":
+        if (billingStatus?.pricingUrl) {
+          window.open(
+            billingStatus.pricingUrl,
+            "_blank",
+            "noopener,noreferrer",
+          );
+          triggerAlert("Shopify billing plans opened in a new tab.");
+        } else {
+          triggerAlert(
+            "Billing must first be configured in the Shopify Partner Dashboard.",
+          );
+        }
+        break;
       default:
         break;
     }
@@ -2245,7 +2272,7 @@ export default function Index() {
         openSecurityWorkspace("Security workspace opened for live pressure review.");
         break;
       case "revenue":
-        openDashboardWorkspace("deepDive", "Evidence workspace opened to review protected revenue drivers.");
+        openDashboardWorkspace("deepDive", "Evidence workspace opened to review verified storefront security events.");
         break;
       case "mode":
         await enableStrictMode();
@@ -3125,6 +3152,20 @@ export default function Index() {
       detail: `${simulatedScans.length} simulations excluded`,
       actionKey: "evidence",
     },
+    {
+      label: billingStatus?.active
+        ? "Billing Active"
+        : billingStatus?.configured
+          ? "Billing Approval Required"
+          : "Billing Setup Required",
+      active: Boolean(billingStatus?.active),
+      detail: billingStatus?.active
+        ? billingStatus.subscription?.name || "paid Shopify plan"
+        : billingStatus?.configured
+          ? "$30/month plan awaiting approval"
+          : "configure Shopify App Pricing",
+      actionKey: "billing",
+    },
   ];
 
   const navItems = [
@@ -3683,6 +3724,51 @@ export default function Index() {
                     Next improvement: {securityPosture.score.suggestions[0]}
                   </div>
                 ) : null}
+              </div>
+              <div style={{ ...cardStyle, marginBottom: "20px" }}>
+                <p style={statLabelStyle}>Launch Setup</p>
+                <h3 style={{ margin: "8px 0 10px", color: theme.text, fontSize: "22px" }}>
+                  Finish setup without contacting support
+                </h3>
+                <div style={{ display: "grid", gap: "9px", color: theme.muted, fontSize: "13px", lineHeight: 1.55 }}>
+                  <div>1. Enable and save the BotShield theme app embed.</div>
+                  <div>2. Visit the storefront and confirm a real event appears.</div>
+                  <div>3. Configure merchant email, then enable alerts and weekly reports.</div>
+                  <div>4. Approve the Shopify $30/month plan when billing is enabled.</div>
+                  <div>5. Use Diagnostic Scan only for testing; simulations never change real enforcement.</div>
+                  <div>6. Recover false positives from Incident Timeline using Unblock or Whitelist.</div>
+                </div>
+                <div
+                  style={{
+                    marginTop: "14px",
+                    padding: "12px 14px",
+                    borderRadius: "14px",
+                    background: theme.surfaceAlt,
+                    border: `1px solid ${theme.border}`,
+                    color: theme.muted,
+                    fontSize: "12px",
+                    lineHeight: 1.6,
+                  }}
+                >
+                  BotShield uses a Shopify theme app embed and storefront JavaScript.
+                  It is not an edge WAF, and clients that bypass JavaScript may not be inspected.
+                </div>
+                <div style={{ marginTop: "14px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <a href="/support" target="_blank" rel="noreferrer" style={getSecondaryButtonStyle()}>
+                    Support
+                  </a>
+                  <a href="/privacy" target="_blank" rel="noreferrer" style={getSecondaryButtonStyle()}>
+                    Privacy
+                  </a>
+                  <a href="/terms" target="_blank" rel="noreferrer" style={getSecondaryButtonStyle()}>
+                    Terms
+                  </a>
+                  {!billingStatus?.active && billingStatus?.pricingUrl ? (
+                    <a href={billingStatus.pricingUrl} target="_blank" rel="noreferrer" style={getPrimaryButtonStyle()}>
+                      Choose Plan
+                    </a>
+                  ) : null}
+                </div>
               </div>
               <div style={{ ...monoLabelStyle, marginBottom: "12px" }}>Executive Brief</div>
 

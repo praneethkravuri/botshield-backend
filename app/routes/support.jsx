@@ -12,9 +12,13 @@ export default function SupportPage() {
       </p>
       <h2>Email</h2>
       <p>
-        <a href={`mailto:${publicInfo.supportEmail}`}>
-          {publicInfo.supportEmail}
-        </a>
+        {publicInfo.supportEmail === "SUPPORT_EMAIL_NOT_CONFIGURED" ? (
+          <strong>Support email must be configured before public launch.</strong>
+        ) : (
+          <a href={`mailto:${publicInfo.supportEmail}`}>
+            {publicInfo.supportEmail}
+          </a>
+        )}
       </p>
       <h2>What To Include</h2>
       <p>
@@ -23,8 +27,21 @@ export default function SupportPage() {
       </p>
       <h2>Response</h2>
       <p>
-        Support requests are reviewed as soon as practical during normal
-        business operations.
+        Urgent storefront-access or false-positive reports are prioritized.
+        Standard support requests are reviewed during normal business
+        operations.
+      </p>
+      <h2>False Positives</h2>
+      <p>
+        Merchants can open the Incident Timeline and use Unblock or Whitelist
+        for a blocked event. If the storefront cannot be accessed, include the
+        BotShield reference code from the blocked page in the support request.
+      </p>
+      <h2>What BotShield Protects</h2>
+      <p>
+        BotShield monitors browsers that run the enabled theme app embed. It is
+        not an edge WAF and cannot guarantee inspection of clients that bypass
+        storefront JavaScript.
       </p>
     </PublicPage>
   );

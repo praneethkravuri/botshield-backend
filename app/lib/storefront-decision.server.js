@@ -5,6 +5,8 @@ export function resolveStorefrontDecision({
   challengePassed = false,
   autoBlock = true,
   protectionPausedUntil = null,
+  billingEnforcementEnabled = false,
+  billingActive = false,
   now = Date.now(),
 }) {
   const pauseTime = protectionPausedUntil
@@ -17,6 +19,14 @@ export function resolveStorefrontDecision({
       decision: "allow",
       protectionPaused,
       reasonCodes: ["WHITELIST_MATCH"],
+    };
+  }
+
+  if (billingEnforcementEnabled && !billingActive) {
+    return {
+      decision: "allow",
+      protectionPaused,
+      reasonCodes: ["BILLING_INACTIVE"],
     };
   }
 

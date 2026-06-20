@@ -70,6 +70,7 @@ async function readSettings(shop) {
             "emailAlerts",
             "highRiskAlertsOnly",
             "alertEmail",
+            "billingActive",
           ],
         },
       },
@@ -82,6 +83,9 @@ async function readSettings(shop) {
       emailAlerts: map.get("emailAlerts") === "true",
       highRiskAlertsOnly: map.get("highRiskAlertsOnly") !== "false",
       alertEmail: map.get("alertEmail") || "",
+      billingActive: map.get("billingActive") === "true",
+      billingEnforcementEnabled:
+        process.env.BILLING_ENFORCEMENT_ENABLED === "true",
     };
   } catch {
     return {
@@ -89,6 +93,9 @@ async function readSettings(shop) {
       emailAlerts: false,
       highRiskAlertsOnly: true,
       alertEmail: "",
+      billingActive: false,
+      billingEnforcementEnabled:
+        process.env.BILLING_ENFORCEMENT_ENABLED === "true",
     };
   }
 }
@@ -308,6 +315,8 @@ export async function evaluateStorefrontRequest(request, shop) {
     challengePassed,
     autoBlock: settings.autoBlock,
     protectionPausedUntil: settings.protectionPausedUntil,
+    billingEnforcementEnabled: settings.billingEnforcementEnabled,
+    billingActive: settings.billingActive,
   });
   const decision = resolution.decision;
   const reasonCodes = [

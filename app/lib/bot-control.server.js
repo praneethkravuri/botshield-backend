@@ -204,7 +204,11 @@ export async function getProtectionStatus(shop) {
         where: {
           shop: normalizedShop,
           key: {
-            in: ["lastStorefrontHeartbeatAt", "lastStorefrontDecisionAt"],
+            in: [
+              "lastStorefrontHeartbeatAt",
+              "lastStorefrontDecisionAt",
+              "billingActive",
+            ],
           },
         },
         select: { key: true, value: true },
@@ -236,6 +240,11 @@ export async function getProtectionStatus(shop) {
   const protectionPaused =
     Boolean(settings.protectionPausedUntil) &&
     new Date(settings.protectionPausedUntil).getTime() > Date.now();
+  const billingEnforcementEnabled =
+    process.env.BILLING_ENFORCEMENT_ENABLED === "true";
+  const billingActive = metadataMap.get("billingActive") === "true";
+  const billingAllowsProtection =
+    !billingEnforcementEnabled || billingActive;
 
   return {
     shop: normalizedShop,
@@ -243,9 +252,12 @@ export async function getProtectionStatus(shop) {
     themeEmbedDetected,
     lastStorefrontHeartbeatAt: lastHeartbeatAt,
     lastStorefrontDecisionAt: lastDecisionAt,
-    protectionActive: themeEmbedDetected && !protectionPaused,
+    protectionActive:
+      themeEmbedDetected && !protectionPaused && billingAllowsProtection,
     protectionPaused,
     protectionPausedUntil: settings.protectionPausedUntil,
+    billingEnforcementEnabled,
+    billingActive,
     blocklistCount,
     whitelistCount,
     realEventsToday,

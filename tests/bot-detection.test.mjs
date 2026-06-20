@@ -177,6 +177,22 @@ test("disabled auto-block monitors suspicious traffic without enforcement", () =
   assert.ok(result.reasonCodes.includes("AUTO_BLOCK_DISABLED"));
 });
 
+test("confirmed unpaid merchants enter monitoring-only mode when billing enforcement is enabled", () => {
+  const detection = detectBotThreat({
+    ...baseRequest,
+    blockedEntry: { active: true },
+  });
+  const result = resolveStorefrontDecision({
+    detection,
+    blockedEntry: { active: true },
+    billingEnforcementEnabled: true,
+    billingActive: false,
+  });
+
+  assert.equal(result.decision, "allow");
+  assert.ok(result.reasonCodes.includes("BILLING_INACTIVE"));
+});
+
 test("medium-risk storefront traffic receives a challenge", () => {
   const detection = {
     actionTaken: "allowed",

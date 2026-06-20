@@ -32,6 +32,18 @@ services:
         sync: false
       - key: IPAPI_IS_KEY
         sync: false
+      - key: SHOPIFY_APP_HANDLE
+        sync: false
+      - key: BILLING_PLAN_NAME
+        value: BotShield Pro
+      - key: BILLING_MONTHLY_PRICE
+        value: "30"
+      - key: BILLING_TRIAL_DAYS
+        value: "7"
+      - key: BILLING_ENFORCEMENT_ENABLED
+        value: "false"
+      - key: VITE_SUPPORT_EMAIL
+        sync: false
 
 databases:
   - name: bot-shield-db
