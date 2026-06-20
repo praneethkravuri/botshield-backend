@@ -8,6 +8,13 @@ import {
 } from "../app/lib/storefront-decision.server.js";
 import { partitionSecurityEvents } from "../app/lib/event-classification.js";
 import { shouldSendIncidentAlert } from "../app/lib/incident-alerts.server.js";
+import {
+  extractReasonCodes,
+  isRecoverableBlockedIncident,
+  maskIpAddress,
+  matchesIncidentFilters,
+  serializeSecurityEvent,
+} from "../app/lib/security-events.js";
 
 const baseRequest = {
   ipAddress: "203.0.113.10",
@@ -227,4 +234,52 @@ test("alert cooldown suppresses duplicate high-risk email bursts", () => {
 
   assert.equal(result.send, false);
   assert.equal(result.reason, "ALERT_COOLDOWN");
+});
+
+test("challenge events qualify for merchant email alerts", () => {
+  const result = shouldSendIncidentAlert({
+    settings: {
+      emailAlerts: true,
+      highRiskAlertsOnly: true,
+      alertEmail: "owner@example.com",
+    },
+    decision: "challenge",
+    threatLevel: "medium",
+    recentEvents: [],
+  });
+
+  assert.equal(result.send, true);
+});
+
+test("security events expose structured reason codes and masked IPs", () => {
+  const event = serializeSecurityEvent({
+    id: 42,
+    ipAddress: "203.0.113.27",
+    threatLevel: "high",
+    action: "blocked",
+    path: "/account/login",
+    riskScore: 90,
+    reasonSummary:
+      "[SUSPICIOUS_USER_AGENT] | [SENSITIVE_PATH] | Suspicious automation signature",
+    source: "storefront-proxy",
+    createdAt: new Date("2026-06-20T00:00:00Z"),
+  });
+
+  assert.deepEqual(extractReasonCodes(event.reasonCodes.join(" ")), []);
+  assert.deepEqual(event.reasonCodes, [
+    "SUSPICIOUS_USER_AGENT",
+    "SENSITIVE_PATH",
+  ]);
+  assert.equal(event.maskedIpAddress, "203.0.xxx.27");
+  assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:…:1");
+  assert.equal(matchesIncidentFilters(event, { source: "real" }), true);
+  assert.equal(
+    matchesIncidentFilters(event, { source: "simulation" }),
+    false,
+  );
+  assert.equal(isRecoverableBlockedIncident(event), true);
+  assert.equal(
+    isRecoverableBlockedIncident({ ...event, decision: "allowed" }),
+    false,
+  );
 });

@@ -1,6 +1,7 @@
 import { getAppSettings } from "../lib/bot-control.server";
 import { sendTestIncidentEmail } from "../lib/incident-alerts.server";
 import { authenticate } from "../shopify.server";
+import db from "../db.server";
 
 export async function action({ request }) {
   const { session } = await authenticate.admin(request);
@@ -21,6 +22,20 @@ export async function action({ request }) {
     shop: session.shop,
     alertEmail: settings.alertEmail,
   });
+  const sentAt = new Date().toISOString();
+  await db.$transaction(
+    Object.entries({
+      lastAlertStatus: delivery.status,
+      lastAlertSentAt: sentAt,
+      lastAlertEventId: "TEST",
+    }).map(([key, value]) =>
+      db.appSetting.upsert({
+        where: { shop_key: { shop: session.shop, key } },
+        create: { shop: session.shop, key, value },
+        update: { value },
+      }),
+    ),
+  );
 
   console.log(
     `[botshield-alert] shop=${session.shop} event=TEST status=${delivery.status} sent=${delivery.sent}`,

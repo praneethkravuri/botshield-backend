@@ -50,6 +50,9 @@ export async function getAppSettings(shop) {
             "emailAlerts",
             "highRiskAlertsOnly",
             "alertEmail",
+            "lastAlertStatus",
+            "lastAlertSentAt",
+            "lastAlertEventId",
           ],
         },
       },
@@ -65,6 +68,9 @@ export async function getAppSettings(shop) {
         true,
       ),
       alertEmail: settingMap.get("alertEmail") || "",
+      lastAlertStatus: settingMap.get("lastAlertStatus") || null,
+      lastAlertSentAt: settingMap.get("lastAlertSentAt") || null,
+      lastAlertEventId: settingMap.get("lastAlertEventId") || null,
       emailProvider: getEmailProviderStatus(),
     };
   } catch {
@@ -73,6 +79,9 @@ export async function getAppSettings(shop) {
       emailAlerts: false,
       highRiskAlertsOnly: true,
       alertEmail: "",
+      lastAlertStatus: null,
+      lastAlertSentAt: null,
+      lastAlertEventId: null,
       emailProvider: getEmailProviderStatus(),
     };
   }

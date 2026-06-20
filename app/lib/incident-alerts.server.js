@@ -47,10 +47,6 @@ export function shouldSendIncidentAlert({
   const suspiciousIncident =
     highRiskIncident || decision === "challenge" || threatLevel === "medium";
 
-  if (settings.highRiskAlertsOnly && !highRiskIncident) {
-    return { send: false, reason: "HIGH_RISK_ONLY" };
-  }
-
   if (!suspiciousIncident) {
     return { send: false, reason: "LOW_RISK_EVENT" };
   }

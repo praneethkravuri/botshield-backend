@@ -371,6 +371,23 @@ export async function evaluateStorefrontRequest(request, shop) {
     });
   }
 
+  if (alertDecision.send) {
+    const alertTimestamp = new Date().toISOString();
+    await db.$transaction(
+      Object.entries({
+        lastAlertStatus: alertDelivery.status,
+        lastAlertSentAt: alertTimestamp,
+        lastAlertEventId: String(event.id),
+      }).map(([key, value]) =>
+        db.appSetting.upsert({
+          where: { shop_key: { shop: normalizedShop, key } },
+          create: { shop: normalizedShop, key, value },
+          update: { value },
+        }),
+      ),
+    );
+  }
+
   if (alertDecision.send || alertDelivery.status === "provider_not_configured") {
     console.log(
       `[botshield-alert] shop=${normalizedShop} event=${event.id} status=${alertDelivery.status} sent=${alertDelivery.sent}`,

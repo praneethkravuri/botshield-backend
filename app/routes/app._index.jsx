@@ -517,7 +517,9 @@ function SecurityPage({
   getPrimaryButtonStyle,
   getSecondaryButtonStyle,
   getDangerButtonStyle,
+  getSmallButtonStyle,
   getRiskBadgeStyle,
+  getActionBadgeStyle,
   scans,
   blockedIPs,
   blockLevel,
@@ -534,6 +536,12 @@ function SecurityPage({
   storeProtectionMode,
   blockedCount,
   recentBlocks,
+  incidents,
+  incidentCounts,
+  incidentFilters,
+  setIncidentFilters,
+  handleIncidentRecovery,
+  incidentLoading,
 }) {
   const threatLevelButtonStyle = (level) => ({
     ...buttonBaseStyle,
@@ -821,33 +829,204 @@ function SecurityPage({
       </div>
 
       <div style={cardStyle}>
-        <h3 style={{ marginTop: 0, color: theme.text }}>Recent Security Records</h3>
-        {scans.length === 0 ? (
-          <p style={{ color: theme.muted, marginBottom: 0 }}>Security events will appear here as traffic is scanned.</p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "14px",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            marginBottom: "16px",
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, color: theme.text }}>Security Incident Timeline</h3>
+            <p style={{ color: theme.muted, margin: "6px 0 0", fontSize: "13px" }}>
+              PostgreSQL-backed storefront evidence. IPs are masked in the merchant view.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <span style={getRiskBadgeStyle("normal")}>{incidentCounts.real} real</span>
+            <span style={getRiskBadgeStyle("balanced")}>
+              {incidentCounts.simulation} simulations
+            </span>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: "10px",
+            marginBottom: "16px",
+          }}
+        >
+          <select
+            value={incidentFilters.source}
+            onChange={(event) =>
+              setIncidentFilters((current) => ({
+                ...current,
+                source: event.target.value,
+              }))
+            }
+            style={{
+              padding: "10px 12px",
+              borderRadius: "12px",
+              border: `1px solid ${theme.border}`,
+              background: theme.inputBg,
+              color: theme.text,
+            }}
+          >
+            <option value="real">Real storefront</option>
+            <option value="simulation">Simulations</option>
+            <option value="all">All sources</option>
+          </select>
+          <select
+            value={incidentFilters.decision}
+            onChange={(event) =>
+              setIncidentFilters((current) => ({
+                ...current,
+                decision: event.target.value,
+              }))
+            }
+            style={{
+              padding: "10px 12px",
+              borderRadius: "12px",
+              border: `1px solid ${theme.border}`,
+              background: theme.inputBg,
+              color: theme.text,
+            }}
+          >
+            <option value="all">All decisions</option>
+            <option value="blocked">Blocked</option>
+            <option value="challenged">Challenged</option>
+            <option value="allowed">Allowed</option>
+            <option value="whitelisted">Whitelisted</option>
+          </select>
+          <select
+            value={incidentFilters.risk}
+            onChange={(event) =>
+              setIncidentFilters((current) => ({
+                ...current,
+                risk: event.target.value,
+              }))
+            }
+            style={{
+              padding: "10px 12px",
+              borderRadius: "12px",
+              border: `1px solid ${theme.border}`,
+              background: theme.inputBg,
+              color: theme.text,
+            }}
+          >
+            <option value="all">All risk levels</option>
+            <option value="high">High risk</option>
+            <option value="medium">Medium risk</option>
+            <option value="low">Low risk</option>
+          </select>
+          <input
+            value={incidentFilters.search}
+            onChange={(event) =>
+              setIncidentFilters((current) => ({
+                ...current,
+                search: event.target.value,
+              }))
+            }
+            placeholder="Search reasons, path, IP"
+            style={{
+              padding: "10px 12px",
+              borderRadius: "12px",
+              border: `1px solid ${theme.border}`,
+              background: theme.inputBg,
+              color: theme.text,
+              minWidth: 0,
+            }}
+          />
+        </div>
+
+        {incidentLoading ? (
+          <p style={{ color: theme.muted, marginBottom: 0 }}>Loading incidents…</p>
+        ) : incidents.length === 0 ? (
+          <p style={{ color: theme.muted, marginBottom: 0 }}>
+            No incidents match the selected filters.
+          </p>
         ) : (
           <div style={{ display: "grid", gap: "10px" }}>
-            {scans.slice(0, 8).map((scan) => (
+            {incidents.slice(0, 50).map((incident) => (
               <div
-                key={scan.id}
+                key={incident.id}
                 style={{
-                  padding: "12px",
-                  borderRadius: "12px",
+                  padding: "14px",
+                  borderRadius: "16px",
                   border: `1px solid ${theme.border}`,
                   background: theme.surfaceAlt,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                  <strong style={{ color: theme.text }}>{scan.ipAddress}</strong>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                    <strong style={{ color: theme.text }}>
+                      {incident.maskedIpAddress}
+                    </strong>
+                    <span style={getActionBadgeStyle(incident.decision)}>
+                      {incident.decision}
+                    </span>
+                    <span style={getRiskBadgeStyle(incident.threatLevel)}>
+                      Risk {incident.riskScore}/100
+                    </span>
+                    <span style={{ color: theme.muted, fontSize: "11px", fontWeight: 700 }}>
+                      {incident.source === "storefront-proxy" ? "REAL" : "SIMULATION"}
+                    </span>
+                  </div>
                   <span style={{ color: theme.muted, fontSize: "13px" }}>
-                    {scan.createdAt ? new Date(scan.createdAt).toLocaleString() : "Unknown time"}
+                    {incident.createdAt
+                      ? new Date(incident.createdAt).toLocaleString()
+                      : "Unknown time"}
                   </span>
                 </div>
                 <div style={{ color: theme.muted, fontSize: "13px", marginTop: "6px" }}>
-                  Threat: {scan.threatLevel} | Action: {scan.actionTaken} | Path: {scan.pathVisited}
+                  Path: {incident.path}
                 </div>
-                {scan.reasons ? (
+                {incident.reasonCodes?.length ? (
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "10px" }}>
+                    {incident.reasonCodes.map((code) => (
+                      <span
+                        key={code}
+                        style={{
+                          border: `1px solid ${theme.border}`,
+                          borderRadius: "999px",
+                          padding: "4px 8px",
+                          color: theme.text,
+                          fontSize: "11px",
+                          fontFamily: '"IBM Plex Mono", monospace',
+                        }}
+                      >
+                        {code}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {incident.reasonSummary ? (
                   <div style={{ color: theme.muted, fontSize: "12px", marginTop: "6px", lineHeight: 1.6 }}>
-                    Reason: {scan.reasons}
+                    {incident.reasonSummary}
+                  </div>
+                ) : null}
+                {incident.source === "storefront-proxy" &&
+                incident.decision === "blocked" ? (
+                  <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => handleIncidentRecovery(incident, "unblock")}
+                      style={getSmallButtonStyle("success")}
+                    >
+                      Unblock
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleIncidentRecovery(incident, "whitelist")}
+                      style={getSmallButtonStyle("neutral")}
+                    >
+                      Whitelist
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -883,6 +1062,8 @@ function SettingsPage({
   handleSaveSettings,
   emailProviderConfigured,
   handleSendTestAlert,
+  lastAlertStatus,
+  lastAlertSentAt,
 }) {
   return (
     <div style={{ display: "grid", gap: "20px" }}>
@@ -928,13 +1109,11 @@ function SettingsPage({
               </span>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: theme.text }}>🚨 High Risk Alerts Only</span>
-              <Toggle
-                checked={highRiskAlertsOnly}
-                onClick={handleHighRiskAlertsOnlyToggle}
-                theme={theme}
-              />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <span style={{ color: theme.text }}>Alert triggers</span>
+              <span style={{ color: theme.muted, fontSize: "12px", textAlign: "right" }}>
+                Blocked, challenged, and high-risk events
+              </span>
             </div>
             <div style={{ color: emailProviderConfigured ? theme.successText : theme.muted, fontSize: "12px" }}>
               {emailProviderConfigured
@@ -953,6 +1132,12 @@ function SettingsPage({
             >
               Send Test Email
             </button>
+            <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
+              Last delivery: {lastAlertStatus || "No delivery attempted"}
+              {lastAlertSentAt
+                ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
+                : ""}
+            </div>
           </div>
         </div>
 
@@ -1040,6 +1225,22 @@ export default function Index() {
   const [highRiskAlertsOnly, setHighRiskAlertsOnly] = useState(true);
   const [alertEmail, setAlertEmail] = useState("");
   const [emailProviderConfigured, setEmailProviderConfigured] = useState(false);
+  const [lastAlertStatus, setLastAlertStatus] = useState(null);
+  const [lastAlertSentAt, setLastAlertSentAt] = useState(null);
+  const [incidents, setIncidents] = useState([]);
+  const [incidentCounts, setIncidentCounts] = useState({
+    real: 0,
+    simulation: 0,
+    blocked: 0,
+    challenged: 0,
+  });
+  const [incidentLoading, setIncidentLoading] = useState(false);
+  const [incidentFilters, setIncidentFilters] = useState({
+    source: "real",
+    decision: "all",
+    risk: "all",
+    search: "",
+  });
   const [pauseUntil, setPauseUntil] = useState(null);
   const [protectionStatus, setProtectionStatus] = useState({
     shop: "",
@@ -1433,6 +1634,17 @@ export default function Index() {
       };
     }
 
+    if (normalized === "challenged") {
+      return {
+        color: darkMode ? "#fde68a" : "#92400e",
+        backgroundColor: darkMode ? "#3b2a07" : "#fef3c7",
+        padding: "5px 12px",
+        borderRadius: "999px",
+        display: "inline-block",
+        fontWeight: "bold",
+      };
+    }
+
     return {
       color: darkMode ? "#86efac" : "#166534",
       backgroundColor: darkMode ? "#052e1a" : "#dcfce7",
@@ -1488,6 +1700,8 @@ export default function Index() {
       setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
       setAlertEmail(settings.alertEmail || "");
       setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
+      setLastAlertStatus(settings.lastAlertStatus || null);
+      setLastAlertSentAt(settings.lastAlertSentAt || null);
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -1537,6 +1751,31 @@ export default function Index() {
     }
   };
 
+  const loadIncidents = async (filters = incidentFilters) => {
+    setIncidentLoading(true);
+    try {
+      const params = new URLSearchParams({
+        source: filters.source,
+        decision: filters.decision,
+        risk: filters.risk,
+        search: filters.search,
+      });
+      const response = await fetch(`/api/incidents?${params.toString()}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to load incidents.");
+      }
+      setIncidents(data.events || []);
+      setIncidentCounts(
+        data.counts || { real: 0, simulation: 0, blocked: 0, challenged: 0 },
+      );
+    } catch (error) {
+      console.error("Failed to load incidents", error);
+    } finally {
+      setIncidentLoading(false);
+    }
+  };
+
   const clearTestData = async () => {
     try {
       const res = await fetch("/api/clear-test-data", { method: "POST" });
@@ -1564,6 +1803,7 @@ export default function Index() {
       loadBlocklist(),
       loadWhitelist(),
       loadProtectionStatus(),
+      loadIncidents(),
     ]);
   };
 
@@ -1640,6 +1880,8 @@ export default function Index() {
     setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
     setAlertEmail(settings.alertEmail || "");
     setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
+    setLastAlertStatus(settings.lastAlertStatus || null);
+    setLastAlertSentAt(settings.lastAlertSentAt || null);
 
     await refreshBackendState();
 
@@ -2257,9 +2499,40 @@ export default function Index() {
       if (!response.ok) {
         throw new Error(data.error || data.delivery?.error || "Test email failed.");
       }
+      await loadSettings();
       triggerAlert(`Test email sent to ${alertEmail}.`);
     } catch (error) {
       triggerAlert(error instanceof Error ? error.message : "Test email failed.");
+    }
+  };
+
+  const handleIncidentRecovery = async (incident, action) => {
+    try {
+      const response = await fetch("/api/incidents/recover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: incident.id, action }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || "Recovery action failed.");
+      }
+
+      await Promise.all([
+        loadIncidents(),
+        loadBlocklist(),
+        loadWhitelist(),
+        loadProtectionStatus(),
+      ]);
+      triggerAlert(
+        action === "whitelist"
+          ? `Whitelisted ${incident.maskedIpAddress} from incident ${incident.id}.`
+          : `Unblocked ${incident.maskedIpAddress} from incident ${incident.id}.`,
+      );
+    } catch (error) {
+      triggerAlert(
+        error instanceof Error ? error.message : "Recovery action failed.",
+      );
     }
   };
 
@@ -2415,6 +2688,18 @@ export default function Index() {
   useEffect(() => {
     refreshBackendState();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadIncidents(incidentFilters);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [
+    incidentFilters.source,
+    incidentFilters.decision,
+    incidentFilters.risk,
+    incidentFilters.search,
+  ]);
 
   useEffect(() => {
     if (!pauseUntil) return;
@@ -4540,7 +4825,7 @@ export default function Index() {
                           : "Provider Not Configured"}
                     </span>
                     <span style={getRiskBadgeStyle(highRiskAlertsOnly ? "balanced" : "normal")}>
-                      {highRiskAlertsOnly ? "High-risk Only" : "All Incidents"}
+                      Blocked · Challenged · High Risk
                     </span>
                   </div>
                   <input
@@ -4554,9 +4839,11 @@ export default function Index() {
                       <span style={{ color: theme.text, fontWeight: 600 }}>Email delivery</span>
                       <Toggle checked={emailAlerts} onClick={handleEmailAlertsToggle} theme={theme} />
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: theme.text, fontWeight: 600 }}>High-risk only</span>
-                      <Toggle checked={highRiskAlertsOnly} onClick={handleHighRiskAlertsOnlyToggle} theme={theme} />
+                    <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
+                      Last delivery: {lastAlertStatus || "No delivery attempted"}
+                      {lastAlertSentAt
+                        ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
+                        : ""}
                     </div>
                     <button onClick={handleSaveSettings} style={getPrimaryButtonStyle()} {...pressHandlers}>
                       Apply Alert Profile
@@ -5442,7 +5729,9 @@ export default function Index() {
               getPrimaryButtonStyle={getPrimaryButtonStyle}
               getSecondaryButtonStyle={getSecondaryButtonStyle}
               getDangerButtonStyle={getDangerButtonStyle}
+              getSmallButtonStyle={getSmallButtonStyle}
               getRiskBadgeStyle={getRiskBadgeStyle}
+              getActionBadgeStyle={getActionBadgeStyle}
               scans={scans}
               blockedIPs={blockedIPs}
               blockLevel={blockLevel}
@@ -5459,6 +5748,12 @@ export default function Index() {
               storeProtectionMode={storeProtectionMode}
               blockedCount={blockedCount}
               recentBlocks={recentBlocks}
+              incidents={incidents}
+              incidentCounts={incidentCounts}
+              incidentFilters={incidentFilters}
+              setIncidentFilters={setIncidentFilters}
+              handleIncidentRecovery={handleIncidentRecovery}
+              incidentLoading={incidentLoading}
             />
           )}
 
@@ -5487,6 +5782,8 @@ export default function Index() {
               handleSaveSettings={handleSaveSettings}
               emailProviderConfigured={emailProviderConfigured}
               handleSendTestAlert={handleSendTestAlert}
+              lastAlertStatus={lastAlertStatus}
+              lastAlertSentAt={lastAlertSentAt}
             />
           )}
         </div>
