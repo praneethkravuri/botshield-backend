@@ -54,10 +54,14 @@ export async function getAppSettings(shop) {
             "lastAlertSentAt",
             "lastAlertEventId",
             "lastAlertAttemptAt",
+            "lastAlertProviderMessageId",
+            "lastAlertError",
             "weeklyReportsEnabled",
             "lastWeeklyReportAt",
             "lastWeeklyReportStatus",
             "lastWeeklyReportAttemptAt",
+            "lastWeeklyReportProviderMessageId",
+            "lastWeeklyReportError",
           ],
         },
       },
@@ -77,6 +81,9 @@ export async function getAppSettings(shop) {
       lastAlertSentAt: settingMap.get("lastAlertSentAt") || null,
       lastAlertEventId: settingMap.get("lastAlertEventId") || null,
       lastAlertAttemptAt: settingMap.get("lastAlertAttemptAt") || null,
+      lastAlertProviderMessageId:
+        settingMap.get("lastAlertProviderMessageId") || null,
+      lastAlertError: settingMap.get("lastAlertError") || null,
       weeklyReportsEnabled: parseDbBoolean(
         settingMap.get("weeklyReportsEnabled"),
         false,
@@ -86,6 +93,10 @@ export async function getAppSettings(shop) {
         settingMap.get("lastWeeklyReportStatus") || null,
       lastWeeklyReportAttemptAt:
         settingMap.get("lastWeeklyReportAttemptAt") || null,
+      lastWeeklyReportProviderMessageId:
+        settingMap.get("lastWeeklyReportProviderMessageId") || null,
+      lastWeeklyReportError:
+        settingMap.get("lastWeeklyReportError") || null,
       emailProvider: getEmailProviderStatus(),
     };
   } catch {
@@ -98,10 +109,14 @@ export async function getAppSettings(shop) {
       lastAlertSentAt: null,
       lastAlertEventId: null,
       lastAlertAttemptAt: null,
+      lastAlertProviderMessageId: null,
+      lastAlertError: null,
       weeklyReportsEnabled: false,
       lastWeeklyReportAt: null,
       lastWeeklyReportStatus: null,
       lastWeeklyReportAttemptAt: null,
+      lastWeeklyReportProviderMessageId: null,
+      lastWeeklyReportError: null,
       emailProvider: getEmailProviderStatus(),
     };
   }

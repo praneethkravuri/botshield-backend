@@ -141,6 +141,10 @@ export async function action({ request }) {
   const userAgent =
     String(body.userAgent ?? "") || getRequestHeader(request, "user-agent");
   const pathVisited = extractPath(request, body.pathVisited);
+  const source =
+    body.source === "dashboard-simulation"
+      ? "dashboard-simulation"
+      : "dashboard-diagnostic";
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -183,36 +187,9 @@ export async function action({ request }) {
         ...(result.reasonCodes || []).map((code) => `[${code}]`),
         ...result.reasons,
       ].join(" | "),
-      source: body.source ? String(body.source) : "dashboard-live-scan",
+      source,
     },
   });
-
-  if (result.actionTaken === "blocked") {
-    try {
-      const now = new Date();
-      await db.blockedIP.upsert({
-        where: { shop_ipAddress: { shop, ipAddress } },
-        create: {
-          shop,
-          ipAddress,
-          reason: result.reasons.join(" | "),
-          source: "local-engine",
-          hits: 1,
-          active: true,
-          lastSeenAt: now,
-        },
-        update: {
-          reason: result.reasons.join(" | "),
-          source: "local-engine",
-          hits: { increment: 1 },
-          active: true,
-          lastSeenAt: now,
-        },
-      });
-    } catch {
-      // Ignore until migration / generate is applied.
-    }
-  }
 
   return Response.json({
     id: createdEvent.id,
@@ -227,6 +204,8 @@ export async function action({ request }) {
     summary: result.summary,
     settings,
     createdAt: createdEvent.createdAt,
+    simulation: true,
+    enforcementApplied: false,
     blockPageUrl:
       result.actionTaken === "blocked"
         ? buildBlockPageUrl(request, {

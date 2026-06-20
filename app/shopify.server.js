@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === "production") {
 const shopify = shopifyApp({
   apiKey,
   apiSecretKey,
-  apiVersion: ApiVersion.October25,
+  apiVersion: ApiVersion.April26,
   scopes,
   appUrl,
   authPathPrefix: "/auth",
@@ -65,7 +65,7 @@ const shopify = shopifyApp({
 });
 
 export default shopify;
-export const apiVersion = ApiVersion.October25;
+export const apiVersion = ApiVersion.April26;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;

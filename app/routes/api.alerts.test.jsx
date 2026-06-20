@@ -27,6 +27,8 @@ export async function action({ request }) {
     lastAlertStatus: delivery.status,
     lastAlertAttemptAt: sentAt,
     lastAlertEventId: "TEST",
+    lastAlertProviderMessageId: delivery.providerMessageId || "",
+    lastAlertError: delivery.error || "",
     ...(delivery.sent ? { lastAlertSentAt: sentAt } : {}),
   };
   await db.$transaction(

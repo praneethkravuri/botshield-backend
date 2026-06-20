@@ -31,6 +31,11 @@ export async function getMerchantSecurityPosture(shop) {
     buildWeeklySecurityReport(shop),
   ]);
   const reportsEnabled = settings.weeklyReportsEnabled === true;
+  const reportsOperational =
+    reportsEnabled &&
+    settings.emailAlerts &&
+    settings.emailProvider.configured &&
+    Boolean(settings.alertEmail);
   return {
     status,
     settings,
@@ -70,8 +75,8 @@ export async function getMerchantSecurityPosture(shop) {
       },
       {
         key: "reports",
-        label: "Weekly reports configured",
-        complete: reportsEnabled,
+        label: "Weekly reports operational",
+        complete: reportsOperational,
       },
     ],
   };

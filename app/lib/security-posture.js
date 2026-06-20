@@ -51,6 +51,11 @@ export function calculateSecurityScore({
   report,
   reportsEnabled,
 }) {
+  const reportsOperational =
+    reportsEnabled &&
+    settings.emailAlerts &&
+    settings.emailProvider.configured &&
+    Boolean(settings.alertEmail);
   const factors = [
     { key: "app", label: "Shopify app installed", points: 10, earned: status.appInstalled ? 10 : 0 },
     { key: "embed", label: "Theme embed active", points: 20, earned: status.themeEmbedDetected ? 20 : 0 },
@@ -67,7 +72,7 @@ export function calculateSecurityScore({
           ? 15
           : 0,
     },
-    { key: "reports", label: "Weekly reports enabled", points: 10, earned: reportsEnabled ? 10 : 0 },
+    { key: "reports", label: "Weekly reports operational", points: 10, earned: reportsOperational ? 10 : 0 },
     { key: "evidence", label: "Real security evidence received", points: 5, earned: report.requestsAnalyzed > 0 ? 5 : 0 },
   ];
   const score = factors.reduce((total, factor) => total + factor.earned, 0);

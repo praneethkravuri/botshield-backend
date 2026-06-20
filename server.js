@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequestListener } from "@mjackson/node-fetch-server";
 import { createRequestHandler } from "@react-router/express";
+import prisma from "./app/db.server.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,13 +38,34 @@ const app = express();
 
 app.disable("x-powered-by");
 app.set("trust proxy", true);
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=()",
+  );
+  next();
+});
 
 if (process.env.NODE_ENV === "production") {
   app.use(compression());
 }
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({ ok: true });
+app.get("/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      ok: true,
+      database: "connected",
+      emailProviderConfigured: Boolean(
+        process.env.RESEND_API_KEY?.trim() &&
+          process.env.ALERT_FROM_EMAIL?.trim(),
+      ),
+    });
+  } catch {
+    res.status(503).json({ ok: false, database: "unavailable" });
+  }
 });
 
 app.get("/health/config", (_req, res) => {
@@ -67,6 +89,9 @@ app.get("/health/config", (_req, res) => {
     scopesMatchConfig: scopes === "write_app_proxy",
     databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
     shopifyApiSecretConfigured: Boolean(process.env.SHOPIFY_API_SECRET),
+    resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+    alertFromEmailConfigured: Boolean(process.env.ALERT_FROM_EMAIL?.trim()),
+    networkIntelligenceKeyConfigured: Boolean(process.env.IPAPI_IS_KEY?.trim()),
     cloudflareUrlPresent:
       shopifyAppUrl.includes(tunnelDomain) ||
       publicAppUrl.includes(tunnelDomain),
@@ -107,7 +132,10 @@ const server = app.listen(port, host, () => {
         console.error(error);
         process.exit(1);
       }
-      process.exit(0);
+      prisma
+        .$disconnect()
+        .catch(() => {})
+        .finally(() => process.exit(0));
     });
   });
 });

@@ -37,6 +37,7 @@ export function shouldSendIncidentAlert({
   settings,
   decision,
   threatLevel,
+  pathVisited = "",
   recentEvents = [],
   now = Date.now(),
 }) {
@@ -57,17 +58,24 @@ export function shouldSendIncidentAlert({
     return { send: false, reason: "LOW_RISK_EVENT" };
   }
 
+  const expectedAction =
+    decision === "block"
+      ? "blocked"
+      : decision === "challenge"
+        ? "challenged"
+        : null;
   const duplicateIncident = recentEvents.some((event) => {
     const createdAt = new Date(event.createdAt).getTime();
     if (!Number.isFinite(createdAt) || now - createdAt > ALERT_COOLDOWN_MS) {
       return false;
     }
 
-    return (
-      event.action === "blocked" ||
-      event.action === "challenged" ||
-      event.threatLevel === "high"
-    );
+    const samePath =
+      !pathVisited || !event.path || String(event.path) === String(pathVisited);
+    const sameIncidentType = expectedAction
+      ? event.action === expectedAction
+      : event.threatLevel === threatLevel;
+    return samePath && sameIncidentType;
   });
 
   if (duplicateIncident) {

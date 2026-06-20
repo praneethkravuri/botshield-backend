@@ -250,10 +250,12 @@ test("alert cooldown suppresses duplicate high-risk email bursts", () => {
     },
     decision: "block",
     threatLevel: "high",
+    pathVisited: "/account/login",
     recentEvents: [
       {
         action: "blocked",
         threatLevel: "high",
+        path: "/account/login",
         createdAt: new Date(),
       },
     ],
@@ -261,6 +263,29 @@ test("alert cooldown suppresses duplicate high-risk email bursts", () => {
 
   assert.equal(result.send, false);
   assert.equal(result.reason, "ALERT_COOLDOWN");
+});
+
+test("alert cooldown does not hide a different high-risk incident", () => {
+  const result = shouldSendIncidentAlert({
+    settings: {
+      emailAlerts: true,
+      highRiskAlertsOnly: true,
+      alertEmail: "owner@example.com",
+    },
+    decision: "block",
+    threatLevel: "high",
+    pathVisited: "/checkout",
+    recentEvents: [
+      {
+        action: "blocked",
+        threatLevel: "high",
+        path: "/account/login",
+        createdAt: new Date(),
+      },
+    ],
+  });
+
+  assert.equal(result.send, true);
 });
 
 test("challenge events qualify for merchant email alerts", () => {
@@ -362,4 +387,26 @@ test("security score is based on verified setup and production evidence", () => 
   assert.equal(result.score, 100);
   assert.equal(result.grade, "Excellent");
   assert.deepEqual(result.suggestions, []);
+});
+
+test("weekly reports do not score as operational without email delivery", () => {
+  const result = calculateSecurityScore({
+    status: {
+      appInstalled: true,
+      themeEmbedDetected: true,
+      lastStorefrontDecisionAt: "2026-06-20T00:00:00Z",
+      protectionActive: true,
+    },
+    settings: {
+      emailAlerts: true,
+      alertEmail: "owner@example.com",
+      emailProvider: { configured: false },
+    },
+    report: { requestsAnalyzed: 5 },
+    reportsEnabled: true,
+  });
+
+  const reportFactor = result.factors.find((factor) => factor.key === "reports");
+  assert.equal(reportFactor.earned, 0);
+  assert.ok(result.score < 90);
 });

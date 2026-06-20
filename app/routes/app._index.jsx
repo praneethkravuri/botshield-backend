@@ -1075,11 +1075,14 @@ function SettingsPage({
   handleSendTestAlert,
   lastAlertStatus,
   lastAlertSentAt,
+  lastAlertError,
+  emailProviderStatus,
   weeklyReportsEnabled,
   setWeeklyReportsEnabled,
   handleSendWeeklyReport,
   lastWeeklyReportStatus,
   lastWeeklyReportAt,
+  lastWeeklyReportError,
 }) {
   return (
     <div style={{ display: "grid", gap: "20px" }}>
@@ -1134,7 +1137,12 @@ function SettingsPage({
             <div style={{ color: emailProviderConfigured ? theme.successText : theme.muted, fontSize: "12px" }}>
               {emailProviderConfigured
                 ? "Email provider connected"
-                : "Email delivery pending provider configuration"}
+                : `Email delivery needs ${[
+                    !emailProviderStatus.apiKeyConfigured && "RESEND_API_KEY",
+                    !emailProviderStatus.fromEmailConfigured && "ALERT_FROM_EMAIL",
+                  ]
+                    .filter(Boolean)
+                    .join(" and ")} on Render`}
             </div>
             <button
               type="button"
@@ -1154,6 +1162,11 @@ function SettingsPage({
                 ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
                 : ""}
             </div>
+            {lastAlertError ? (
+              <div style={{ color: theme.dangerText, fontSize: "12px", lineHeight: 1.6 }}>
+                Last delivery error: {lastAlertError}
+              </div>
+            ) : null}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: theme.text }}>Weekly Security Report</span>
               <Toggle
@@ -1180,6 +1193,11 @@ function SettingsPage({
                 ? ` · ${new Date(lastWeeklyReportAt).toLocaleString()}`
                 : ""}
             </div>
+            {lastWeeklyReportError ? (
+              <div style={{ color: theme.dangerText, fontSize: "12px", lineHeight: 1.6 }}>
+                Last report error: {lastWeeklyReportError}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -1267,11 +1285,17 @@ export default function Index() {
   const [highRiskAlertsOnly, setHighRiskAlertsOnly] = useState(true);
   const [alertEmail, setAlertEmail] = useState("");
   const [emailProviderConfigured, setEmailProviderConfigured] = useState(false);
+  const [emailProviderStatus, setEmailProviderStatus] = useState({
+    apiKeyConfigured: false,
+    fromEmailConfigured: false,
+  });
   const [lastAlertStatus, setLastAlertStatus] = useState(null);
   const [lastAlertSentAt, setLastAlertSentAt] = useState(null);
+  const [lastAlertError, setLastAlertError] = useState(null);
   const [weeklyReportsEnabled, setWeeklyReportsEnabled] = useState(false);
   const [lastWeeklyReportStatus, setLastWeeklyReportStatus] = useState(null);
   const [lastWeeklyReportAt, setLastWeeklyReportAt] = useState(null);
+  const [lastWeeklyReportError, setLastWeeklyReportError] = useState(null);
   const [securityPosture, setSecurityPosture] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
@@ -1710,8 +1734,7 @@ export default function Index() {
     try {
       const res = await fetch("/api/scans");
       const data = await res.json();
-      setScans(
-        (data.scans || []).map((scan, index) => ({
+      const nextScans = (data.scans || []).map((scan, index) => ({
           id: scan.id ?? index,
           ipAddress: scan.ipAddress || "Unknown",
           threatLevel: String(scan.threatLevel || "low").toLowerCase(),
@@ -1719,9 +1742,16 @@ export default function Index() {
           pathVisited: scan.pathVisited || "/",
           riskScore: Number(scan.riskScore || 0),
           reasons: scan.reasons || "",
-          source: scan.source || "dashboard-live-scan",
+          source: scan.source || "dashboard-diagnostic",
           createdAt: scan.createdAt || null,
-        })),
+        }));
+      setScans(nextScans);
+      const diagnostics = nextScans.filter(
+        (scan) => scan.source !== "storefront-proxy",
+      );
+      setTotalScans(diagnostics.length);
+      setBlocked(
+        diagnostics.filter((scan) => scan.actionTaken === "blocked").length,
       );
     } catch (err) {
       console.error("Failed to load scans", err);
@@ -1746,11 +1776,19 @@ export default function Index() {
       setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
       setAlertEmail(settings.alertEmail || "");
       setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
+      setEmailProviderStatus({
+        apiKeyConfigured: Boolean(settings.emailProvider?.apiKeyConfigured),
+        fromEmailConfigured: Boolean(
+          settings.emailProvider?.fromEmailConfigured,
+        ),
+      });
       setLastAlertStatus(settings.lastAlertStatus || null);
       setLastAlertSentAt(settings.lastAlertSentAt || null);
+      setLastAlertError(settings.lastAlertError || null);
       setWeeklyReportsEnabled(Boolean(settings.weeklyReportsEnabled));
       setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
       setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
+      setLastWeeklyReportError(settings.lastWeeklyReportError || null);
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -1836,6 +1874,36 @@ export default function Index() {
     }
   };
 
+  const loadMerchantMetadata = async () => {
+    try {
+      const response = await fetch("/api/merchant-metadata");
+      if (!response.ok) return;
+      const data = await response.json();
+      setTeamNotes(data.analystNotes || {});
+      setTrustedTags(data.trustedTags || {});
+    } catch (error) {
+      console.error("Failed to load merchant metadata", error);
+    }
+  };
+
+  const saveMerchantMetadata = async (nextNotes, nextTags) => {
+    const response = await fetch("/api/merchant-metadata", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        analystNotes: nextNotes,
+        trustedTags: nextTags,
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to save merchant metadata.");
+    }
+    setTeamNotes(data.analystNotes || {});
+    setTrustedTags(data.trustedTags || {});
+    return data;
+  };
+
   const clearTestData = async () => {
     try {
       const res = await fetch("/api/clear-test-data", { method: "POST" });
@@ -1865,6 +1933,7 @@ export default function Index() {
       loadProtectionStatus(),
       loadIncidents(),
       loadSecurityPosture(),
+      loadMerchantMetadata(),
     ]);
   };
 
@@ -1942,11 +2011,17 @@ export default function Index() {
     setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
     setAlertEmail(settings.alertEmail || "");
     setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
+    setEmailProviderStatus({
+      apiKeyConfigured: Boolean(settings.emailProvider?.apiKeyConfigured),
+      fromEmailConfigured: Boolean(settings.emailProvider?.fromEmailConfigured),
+    });
     setLastAlertStatus(settings.lastAlertStatus || null);
     setLastAlertSentAt(settings.lastAlertSentAt || null);
+    setLastAlertError(settings.lastAlertError || null);
     setWeeklyReportsEnabled(Boolean(settings.weeklyReportsEnabled));
     setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
     setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
+    setLastWeeklyReportError(settings.lastWeeklyReportError || null);
 
     await refreshBackendState();
 
@@ -2029,7 +2104,7 @@ export default function Index() {
         ipAddress: candidateIp,
         userAgent: navigator.userAgent,
         pathVisited: window.location.pathname,
-        source: "dashboard-live-scan",
+        source: "dashboard-diagnostic",
       }),
     });
 
@@ -2058,7 +2133,7 @@ export default function Index() {
       }
 
       await Promise.all([loadScans(), loadBlocklist(), loadWhitelist(), loadSettings()]);
-      triggerAlert(`Live scan complete. Threat ${String(data.threatLevel || "unknown").toUpperCase()} was ${String(actionLabel).toUpperCase()}.`);
+      triggerAlert(`Diagnostic scan complete. Threat ${String(data.threatLevel || "unknown").toUpperCase()} was ${String(actionLabel).toUpperCase()}. No storefront enforcement was changed.`);
     } catch (err) {
       console.error(err);
       triggerAlert("Error connecting to backend.");
@@ -2441,17 +2516,24 @@ export default function Index() {
     }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!selectedNoteIp || !noteInput.trim()) {
       triggerAlert("Select an IP and add a note before saving.");
       return;
     }
-    setTeamNotes((prev) => ({
-      ...prev,
-      [selectedNoteIp]: noteInput.trim(),
-    }));
-    setNoteInput("");
-    triggerAlert(`Saved note for ${selectedNoteIp}.`);
+    try {
+      const nextNotes = {
+        ...teamNotes,
+        [selectedNoteIp]: noteInput.trim(),
+      };
+      await saveMerchantMetadata(nextNotes, trustedTags);
+      setNoteInput("");
+      triggerAlert(`Saved note for ${selectedNoteIp}.`);
+    } catch (error) {
+      triggerAlert(
+        error instanceof Error ? error.message : "Failed to save note.",
+      );
+    }
   };
 
   const handleAddTrustedTag = (ip) => {
@@ -2464,19 +2546,26 @@ export default function Index() {
     triggerAlert(`Trust registry opened for ${ip}.`);
   };
 
-  const handleSaveTrustedTag = () => {
+  const handleSaveTrustedTag = async () => {
     if (!selectedTrustedTagIp || !trustedTagInput.trim()) {
       triggerAlert("Select an IP and enter a trusted tag before saving.");
       return;
     }
 
-    setTrustedTags((prev) => ({
-      ...prev,
-      [selectedTrustedTagIp]: trustedTagInput.trim(),
-    }));
-    triggerAlert(`Updated trusted tag for ${selectedTrustedTagIp}.`);
-    setSelectedTrustedTagIp("");
-    setTrustedTagInput("");
+    try {
+      const nextTags = {
+        ...trustedTags,
+        [selectedTrustedTagIp]: trustedTagInput.trim(),
+      };
+      await saveMerchantMetadata(teamNotes, nextTags);
+      triggerAlert(`Updated trusted tag for ${selectedTrustedTagIp}.`);
+      setSelectedTrustedTagIp("");
+      setTrustedTagInput("");
+    } catch (error) {
+      triggerAlert(
+        error instanceof Error ? error.message : "Failed to save trusted tag.",
+      );
+    }
   };
 
   const handleCancelTrustedTag = () => {
@@ -2678,31 +2767,12 @@ export default function Index() {
       const parsed = JSON.parse(savedData);
       setPage(parsed.page ?? "dashboard");
       setThreatLevel(parsed.threatLevel ?? "low");
-      setStrictMode(parsed.strictMode ?? false);
       setInsight(parsed.insight ?? "");
       setRecommendation(parsed.recommendation ?? "");
       setDarkMode(parsed.darkMode ?? false);
-      setProtectionOn(parsed.protectionOn ?? true);
-      setAutoBlock(parsed.autoBlock ?? true);
-      setBlockLevel(parsed.blockLevel ?? "Medium");
-      setTotalScans(parsed.totalScans ?? 0);
-      setBlocked(parsed.blocked ?? 0);
-      setBlockedIPs(parsed.blockedIPs ?? []);
       setHistory(parsed.history ?? []);
       setLastScanTime(parsed.lastScanTime ?? "No scans yet");
       setResult(parsed.result ?? "No scans yet");
-      setWhitelist(parsed.whitelist ?? []);
-      setThreatCounts(parsed.threatCounts ?? { Low: 0, Medium: 0, High: 0 });
-      setActionCounts(
-        parsed.actionCounts ?? { Allowed: 0, Blocked: 0, Whitelisted: 0 },
-      );
-      setEmailAlerts(parsed.emailAlerts ?? false);
-      setSmsAlerts(parsed.smsAlerts ?? false);
-      setHighRiskAlertsOnly(parsed.highRiskAlertsOnly ?? true);
-      setAlertEmail(parsed.alertEmail ?? "");
-      setPauseUntil(parsed.pauseUntil ?? null);
-      setTeamNotes(parsed.teamNotes ?? {});
-      setTrustedTags(parsed.trustedTags ?? {});
       setSelectedTrustedTagIp(parsed.selectedTrustedTagIp ?? "");
       setTrustedTagInput(parsed.trustedTagInput ?? "");
     }
@@ -2712,29 +2782,12 @@ export default function Index() {
     const dataToSave = {
       page,
       threatLevel,
-      strictMode,
       insight,
       recommendation,
       darkMode,
-      protectionOn,
-      autoBlock,
-      blockLevel,
-      totalScans,
-      blocked,
-      blockedIPs,
       history,
       lastScanTime,
       result,
-      whitelist,
-      threatCounts,
-      actionCounts,
-      emailAlerts,
-      smsAlerts,
-      highRiskAlertsOnly,
-      alertEmail,
-      pauseUntil,
-      teamNotes,
-      trustedTags,
       selectedTrustedTagIp,
       trustedTagInput,
     };
@@ -2743,29 +2796,12 @@ export default function Index() {
   }, [
     page,
     threatLevel,
-    strictMode,
     insight,
     recommendation,
     darkMode,
-    protectionOn,
-    autoBlock,
-    blockLevel,
-    totalScans,
-    blocked,
-    blockedIPs,
     history,
     lastScanTime,
     result,
-    whitelist,
-    threatCounts,
-    actionCounts,
-    emailAlerts,
-    smsAlerts,
-    highRiskAlertsOnly,
-    alertEmail,
-    pauseUntil,
-    teamNotes,
-    trustedTags,
     selectedTrustedTagIp,
     trustedTagInput,
   ]);
@@ -4114,7 +4150,7 @@ export default function Index() {
                         style={getPrimaryButtonStyle()}
                         {...pressHandlers}
                       >
-                        Run Live Scan
+                        Run Diagnostic Scan
                       </button>
 
                       <button
@@ -5226,7 +5262,7 @@ export default function Index() {
                     </p>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "14px" }}>
                       <button onClick={handleBackendScan} style={getPrimaryButtonStyle()} {...pressHandlers}>
-                        Run Live Scan
+                        Run Diagnostic Scan
                       </button>
                       <button onClick={handleScan} style={getSecondaryButtonStyle()} {...pressHandlers}>
                         Generate Test Traffic
@@ -5307,7 +5343,7 @@ export default function Index() {
               >
                 <div style={{ ...statCardStyle, ...getRevealStyle(22), flex: 1, minWidth: "180px" }} {...cardHoverHandlers}>
                   <div style={{ color: theme.muted, fontSize: "13px", fontWeight: "600" }}>
-                    Total Scans
+                    Diagnostic Simulations
                   </div>
                   <div style={{ fontSize: "30px", fontWeight: "800", marginTop: "8px" }}>
                     <AnimatedNumber value={totalScans} />
@@ -5325,7 +5361,7 @@ export default function Index() {
 
                 <div style={{ ...statCardStyle, ...getRevealStyle(24), flex: 1, minWidth: "180px" }} {...cardHoverHandlers}>
                   <div style={{ color: theme.muted, fontSize: "13px", fontWeight: "600" }}>
-                    Blocked Visitors
+                    Simulated Blocks
                   </div>
                   <div style={{ fontSize: "30px", fontWeight: "800", marginTop: "8px" }}>
                     <AnimatedNumber value={blocked} />
@@ -5502,7 +5538,7 @@ export default function Index() {
                     </p>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                       <button onClick={handleBackendScan} style={getPrimaryButtonStyle()} {...pressHandlers}>
-                        Run Live Scan
+                        Run Diagnostic Scan
                       </button>
                       <button onClick={handleScan} style={getSecondaryButtonStyle()} {...pressHandlers}>
                         Generate Test Traffic
@@ -5758,7 +5794,7 @@ export default function Index() {
                       </p>
                       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                         <button onClick={handleBackendScan} style={getPrimaryButtonStyle()} {...pressHandlers}>
-                          Run Live Scan
+                          Run Diagnostic Scan
                         </button>
                         <button onClick={handleScan} style={getSecondaryButtonStyle()} {...pressHandlers}>
                           Generate Test Traffic
@@ -5906,11 +5942,14 @@ export default function Index() {
               handleSendTestAlert={handleSendTestAlert}
               lastAlertStatus={lastAlertStatus}
               lastAlertSentAt={lastAlertSentAt}
+              lastAlertError={lastAlertError}
+              emailProviderStatus={emailProviderStatus}
               weeklyReportsEnabled={weeklyReportsEnabled}
               setWeeklyReportsEnabled={setWeeklyReportsEnabled}
               handleSendWeeklyReport={handleSendWeeklyReport}
               lastWeeklyReportStatus={lastWeeklyReportStatus}
               lastWeeklyReportAt={lastWeeklyReportAt}
+              lastWeeklyReportError={lastWeeklyReportError}
             />
           )}
         </div>

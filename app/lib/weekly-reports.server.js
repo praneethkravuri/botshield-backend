@@ -9,6 +9,8 @@ async function saveReportStatus(shop, delivery, sentAt = new Date()) {
   const values = {
     lastWeeklyReportAttemptAt: sentAt.toISOString(),
     lastWeeklyReportStatus: delivery.status,
+    lastWeeklyReportProviderMessageId: delivery.providerMessageId || "",
+    lastWeeklyReportError: delivery.error || "",
     ...(delivery.sent ? { lastWeeklyReportAt: sentAt.toISOString() } : {}),
   };
   await db.$transaction(

@@ -360,6 +360,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     settings,
     decision,
     threatLevel: detection.threatLevel,
+    pathVisited,
     recentEvents,
   });
   let alertDelivery = {
@@ -388,6 +389,8 @@ export async function evaluateStorefrontRequest(request, shop) {
       lastAlertStatus: alertDelivery.status,
       lastAlertAttemptAt: alertTimestamp,
       lastAlertEventId: String(event.id),
+      lastAlertProviderMessageId: alertDelivery.providerMessageId || "",
+      lastAlertError: alertDelivery.error || "",
       ...(alertDelivery.sent ? { lastAlertSentAt: alertTimestamp } : {}),
     };
     await db.$transaction(
