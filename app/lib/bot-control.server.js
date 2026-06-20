@@ -3,6 +3,7 @@ import {
   buildDetectionSettings,
   normalizeIpAddress,
 } from "./bot-detection.server";
+import { getEmailProviderStatus } from "./incident-alerts.server";
 
 function toBooleanString(value, fallback = false) {
   if (typeof value === "boolean") return value ? "true" : "false";
@@ -46,14 +47,34 @@ export async function getAppSettings(shop) {
             "blockLevel",
             "strictMode",
             "protectionPausedUntil",
+            "emailAlerts",
+            "highRiskAlertsOnly",
+            "alertEmail",
           ],
         },
       },
       select: { key: true, value: true },
     });
-    return buildDetectionSettings(rows);
+    const detectionSettings = buildDetectionSettings(rows);
+    const settingMap = new Map(rows.map((row) => [row.key, row.value]));
+    return {
+      ...detectionSettings,
+      emailAlerts: parseDbBoolean(settingMap.get("emailAlerts"), false),
+      highRiskAlertsOnly: parseDbBoolean(
+        settingMap.get("highRiskAlertsOnly"),
+        true,
+      ),
+      alertEmail: settingMap.get("alertEmail") || "",
+      emailProvider: getEmailProviderStatus(),
+    };
   } catch {
-    return buildDetectionSettings([]);
+    return {
+      ...buildDetectionSettings([]),
+      emailAlerts: false,
+      highRiskAlertsOnly: true,
+      alertEmail: "",
+      emailProvider: getEmailProviderStatus(),
+    };
   }
 }
 
@@ -71,6 +92,19 @@ export async function saveAppSettings(shop, input = {}) {
     protectionPausedUntil && !Number.isNaN(protectionPausedUntil.getTime())
       ? protectionPausedUntil.toISOString()
       : "";
+  const emailAlerts = toBooleanString(input.emailAlerts, false);
+  const highRiskAlertsOnly = toBooleanString(
+    input.highRiskAlertsOnly,
+    true,
+  );
+  const alertEmail = String(input.alertEmail || "").trim();
+
+  if (
+    emailAlerts === "true" &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alertEmail)
+  ) {
+    throw new Error("A valid alert email is required when email alerts are enabled");
+  }
 
   await db.$transaction(
     Object.entries({
@@ -78,6 +112,9 @@ export async function saveAppSettings(shop, input = {}) {
       strictMode,
       blockLevel,
       protectionPausedUntil: normalizedPause,
+      emailAlerts,
+      highRiskAlertsOnly,
+      alertEmail,
     }).map(([key, value]) =>
       db.appSetting.upsert({
         where: { shop_key: { shop: normalizedShop, key } },

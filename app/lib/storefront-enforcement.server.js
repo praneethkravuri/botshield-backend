@@ -6,6 +6,10 @@ import {
   normalizeIpAddress,
 } from "./bot-detection.server";
 import { recordStorefrontHeartbeat } from "./bot-control.server";
+import {
+  sendIncidentEmail,
+  shouldSendIncidentAlert,
+} from "./incident-alerts.server";
 import { resolveStorefrontDecision } from "./storefront-decision.server";
 
 const CHALLENGE_TTL_MS = 15 * 60 * 1000;
@@ -58,15 +62,29 @@ async function readSettings(shop) {
             "blockLevel",
             "strictMode",
             "protectionPausedUntil",
+            "emailAlerts",
+            "highRiskAlertsOnly",
+            "alertEmail",
           ],
         },
       },
       select: { key: true, value: true },
     });
 
-    return buildDetectionSettings(rows);
+    const map = new Map(rows.map((row) => [row.key, row.value]));
+    return {
+      ...buildDetectionSettings(rows),
+      emailAlerts: map.get("emailAlerts") === "true",
+      highRiskAlertsOnly: map.get("highRiskAlertsOnly") !== "false",
+      alertEmail: map.get("alertEmail") || "",
+    };
   } catch {
-    return buildDetectionSettings([]);
+    return {
+      ...buildDetectionSettings([]),
+      emailAlerts: false,
+      highRiskAlertsOnly: true,
+      alertEmail: "",
+    };
   }
 }
 
@@ -82,8 +100,13 @@ async function readWhitelist(shop, ipAddress) {
 
 async function readBlocked(shop, ipAddress) {
   try {
-    return await db.blockedIP.findUnique({
-      where: { shop_ipAddress: { shop, ipAddress } },
+    return await db.blockedIP.findFirst({
+      where: {
+        shop,
+        ipAddress,
+        active: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
     });
   } catch {
     return null;
@@ -324,6 +347,38 @@ export async function evaluateStorefrontRequest(request, shop) {
   ]);
   await recordStorefrontHeartbeat(normalizedShop, receivedAt);
 
+  const alertDecision = shouldSendIncidentAlert({
+    settings,
+    decision,
+    threatLevel: detection.threatLevel,
+    recentEvents,
+  });
+  let alertDelivery = {
+    sent: false,
+    status: alertDecision.reason.toLowerCase(),
+  };
+
+  if (alertDecision.send) {
+    alertDelivery = await sendIncidentEmail({
+      shop: normalizedShop,
+      alertEmail: settings.alertEmail,
+      ipAddress,
+      pathVisited,
+      decision,
+      threatLevel: detection.threatLevel,
+      riskScore: detection.riskScore,
+      reasonCodes,
+      eventId: event.id,
+      createdAt: event.createdAt.toISOString(),
+    });
+  }
+
+  if (alertDecision.send || alertDelivery.status === "provider_not_configured") {
+    console.log(
+      `[botshield-alert] shop=${normalizedShop} event=${event.id} status=${alertDelivery.status} sent=${alertDelivery.sent}`,
+    );
+  }
+
   return {
     decision,
     action: actionForLog,
@@ -337,6 +392,10 @@ export async function evaluateStorefrontRequest(request, shop) {
     summary: detection.summary,
     createdAt: event.createdAt,
     protectionPaused: resolution.protectionPaused,
+    alertDelivery: {
+      sent: alertDelivery.sent,
+      status: alertDelivery.status,
+    },
     referer,
     challengeToken:
       decision === "challenge"

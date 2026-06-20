@@ -25,6 +25,10 @@ services:
         sync: false
       - key: BOTSHIELD_SIGNING_SECRET
         generateValue: true
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ALERT_FROM_EMAIL
+        sync: false
 
 databases:
   - name: bot-shield-db

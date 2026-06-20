@@ -52,8 +52,13 @@ async function readBlocked(shop, ipAddress) {
   const normalizedShop = normalizeShop(shop);
 
   try {
-    return await db.blockedIP.findUnique({
-      where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+    return await db.blockedIP.findFirst({
+      where: {
+        shop: normalizedShop,
+        ipAddress,
+        active: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
     });
   } catch {
     return null;

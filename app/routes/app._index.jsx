@@ -881,6 +881,8 @@ function SettingsPage({
   handleStrictModeToggle,
   storeProtectionMode,
   handleSaveSettings,
+  emailProviderConfigured,
+  handleSendTestAlert,
 }) {
   return (
     <div style={{ display: "grid", gap: "20px" }}>
@@ -921,7 +923,9 @@ function SettingsPage({
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ color: theme.text }}>📱 SMS Alerts</span>
-              <Toggle checked={smsAlerts} onClick={handleSmsAlertsToggle} theme={theme} />
+              <span style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
+                Not implemented
+              </span>
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -932,6 +936,23 @@ function SettingsPage({
                 theme={theme}
               />
             </div>
+            <div style={{ color: emailProviderConfigured ? theme.successText : theme.muted, fontSize: "12px" }}>
+              {emailProviderConfigured
+                ? "Email provider connected"
+                : "Email delivery pending provider configuration"}
+            </div>
+            <button
+              type="button"
+              onClick={handleSendTestAlert}
+              disabled={!emailAlerts || !emailProviderConfigured}
+              style={{
+                ...getPrimaryButtonStyle(),
+                opacity: !emailAlerts || !emailProviderConfigured ? 0.55 : 1,
+                cursor: !emailAlerts || !emailProviderConfigured ? "not-allowed" : "pointer",
+              }}
+            >
+              Send Test Email
+            </button>
           </div>
         </div>
 
@@ -1014,10 +1035,11 @@ export default function Index() {
   const [result, setResult] = useState("No scans yet");
   const [searchTerm, setSearchTerm] = useState("");
   const [whitelist, setWhitelist] = useState([]);
-  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [emailAlerts, setEmailAlerts] = useState(false);
   const [smsAlerts, setSmsAlerts] = useState(false);
-  const [highRiskAlertsOnly, setHighRiskAlertsOnly] = useState(false);
-  const [alertEmail, setAlertEmail] = useState("owner@store.com");
+  const [highRiskAlertsOnly, setHighRiskAlertsOnly] = useState(true);
+  const [alertEmail, setAlertEmail] = useState("");
+  const [emailProviderConfigured, setEmailProviderConfigured] = useState(false);
   const [pauseUntil, setPauseUntil] = useState(null);
   const [protectionStatus, setProtectionStatus] = useState({
     shop: "",
@@ -1462,6 +1484,10 @@ export default function Index() {
         !settings.protectionPausedUntil ||
           new Date(settings.protectionPausedUntil).getTime() <= Date.now(),
       );
+      setEmailAlerts(Boolean(settings.emailAlerts));
+      setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
+      setAlertEmail(settings.alertEmail || "");
+      setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -1582,6 +1608,9 @@ export default function Index() {
       strictMode,
       blockLevel,
       protectionPausedUntil: pauseUntil,
+      emailAlerts,
+      highRiskAlertsOnly,
+      alertEmail,
       ...overrides,
     };
 
@@ -1607,6 +1636,10 @@ export default function Index() {
       !settings.protectionPausedUntil ||
         new Date(settings.protectionPausedUntil).getTime() <= Date.now(),
     );
+    setEmailAlerts(Boolean(settings.emailAlerts));
+    setHighRiskAlertsOnly(settings.highRiskAlertsOnly !== false);
+    setAlertEmail(settings.alertEmail || "");
+    setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
 
     await refreshBackendState();
 
@@ -1715,9 +1748,6 @@ export default function Index() {
 
       if (String(actionLabel).toLowerCase() === "blocked") {
         setBlocked((prev) => prev + 1);
-        if (emailAlerts) {
-          triggerAlert(`Email alert sent to ${alertEmail} for blocked traffic.`);
-        }
       }
 
       await Promise.all([loadScans(), loadBlocklist(), loadWhitelist(), loadSettings()]);
@@ -1729,6 +1759,10 @@ export default function Index() {
   };
 
   const handleEmailAlertsToggle = () => {
+    if (!emailProviderConfigured && !emailAlerts) {
+      triggerAlert("Email delivery requires RESEND_API_KEY and ALERT_FROM_EMAIL on Render.");
+      return;
+    }
     setEmailAlerts((prev) => {
       const nextValue = !prev;
       triggerAlert(`Email alerts ${nextValue ? "enabled" : "disabled"}.`);
@@ -1737,11 +1771,8 @@ export default function Index() {
   };
 
   const handleSmsAlertsToggle = () => {
-    setSmsAlerts((prev) => {
-      const nextValue = !prev;
-      triggerAlert(`SMS alerts ${nextValue ? "enabled" : "disabled"}.`);
-      return nextValue;
-    });
+    setSmsAlerts(false);
+    triggerAlert("SMS alerts are not implemented in this MVP.");
   };
 
   const handleHighRiskAlertsOnlyToggle = () => {
@@ -2205,6 +2236,9 @@ export default function Index() {
           autoBlock,
           strictMode,
           blockLevel,
+          emailAlerts,
+          highRiskAlertsOnly,
+          alertEmail,
         },
         {
           message: `Settings saved. Alerts are ${emailAlerts ? "enabled" : "disabled"} and protection is running in ${strictMode ? "Strict" : blockLevel} mode.`,
@@ -2213,6 +2247,19 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to save settings", err);
       triggerAlert("Failed to save settings.");
+    }
+  };
+
+  const handleSendTestAlert = async () => {
+    try {
+      const response = await fetch("/api/alerts/test", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || data.delivery?.error || "Test email failed.");
+      }
+      triggerAlert(`Test email sent to ${alertEmail}.`);
+    } catch (error) {
+      triggerAlert(error instanceof Error ? error.message : "Test email failed.");
     }
   };
 
@@ -2291,10 +2338,10 @@ export default function Index() {
       setActionCounts(
         parsed.actionCounts ?? { Allowed: 0, Blocked: 0, Whitelisted: 0 },
       );
-      setEmailAlerts(parsed.emailAlerts ?? true);
+      setEmailAlerts(parsed.emailAlerts ?? false);
       setSmsAlerts(parsed.smsAlerts ?? false);
-      setHighRiskAlertsOnly(parsed.highRiskAlertsOnly ?? false);
-      setAlertEmail(parsed.alertEmail ?? "owner@store.com");
+      setHighRiskAlertsOnly(parsed.highRiskAlertsOnly ?? true);
+      setAlertEmail(parsed.alertEmail ?? "");
       setPauseUntil(parsed.pauseUntil ?? null);
       setTeamNotes(parsed.teamNotes ?? {});
       setTrustedTags(parsed.trustedTags ?? {});
@@ -3962,7 +4009,7 @@ export default function Index() {
                   }}
                   {...cardHoverHandlers}
                 >
-                  <p style={statLabelStyle}>Traffic Coverage</p>
+                  <p style={statLabelStyle}>Storefront Evaluations</p>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "flex-end" }}>
                     <div>
                       <h2 style={statValueStyle}>
@@ -4486,7 +4533,11 @@ export default function Index() {
                   </h3>
                   <div style={{ marginTop: "14px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <span style={getRiskBadgeStyle(emailAlerts ? "normal" : "high")}>
-                      {emailAlerts ? "Delivery Enabled" : "Delivery Disabled"}
+                      {emailAlerts && emailProviderConfigured
+                        ? "Delivery Enabled"
+                        : emailProviderConfigured
+                          ? "Delivery Disabled"
+                          : "Provider Not Configured"}
                     </span>
                     <span style={getRiskBadgeStyle(highRiskAlertsOnly ? "balanced" : "normal")}>
                       {highRiskAlertsOnly ? "High-risk Only" : "All Incidents"}
@@ -4509,6 +4560,18 @@ export default function Index() {
                     </div>
                     <button onClick={handleSaveSettings} style={getPrimaryButtonStyle()} {...pressHandlers}>
                       Apply Alert Profile
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendTestAlert}
+                      disabled={!emailAlerts || !emailProviderConfigured}
+                      style={{
+                        ...getSecondaryButtonStyle(),
+                        opacity: !emailAlerts || !emailProviderConfigured ? 0.55 : 1,
+                        cursor: !emailAlerts || !emailProviderConfigured ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      Send Test Email
                     </button>
                   </div>
                 </div>
@@ -5422,6 +5485,8 @@ export default function Index() {
               handleStrictModeToggle={handleStrictModeToggle}
               storeProtectionMode={storeProtectionMode}
               handleSaveSettings={handleSaveSettings}
+              emailProviderConfigured={emailProviderConfigured}
+              handleSendTestAlert={handleSendTestAlert}
             />
           )}
         </div>

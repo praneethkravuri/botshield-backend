@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { detectBotThreat } from "../app/lib/bot-detection.server.js";
 import { resolveStorefrontDecision } from "../app/lib/storefront-decision.server.js";
 import { partitionSecurityEvents } from "../app/lib/event-classification.js";
+import { shouldSendIncidentAlert } from "../app/lib/incident-alerts.server.js";
 
 const baseRequest = {
   ipAddress: "203.0.113.10",
@@ -124,6 +125,34 @@ test("disabled auto-block monitors suspicious traffic without enforcement", () =
   assert.ok(result.reasonCodes.includes("AUTO_BLOCK_DISABLED"));
 });
 
+test("medium-risk storefront traffic receives a challenge", () => {
+  const detection = {
+    actionTaken: "allowed",
+    threatLevel: "medium",
+  };
+  const result = resolveStorefrontDecision({
+    detection,
+    autoBlock: true,
+  });
+
+  assert.equal(result.decision, "challenge");
+  assert.ok(result.reasonCodes.includes("CHALLENGE_REQUIRED"));
+});
+
+test("a passed challenge allows medium-risk storefront traffic", () => {
+  const detection = {
+    actionTaken: "allowed",
+    threatLevel: "medium",
+  };
+  const result = resolveStorefrontDecision({
+    detection,
+    autoBlock: true,
+    challengePassed: true,
+  });
+
+  assert.equal(result.decision, "allow");
+});
+
 test("dashboard simulations do not pollute real storefront metrics", () => {
   const events = [
     { id: 1, source: "storefront-proxy" },
@@ -140,4 +169,44 @@ test("dashboard simulations do not pollute real storefront metrics", () => {
     partitioned.simulated.map((event) => event.id),
     [2, 3],
   );
+});
+
+test("high-risk storefront incidents trigger configured email alerts", () => {
+  const result = shouldSendIncidentAlert({
+    settings: {
+      emailAlerts: true,
+      highRiskAlertsOnly: true,
+      alertEmail: "owner@example.com",
+    },
+    decision: "block",
+    threatLevel: "high",
+    recentEvents: [],
+  });
+
+  assert.deepEqual(result, {
+    send: true,
+    reason: "INCIDENT_ALERT_REQUIRED",
+  });
+});
+
+test("alert cooldown suppresses duplicate high-risk email bursts", () => {
+  const result = shouldSendIncidentAlert({
+    settings: {
+      emailAlerts: true,
+      highRiskAlertsOnly: true,
+      alertEmail: "owner@example.com",
+    },
+    decision: "block",
+    threatLevel: "high",
+    recentEvents: [
+      {
+        action: "blocked",
+        threatLevel: "high",
+        createdAt: new Date(),
+      },
+    ],
+  });
+
+  assert.equal(result.send, false);
+  assert.equal(result.reason, "ALERT_COOLDOWN");
 });

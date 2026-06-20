@@ -21,6 +21,16 @@ export async function action({ request }) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const settings = await saveAppSettings(session.shop, body);
-  return Response.json({ ok: true, settings });
+  try {
+    const settings = await saveAppSettings(session.shop, body);
+    return Response.json({ ok: true, settings });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to save settings",
+      },
+      { status: 400 },
+    );
+  }
 }
