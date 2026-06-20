@@ -10,7 +10,10 @@ import {
   sendIncidentEmail,
   shouldSendIncidentAlert,
 } from "./incident-alerts.server";
-import { resolveStorefrontDecision } from "./storefront-decision.server";
+import {
+  getStorefrontActionForLog,
+  resolveStorefrontDecision,
+} from "./storefront-decision.server";
 
 const CHALLENGE_TTL_MS = 15 * 60 * 1000;
 
@@ -301,12 +304,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     ...new Set([...(detection.reasonCodes || []), ...resolution.reasonCodes]),
   ];
 
-  const actionForLog =
-    decision === "block"
-      ? "blocked"
-      : decision === "challenge"
-        ? "challenged"
-        : "allowed";
+  const actionForLog = getStorefrontActionForLog(decision, reasonCodes);
 
   const event = await writeBotEvent({
     shop: normalizedShop,

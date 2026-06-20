@@ -61,3 +61,10 @@ export function resolveStorefrontDecision({
     reasonCodes: [],
   };
 }
+
+export function getStorefrontActionForLog(decision, reasonCodes = []) {
+  if (reasonCodes.includes("WHITELIST_MATCH")) return "whitelisted";
+  if (decision === "block") return "blocked";
+  if (decision === "challenge") return "challenged";
+  return "allowed";
+}

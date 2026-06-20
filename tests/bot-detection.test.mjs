@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { detectBotThreat } from "../app/lib/bot-detection.server.js";
-import { resolveStorefrontDecision } from "../app/lib/storefront-decision.server.js";
+import {
+  getStorefrontActionForLog,
+  resolveStorefrontDecision,
+} from "../app/lib/storefront-decision.server.js";
 import { partitionSecurityEvents } from "../app/lib/event-classification.js";
 import { shouldSendIncidentAlert } from "../app/lib/incident-alerts.server.js";
 
@@ -32,6 +35,21 @@ test("whitelisted IP is always allowed", () => {
   assert.equal(detection.actionTaken, "whitelisted");
   assert.equal(result.decision, "allow");
   assert.ok(detection.reasonCodes.includes("WHITELIST_MATCH"));
+});
+
+test("whitelist decisions remain identifiable for dashboard reporting", () => {
+  const detection = detectBotThreat({
+    ...baseRequest,
+    whitelistEntry: { active: true },
+  });
+
+  assert.equal(detection.actionTaken, "whitelisted");
+  assert.equal(detection.threatLevel, "low");
+  assert.equal(detection.riskScore, 0);
+  assert.equal(
+    getStorefrontActionForLog("allow", detection.reasonCodes),
+    "whitelisted",
+  );
 });
 
 test("blocklisted IP is blocked", () => {
