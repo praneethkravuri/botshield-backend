@@ -14,6 +14,8 @@ import {
   getStorefrontActionForLog,
   resolveStorefrontDecision,
 } from "./storefront-decision.server";
+import { lookupNetworkIntelligence } from "./network-intelligence.server";
+import { maybeSendDueWeeklyReport } from "./weekly-reports.server";
 
 const CHALLENGE_TTL_MS = 15 * 60 * 1000;
 
@@ -187,6 +189,7 @@ async function writeBotEvent({
   reasons,
   reasonCodes = [],
   source,
+  networkIntel,
 }) {
   return db.botEvent.create({
     data: {
@@ -202,6 +205,10 @@ async function writeBotEvent({
         ...reasons,
       ].join(" | "),
       source,
+      networkAsn: networkIntel?.asn ?? null,
+      networkOrg: networkIntel?.organization || null,
+      networkType: networkIntel?.networkType || null,
+      networkProvider: networkIntel?.provider || null,
     },
   });
 }
@@ -258,7 +265,7 @@ export async function evaluateStorefrontRequest(request, shop) {
   const receivedAt = new Date();
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const [recentEvents, settings, whitelistEntry, blockedEntry] =
+  const [recentEvents, settings, whitelistEntry, blockedEntry, networkLookup] =
     await Promise.all([
       db.botEvent.findMany({
         where: {
@@ -272,7 +279,9 @@ export async function evaluateStorefrontRequest(request, shop) {
       readSettings(normalizedShop),
       readWhitelist(normalizedShop, ipAddress),
       readBlocked(normalizedShop, ipAddress),
+      lookupNetworkIntelligence(ipAddress),
     ]);
+  const networkIntel = networkLookup.intel;
 
   const detection = detectBotThreat({
     ipAddress,
@@ -282,6 +291,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     settings,
     whitelistEntry,
     blockedEntry,
+    networkIntel,
   });
 
   const challengePassed = verifyChallengeToken(challengeToken, {
@@ -317,6 +327,7 @@ export async function evaluateStorefrontRequest(request, shop) {
     reasons: detection.reasons,
     reasonCodes,
     source,
+    networkIntel,
   });
 
   if (decision === "block" && !resolution.protectionPaused) {
@@ -373,12 +384,14 @@ export async function evaluateStorefrontRequest(request, shop) {
 
   if (alertDecision.send) {
     const alertTimestamp = new Date().toISOString();
+    const deliverySettings = {
+      lastAlertStatus: alertDelivery.status,
+      lastAlertAttemptAt: alertTimestamp,
+      lastAlertEventId: String(event.id),
+      ...(alertDelivery.sent ? { lastAlertSentAt: alertTimestamp } : {}),
+    };
     await db.$transaction(
-      Object.entries({
-        lastAlertStatus: alertDelivery.status,
-        lastAlertSentAt: alertTimestamp,
-        lastAlertEventId: String(event.id),
-      }).map(([key, value]) =>
+      Object.entries(deliverySettings).map(([key, value]) =>
         db.appSetting.upsert({
           where: { shop_key: { shop: normalizedShop, key } },
           create: { shop: normalizedShop, key, value },
@@ -393,6 +406,16 @@ export async function evaluateStorefrontRequest(request, shop) {
       `[botshield-alert] shop=${normalizedShop} event=${event.id} status=${alertDelivery.status} sent=${alertDelivery.sent}`,
     );
   }
+
+  maybeSendDueWeeklyReport(normalizedShop).catch((error) => {
+    console.error(
+      `[botshield-weekly-report] shop=${normalizedShop} status=error message=${error instanceof Error ? error.message : "unknown"}`,
+    );
+  });
+
+  console.log(
+    `[botshield-intel] shop=${normalizedShop} event=${event.id} status=${networkLookup.status} asn=${networkIntel?.asn || "unknown"} vpn=${Boolean(networkIntel?.isVpn || networkIntel?.isProxy)} datacenter=${Boolean(networkIntel?.isDatacenter)}`,
+  );
 
   return {
     decision,
@@ -412,6 +435,16 @@ export async function evaluateStorefrontRequest(request, shop) {
       status: alertDelivery.status,
     },
     referer,
+    networkIntelligence: networkIntel
+      ? {
+          asn: networkIntel.asn,
+          organization: networkIntel.organization,
+          type: networkIntel.networkType,
+          provider: networkIntel.provider,
+          vpn: Boolean(networkIntel.isVpn || networkIntel.isProxy),
+          datacenter: networkIntel.isDatacenter,
+        }
+      : null,
     challengeToken:
       decision === "challenge"
         ? createChallengeToken({

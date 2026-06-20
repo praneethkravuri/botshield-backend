@@ -39,6 +39,10 @@ export function serializeSecurityEvent(event) {
     reasonCodes: extractReasonCodes(event.reasonSummary),
     reasonSummary: stripReasonCodes(event.reasonSummary),
     source: event.source || "local-engine",
+    networkAsn: event.networkAsn || null,
+    networkOrg: event.networkOrg || "",
+    networkType: event.networkType || "",
+    networkProvider: event.networkProvider || "",
     createdAt: event.createdAt,
   };
 }
@@ -76,6 +80,9 @@ export function matchesIncidentFilters(event, filters = {}) {
     event.threatLevel,
     event.path,
     event.reasonSummary,
+    event.networkOrg,
+    event.networkType,
+    event.networkProvider,
     ...(event.reasonCodes || []),
   ].some((value) => String(value || "").toLowerCase().includes(search));
 }

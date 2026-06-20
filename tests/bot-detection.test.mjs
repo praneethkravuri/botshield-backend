@@ -9,6 +9,14 @@ import {
 import { partitionSecurityEvents } from "../app/lib/event-classification.js";
 import { shouldSendIncidentAlert } from "../app/lib/incident-alerts.server.js";
 import {
+  getNetworkIntelSignals,
+  normalizeNetworkIntel,
+} from "../app/lib/network-intelligence.js";
+import {
+  buildWeeklyReportFromEvents,
+  calculateSecurityScore,
+} from "../app/lib/security-posture.js";
+import {
   extractReasonCodes,
   isRecoverableBlockedIncident,
   maskIpAddress,
@@ -81,6 +89,25 @@ test("suspicious user agent raises risk and emits a reason code", () => {
 
   assert.ok(detection.riskScore >= 30);
   assert.ok(detection.reasonCodes.includes("SUSPICIOUS_USER_AGENT"));
+});
+
+test("VPN datacenter and ASN intelligence changes real request scoring", () => {
+  const networkIntel = normalizeNetworkIntel({
+    is_vpn: true,
+    is_datacenter: true,
+    asn: { asn: 64500, org: "Example Hosting", type: "hosting" },
+    datacenter: { datacenter: "Example Cloud" },
+  });
+  const signals = getNetworkIntelSignals(networkIntel);
+  const detection = detectBotThreat({ ...baseRequest, networkIntel });
+
+  assert.equal(networkIntel.asn, 64500);
+  assert.ok(signals.reasonCodes.includes("VPN_DETECTED"));
+  assert.ok(signals.reasonCodes.includes("DATACENTER_IP"));
+  assert.ok(signals.reasonCodes.includes("HOSTING_PROVIDER"));
+  assert.ok(signals.reasonCodes.includes("ASN_MATCH"));
+  assert.ok(detection.riskScore >= 50);
+  assert.ok(detection.reasonCodes.includes("ASN_MATCH"));
 });
 
 test("aggressiveness increases from Low to Medium to High to Strict", () => {
@@ -282,4 +309,57 @@ test("security events expose structured reason codes and masked IPs", () => {
     isRecoverableBlockedIncident({ ...event, decision: "allowed" }),
     false,
   );
+});
+
+test("weekly reports exclude simulations and summarize real decisions", () => {
+  const report = buildWeeklyReportFromEvents({
+    events: [
+      {
+        action: "allowed",
+        threatLevel: "low",
+        reasonSummary: "[NO_SIGNIFICANT_RISK] | Allowed",
+      },
+      {
+        action: "blocked",
+        threatLevel: "high",
+        reasonSummary: "[VPN_DETECTED] | [DATACENTER_IP] | Blocked",
+      },
+    ],
+    status: { protectionActive: true, themeEmbedDetected: true },
+    settings: {
+      emailAlerts: true,
+      alertEmail: "owner@example.com",
+      emailProvider: { configured: true },
+    },
+    start: new Date("2026-06-13T00:00:00Z"),
+    end: new Date("2026-06-20T00:00:00Z"),
+  });
+
+  assert.equal(report.requestsAnalyzed, 2);
+  assert.equal(report.allowed, 1);
+  assert.equal(report.blocked, 1);
+  assert.equal(report.topReasonCodes[0].count, 1);
+  assert.equal(report.alertsConfigured, true);
+});
+
+test("security score is based on verified setup and production evidence", () => {
+  const result = calculateSecurityScore({
+    status: {
+      appInstalled: true,
+      themeEmbedDetected: true,
+      lastStorefrontDecisionAt: "2026-06-20T00:00:00Z",
+      protectionActive: true,
+    },
+    settings: {
+      emailAlerts: true,
+      alertEmail: "owner@example.com",
+      emailProvider: { configured: true },
+    },
+    report: { requestsAnalyzed: 5 },
+    reportsEnabled: true,
+  });
+
+  assert.equal(result.score, 100);
+  assert.equal(result.grade, "Excellent");
+  assert.deepEqual(result.suggestions, []);
 });

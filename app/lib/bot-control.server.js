@@ -53,6 +53,11 @@ export async function getAppSettings(shop) {
             "lastAlertStatus",
             "lastAlertSentAt",
             "lastAlertEventId",
+            "lastAlertAttemptAt",
+            "weeklyReportsEnabled",
+            "lastWeeklyReportAt",
+            "lastWeeklyReportStatus",
+            "lastWeeklyReportAttemptAt",
           ],
         },
       },
@@ -71,6 +76,16 @@ export async function getAppSettings(shop) {
       lastAlertStatus: settingMap.get("lastAlertStatus") || null,
       lastAlertSentAt: settingMap.get("lastAlertSentAt") || null,
       lastAlertEventId: settingMap.get("lastAlertEventId") || null,
+      lastAlertAttemptAt: settingMap.get("lastAlertAttemptAt") || null,
+      weeklyReportsEnabled: parseDbBoolean(
+        settingMap.get("weeklyReportsEnabled"),
+        false,
+      ),
+      lastWeeklyReportAt: settingMap.get("lastWeeklyReportAt") || null,
+      lastWeeklyReportStatus:
+        settingMap.get("lastWeeklyReportStatus") || null,
+      lastWeeklyReportAttemptAt:
+        settingMap.get("lastWeeklyReportAttemptAt") || null,
       emailProvider: getEmailProviderStatus(),
     };
   } catch {
@@ -82,6 +97,11 @@ export async function getAppSettings(shop) {
       lastAlertStatus: null,
       lastAlertSentAt: null,
       lastAlertEventId: null,
+      lastAlertAttemptAt: null,
+      weeklyReportsEnabled: false,
+      lastWeeklyReportAt: null,
+      lastWeeklyReportStatus: null,
+      lastWeeklyReportAttemptAt: null,
       emailProvider: getEmailProviderStatus(),
     };
   }
@@ -107,6 +127,10 @@ export async function saveAppSettings(shop, input = {}) {
     true,
   );
   const alertEmail = String(input.alertEmail || "").trim();
+  const weeklyReportsEnabled = toBooleanString(
+    input.weeklyReportsEnabled,
+    false,
+  );
 
   if (
     emailAlerts === "true" &&
@@ -124,6 +148,7 @@ export async function saveAppSettings(shop, input = {}) {
       emailAlerts,
       highRiskAlertsOnly,
       alertEmail,
+      weeklyReportsEnabled,
     }).map(([key, value]) =>
       db.appSetting.upsert({
         where: { shop_key: { shop: normalizedShop, key } },

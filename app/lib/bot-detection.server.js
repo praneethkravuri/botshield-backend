@@ -1,4 +1,5 @@
 import { isbot } from "isbot";
+import { getNetworkIntelSignals } from "./network-intelligence.js";
 
 const DEFAULT_SETTINGS = {
   autoBlock: true,
@@ -64,7 +65,13 @@ export function buildDetectionSettings(settingRows = []) {
   };
 }
 
-function scoreRequestSignals({ ipAddress, userAgent, pathVisited, recentEvents }) {
+function scoreRequestSignals({
+  ipAddress,
+  userAgent,
+  pathVisited,
+  recentEvents,
+  networkIntel,
+}) {
   let score = 0;
   const reasons = [];
   const reasonCodes = [];
@@ -137,6 +144,11 @@ function scoreRequestSignals({ ipAddress, userAgent, pathVisited, recentEvents }
     reasonCodes.push("MISSING_IP");
   }
 
+  const networkSignals = getNetworkIntelSignals(networkIntel);
+  score += networkSignals.score;
+  reasons.push(...networkSignals.reasons);
+  reasonCodes.push(...networkSignals.reasonCodes);
+
   return {
     score: Math.min(score, 100),
     reasons,
@@ -152,6 +164,7 @@ export function detectBotThreat({
   settings = DEFAULT_SETTINGS,
   whitelistEntry = null,
   blockedEntry = null,
+  networkIntel = null,
 }) {
   const normalizedIp = normalizeIpAddress(ipAddress);
   const normalizedPath = safeString(pathVisited, "/");
@@ -190,6 +203,7 @@ export function detectBotThreat({
     userAgent: normalizedUserAgent,
     pathVisited: normalizedPath,
     recentEvents,
+    networkIntel,
   });
 
   let threatLevel = "low";

@@ -29,6 +29,8 @@ services:
         sync: false
       - key: ALERT_FROM_EMAIL
         sync: false
+      - key: IPAPI_IS_KEY
+        sync: false
 
 databases:
   - name: bot-shield-db

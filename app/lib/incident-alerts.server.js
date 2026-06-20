@@ -6,6 +6,12 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 }
 
+function isValidSender(value) {
+  const normalized = String(value || "").trim();
+  const bracketed = normalized.match(/<([^>]+)>$/);
+  return isValidEmail(bracketed ? bracketed[1] : normalized);
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -17,7 +23,7 @@ function escapeHtml(value) {
 
 export function getEmailProviderStatus() {
   const apiKeyConfigured = Boolean(process.env.RESEND_API_KEY?.trim());
-  const fromEmailConfigured = isValidEmail(process.env.ALERT_FROM_EMAIL);
+  const fromEmailConfigured = isValidSender(process.env.ALERT_FROM_EMAIL);
 
   return {
     provider: "resend",
@@ -105,6 +111,14 @@ function buildIncidentHtml({
 }
 
 export async function sendIncidentEmail(input) {
+  return sendEmail({
+    to: input.alertEmail,
+    subject: `[BotShield] ${input.decision.toUpperCase()} incident on ${input.shop}`,
+    html: buildIncidentHtml(input),
+  });
+}
+
+async function sendEmail({ to, subject, html }) {
   const providerStatus = getEmailProviderStatus();
   if (!providerStatus.configured) {
     return { sent: false, status: "provider_not_configured" };
@@ -123,9 +137,9 @@ export async function sendIncidentEmail(input) {
       },
       body: JSON.stringify({
         from: process.env.ALERT_FROM_EMAIL.trim(),
-        to: [input.alertEmail.trim()],
-        subject: `[BotShield] ${input.decision.toUpperCase()} incident on ${input.shop}`,
-        html: buildIncidentHtml(input),
+        to: [to.trim()],
+        subject,
+        html,
       }),
     });
 
@@ -153,6 +167,46 @@ export async function sendIncidentEmail(input) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function sendWeeklySecurityReportEmail({
+  shop,
+  alertEmail,
+  report,
+}) {
+  const threatRows = report.topReasonCodes.length
+    ? report.topReasonCodes
+        .map(
+          (item) =>
+            `<li><strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.count)}</li>`,
+        )
+        .join("")
+    : "<li>No threat reason codes recorded this week.</li>";
+  const html = `<!doctype html>
+<html>
+  <body style="font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;padding:24px">
+    <div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px">
+      <h1 style="margin-top:0">BotShield weekly security report</h1>
+      <p>Real storefront activity for <strong>${escapeHtml(shop)}</strong>.</p>
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:8px 0;color:#64748b">Requests analyzed</td><td><strong>${report.requestsAnalyzed}</strong></td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Allowed</td><td>${report.allowed}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Challenged</td><td>${report.challenged}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Blocked</td><td>${report.blocked}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Protection</td><td>${report.protectionActive ? "Active" : "Needs attention"}</td></tr>
+      </table>
+      <h2>Top reason codes</h2>
+      <ul>${threatRows}</ul>
+      <p style="margin-bottom:0;color:#64748b;font-size:13px">This report uses real storefront-proxy events only. Simulations are excluded.</p>
+    </div>
+  </body>
+</html>`;
+
+  return sendEmail({
+    to: alertEmail,
+    subject: `[BotShield] Weekly security report for ${shop}`,
+    html,
+  });
 }
 
 export async function sendTestIncidentEmail({ shop, alertEmail }) {

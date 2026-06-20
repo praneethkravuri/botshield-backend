@@ -18,10 +18,34 @@ model BotEvent {
   riskScore     Int      @default(0)
   reasonSummary String?
   source        String   @default("local-engine")
+  networkAsn    Int?
+  networkOrg    String?
+  networkType   String?
+  networkProvider String?
   createdAt     DateTime @default(now())
 
   @@index([shop, createdAt])
   @@index([shop, ipAddress, createdAt])
+}
+
+model NetworkIntel {
+  id            Int      @id @default(autoincrement())
+  ipAddress     String   @unique
+  asn           Int?
+  organization  String?
+  networkType   String?
+  provider      String?
+  isVpn         Boolean  @default(false)
+  isProxy       Boolean  @default(false)
+  isDatacenter  Boolean  @default(false)
+  isTor         Boolean  @default(false)
+  isAbuser      Boolean  @default(false)
+  rawJson       String?
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([expiresAt])
 }
 
 model BlockedIP {

@@ -986,6 +986,17 @@ function SecurityPage({
                 <div style={{ color: theme.muted, fontSize: "13px", marginTop: "6px" }}>
                   Path: {incident.path}
                 </div>
+                {incident.networkAsn || incident.networkOrg ? (
+                  <div style={{ color: theme.muted, fontSize: "12px", marginTop: "6px" }}>
+                    Network: {incident.networkAsn ? `AS${incident.networkAsn}` : "ASN unknown"}
+                    {incident.networkOrg ? ` · ${incident.networkOrg}` : ""}
+                    {incident.networkType ? ` · ${incident.networkType}` : ""}
+                    {incident.networkProvider &&
+                    incident.networkProvider !== incident.networkOrg
+                      ? ` · ${incident.networkProvider}`
+                      : ""}
+                  </div>
+                ) : null}
                 {incident.reasonCodes?.length ? (
                   <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "10px" }}>
                     {incident.reasonCodes.map((code) => (
@@ -1064,6 +1075,11 @@ function SettingsPage({
   handleSendTestAlert,
   lastAlertStatus,
   lastAlertSentAt,
+  weeklyReportsEnabled,
+  setWeeklyReportsEnabled,
+  handleSendWeeklyReport,
+  lastWeeklyReportStatus,
+  lastWeeklyReportAt,
 }) {
   return (
     <div style={{ display: "grid", gap: "20px" }}>
@@ -1136,6 +1152,32 @@ function SettingsPage({
               Last delivery: {lastAlertStatus || "No delivery attempted"}
               {lastAlertSentAt
                 ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
+                : ""}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ color: theme.text }}>Weekly Security Report</span>
+              <Toggle
+                checked={weeklyReportsEnabled}
+                onClick={() => setWeeklyReportsEnabled(!weeklyReportsEnabled)}
+                theme={theme}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleSendWeeklyReport}
+              disabled={!weeklyReportsEnabled || !emailProviderConfigured}
+              style={{
+                ...getPrimaryButtonStyle(),
+                opacity: !weeklyReportsEnabled || !emailProviderConfigured ? 0.55 : 1,
+                cursor: !weeklyReportsEnabled || !emailProviderConfigured ? "not-allowed" : "pointer",
+              }}
+            >
+              Send Weekly Report Now
+            </button>
+            <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
+              Last weekly report: {lastWeeklyReportStatus || "No report attempted"}
+              {lastWeeklyReportAt
+                ? ` · ${new Date(lastWeeklyReportAt).toLocaleString()}`
                 : ""}
             </div>
           </div>
@@ -1227,6 +1269,10 @@ export default function Index() {
   const [emailProviderConfigured, setEmailProviderConfigured] = useState(false);
   const [lastAlertStatus, setLastAlertStatus] = useState(null);
   const [lastAlertSentAt, setLastAlertSentAt] = useState(null);
+  const [weeklyReportsEnabled, setWeeklyReportsEnabled] = useState(false);
+  const [lastWeeklyReportStatus, setLastWeeklyReportStatus] = useState(null);
+  const [lastWeeklyReportAt, setLastWeeklyReportAt] = useState(null);
+  const [securityPosture, setSecurityPosture] = useState(null);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
     real: 0,
@@ -1702,6 +1748,9 @@ export default function Index() {
       setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
       setLastAlertStatus(settings.lastAlertStatus || null);
       setLastAlertSentAt(settings.lastAlertSentAt || null);
+      setWeeklyReportsEnabled(Boolean(settings.weeklyReportsEnabled));
+      setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
+      setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -1718,6 +1767,17 @@ export default function Index() {
       setProtectionOn(Boolean(status.protectionActive));
     } catch (err) {
       console.error("Failed to load protection status", err);
+    }
+  };
+
+  const loadSecurityPosture = async () => {
+    try {
+      const response = await fetch("/api/security-posture");
+      if (!response.ok) return;
+      const data = await response.json();
+      setSecurityPosture(data.posture || null);
+    } catch (error) {
+      console.error("Failed to load security posture", error);
     }
   };
 
@@ -1804,6 +1864,7 @@ export default function Index() {
       loadWhitelist(),
       loadProtectionStatus(),
       loadIncidents(),
+      loadSecurityPosture(),
     ]);
   };
 
@@ -1851,6 +1912,7 @@ export default function Index() {
       emailAlerts,
       highRiskAlertsOnly,
       alertEmail,
+      weeklyReportsEnabled,
       ...overrides,
     };
 
@@ -1882,6 +1944,9 @@ export default function Index() {
     setEmailProviderConfigured(Boolean(settings.emailProvider?.configured));
     setLastAlertStatus(settings.lastAlertStatus || null);
     setLastAlertSentAt(settings.lastAlertSentAt || null);
+    setWeeklyReportsEnabled(Boolean(settings.weeklyReportsEnabled));
+    setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
+    setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
 
     await refreshBackendState();
 
@@ -2481,6 +2546,7 @@ export default function Index() {
           emailAlerts,
           highRiskAlertsOnly,
           alertEmail,
+          weeklyReportsEnabled,
         },
         {
           message: `Settings saved. Alerts are ${emailAlerts ? "enabled" : "disabled"} and protection is running in ${strictMode ? "Strict" : blockLevel} mode.`,
@@ -2503,6 +2569,25 @@ export default function Index() {
       triggerAlert(`Test email sent to ${alertEmail}.`);
     } catch (error) {
       triggerAlert(error instanceof Error ? error.message : "Test email failed.");
+    }
+  };
+
+  const handleSendWeeklyReport = async () => {
+    try {
+      const response = await fetch("/api/weekly-report", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(
+          data.delivery?.error ||
+            `Weekly report not sent: ${data.delivery?.status || "delivery failed"}`,
+        );
+      }
+      await Promise.all([loadSettings(), loadSecurityPosture()]);
+      triggerAlert(`Weekly report sent to ${alertEmail}.`);
+    } catch (error) {
+      triggerAlert(
+        error instanceof Error ? error.message : "Weekly report failed.",
+      );
     }
   };
 
@@ -3527,6 +3612,42 @@ export default function Index() {
 
           {page === "dashboard" && (
             <>
+              <div style={{ ...cardStyle, marginBottom: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "center", flexWrap: "wrap" }}>
+                  <div>
+                    <p style={statLabelStyle}>Security Readiness</p>
+                    <h3 style={{ margin: "8px 0 0", color: theme.text, fontSize: "28px" }}>
+                      {securityPosture ? `${securityPosture.score.score}/100` : "Loading"}
+                    </h3>
+                    <div style={{ color: theme.muted, marginTop: "6px" }}>
+                      {securityPosture?.score?.grade || "Calculating from production status"}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", maxWidth: "720px" }}>
+                    {(securityPosture?.checklist || []).map((item) => (
+                      <span
+                        key={item.key}
+                        style={{
+                          border: `1px solid ${item.complete ? theme.accentSoft : theme.border}`,
+                          background: item.complete ? theme.successBg : theme.surfaceAlt,
+                          color: item.complete ? theme.successText : theme.muted,
+                          padding: "7px 10px",
+                          borderRadius: "999px",
+                          fontSize: "12px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {item.complete ? "✓" : "○"} {item.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {securityPosture?.score?.suggestions?.length ? (
+                  <div style={{ color: theme.muted, fontSize: "12px", marginTop: "12px" }}>
+                    Next improvement: {securityPosture.score.suggestions[0]}
+                  </div>
+                ) : null}
+              </div>
               <div style={{ ...monoLabelStyle, marginBottom: "12px" }}>Executive Brief</div>
 
               <div
@@ -4690,7 +4811,7 @@ export default function Index() {
                     Weekly Report
                   </h3>
                   <div style={{ marginTop: "10px", color: theme.muted, fontSize: "13px", lineHeight: 1.6 }}>
-                    Weekly movement across scan volume and enforcement intensity.
+                    Real storefront activity from the last seven days. Simulations are excluded.
                   </div>
                   <div style={{ marginTop: "18px", display: "grid", gap: "12px" }}>
                     <button
@@ -4706,8 +4827,8 @@ export default function Index() {
                         alignItems: "center",
                       })}
                     >
-                      <span style={{ color: theme.muted }}>This week scans</span>
-                      <strong style={{ color: theme.text }}>{currentWeekScans}</strong>
+                      <span style={{ color: theme.muted }}>Requests analyzed</span>
+                      <strong style={{ color: theme.text }}>{securityPosture?.report?.requestsAnalyzed ?? 0}</strong>
                     </button>
                     <button
                       type="button"
@@ -4722,8 +4843,10 @@ export default function Index() {
                         alignItems: "center",
                       })}
                     >
-                      <span style={{ color: theme.muted }}>Last week scans</span>
-                      <strong style={{ color: theme.text }}>{previousWeekScans}</strong>
+                      <span style={{ color: theme.muted }}>Allowed / challenged</span>
+                      <strong style={{ color: theme.text }}>
+                        {securityPosture?.report?.allowed ?? 0} / {securityPosture?.report?.challenged ?? 0}
+                      </strong>
                     </button>
                     <button
                       type="button"
@@ -4731,17 +4854,16 @@ export default function Index() {
                       style={interactiveCardButtonStyle({
                         padding: "14px 16px",
                         borderRadius: "18px",
-                        background: weeklyDelta >= 0 ? theme.dangerBg : theme.successBg,
+                        background: (securityPosture?.report?.blocked || 0) > 0 ? theme.dangerBg : theme.successBg,
                         border: `1px solid ${theme.border}`,
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
                       })}
                     >
-                      <span style={{ color: weeklyDelta >= 0 ? theme.dangerText : theme.successText }}>Blocked delta</span>
-                      <strong style={{ color: weeklyDelta >= 0 ? theme.dangerText : theme.successText }}>
-                        {weeklyDelta >= 0 ? "+" : ""}
-                        {weeklyDelta}
+                      <span style={{ color: (securityPosture?.report?.blocked || 0) > 0 ? theme.dangerText : theme.successText }}>Blocked</span>
+                      <strong style={{ color: (securityPosture?.report?.blocked || 0) > 0 ? theme.dangerText : theme.successText }}>
+                        {securityPosture?.report?.blocked ?? 0}
                       </strong>
                     </button>
                   </div>
@@ -5784,6 +5906,11 @@ export default function Index() {
               handleSendTestAlert={handleSendTestAlert}
               lastAlertStatus={lastAlertStatus}
               lastAlertSentAt={lastAlertSentAt}
+              weeklyReportsEnabled={weeklyReportsEnabled}
+              setWeeklyReportsEnabled={setWeeklyReportsEnabled}
+              handleSendWeeklyReport={handleSendWeeklyReport}
+              lastWeeklyReportStatus={lastWeeklyReportStatus}
+              lastWeeklyReportAt={lastWeeklyReportAt}
             />
           )}
         </div>
