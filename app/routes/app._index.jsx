@@ -1760,7 +1760,7 @@ export default function Index() {
         risk: filters.risk,
         search: filters.search,
       });
-      const response = await fetch(`/api/incidents?${params.toString()}`);
+      const response = await fetch(`/api/incident-list?${params.toString()}`);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(data.error || "Failed to load incidents.");
@@ -2508,7 +2508,7 @@ export default function Index() {
 
   const handleIncidentRecovery = async (incident, action) => {
     try {
-      const response = await fetch("/api/incidents/recover", {
+      const response = await fetch("/api/incident-recovery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId: incident.id, action }),
