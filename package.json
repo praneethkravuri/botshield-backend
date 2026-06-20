@@ -25,7 +25,7 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=20.19 <22 || >=22.12 <23"
+    "node": ">=22.12 <25"
   },
   "dependencies": {
     "@mjackson/node-fetch-server": "^0.2.0",
