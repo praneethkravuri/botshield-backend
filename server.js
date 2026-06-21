@@ -103,6 +103,12 @@ app.get("/health/config", (_req, res) => {
     ),
     shopifyPublicPlanHandle:
       process.env.SHOPIFY_PUBLIC_PLAN_HANDLE?.trim() || "basic",
+    billingPlanName:
+      process.env.BILLING_PLAN_NAME?.trim() || "BotShield Basic",
+    billingMonthlyPrice: Number(
+      process.env.BILLING_MONTHLY_PRICE || 14.99,
+    ),
+    billingTrialDays: Number(process.env.BILLING_TRIAL_DAYS || 7),
     shopifyPartnerBillingConfigured: Boolean(
       process.env.SHOPIFY_PARTNER_ORG_ID?.trim() &&
         process.env.SHOPIFY_PARTNER_ACCESS_TOKEN?.trim() &&
