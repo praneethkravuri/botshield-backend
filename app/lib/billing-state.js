@@ -85,8 +85,9 @@ export function deriveBillingState({
   lifecycleEvents = [],
   checkedAt = new Date(),
   requestedPlanHandle = "",
+  configuredPublicPlanHandle = "basic",
   configuredTestPlanHandle = "",
-  configuredPlanName = "BotShield Pro",
+  configuredPlanName = "BotShield Basic",
   previousState = null,
 } = {}) {
   const now = checkedAt instanceof Date ? checkedAt : new Date(checkedAt);
@@ -117,7 +118,13 @@ export function deriveBillingState({
   const items = activeSubscription.items || [];
   const primaryItem = items[0] || null;
   const itemHandle = primaryItem?.handle || "";
-  const planHandle = requestedPlanHandle || itemHandle;
+  const planHandle = itemHandle || requestedPlanHandle;
+  const knownPublicPlan =
+    Boolean(configuredPublicPlanHandle) &&
+    planHandle === configuredPublicPlanHandle;
+  const knownTestPlan =
+    Boolean(configuredTestPlanHandle) &&
+    planHandle === configuredTestPlanHandle;
   const trialEndsAt = asDate(activeSubscription.trialEndsAt);
   const inTrial = Boolean(
     trialEndsAt && trialEndsAt.getTime() > now.getTime(),
@@ -141,20 +148,32 @@ export function deriveBillingState({
   const canceled =
     latestEvent?.eventType === "SUBSCRIPTION_CANCELED" ||
     latestState === "CANCELED";
-  const active = !expired && !frozen && !canceled;
   const zeroDollarPlan = items.some(
     (item) => getFlatRateAmount(item) === 0,
   );
   const test =
     zeroDollarPlan ||
-    Boolean(
-      configuredTestPlanHandle &&
-        planHandle === configuredTestPlanHandle,
-    );
+    knownTestPlan;
+  const knownPlan = knownPublicPlan || knownTestPlan;
+  const handleMismatch =
+    Boolean(requestedPlanHandle && itemHandle) &&
+    requestedPlanHandle !== itemHandle;
+  const active =
+    !expired &&
+    !frozen &&
+    !canceled &&
+    knownPlan &&
+    !handleMismatch;
 
   let status = "active";
   if (!active) {
-    status = frozen ? "frozen" : canceled ? "canceled" : "expired";
+    status = frozen
+      ? "frozen"
+      : canceled
+        ? "canceled"
+        : expired
+          ? "expired"
+          : "invalid_plan";
   } else if (inTrial) {
     status = "trial";
   } else if (cancelAtEndOfCycle) {
@@ -181,6 +200,10 @@ export function deriveBillingState({
     latestEventType: latestEvent?.eventType || null,
     latestEventAt: latestEvent?.occurredAt || null,
     checkedAt: now.toISOString(),
-    error: null,
+    error: !knownPlan
+      ? `Unknown Shopify plan handle: ${planHandle || "missing"}`
+      : handleMismatch
+        ? "Shopify redirect plan handle did not match the active Partner API subscription."
+        : null,
   };
 }

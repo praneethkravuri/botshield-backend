@@ -21,13 +21,13 @@ function subscription(overrides = {}) {
     },
     items: [
       {
-        handle: "botshield-pro",
-        description: "BotShield Pro",
+          handle: "basic",
+          description: "BotShield Basic",
         price: {
           __typename: "FlatRatePrice",
           active: true,
           currency: "USD",
-          amount: "30.00",
+          amount: "14.99",
         },
       },
     ],
@@ -44,7 +44,7 @@ test("active Partner API subscription enables billing", () => {
   assert.equal(state.active, true);
   assert.equal(state.verified, true);
   assert.equal(state.status, "active");
-  assert.equal(state.planHandle, "botshield-pro");
+  assert.equal(state.planHandle, "basic");
   assert.equal(state.subscriptionId, "gid://shopify/AppSubscription/123");
 });
 
@@ -86,8 +86,8 @@ test("canceled subscription is inactive", () => {
     checkedAt: now,
     previousState: {
       active: true,
-      planHandle: "botshield-pro",
-      planName: "BotShield Pro",
+      planHandle: "basic",
+      planName: "BotShield Basic",
       currentPeriodEnd: "2026-07-20T00:00:00.000Z",
     },
   });
@@ -186,4 +186,44 @@ test("scheduled cancellation stays active only through its billing cycle", () =>
   assert.equal(state.active, true);
   assert.equal(state.cancelAtEndOfCycle, true);
   assert.equal(state.status, "canceling");
+});
+
+test("unknown active plan handle is rejected safely", () => {
+  const state = deriveBillingState({
+    activeSubscription: subscription({
+      items: [
+        {
+          handle: "unknown-plan",
+          description: "Unknown Plan",
+          price: {
+            __typename: "FlatRatePrice",
+            active: true,
+            currency: "USD",
+            amount: "14.99",
+          },
+        },
+      ],
+    }),
+    checkedAt: now,
+    configuredPublicPlanHandle: "basic",
+    configuredTestPlanHandle: "botshield-private-test",
+  });
+
+  assert.equal(state.active, false);
+  assert.equal(state.status, "invalid_plan");
+  assert.match(state.error, /unknown-plan/);
+});
+
+test("redirect handle cannot override authoritative Partner API handle", () => {
+  const state = deriveBillingState({
+    activeSubscription: subscription(),
+    checkedAt: now,
+    requestedPlanHandle: "unknown-plan",
+    configuredPublicPlanHandle: "basic",
+  });
+
+  assert.equal(state.planHandle, "basic");
+  assert.equal(state.active, false);
+  assert.equal(state.status, "invalid_plan");
+  assert.match(state.error, /did not match/);
 });

@@ -49,7 +49,7 @@ bypass JavaScript might not be inspected.
 
 ## Pricing
 
-BotShield Pro: $30 USD per month after a 7-day free trial.
+BotShield Basic: $14.99 USD per month after a 7-day free trial.
 
 The plan includes storefront monitoring, automated responses, incident history,
 network intelligence, email alerts, weekly reports, and recovery controls.
@@ -66,4 +66,3 @@ Support email: configure and publish the same real address through
 - Privacy: `https://botshield-backend.onrender.com/privacy`
 - Terms: `https://botshield-backend.onrender.com/terms`
 - Support: `https://botshield-backend.onrender.com/support`
-

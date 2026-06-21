@@ -41,8 +41,8 @@ session or recovery path.
 ## Billing verification
 
 Use Shopify App Pricing's private $0 test plan during review. Configure its
-welcome link as `/app/billing-return`. The public plan should be BotShield Pro,
-$30 USD monthly, with a 7-day free trial.
+welcome link as `/app/billing-return`. The public plan should be BotShield
+Basic, $14.99 USD monthly, with a 7-day free trial and plan handle `basic`.
 
 ## Email verification
 
@@ -58,4 +58,3 @@ $30 USD monthly, with a 7-day free trial.
 BotShield uses a Shopify theme app embed and storefront JavaScript. It is not an
 edge WAF or server-side interceptor. Clients that bypass JavaScript may not be
 inspected.
-

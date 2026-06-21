@@ -101,6 +101,8 @@ app.get("/health/config", (_req, res) => {
     shopifyAppHandleConfigured: Boolean(
       process.env.SHOPIFY_APP_HANDLE?.trim(),
     ),
+    shopifyPublicPlanHandle:
+      process.env.SHOPIFY_PUBLIC_PLAN_HANDLE?.trim() || "basic",
     shopifyPartnerBillingConfigured: Boolean(
       process.env.SHOPIFY_PARTNER_ORG_ID?.trim() &&
         process.env.SHOPIFY_PARTNER_ACCESS_TOKEN?.trim() &&

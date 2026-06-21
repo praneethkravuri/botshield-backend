@@ -51,13 +51,16 @@ export function getBillingConfiguration(shop) {
     partnerAccessToken,
     partnerAppId,
     partnerApiVersion,
+    publicPlanHandle:
+      process.env.SHOPIFY_PUBLIC_PLAN_HANDLE?.trim() || "basic",
     testPlanHandle:
       process.env.SHOPIFY_TEST_PLAN_HANDLE?.trim() || "",
     enforcementEnabled: parseBoolean(
       process.env.BILLING_ENFORCEMENT_ENABLED,
     ),
-    planName: process.env.BILLING_PLAN_NAME?.trim() || "BotShield Pro",
-    monthlyPrice: Number(process.env.BILLING_MONTHLY_PRICE || 30),
+    planName:
+      process.env.BILLING_PLAN_NAME?.trim() || "BotShield Basic",
+    monthlyPrice: Number(process.env.BILLING_MONTHLY_PRICE || 14.99),
     trialDays: Number(process.env.BILLING_TRIAL_DAYS || 7),
     pricingUrl:
       appHandle && storeHandle
@@ -318,6 +321,7 @@ export async function refreshBillingStatus({
         data.events?.edges?.map((edge) => edge.node) || [],
       checkedAt,
       requestedPlanHandle: planHandle,
+      configuredPublicPlanHandle: configuration.publicPlanHandle,
       configuredTestPlanHandle: configuration.testPlanHandle,
       configuredPlanName: configuration.planName,
       previousState,

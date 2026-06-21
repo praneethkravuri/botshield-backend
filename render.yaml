@@ -34,6 +34,8 @@ services:
         sync: false
       - key: SHOPIFY_APP_HANDLE
         sync: false
+      - key: SHOPIFY_PUBLIC_PLAN_HANDLE
+        value: basic
       - key: SHOPIFY_PARTNER_ORG_ID
         sync: false
       - key: SHOPIFY_PARTNER_ACCESS_TOKEN
@@ -47,9 +49,9 @@ services:
       - key: BILLING_REFRESH_INTERVAL_MS
         value: "900000"
       - key: BILLING_PLAN_NAME
-        value: BotShield Pro
+        value: BotShield Basic
       - key: BILLING_MONTHLY_PRICE
-        value: "30"
+        value: "14.99"
       - key: BILLING_TRIAL_DAYS
         value: "7"
       - key: BILLING_ENFORCEMENT_ENABLED

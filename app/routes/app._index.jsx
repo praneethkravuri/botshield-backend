@@ -3162,7 +3162,9 @@ export default function Index() {
       detail: billingStatus?.active
         ? billingStatus.subscription?.name || "paid Shopify plan"
         : billingStatus?.configured
-          ? "$30/month plan awaiting approval"
+          ? `${billingStatus.planName || "BotShield Basic"} at $${Number(
+              billingStatus.monthlyPrice || 14.99,
+            ).toFixed(2)}/month awaiting approval`
           : "configure Shopify App Pricing",
       actionKey: "billing",
     },
@@ -3734,7 +3736,12 @@ export default function Index() {
                   <div>1. Enable and save the BotShield theme app embed.</div>
                   <div>2. Visit the storefront and confirm a real event appears.</div>
                   <div>3. Configure merchant email, then enable alerts and weekly reports.</div>
-                  <div>4. Approve the Shopify $30/month plan when billing is enabled.</div>
+                  <div>
+                    4. Approve the Shopify{" "}
+                    {billingStatus?.planName || "BotShield Basic"} plan at $
+                    {Number(billingStatus?.monthlyPrice || 14.99).toFixed(2)}
+                    /month when billing is enabled.
+                  </div>
                   <div>5. Use Diagnostic Scan only for testing; simulations never change real enforcement.</div>
                   <div>6. Recover false positives from Incident Timeline using Unblock or Whitelist.</div>
                 </div>
