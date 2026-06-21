@@ -34,6 +34,18 @@ services:
         sync: false
       - key: SHOPIFY_APP_HANDLE
         sync: false
+      - key: SHOPIFY_PARTNER_ORG_ID
+        sync: false
+      - key: SHOPIFY_PARTNER_ACCESS_TOKEN
+        sync: false
+      - key: SHOPIFY_PARTNER_APP_ID
+        sync: false
+      - key: SHOPIFY_PARTNER_API_VERSION
+        value: "2026-07"
+      - key: SHOPIFY_TEST_PLAN_HANDLE
+        sync: false
+      - key: BILLING_REFRESH_INTERVAL_MS
+        value: "900000"
       - key: BILLING_PLAN_NAME
         value: BotShield Pro
       - key: BILLING_MONTHLY_PRICE

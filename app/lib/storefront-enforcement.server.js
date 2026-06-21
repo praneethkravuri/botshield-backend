@@ -5,6 +5,7 @@ import {
   detectBotThreat,
   normalizeIpAddress,
 } from "./bot-detection.server";
+import { refreshBillingStatusIfStale } from "./billing.server";
 import { recordStorefrontHeartbeat } from "./bot-control.server";
 import {
   sendIncidentEmail,
@@ -58,6 +59,7 @@ export function extractClientIp(request) {
 
 async function readSettings(shop) {
   try {
+    await refreshBillingStatusIfStale(shop);
     const rows = await db.appSetting.findMany({
       where: {
         shop,

@@ -101,6 +101,11 @@ app.get("/health/config", (_req, res) => {
     shopifyAppHandleConfigured: Boolean(
       process.env.SHOPIFY_APP_HANDLE?.trim(),
     ),
+    shopifyPartnerBillingConfigured: Boolean(
+      process.env.SHOPIFY_PARTNER_ORG_ID?.trim() &&
+        process.env.SHOPIFY_PARTNER_ACCESS_TOKEN?.trim() &&
+        process.env.SHOPIFY_PARTNER_APP_ID?.trim(),
+    ),
     supportEmailConfigured: Boolean(process.env.VITE_SUPPORT_EMAIL?.trim()),
     billingEnforcementEnabled:
       process.env.BILLING_ENFORCEMENT_ENABLED === "true",
