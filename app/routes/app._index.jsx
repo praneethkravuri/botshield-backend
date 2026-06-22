@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { partitionSecurityEvents } from "../lib/event-classification";
+import BotShieldPolarisExperience from "../components/BotShieldPolarisExperience";
+import { safeFetchJson } from "../lib/safe-fetch";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function formatDateForPolaris(value) {
+  if (!value) return "not yet";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "not yet" : date.toLocaleString();
+}
 
 function getWeekStart(dateInput) {
   const date = new Date(dateInput);
@@ -2818,6 +2828,21 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    const requestedView = new URLSearchParams(window.location.search).get("view");
+    const pageMap = {
+      dashboard: "dashboard",
+      incidents: "incidents",
+      detection: "security",
+      policy: "settings",
+      billing: "billing",
+      setup: "setup",
+    };
+    if (requestedView && pageMap[requestedView]) {
+      setPage(pageMap[requestedView]);
+    }
+  }, []);
+
+  useEffect(() => {
     const dataToSave = {
       page,
       threatLevel,
@@ -3445,6 +3470,227 @@ export default function Index() {
     setChatInput("");
     setChatOpen(true);
   };
+
+  const polarisReadinessItems = [
+    {
+      label: "Shopify app installed",
+      complete: Boolean(protectionStatus.appInstalled),
+      detail: "The embedded admin app is authenticated.",
+    },
+    {
+      label: "Theme app embed enabled",
+      complete: Boolean(protectionStatus.themeEmbedDetected),
+      detail: protectionStatus.themeEmbedDetected
+        ? "The storefront connection is active."
+        : "Enable BotShield in the Shopify theme editor.",
+    },
+    {
+      label: "Storefront events received",
+      complete: storefrontScans.length > 0,
+      detail:
+        storefrontScans.length > 0
+          ? `${storefrontScans.length} real storefront events recorded.`
+          : "Visit the storefront after enabling the theme embed.",
+    },
+    {
+      label: "Protection active",
+      complete: Boolean(protectionReady),
+      detail: protectionPaused
+        ? "Protection is paused; events are still recorded."
+        : autoBlock
+          ? "Automated response is enabled."
+          : "Monitoring is active without automated blocking.",
+    },
+    {
+      label: "Email provider connected",
+      complete: Boolean(emailProviderConfigured),
+      detail: emailProviderConfigured
+        ? "Resend is available for alerts and reports."
+        : "Configure RESEND_API_KEY and verify botshieldapp.com.",
+    },
+    {
+      label: "Alert email configured",
+      complete: EMAIL_PATTERN.test(alertEmail),
+      detail: alertEmail || "Add the merchant alert recipient.",
+    },
+    {
+      label: "Test email delivered",
+      complete: lastAlertStatus === "sent",
+      detail:
+        lastAlertStatus === "sent"
+          ? `Last sent ${formatDateForPolaris(lastAlertSentAt)}.`
+          : "Send a test email after configuring alerts.",
+    },
+    {
+      label: "Billing verified",
+      complete: Boolean(billingStatus?.active),
+      detail: billingStatus?.active
+        ? billingStatus.subscription?.name || "Shopify subscription active."
+        : "Complete Shopify App Pricing and subscription verification.",
+    },
+  ];
+
+  const openThemeEditor = () => {
+    if (!protectionStatus.shop) {
+      throw new Error("The Shopify store domain is not available yet.");
+    }
+    window.open(
+      `https://${protectionStatus.shop}/admin/themes/current/editor?context=apps&activateAppId=d4fd10812566b17d9d99ed95e0978ada/botshield-theme-embed`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const polarisModel = {
+    page,
+    protectionStatus,
+    protectionPaused,
+    protectionReady,
+    autoBlock,
+    strictMode,
+    blockLevel,
+    storefrontScans,
+    simulatedScans,
+    allowedCount,
+    challengedCount,
+    blockedCount,
+    highRiskCount,
+    securityPosture,
+    billingStatus,
+    incidents,
+    incidentCounts,
+    incidentLoading,
+    incidentFilters,
+    emailAlerts,
+    highRiskAlertsOnly,
+    alertEmail,
+    emailProviderConfigured,
+    emailProviderStatus,
+    lastAlertStatus,
+    lastAlertSentAt,
+    lastAlertError,
+    weeklyReportsEnabled,
+    lastWeeklyReportStatus,
+    lastWeeklyReportAt,
+    lastWeeklyReportError,
+    blockedIPs,
+    whitelist,
+    trafficOrigins,
+    result,
+    lastScanTime,
+    syncing,
+    readinessItems: polarisReadinessItems,
+  };
+
+  const polarisActions = {
+    setPage,
+    refresh: refreshBackendState,
+    openThemeEditor,
+    refreshSettings: loadSettings,
+    refreshBilling: loadBillingStatus,
+    refreshIncidents: () => loadIncidents(incidentFilters),
+    setIncidentFilter: (key, value) =>
+      setIncidentFilters((current) => ({ ...current, [key]: value })),
+    saveSettings: (overrides) => persistProtectionSettings(overrides),
+    pauseProtection: (minutes) =>
+      persistProtectionSettings({
+        protectionPausedUntil: new Date(
+          Date.now() + minutes * 60 * 1000,
+        ).toISOString(),
+      }),
+    resumeProtection: () =>
+      persistProtectionSettings({ protectionPausedUntil: null }),
+    runDiagnostic: async () => {
+      const data = await runLiveScanRequest();
+      const actionLabel = data.action ?? data.actionTaken ?? "unknown";
+      setResult(`Diagnostic: ${data.threatLevel} risk, ${actionLabel}`);
+      setLastScanTime(new Date().toLocaleTimeString());
+      await refreshBackendState();
+      return data;
+    },
+    runSimulation: async () => {
+      const risks = ["low", "medium", "high"];
+      const risk = risks[Math.floor(Math.random() * risks.length)];
+      const data = await safeFetchJson("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ipAddress: `198.51.100.${Math.max(1, Math.floor(Math.random() * 254))}`,
+          userAgent:
+            risk === "high"
+              ? "python-requests/2.32 BotShield-Simulation"
+              : "HeadlessChrome BotShield-Simulation",
+          pathVisited: risk === "high" ? "/account/login" : "/cart",
+          source: "dashboard-simulation",
+        }),
+      });
+      setResult(
+        `Simulation: ${data.threatLevel || risk} risk, ${data.actionTaken || data.action}`,
+      );
+      setLastScanTime(new Date().toLocaleTimeString());
+      await loadScans();
+      return data;
+    },
+    recoverIncident: async (eventId, action) => {
+      await safeFetchJson("/api/incident-recovery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, action }),
+      });
+      await Promise.all([
+        loadIncidents(incidentFilters),
+        loadBlocklist(),
+        loadWhitelist(),
+        loadProtectionStatus(),
+      ]);
+    },
+    addBlockedIp: async (ipAddress) => {
+      await addBlockedIp(ipAddress, "Manual block from policy settings");
+      await Promise.all([loadBlocklist(), loadProtectionStatus()]);
+    },
+    removeBlockedIp: async (ipAddress) => {
+      await safeFetchJson("/api/blocklist", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipAddress }),
+      });
+      await Promise.all([loadBlocklist(), loadProtectionStatus()]);
+    },
+    addTrustedIp: async (ipAddress) => {
+      await safeFetchJson("/api/whitelist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ipAddress,
+          label: "Trusted visitor",
+          notes: "Added from policy settings",
+          active: true,
+        }),
+      });
+      await Promise.all([loadWhitelist(), loadProtectionStatus()]);
+    },
+    removeTrustedIp: async (ipAddress) => {
+      await safeFetchJson("/api/whitelist", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipAddress }),
+      });
+      await Promise.all([loadWhitelist(), loadProtectionStatus()]);
+    },
+    clearSimulationData: async () => {
+      await safeFetchJson("/api/clear-test-data", { method: "POST" });
+      await refreshBackendState();
+    },
+  };
+
+  if (page !== "legacy") {
+    return (
+      <BotShieldPolarisExperience
+        model={polarisModel}
+        actions={polarisActions}
+      />
+    );
+  }
 
   return (
     <div
