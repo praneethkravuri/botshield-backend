@@ -1117,12 +1117,12 @@ function SettingsPage({
 
           <div style={{ display: "grid", gap: "14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: theme.text }}>📧 Email Alerts</span>
+              <span style={{ color: theme.text }}>Email alerts</span>
               <Toggle checked={emailAlerts} onClick={handleEmailAlertsToggle} theme={theme} />
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ color: theme.text }}>📱 SMS Alerts</span>
+              <span style={{ color: theme.text }}>SMS alerts</span>
               <span style={{ color: theme.muted, fontSize: "12px", fontWeight: 700 }}>
                 Not implemented
               </span>
@@ -1379,23 +1379,23 @@ export default function Index() {
 
   useEffect(() => {
     if (threatLevel === "high") {
-      setInsight("🚨 High-risk traffic detected!");
+      setInsight("High-risk traffic detected");
       setRecommendation("Enable Strict Mode immediately");
     } else if (threatLevel === "medium") {
-      setInsight("🟡 Suspicious activity detected");
+      setInsight("Suspicious activity detected");
       setRecommendation("Consider enabling Strict Mode");
     } else {
-      setInsight("🟢 No high-risk threats detected today");
+      setInsight("No high-risk threats detected today");
       setRecommendation("All systems normal");
     }
   }, [threatLevel]);
 
   const theme = darkMode
     ? {
-        bg: "linear-gradient(180deg, #09111f 0%, #0b1324 44%, #070d18 100%)",
-        sidebar: "rgba(7, 15, 28, 0.72)",
-        surface: "rgba(15, 23, 42, 0.74)",
-        surfaceAlt: "rgba(9, 16, 31, 0.78)",
+        bg: "#09111f",
+        sidebar: "#0b1424",
+        surface: "#111c2f",
+        surfaceAlt: "#0d1728",
         border: "rgba(148, 163, 184, 0.18)",
         text: "#f8fafc",
         muted: "#94a3b8",
@@ -1409,18 +1409,18 @@ export default function Index() {
         inputBg: "rgba(8, 15, 29, 0.88)",
         tableHead: "rgba(10, 17, 32, 0.92)",
         track: "rgba(30, 41, 59, 0.88)",
-        shadow: "0 24px 70px rgba(2, 6, 23, 0.52)",
-        softShadow: "0 18px 38px rgba(8, 15, 29, 0.32)",
+        shadow: "0 18px 42px rgba(2, 6, 23, 0.36)",
+        softShadow: "0 8px 24px rgba(2, 6, 23, 0.22)",
         accent: "#38bdf8",
         accentStrong: "#2563eb",
         accentSoft: "rgba(56, 189, 248, 0.16)",
-        glass: "blur(18px)",
+        glass: "none",
       }
     : {
-        bg: "linear-gradient(180deg, #f3f6fb 0%, #f7f9fc 42%, #eef3f9 100%)",
-        sidebar: "rgba(255, 255, 255, 0.7)",
-        surface: "rgba(255, 255, 255, 0.78)",
-        surfaceAlt: "rgba(248, 250, 252, 0.92)",
+        bg: "#f4f6f8",
+        sidebar: "#ffffff",
+        surface: "#ffffff",
+        surfaceAlt: "#f8fafc",
         border: "rgba(148, 163, 184, 0.28)",
         text: "#0f172a",
         muted: "#64748b",
@@ -1434,12 +1434,12 @@ export default function Index() {
         inputBg: "rgba(255, 255, 255, 0.88)",
         tableHead: "rgba(241, 245, 249, 0.96)",
         track: "rgba(226, 232, 240, 0.96)",
-        shadow: "0 24px 60px rgba(15, 23, 42, 0.12)",
-        softShadow: "0 18px 34px rgba(15, 23, 42, 0.1)",
+        shadow: "0 18px 42px rgba(15, 23, 42, 0.1)",
+        softShadow: "0 6px 20px rgba(15, 23, 42, 0.07)",
         accent: "#0ea5e9",
         accentStrong: "#1d4ed8",
         accentSoft: "rgba(14, 165, 233, 0.12)",
-        glass: "blur(16px)",
+        glass: "none",
       };
 
   const buttonBaseStyle = {
@@ -1461,7 +1461,7 @@ export default function Index() {
 
   const cardHoverHandlers = {
     onMouseEnter: (e) => {
-      e.currentTarget.style.transform = "translateY(-6px) scale(1.01)";
+      e.currentTarget.style.transform = "translateY(-2px)";
       e.currentTarget.style.boxShadow = theme.shadow;
     },
     onMouseLeave: (e) => {
@@ -1471,14 +1471,12 @@ export default function Index() {
   };
 
   const cardStyle = {
-    background: darkMode
-      ? "linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(8, 15, 29, 0.84))"
-      : "linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.92))",
+    background: theme.surface,
     border: `1px solid ${theme.border}`,
     backdropFilter: theme.glass,
     WebkitBackdropFilter: theme.glass,
-    borderRadius: "26px",
-    padding: "22px",
+    borderRadius: "18px",
+    padding: "20px",
     boxShadow: theme.softShadow,
     transition: "all 0.28s cubic-bezier(0.22, 1, 0.36, 1)",
     position: "relative",
@@ -2285,13 +2283,13 @@ export default function Index() {
   const handleRuntimeChipAction = async (actionKey) => {
     switch (actionKey) {
       case "pressure":
-        applyThreatScenario(botPressureScore >= 70 ? "high" : botPressureScore >= 40 ? "medium" : "low");
+        openDashboardWorkspace("deepDive", "Threat pressure evidence opened.");
         break;
       case "blocked":
         openDashboardWorkspace("deepDive", "Recent enforcement evidence opened.");
         break;
       case "mode":
-        await enableStrictMode();
+        openSettingsWorkspace("Protection policy settings opened.");
         break;
       default:
         break;
@@ -3052,13 +3050,13 @@ export default function Index() {
   const liveSecurityLogs =
     storefrontScans.length > 0
       ? storefrontScans.slice(0, 3).map((scan) => ({
-          status: scan.actionTaken === "blocked" ? "🔴" : "🟢",
+          status: scan.actionTaken === "blocked" ? "Blocked" : "Allowed",
           message: `${scan.ipAddress} ${scan.actionTaken} (${scan.threatLevel})`,
         }))
       : [
-          { status: "🟡", message: "No storefront traffic received yet" },
+          { status: "Waiting", message: "No storefront traffic received yet" },
           {
-            status: protectionStatus.themeEmbedDetected ? "🟢" : "🔴",
+            status: protectionStatus.themeEmbedDetected ? "Connected" : "Setup",
             message: protectionStatus.themeEmbedDetected
               ? "Theme embed heartbeat detected"
               : "Theme embed not detected",
@@ -3078,38 +3076,38 @@ export default function Index() {
   const storeProtectionMode = strictMode
     ? {
         badge: "high",
-        label: "🔴 Aggressive Mode",
+        label: "Aggressive",
         description: "Strict blocking is active for suspicious traffic.",
       }
     : blockLevel === "Low"
     ? {
         badge: "normal",
-        label: "🟢 Normal Mode",
+        label: "Normal",
         description: "Light protection focused on obvious abuse.",
       }
     : blockLevel === "Medium"
     ? {
         badge: "balanced",
-        label: "🟡 Balanced Mode",
+        label: "Balanced",
         description: "Balanced protection for everyday store traffic.",
       }
     : {
         badge: "high",
-        label: "🔴 Aggressive Mode",
+        label: "Aggressive",
         description: "Stronger rules for elevated threat conditions.",
       };
 
   const systemStatusItems = [
     {
-      label: "🟢 Shopify App Installed",
+      label: "Shopify app installed",
       active: protectionStatus.appInstalled,
       detail: "authenticated admin connection",
       actionKey: "runtime",
     },
     {
       label: protectionStatus.themeEmbedDetected
-        ? "🟢 Theme Embed Detected"
-        : "🔴 Theme Embed Not Detected",
+        ? "Theme embed connected"
+        : "Theme embed not connected",
       active: protectionStatus.themeEmbedDetected,
       detail: protectionStatus.lastStorefrontDecisionAt
         ? `last event ${new Date(protectionStatus.lastStorefrontDecisionAt).toLocaleTimeString()}`
@@ -3117,7 +3115,7 @@ export default function Index() {
       actionKey: "runtime",
     },
     {
-      label: protectionPaused ? "⏸ Protection Paused" : "⚡ Protection Policy Ready",
+      label: protectionPaused ? "Protection paused" : "Protection policy ready",
       active: protectionStatus.themeEmbedDetected && !protectionPaused,
       detail: protectionPaused
         ? `resumes in ${pauseCountdown}m`
@@ -3129,10 +3127,10 @@ export default function Index() {
     {
       label:
         storefrontScans.length === 0
-          ? "🟡 No Storefront Traffic Yet"
+          ? "No storefront traffic yet"
           : highRiskCount > 0
-            ? "🚨 Threats Detected"
-            : "🛡️ No High-Risk Events",
+            ? "Threats detected"
+            : "No high-risk events",
       active: storefrontScans.length > 0,
       detail:
         storefrontScans.length > 0
@@ -3141,13 +3139,13 @@ export default function Index() {
       actionKey: "evidence",
     },
     {
-      label: `🧱 ${protectionStatus.blocklistCount} Blocklisted`,
+      label: `${protectionStatus.blocklistCount} blocklisted`,
       active: true,
       detail: `${protectionStatus.whitelistCount} whitelisted`,
       actionKey: "evidence",
     },
     {
-      label: `📡 ${protectionStatus.realEventsToday} Real Events Today`,
+      label: `${protectionStatus.realEventsToday} real events today`,
       active: protectionStatus.realEventsToday > 0,
       detail: `${simulatedScans.length} simulations excluded`,
       actionKey: "evidence",
@@ -3169,25 +3167,28 @@ export default function Index() {
       actionKey: "billing",
     },
   ];
+  const primarySystemStatusItems = systemStatusItems.filter((_, index) =>
+    [0, 1, 2, 6].includes(index),
+  );
 
   const navItems = [
     {
       key: "dashboard",
       label: "Dashboard",
       eyebrow: "Control",
-      icon: "◈",
+      icon: "01",
     },
     {
       key: "security",
       label: "Security",
       eyebrow: "Detection",
-      icon: "◌",
+      icon: "02",
     },
     {
       key: "settings",
       label: "Settings",
       eyebrow: "Policy",
-      icon: "△",
+      icon: "03",
     },
   ];
 
@@ -3217,7 +3218,7 @@ export default function Index() {
       label: "Storefront Events",
       value: `${storefrontScans.length}`,
       detail: `${blockedCount} blocked, ${simulatedScans.length} simulations excluded`,
-      actionKey: "revenue",
+      actionKey: "blocked",
     },
     {
       label: "Runtime Mode",
@@ -3352,6 +3353,7 @@ export default function Index() {
       />
       <div
         style={{
+          display: "none",
           position: "absolute",
           top: "7%",
           left: "-4%",
@@ -3366,6 +3368,7 @@ export default function Index() {
       />
       <div
         style={{
+          display: "none",
           position: "absolute",
           top: "24%",
           right: "-6%",
@@ -3380,6 +3383,7 @@ export default function Index() {
       />
       <div
         style={{
+          display: "none",
           position: "absolute",
           bottom: "8%",
           left: "32%",
@@ -3392,10 +3396,11 @@ export default function Index() {
           animation: "ambientDrift 26s ease-in-out infinite",
         }}
       />
-      <div style={{ display: "flex" }}>
+      <div className="botshield-shell" style={{ display: "flex" }}>
         <div
+          className="botshield-sidebar"
           style={{
-            width: "240px",
+            width: "220px",
             borderRight: `1px solid ${theme.border}`,
             padding: "24px 20px",
             background: theme.sidebar,
@@ -3623,6 +3628,7 @@ export default function Index() {
         </div>
 
         <div
+          className="botshield-main"
           style={{
             flex: 1,
             padding: "28px",
@@ -3642,7 +3648,7 @@ export default function Index() {
               alignItems: "center",
             }}
           >
-            {systemStatusItems.map((item) => (
+            {primarySystemStatusItems.map((item) => (
               <button
                 key={item.label}
                 type="button"
@@ -3849,7 +3855,7 @@ export default function Index() {
                         />
                       </div>
                       <div>
-                        <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Merchant Proof</div>
+                        <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Security Operations</div>
                         <div
                           style={{
                             display: "inline-flex",
@@ -3866,15 +3872,15 @@ export default function Index() {
                             textTransform: "uppercase",
                           }}
                         >
-                          BotShield Commerce Defense
+                          Verified storefront telemetry
                         </div>
                       </div>
                     </div>
-                    <h1 style={{ ...displayHeadingStyle, margin: 0, fontSize: "42px", lineHeight: 0.98 }}>
-                      BotShield Command Center
+                    <h1 style={{ ...displayHeadingStyle, margin: 0, fontSize: "38px", lineHeight: 1.04 }}>
+                      Storefront Security Overview
                     </h1>
                     <p style={{ margin: "12px 0 0 0", color: theme.muted, fontSize: "15px", lineHeight: 1.8, maxWidth: "720px" }}>
-                      A trust-first commerce security surface built to show value quickly, stay readable under pressure, and make policy decisions feel calm.
+                      Live protection status, verified storefront decisions, and policy controls for your Shopify store.
                     </p>
                   </div>
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "flex-start" }}>
@@ -3913,61 +3919,13 @@ export default function Index() {
                         ? "Protection active"
                         : "Protection disabled"}
                     </span>
-                    <div
-                      style={{
-                        minWidth: "230px",
-                        padding: "16px",
-                        borderRadius: "20px",
-                        background: darkMode
-                          ? "linear-gradient(160deg, rgba(8,15,29,0.84), rgba(15,23,42,0.74))"
-                          : "linear-gradient(160deg, rgba(255,255,255,0.88), rgba(248,250,252,0.8))",
-                        border: `1px solid ${theme.border}`,
-                        boxShadow: theme.softShadow,
-                      }}
-                    >
-                      <div style={{ ...monoLabelStyle, marginBottom: "10px" }}>Brand Identity</div>
-                      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                        <div
-                          style={{
-                            width: "50px",
-                            height: "50px",
-                            borderRadius: "16px",
-                            display: "grid",
-                            placeItems: "center",
-                            background: theme.surfaceAlt,
-                            border: `1px solid ${theme.accentSoft}`,
-                            overflow: "hidden",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <img
-                            src="/botshield-logo-transparent.png"
-                            alt="BotShield"
-                            style={{
-                              width: "42px",
-                              height: "42px",
-                              objectFit: "contain",
-                              display: "block",
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <div style={{ color: theme.text, fontWeight: 800, letterSpacing: "-0.03em" }}>
-                            Trusted storefront defense
-                          </div>
-                          <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6, marginTop: "4px" }}>
-                            Branded protection for operators, merchants, and blocked-session flows.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
-                <div style={{ color: theme.text, fontSize: "30px", fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1.18, marginTop: "22px", maxWidth: "900px" }}>
+                <div style={{ color: theme.text, fontSize: "24px", fontWeight: 750, letterSpacing: "-0.035em", lineHeight: 1.25, marginTop: "22px", maxWidth: "900px" }}>
                   {blockedToday > 0
-                    ? `BotShield stopped ${blockedToday} suspicious threat${blockedToday === 1 ? "" : "s"} today before they could create storefront noise.`
+                    ? `${blockedToday} suspicious request${blockedToday === 1 ? "" : "s"} blocked today.`
                     : scansToday > 0
-                    ? `BotShield evaluated ${scansToday} real storefront request${scansToday === 1 ? "" : "s"} today.`
+                    ? `${scansToday} real storefront request${scansToday === 1 ? "" : "s"} evaluated today.`
                     : protectionStatus.themeEmbedDetected
                       ? "Theme embed detected. Waiting for the first real storefront decision."
                       : "Protection pending setup: enable the BotShield theme app embed."}
@@ -3975,38 +3933,28 @@ export default function Index() {
                 <div style={{ color: theme.muted, fontSize: "14px", lineHeight: 1.8, marginTop: "12px", maxWidth: "880px" }}>
                   {percentHigh > 0
                     ? `${percentHigh}% of observed traffic has scored high risk. The current operating mode is ${strictMode ? "strict enforcement" : `${blockLevel.toLowerCase()} policy enforcement`}, with ${recentBlocks} recent block${recentBlocks === 1 ? "" : "s"} in the last hour.`
-                    : "As traffic builds, BotShield will translate raw security activity into merchant-level outcomes so the value of the app is obvious in seconds."}
+                    : "Live metrics will populate as storefront traffic is evaluated."}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px", marginTop: "20px" }}>
-                  {[
-                    {
-                      key: "low",
-                      eyebrow: "Calm lens",
-                      title: "Healthy traffic",
-                      detail: "Focus the board on stable storefront conditions.",
-                    },
-                    {
-                      key: "medium",
-                      eyebrow: "Review lens",
-                      title: "Suspicious traffic",
-                      detail: "Surface suspicious patterns and tuning signals.",
-                    },
-                    {
-                      key: "high",
-                      eyebrow: "Defense lens",
-                      title: "Attack pressure",
-                      detail: "Prioritize enforcement and hardening decisions.",
-                    },
-                  ].map((lens) => (
+                  {commandDeckStats.map((item) => (
                     <button
-                      key={lens.key}
-                      onClick={() => applyThreatScenario(lens.key)}
-                      style={scenarioButtonStyle(lens.key)}
+                      key={item.label}
+                      onClick={() => handleRuntimeChipAction(item.actionKey)}
+                      style={{
+                        ...buttonBaseStyle,
+                        padding: "14px 16px",
+                        borderRadius: "14px",
+                        border: `1px solid ${theme.border}`,
+                        background: theme.surfaceAlt,
+                        color: theme.text,
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
                       {...pressHandlers}
                     >
-                      <div style={{ ...monoLabelStyle, marginBottom: "2px" }}>{lens.eyebrow}</div>
-                      <div style={{ fontSize: "17px", fontWeight: 800, letterSpacing: "-0.03em" }}>{lens.title}</div>
-                      <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>{lens.detail}</div>
+                      <div style={{ ...monoLabelStyle, marginBottom: "6px" }}>{item.label}</div>
+                      <div style={{ fontSize: "18px", fontWeight: 800, letterSpacing: "-0.025em" }}>{item.value}</div>
+                      <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.55, marginTop: "4px" }}>{item.detail}</div>
                     </button>
                   ))}
                 </div>
@@ -4014,19 +3962,18 @@ export default function Index() {
 
               <div
                 style={{
-                  background: darkMode
-                    ? "linear-gradient(135deg, rgba(8,15,29,0.96), rgba(15,23,42,0.9))"
-                    : "linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.92))",
-                  color: "white",
-                  padding: "18px 20px",
-                  borderRadius: "18px",
+                  background: theme.surface,
+                  color: theme.text,
+                  padding: "16px 18px",
+                  borderRadius: "16px",
                   marginBottom: "20px",
                   transition: "all 0.2s ease",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  boxShadow: "0 18px 36px rgba(2,6,23,0.22)",
+                  border: `1px solid ${theme.border}`,
+                  boxShadow: theme.softShadow,
                 }}
               >
-                <strong>Recommended Next Move:</strong> {recommendation}
+                <span style={monoLabelStyle}>Recommended action</span>
+                <div style={{ marginTop: "8px", fontWeight: 750 }}>{recommendation}</div>
 
                 {threatLevel !== "low" && (
                   <button
@@ -4034,10 +3981,10 @@ export default function Index() {
                     style={{
                       marginLeft: "12px",
                       padding: "6px 12px",
-                      background: "#22c55e",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
+                      background: theme.accentStrong,
+                      color: "#ffffff",
+                      border: `1px solid ${theme.accentStrong}`,
+                      borderRadius: "10px",
                       cursor: "pointer",
                     }}
                   >
@@ -4045,12 +3992,12 @@ export default function Index() {
                   </button>
                 )}
 
-                <div style={{ marginTop: "10px", color: "#cbd5e1" }}>
+                <div style={{ marginTop: "10px", color: theme.muted, fontSize: "13px" }}>
                   Current posture: {strictMode ? "Strict Mode active" : `${blockLevel} protection active`}
                 </div>
 
-                <div style={{ marginTop: "10px" }}>
-                  Strict Mode: {strictMode ? "🟢 ON" : "⚪ OFF"}
+                <div style={{ marginTop: "6px", color: theme.muted, fontSize: "13px" }}>
+                  Strict Mode: {strictMode ? "On" : "Off"}
                 </div>
               </div>
 
@@ -6510,6 +6457,35 @@ export default function Index() {
             }
             100% {
               background-position: 0% 50%;
+            }
+          }
+
+          .botshield-main {
+            min-width: 0;
+          }
+
+          @media (max-width: 980px) {
+            .botshield-shell {
+              display: block !important;
+            }
+
+            .botshield-sidebar {
+              width: auto !important;
+              min-height: auto !important;
+              border-right: 0 !important;
+              border-bottom: 1px solid ${theme.border} !important;
+            }
+
+            .botshield-main {
+              padding: 18px !important;
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              scroll-behavior: auto !important;
             }
           }
         `}
