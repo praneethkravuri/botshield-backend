@@ -84,6 +84,7 @@ app.get("/health/config", (_req, res) => {
 
   res.status(200).json({
     ok: true,
+    deployRevision: process.env.RENDER_GIT_COMMIT?.slice(0, 7) || null,
     shopifyApiKeyConfigured: Boolean(shopifyApiKey),
     shopifyApiKeyMatchesBotshield4: shopifyApiKey === expectedShopifyApiKey,
     shopifyAppUrl,
