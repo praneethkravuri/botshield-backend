@@ -106,9 +106,12 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
         borderRadius: "18px",
         overflow: "hidden",
         background: darkMode
-          ? "radial-gradient(circle at 50% 15%, rgba(37,99,235,0.16), transparent 38%), linear-gradient(155deg, #07111f, #0b1728)"
-          : "radial-gradient(circle at 50% 15%, rgba(14,165,233,0.12), transparent 38%), linear-gradient(155deg, #f7fbff, #e8f0f7)",
-        border: `1px solid ${theme.border}`,
+          ? "radial-gradient(circle at 50% 15%, rgba(37,99,235,0.24), transparent 42%), linear-gradient(155deg, #050d19, #0b1728)"
+          : "radial-gradient(circle at 50% 15%, rgba(14,165,233,0.18), transparent 42%), linear-gradient(155deg, #f8fcff, #dceaf5)",
+        border: `1px solid ${darkMode ? "rgba(56,189,248,0.28)" : "rgba(14,116,144,0.2)"}`,
+        boxShadow: darkMode
+          ? "inset 0 0 60px rgba(14,165,233,0.06)"
+          : "inset 0 0 60px rgba(14,116,144,0.06)",
       }}
     >
       <svg
@@ -141,9 +144,10 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
           />
         ))}
         <g
-          fill={darkMode ? "rgba(71,85,105,0.58)" : "rgba(148,163,184,0.42)"}
-          stroke={darkMode ? "rgba(148,163,184,0.24)" : "rgba(100,116,139,0.22)"}
-          strokeWidth="1"
+          fill={darkMode ? "rgba(56,189,248,0.22)" : "rgba(14,116,144,0.2)"}
+          stroke={darkMode ? "rgba(125,211,252,0.7)" : "rgba(14,116,144,0.58)"}
+          strokeWidth="2"
+          strokeLinejoin="round"
         >
           <path d="M58 61 L105 36 L170 43 L211 72 L194 98 L149 104 L117 128 L78 109 L47 82 Z" />
           <path d="M178 131 L218 145 L235 180 L217 237 L188 211 L173 174 Z" />
@@ -190,6 +194,25 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
       <div
         style={{
           position: "absolute",
+          top: "12px",
+          left: "14px",
+          padding: "7px 10px",
+          borderRadius: "999px",
+          background: darkMode ? "rgba(7,17,31,0.84)" : "rgba(255,255,255,0.88)",
+          border: `1px solid ${theme.border}`,
+          color: theme.text,
+          fontSize: "10px",
+          fontWeight: 850,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        World traffic map
+      </div>
+      <div
+        style={{
+          position: "absolute",
           left: "14px",
           bottom: "12px",
           display: "flex",
@@ -211,21 +234,22 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            display: "grid",
-            placeItems: "center",
-            padding: "32px",
-            textAlign: "center",
-            background: darkMode ? "rgba(7,17,31,0.38)" : "rgba(247,251,255,0.48)",
+            top: "12px",
+            right: "14px",
+            maxWidth: "245px",
+            padding: "9px 11px",
+            borderRadius: "12px",
+            background: darkMode ? "rgba(7,17,31,0.9)" : "rgba(255,255,255,0.92)",
+            border: `1px solid ${theme.border}`,
+            boxShadow: theme.softShadow,
+            backdropFilter: "blur(10px)",
           }}
         >
-          <div>
-            <div style={{ color: theme.text, fontSize: "15px", fontWeight: 800 }}>
-              Collecting storefront geography
-            </div>
-            <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.55, marginTop: "5px", maxWidth: "320px" }}>
-              The next verified storefront visits will populate this map automatically.
-            </div>
+          <div style={{ color: theme.text, fontSize: "11px", fontWeight: 800 }}>
+            Waiting for mapped traffic
+          </div>
+          <div style={{ color: theme.muted, fontSize: "10px", lineHeight: 1.45, marginTop: "3px" }}>
+            The world remains visible; location markers appear after verified storefront visits.
           </div>
         </div>
       ) : null}
