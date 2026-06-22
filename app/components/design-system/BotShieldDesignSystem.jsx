@@ -257,8 +257,10 @@ export function BotShieldAsyncButton({
 export function BotShieldBanner({ tone = "info", title, children, action }) {
   return (
     <s-banner tone={tone} heading={title}>
-      {children ? <s-paragraph>{children}</s-paragraph> : null}
-      {action ? <div slot="secondary-actions">{action}</div> : null}
+      <s-stack gap="base">
+        {children ? <s-paragraph>{children}</s-paragraph> : null}
+        {action ? <s-stack direction="inline">{action}</s-stack> : null}
+      </s-stack>
     </s-banner>
   );
 }
