@@ -91,20 +91,23 @@ function Toggle({ checked, onClick, theme }) {
 
 function ThreatOriginMap({ origins, theme, darkMode }) {
   const width = 760;
-  const height = 330;
+  const height = 260;
   const project = (latitude, longitude) => ({
     x: ((Number(longitude) + 180) / 360) * width,
     y: ((90 - Number(latitude)) / 180) * height,
   });
+  const visibleOrigins = origins.slice(0, 18);
 
   return (
     <div
       style={{
         position: "relative",
-        minHeight: "330px",
-        borderRadius: "16px",
+        minHeight: "260px",
+        borderRadius: "18px",
         overflow: "hidden",
-        background: darkMode ? "#07111f" : "#eef4f8",
+        background: darkMode
+          ? "radial-gradient(circle at 50% 15%, rgba(37,99,235,0.16), transparent 38%), linear-gradient(155deg, #07111f, #0b1728)"
+          : "radial-gradient(circle at 50% 15%, rgba(14,165,233,0.12), transparent 38%), linear-gradient(155deg, #f7fbff, #e8f0f7)",
         border: `1px solid ${theme.border}`,
       }}
     >
@@ -113,11 +116,11 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
         width="100%"
         height="100%"
         role="img"
-        aria-label="Geographic origin map for suspicious storefront events"
-        style={{ display: "block", minHeight: "330px" }}
+        aria-label="Approximate geographic origin map for verified storefront events"
+        style={{ display: "block", minHeight: "260px" }}
       >
         <rect width={width} height={height} fill="transparent" />
-        {[60, 120, 180, 240, 300].map((y) => (
+        {[52, 104, 156, 208].map((y) => (
           <line
             key={`lat-${y}`}
             x1="0"
@@ -138,49 +141,72 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
           />
         ))}
         <g
-          fill={darkMode ? "rgba(71,85,105,0.48)" : "rgba(148,163,184,0.38)"}
-          stroke={darkMode ? "rgba(148,163,184,0.2)" : "rgba(100,116,139,0.2)"}
+          fill={darkMode ? "rgba(71,85,105,0.58)" : "rgba(148,163,184,0.42)"}
+          stroke={darkMode ? "rgba(148,163,184,0.24)" : "rgba(100,116,139,0.22)"}
           strokeWidth="1"
         >
-          <path d="M58 78 L105 46 L170 55 L211 92 L194 125 L149 132 L117 162 L78 138 L47 105 Z" />
-          <path d="M178 166 L218 184 L235 228 L217 299 L188 266 L173 219 Z" />
-          <path d="M339 70 L381 51 L432 63 L457 87 L514 75 L577 91 L648 120 L690 151 L663 184 L600 170 L553 187 L505 154 L455 147 L418 121 L382 126 L344 104 Z" />
-          <path d="M374 137 L420 145 L447 191 L431 258 L392 285 L361 236 L348 182 Z" />
-          <path d="M631 229 L672 213 L714 235 L706 271 L662 281 L632 258 Z" />
-          <path d="M281 78 L307 65 L329 83 L315 106 L288 103 Z" />
+          <path d="M58 61 L105 36 L170 43 L211 72 L194 98 L149 104 L117 128 L78 109 L47 82 Z" />
+          <path d="M178 131 L218 145 L235 180 L217 237 L188 211 L173 174 Z" />
+          <path d="M339 55 L381 40 L432 50 L457 68 L514 59 L577 72 L648 94 L690 119 L663 145 L600 134 L553 148 L505 122 L455 116 L418 95 L382 99 L344 82 Z" />
+          <path d="M374 108 L420 114 L447 151 L431 203 L392 225 L361 187 L348 144 Z" />
+          <path d="M631 181 L672 168 L714 185 L706 214 L662 222 L632 204 Z" />
+          <path d="M281 61 L307 51 L329 66 L315 84 L288 82 Z" />
         </g>
-        {origins.map((origin) => {
+        {visibleOrigins.map((origin, index) => {
           const point = project(origin.latitude, origin.longitude);
-          const radius = Math.min(16, 5 + origin.count * 2);
+          const isThreatOrigin = origin.threatCount > 0;
+          const radius = Math.min(13, 4 + Math.sqrt(origin.count) * 2.2);
           return (
             <g key={origin.key}>
               <circle
                 cx={point.x}
                 cy={point.y}
-                r={radius + 7}
-                fill="rgba(239,68,68,0.12)"
+                r={radius + 8}
+                fill={isThreatOrigin ? "rgba(244,63,94,0.14)" : "rgba(56,189,248,0.13)"}
               />
               <circle
                 cx={point.x}
                 cy={point.y}
                 r={radius}
-                fill="#ef4444"
+                fill={isThreatOrigin ? "#f43f5e" : "#38bdf8"}
                 stroke="#ffffff"
                 strokeWidth="2"
               />
-              <text
-                x={point.x + radius + 6}
-                y={point.y + 4}
-                fill={darkMode ? "#f8fafc" : "#0f172a"}
-                fontSize="11"
-                fontWeight="700"
-              >
-                {origin.countryCode || origin.country || "Unknown"} · {origin.count}
-              </text>
+              {index < 7 ? (
+                <text
+                  x={point.x + radius + 6}
+                  y={point.y + 4}
+                  fill={darkMode ? "#f8fafc" : "#0f172a"}
+                  fontSize="10"
+                  fontWeight="800"
+                >
+                  {origin.countryCode || origin.country || "Unknown"} · {origin.count}
+                </text>
+              ) : null}
             </g>
           );
         })}
       </svg>
+      <div
+        style={{
+          position: "absolute",
+          left: "14px",
+          bottom: "12px",
+          display: "flex",
+          gap: "12px",
+          padding: "7px 10px",
+          borderRadius: "999px",
+          background: darkMode ? "rgba(7,17,31,0.82)" : "rgba(255,255,255,0.86)",
+          border: `1px solid ${theme.border}`,
+          backdropFilter: "blur(10px)",
+          color: theme.muted,
+          fontSize: "10px",
+          fontWeight: 750,
+        }}
+      >
+        <span><span style={{ color: "#38bdf8" }}>●</span> Observed</span>
+        <span><span style={{ color: "#f43f5e" }}>●</span> Suspicious</span>
+      </div>
       {origins.length === 0 ? (
         <div
           style={{
@@ -188,14 +214,19 @@ function ThreatOriginMap({ origins, theme, darkMode }) {
             inset: 0,
             display: "grid",
             placeItems: "center",
-            padding: "24px",
+            padding: "32px",
             textAlign: "center",
-            color: theme.muted,
-            fontSize: "13px",
+            background: darkMode ? "rgba(7,17,31,0.38)" : "rgba(247,251,255,0.48)",
           }}
         >
-          Threat locations will appear after geo-enriched suspicious storefront
-          events are received.
+          <div>
+            <div style={{ color: theme.text, fontSize: "15px", fontWeight: 800 }}>
+              Collecting storefront geography
+            </div>
+            <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.55, marginTop: "5px", maxWidth: "320px" }}>
+              The next verified storefront visits will populate this map automatically.
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
@@ -3100,21 +3131,22 @@ export default function Index() {
     (scan) => scan.actionTaken === "whitelisted",
   ).length;
   const verifiedInterventions = blockedCount + challengedCount;
-  const geolocatedThreatEvents = storefrontScans.filter((scan) => {
-    const hasCoordinates =
+  const geolocatedStorefrontEvents = storefrontScans.filter(
+    (scan) =>
       scan.networkLatitude != null &&
       scan.networkLongitude != null &&
       Number.isFinite(Number(scan.networkLatitude)) &&
-      Number.isFinite(Number(scan.networkLongitude));
-    const isThreat =
+      Number.isFinite(Number(scan.networkLongitude)),
+  );
+  const geolocatedThreatEvents = geolocatedStorefrontEvents.filter(
+    (scan) =>
       scan.threatLevel === "high" ||
       scan.threatLevel === "medium" ||
       scan.actionTaken === "blocked" ||
-      scan.actionTaken === "challenged";
-    return hasCoordinates && isThreat;
-  });
-  const threatOrigins = Array.from(
-    geolocatedThreatEvents.reduce((origins, scan) => {
+      scan.actionTaken === "challenged",
+  );
+  const trafficOrigins = Array.from(
+    geolocatedStorefrontEvents.reduce((origins, scan) => {
       const latitude = Number(scan.networkLatitude);
       const longitude = Number(scan.networkLongitude);
       const countryCode = scan.networkCountryCode || "";
@@ -3129,19 +3161,37 @@ export default function Index() {
         country,
         city,
         count: 0,
+        threatCount: 0,
+        allowed: 0,
         blocked: 0,
         challenged: 0,
       };
+      const isThreat =
+        scan.threatLevel === "high" ||
+        scan.threatLevel === "medium" ||
+        scan.actionTaken === "blocked" ||
+        scan.actionTaken === "challenged";
       current.count += 1;
+      current.threatCount += isThreat ? 1 : 0;
+      current.allowed += scan.actionTaken === "allowed" ? 1 : 0;
       current.blocked += scan.actionTaken === "blocked" ? 1 : 0;
       current.challenged += scan.actionTaken === "challenged" ? 1 : 0;
       origins.set(key, current);
       return origins;
     }, new Map()).values(),
-  ).sort((a, b) => b.count - a.count);
+  ).sort(
+    (a, b) =>
+      b.threatCount - a.threatCount ||
+      b.count - a.count,
+  );
   const geolocatedCountryCount = new Set(
-    threatOrigins.map((origin) => origin.countryCode || origin.country),
+    trafficOrigins.map((origin) => origin.countryCode || origin.country),
   ).size;
+  const geographyCoverage = storefrontScans.length
+    ? Math.round(
+        (geolocatedStorefrontEvents.length / storefrontScans.length) * 100,
+      )
+    : 0;
   const maxThreatCount = Math.max(
     lowRiskCount,
     mediumRiskCount,
@@ -4177,9 +4227,9 @@ export default function Index() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", alignItems: "flex-start", flexWrap: "wrap", marginBottom: "16px" }}>
                   <div>
                     <div style={{ ...monoLabelStyle, marginBottom: "7px" }}>Threat intelligence</div>
-                    <h2 style={{ ...displayHeadingStyle, margin: 0, fontSize: "26px" }}>Where suspicious traffic originates</h2>
+                    <h2 style={{ ...displayHeadingStyle, margin: 0, fontSize: "26px" }}>Live storefront traffic origins</h2>
                     <p style={{ margin: "8px 0 0", color: theme.muted, fontSize: "13px", lineHeight: 1.65, maxWidth: "680px" }}>
-                      Approximate locations from IP intelligence attached to real storefront events. Simulations are excluded.
+                      A verified geographic view of real storefront activity. Suspicious traffic is highlighted in red; simulations never appear here.
                     </p>
                   </div>
                   <span
@@ -4200,79 +4250,123 @@ export default function Index() {
                 </div>
 
                 <div
+                  className="botshield-origin-metrics"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                    gap: "10px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {[
+                    {
+                      label: "Requests mapped",
+                      value: geolocatedStorefrontEvents.length,
+                      suffix: "",
+                      detail: "Verified storefront events",
+                    },
+                    {
+                      label: "Suspicious traffic",
+                      value: geolocatedThreatEvents.length,
+                      suffix: "",
+                      detail: "Medium/high-risk observations",
+                    },
+                    {
+                      label: "Interventions",
+                      value: verifiedInterventions,
+                      suffix: "",
+                      detail: `${blockedCount} blocked · ${challengedCount} challenged`,
+                    },
+                    {
+                      label: "Geo coverage",
+                      value: geographyCoverage,
+                      suffix: "%",
+                      detail: `${geolocatedCountryCount} countr${geolocatedCountryCount === 1 ? "y" : "ies"} observed`,
+                    },
+                  ].map((metric) => (
+                    <div
+                      key={metric.label}
+                      style={{
+                        padding: "12px 14px",
+                        borderRadius: "14px",
+                        background: theme.surfaceAlt,
+                        border: `1px solid ${theme.border}`,
+                      }}
+                    >
+                      <div style={{ ...monoLabelStyle, fontSize: "9px" }}>{metric.label}</div>
+                      <div style={{ marginTop: "5px", color: theme.text, fontSize: "22px", fontWeight: 850, letterSpacing: "-0.04em" }}>
+                        <AnimatedNumber value={metric.value} suffix={metric.suffix} />
+                      </div>
+                      <div style={{ marginTop: "3px", color: theme.muted, fontSize: "11px", lineHeight: 1.4 }}>{metric.detail}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div
                   className="botshield-origin-grid"
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "minmax(0, 1.7fr) minmax(260px, 0.7fr)",
-                    gap: "16px",
+                    gridTemplateColumns: "minmax(0, 1.8fr) minmax(230px, 0.62fr)",
+                    gap: "12px",
                     alignItems: "stretch",
                   }}
                 >
-                  <ThreatOriginMap origins={threatOrigins} theme={theme} darkMode={darkMode} />
-                  <div style={{ display: "grid", gap: "10px", alignContent: "start" }}>
-                    {[
-                      {
-                        label: "Verified interventions",
-                        value: verifiedInterventions,
-                        detail: `${blockedCount} blocked · ${challengedCount} challenged`,
-                      },
-                      {
-                        label: "Threats with location",
-                        value: geolocatedThreatEvents.length,
-                        detail: "Medium/high-risk real events with IP geography",
-                      },
-                      {
-                        label: "Countries observed",
-                        value: geolocatedCountryCount,
-                        detail: "Unique approximate traffic origins",
-                      },
-                    ].map((metric) => (
-                      <div
-                        key={metric.label}
-                        style={{
-                          padding: "14px",
-                          borderRadius: "14px",
-                          background: theme.surfaceAlt,
-                          border: `1px solid ${theme.border}`,
-                        }}
-                      >
-                        <div style={monoLabelStyle}>{metric.label}</div>
-                        <div style={{ marginTop: "6px", color: theme.text, fontSize: "25px", fontWeight: 850, letterSpacing: "-0.04em" }}>
-                          <AnimatedNumber value={metric.value} />
-                        </div>
-                        <div style={{ marginTop: "4px", color: theme.muted, fontSize: "12px", lineHeight: 1.5 }}>{metric.detail}</div>
-                      </div>
-                    ))}
-
-                    <div style={{ padding: "14px", borderRadius: "14px", background: theme.surfaceAlt, border: `1px solid ${theme.border}` }}>
-                      <div style={{ ...monoLabelStyle, marginBottom: "9px" }}>Top origins</div>
-                      {threatOrigins.length ? (
-                        <div style={{ display: "grid", gap: "9px" }}>
-                          {threatOrigins.slice(0, 4).map((origin) => (
-                            <div key={origin.key} style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
+                  <ThreatOriginMap origins={trafficOrigins} theme={theme} darkMode={darkMode} />
+                  <div
+                    style={{
+                      padding: "15px",
+                      borderRadius: "18px",
+                      background: theme.surfaceAlt,
+                      border: `1px solid ${theme.border}`,
+                    }}
+                  >
+                    <div style={{ ...monoLabelStyle, marginBottom: "11px" }}>Top observed origins</div>
+                    {trafficOrigins.length ? (
+                      <div style={{ display: "grid", gap: "10px" }}>
+                        {trafficOrigins.slice(0, 5).map((origin, index) => (
+                          <div key={origin.key} style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: "9px", alignItems: "center", minWidth: 0 }}>
+                              <span
+                                style={{
+                                  width: "22px",
+                                  height: "22px",
+                                  borderRadius: "8px",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  flexShrink: 0,
+                                  color: origin.threatCount > 0 ? "#e11d48" : theme.accent,
+                                  background: origin.threatCount > 0 ? "rgba(244,63,94,0.12)" : theme.accentSoft,
+                                  fontSize: "10px",
+                                  fontWeight: 850,
+                                }}
+                              >
+                                {index + 1}
+                              </span>
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ color: theme.text, fontSize: "13px", fontWeight: 750, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <div style={{ color: theme.text, fontSize: "12px", fontWeight: 780, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {[origin.city, origin.country].filter(Boolean).join(", ")}
                                 </div>
-                                <div style={{ color: theme.muted, fontSize: "11px", marginTop: "2px" }}>
-                                  {origin.blocked} blocked · {origin.challenged} challenged
+                                <div style={{ color: theme.muted, fontSize: "10px", marginTop: "2px" }}>
+                                  {origin.threatCount > 0
+                                    ? `${origin.threatCount} suspicious · ${origin.blocked} blocked`
+                                    : "Observed · no elevated signal"}
                                 </div>
                               </div>
-                              <span style={{ color: theme.text, fontWeight: 850, fontSize: "14px" }}>{origin.count}</span>
                             </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.55 }}>
-                          No geo-enriched suspicious traffic has been recorded yet.
-                        </div>
-                      )}
-                    </div>
+                            <span style={{ color: theme.text, fontWeight: 850, fontSize: "13px" }}>{origin.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
+                        BotShield is connected. Refresh the storefront to record the next verified origin.
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div style={{ marginTop: "12px", color: theme.muted, fontSize: "11px", lineHeight: 1.6 }}>
-                  IP geography is approximate and may identify a VPN, proxy, or hosting facility rather than a visitor&apos;s exact location. BotShield reports verified interventions instead of estimating unproven revenue savings.
+                  Approximate IP geography may identify a VPN, proxy, or hosting facility rather than a visitor&apos;s exact location. Revenue savings remain hidden until commerce attribution can support a defensible number.
                 </div>
               </div>
 
@@ -6804,6 +6898,7 @@ export default function Index() {
 
             .botshield-metric-grid,
             .botshield-workspace-grid,
+            .botshield-origin-metrics,
             .botshield-origin-grid {
               grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
@@ -6812,6 +6907,7 @@ export default function Index() {
           @media (max-width: 640px) {
             .botshield-metric-grid,
             .botshield-workspace-grid,
+            .botshield-origin-metrics,
             .botshield-origin-grid {
               grid-template-columns: 1fr !important;
             }

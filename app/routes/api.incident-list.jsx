@@ -1,4 +1,5 @@
 import db from "../db.server";
+import { hydrateEventGeography } from "../lib/event-geography.server";
 import {
   matchesIncidentFilters,
   serializeSecurityEvent,
@@ -17,11 +18,12 @@ export async function loader({ request }) {
     search: url.searchParams.get("search") || "",
   };
 
-  const rows = await db.botEvent.findMany({
+  const eventRows = await db.botEvent.findMany({
     where: { shop: session.shop },
     orderBy: { createdAt: "desc" },
     take: MAX_INCIDENTS,
   });
+  const rows = await hydrateEventGeography(eventRows, session.shop);
 
   const allEvents = rows.map(serializeSecurityEvent);
   const events = allEvents.filter((event) =>

@@ -1,13 +1,15 @@
 import db from "../db.server";
+import { hydrateEventGeography } from "../lib/event-geography.server";
 import { authenticate } from "../shopify.server";
 
 export async function loader({ request }) {
   const { session } = await authenticate.admin(request);
-  const rows = await db.botEvent.findMany({
+  const eventRows = await db.botEvent.findMany({
     where: { shop: session.shop },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
+  const rows = await hydrateEventGeography(eventRows, session.shop);
   const scans = rows.map((r) => ({
     id: r.id,
     ipAddress: r.ipAddress,
