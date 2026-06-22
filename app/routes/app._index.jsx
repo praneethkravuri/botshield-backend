@@ -1356,7 +1356,7 @@ export default function Index() {
     },
   ]);
   const [dashboardSections, setDashboardSections] = useState({
-    operations: true,
+    operations: false,
     analyst: false,
     deepDive: false,
   });
@@ -3227,6 +3227,32 @@ export default function Index() {
       actionKey: "mode",
     },
   ];
+  const merchantMetrics = [
+    {
+      label: "Requests analyzed today",
+      value: scansToday,
+      detail: "Verified storefront traffic",
+      actionKey: "scansToday",
+    },
+    {
+      label: "Threats blocked today",
+      value: blockedToday,
+      detail: autoBlock ? "Automated response enabled" : "Monitoring only",
+      actionKey: "blocked",
+    },
+    {
+      label: "High-risk traffic",
+      value: `${percentHigh}%`,
+      detail: `${highRiskCount} high-risk event${highRiskCount === 1 ? "" : "s"}`,
+      actionKey: "hostileShare",
+    },
+    {
+      label: "Security score",
+      value: securityPosture ? `${securityPosture.score.score}/100` : "—",
+      detail: securityPosture?.score?.grade || "Calculating posture",
+      actionKey: "runtimeStatus",
+    },
+  ];
 
   const navButtonStyle = (targetPage) => ({
     width: "100%",
@@ -3697,7 +3723,7 @@ export default function Index() {
 
           {page === "dashboard" && (
             <>
-              <div style={{ ...cardStyle, marginBottom: "20px" }}>
+              <div style={{ ...cardStyle, marginBottom: "20px", display: "none" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "20px", alignItems: "center", flexWrap: "wrap" }}>
                   <div>
                     <p style={statLabelStyle}>Security Readiness</p>
@@ -3733,27 +3759,15 @@ export default function Index() {
                   </div>
                 ) : null}
               </div>
-              <div style={{ ...cardStyle, marginBottom: "20px" }}>
-                <p style={statLabelStyle}>Launch Setup</p>
+              <div style={{ ...cardStyle, marginBottom: "20px", display: "none" }}>
+                <p style={statLabelStyle}>Next Step</p>
                 <h3 style={{ margin: "8px 0 10px", color: theme.text, fontSize: "22px" }}>
-                  Finish setup without contacting support
+                  {securityPosture?.score?.suggestions?.[0] ||
+                    "BotShield is ready for storefront monitoring"}
                 </h3>
-                <div style={{ display: "grid", gap: "9px", color: theme.muted, fontSize: "13px", lineHeight: 1.55 }}>
-                  <div>1. Enable and save the BotShield theme app embed.</div>
-                  <div>2. Visit the storefront and confirm a real event appears.</div>
-                  <div>3. Configure merchant email, then enable alerts and weekly reports.</div>
-                  <div>
-                    4. Approve the Shopify{" "}
-                    {billingStatus?.planName || "BotShield Basic"} plan at $
-                    {Number(billingStatus?.monthlyPrice || 14.99).toFixed(2)}
-                    /month when billing is enabled.
-                  </div>
-                  <div>5. Use Diagnostic Scan only for testing; simulations never change real enforcement.</div>
-                  <div>6. Recover false positives from Incident Timeline using Unblock or Whitelist.</div>
-                </div>
                 <div
                   style={{
-                    marginTop: "14px",
+                    marginTop: "10px",
                     padding: "12px 14px",
                     borderRadius: "14px",
                     background: theme.surfaceAlt,
@@ -3763,8 +3777,9 @@ export default function Index() {
                     lineHeight: 1.6,
                   }}
                 >
-                  BotShield uses a Shopify theme app embed and storefront JavaScript.
-                  It is not an edge WAF, and clients that bypass JavaScript may not be inspected.
+                  Theme-embed protection monitors JavaScript-enabled storefront
+                  sessions. Diagnostic scans remain separate from production
+                  security metrics.
                 </div>
                 <div style={{ marginTop: "14px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <a href="/support" target="_blank" rel="noreferrer" style={getSecondaryButtonStyle()}>
@@ -3783,7 +3798,7 @@ export default function Index() {
                   ) : null}
                 </div>
               </div>
-              <div style={{ ...monoLabelStyle, marginBottom: "12px" }}>Executive Brief</div>
+              <div style={{ ...monoLabelStyle, marginBottom: "12px" }}>Overview</div>
 
               <div
                 style={{
@@ -3877,10 +3892,14 @@ export default function Index() {
                       </div>
                     </div>
                     <h1 style={{ ...displayHeadingStyle, margin: 0, fontSize: "38px", lineHeight: 1.04 }}>
-                      Storefront Security Overview
+                      {protectionReady
+                        ? "Your storefront is protected"
+                        : "Finish setup to activate protection"}
                     </h1>
                     <p style={{ margin: "12px 0 0 0", color: theme.muted, fontSize: "15px", lineHeight: 1.8, maxWidth: "720px" }}>
-                      Live protection status, verified storefront decisions, and policy controls for your Shopify store.
+                      {protectionReady
+                        ? "BotShield is evaluating real storefront traffic and applying your active protection policy."
+                        : "Complete the remaining readiness steps, then BotShield can monitor and respond to storefront threats."}
                     </p>
                   </div>
                   <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "flex-start" }}>
@@ -3935,11 +3954,11 @@ export default function Index() {
                     ? `${percentHigh}% of observed traffic has scored high risk. The current operating mode is ${strictMode ? "strict enforcement" : `${blockLevel.toLowerCase()} policy enforcement`}, with ${recentBlocks} recent block${recentBlocks === 1 ? "" : "s"} in the last hour.`
                     : "Live metrics will populate as storefront traffic is evaluated."}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px", marginTop: "20px" }}>
-                  {commandDeckStats.map((item) => (
+                <div className="botshield-metric-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "12px", marginTop: "20px" }}>
+                  {merchantMetrics.map((item) => (
                     <button
                       key={item.label}
-                      onClick={() => handleRuntimeChipAction(item.actionKey)}
+                      onClick={() => handleDashboardSurfaceAction(item.actionKey)}
                       style={{
                         ...buttonBaseStyle,
                         padding: "14px 16px",
@@ -3958,8 +3977,27 @@ export default function Index() {
                     </button>
                   ))}
                 </div>
+                {securityPosture?.score?.suggestions?.[0] ? (
+                  <div
+                    style={{
+                      marginTop: "14px",
+                      padding: "12px 14px",
+                      borderRadius: "12px",
+                      background: theme.surfaceAlt,
+                      border: `1px solid ${theme.border}`,
+                      color: theme.muted,
+                      fontSize: "13px",
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    <strong style={{ color: theme.text }}>Next step:</strong>{" "}
+                    {securityPosture.score.suggestions[0]}
+                  </div>
+                ) : null}
               </div>
 
+              {dashboardSections.operations ? (
+                <>
               <div
                 style={{
                   background: theme.surface,
@@ -4002,6 +4040,7 @@ export default function Index() {
               </div>
 
               <div
+                className="botshield-workspace-grid"
                 style={{
                   marginBottom: "20px",
                   display: "grid",
@@ -4418,6 +4457,8 @@ export default function Index() {
                   </div>
                 </button>
               </div>
+                </>
+              ) : null}
 
               <div
                 style={{
@@ -4700,6 +4741,7 @@ export default function Index() {
               </div>
 
               <div
+                className="botshield-workspace-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
@@ -4712,9 +4754,9 @@ export default function Index() {
                   style={dashboardSectionButtonStyle(dashboardSections.operations)}
                 >
                   <div>
-                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Operating Mode</div>
+                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Workspace</div>
                     <div style={{ color: theme.text, fontWeight: 800, fontSize: "18px", letterSpacing: "-0.03em" }}>
-                      Command
+                      Operations
                     </div>
                     <div style={{ color: theme.muted, fontSize: "13px", marginTop: "6px", lineHeight: 1.6 }}>
                       Policy actions, alerts, and runtime control.
@@ -4730,9 +4772,9 @@ export default function Index() {
                   style={dashboardSectionButtonStyle(dashboardSections.analyst)}
                 >
                   <div>
-                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Operating Mode</div>
+                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Workspace</div>
                     <div style={{ color: theme.text, fontWeight: 800, fontSize: "18px", letterSpacing: "-0.03em" }}>
-                      Review
+                      Incident review
                     </div>
                     <div style={{ color: theme.muted, fontSize: "13px", marginTop: "6px", lineHeight: 1.6 }}>
                       Notes, trust signals, and operator review tools.
@@ -4748,7 +4790,7 @@ export default function Index() {
                   style={dashboardSectionButtonStyle(dashboardSections.deepDive)}
                 >
                   <div>
-                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Operating Mode</div>
+                    <div style={{ ...monoLabelStyle, marginBottom: "8px" }}>Workspace</div>
                     <div style={{ color: theme.text, fontWeight: 800, fontSize: "18px", letterSpacing: "-0.03em" }}>
                       Evidence
                     </div>
@@ -6478,6 +6520,18 @@ export default function Index() {
 
             .botshield-main {
               padding: 18px !important;
+            }
+
+            .botshield-metric-grid,
+            .botshield-workspace-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+          }
+
+          @media (max-width: 640px) {
+            .botshield-metric-grid,
+            .botshield-workspace-grid {
+              grid-template-columns: 1fr !important;
             }
           }
 
