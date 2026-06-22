@@ -1,15 +1,9 @@
-const RESEND_ENDPOINT = "https://api.resend.com/emails";
-const ALERT_TIMEOUT_MS = 4_000;
+import { getEmailProviderStatus, sendEmail } from "./email.server.js";
+
 const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
-}
-
-function isValidSender(value) {
-  const normalized = String(value || "").trim();
-  const bracketed = normalized.match(/<([^>]+)>$/);
-  return isValidEmail(bracketed ? bracketed[1] : normalized);
 }
 
 function escapeHtml(value) {
@@ -21,17 +15,7 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-export function getEmailProviderStatus() {
-  const apiKeyConfigured = Boolean(process.env.RESEND_API_KEY?.trim());
-  const fromEmailConfigured = isValidSender(process.env.ALERT_FROM_EMAIL);
-
-  return {
-    provider: "resend",
-    configured: apiKeyConfigured && fromEmailConfigured,
-    apiKeyConfigured,
-    fromEmailConfigured,
-  };
-}
+export { getEmailProviderStatus };
 
 export function shouldSendIncidentAlert({
   settings,
@@ -124,57 +108,6 @@ export async function sendIncidentEmail(input) {
     subject: `[BotShield] ${input.decision.toUpperCase()} incident on ${input.shop}`,
     html: buildIncidentHtml(input),
   });
-}
-
-async function sendEmail({ to, subject, html }) {
-  const providerStatus = getEmailProviderStatus();
-  if (!providerStatus.configured) {
-    return { sent: false, status: "provider_not_configured" };
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ALERT_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(RESEND_ENDPOINT, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: process.env.ALERT_FROM_EMAIL.trim(),
-        to: [to.trim()],
-        subject,
-        html,
-      }),
-    });
-
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      return {
-        sent: false,
-        status: "provider_error",
-        providerStatus: response.status,
-        error: payload?.message || "Email provider rejected the request.",
-      };
-    }
-
-    return {
-      sent: true,
-      status: "sent",
-      providerMessageId: payload?.id || null,
-    };
-  } catch (error) {
-    return {
-      sent: false,
-      status: error?.name === "AbortError" ? "timeout" : "delivery_error",
-      error: error instanceof Error ? error.message : "Email delivery failed.",
-    };
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 export async function sendWeeklySecurityReportEmail({

@@ -7,6 +7,10 @@ import {
   resolveStorefrontDecision,
 } from "../app/lib/storefront-decision.server.js";
 import { partitionSecurityEvents } from "../app/lib/event-classification.js";
+import {
+  getEmailProviderStatus,
+  sendEmail,
+} from "../app/lib/email.server.js";
 import { shouldSendIncidentAlert } from "../app/lib/incident-alerts.server.js";
 import {
   getNetworkIntelSignals,
@@ -327,6 +331,66 @@ test("challenge events qualify for merchant email alerts", () => {
   });
 
   assert.equal(result.send, true);
+});
+
+test("Resend email delivery uses the verified BotShield support sender by default", async () => {
+  const originalApiKey = process.env.RESEND_API_KEY;
+  const originalFromEmail = process.env.ALERT_FROM_EMAIL;
+  const originalFetch = globalThis.fetch;
+  let requestBody;
+
+  process.env.RESEND_API_KEY = "test_resend_key";
+  delete process.env.ALERT_FROM_EMAIL;
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({ id: "email_test_123" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    const status = getEmailProviderStatus();
+    const delivery = await sendEmail({
+      to: "merchant@example.com",
+      subject: "BotShield test",
+      html: "<p>Test</p>",
+    });
+
+    assert.equal(status.configured, true);
+    assert.equal(status.usingDefaultSender, true);
+    assert.equal(status.fromEmail, "BotShield <support@botshieldapp.com>");
+    assert.equal(requestBody.from, "BotShield <support@botshieldapp.com>");
+    assert.deepEqual(requestBody.to, ["merchant@example.com"]);
+    assert.equal(delivery.sent, true);
+    assert.equal(delivery.providerMessageId, "email_test_123");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalApiKey == null) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = originalApiKey;
+    if (originalFromEmail == null) delete process.env.ALERT_FROM_EMAIL;
+    else process.env.ALERT_FROM_EMAIL = originalFromEmail;
+  }
+});
+
+test("Resend email delivery fails safely without an API key", async () => {
+  const originalApiKey = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+
+  try {
+    const delivery = await sendEmail({
+      to: "merchant@example.com",
+      subject: "BotShield test",
+      html: "<p>Test</p>",
+    });
+
+    assert.equal(getEmailProviderStatus().configured, false);
+    assert.equal(delivery.sent, false);
+    assert.equal(delivery.status, "provider_not_configured");
+  } finally {
+    if (originalApiKey == null) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = originalApiKey;
+  }
 });
 
 test("security events expose structured reason codes and masked IPs", () => {

@@ -11,7 +11,7 @@ These steps cannot be completed safely by application code.
    is not required, or allow only trusted operator IP ranges.
 5. Configure:
    - `RESEND_API_KEY`
-   - `ALERT_FROM_EMAIL`
+   - optional `ALERT_FROM_EMAIL` sender override
    - `VITE_SUPPORT_EMAIL`
    - `SHOPIFY_APP_HANDLE`
    - `SHOPIFY_PUBLIC_PLAN_HANDLE=basic`
@@ -28,8 +28,10 @@ These steps cannot be completed safely by application code.
 2. Publish Resend's SPF and DKIM DNS records exactly as shown.
 3. Wait for the domain to show Verified.
 4. Create a restricted production API key.
-5. Set `ALERT_FROM_EMAIL` to a sender on the verified domain.
-6. Redeploy and send both a test alert and weekly report.
+5. Verify `botshieldapp.com` in Resend. BotShield defaults to
+   `BotShield <support@botshieldapp.com>`.
+6. Optionally set `ALERT_FROM_EMAIL` to another sender on the verified domain.
+7. Redeploy and send both a test alert and weekly report.
 
 ## Shopify Partner Dashboard
 

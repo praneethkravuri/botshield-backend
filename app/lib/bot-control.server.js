@@ -3,7 +3,7 @@ import {
   buildDetectionSettings,
   normalizeIpAddress,
 } from "./bot-detection.server";
-import { getEmailProviderStatus } from "./incident-alerts.server";
+import { getEmailProviderStatus } from "./email.server.js";
 
 function toBooleanString(value, fallback = false) {
   if (typeof value === "boolean") return value ? "true" : "false";
