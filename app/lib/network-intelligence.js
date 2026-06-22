@@ -1,4 +1,5 @@
 export function normalizeNetworkIntel(payload = {}) {
+  const location = payload.location || payload.geo || {};
   const asn = Number(payload.asn?.asn);
   const organization =
     payload.asn?.org || payload.company?.name || payload.datacenter?.datacenter || "";
@@ -8,12 +9,31 @@ export function normalizeNetworkIntel(payload = {}) {
     payload.company?.name ||
     payload.asn?.org ||
     "";
+  const latitude = Number(
+    location.latitude ?? location.lat ?? payload.latitude ?? payload.lat,
+  );
+  const longitude = Number(
+    location.longitude ?? location.lon ?? payload.longitude ?? payload.lon,
+  );
 
   return {
     asn: Number.isInteger(asn) ? asn : null,
     organization: String(organization || ""),
     networkType: String(networkType || ""),
     provider: String(provider || ""),
+    country: String(
+      location.country || payload.country || payload.country_name || "",
+    ),
+    countryCode: String(
+      location.country_code ||
+        location.countryCode ||
+        payload.country_code ||
+        payload.countryCode ||
+        "",
+    ).toUpperCase(),
+    city: String(location.city || payload.city || ""),
+    latitude: Number.isFinite(latitude) ? latitude : null,
+    longitude: Number.isFinite(longitude) ? longitude : null,
     isVpn: payload.is_vpn === true,
     isProxy: payload.is_proxy === true,
     isDatacenter: payload.is_datacenter === true,

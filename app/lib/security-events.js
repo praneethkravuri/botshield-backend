@@ -43,6 +43,11 @@ export function serializeSecurityEvent(event) {
     networkOrg: event.networkOrg || "",
     networkType: event.networkType || "",
     networkProvider: event.networkProvider || "",
+    networkCountry: event.networkCountry || "",
+    networkCountryCode: event.networkCountryCode || "",
+    networkCity: event.networkCity || "",
+    networkLatitude: event.networkLatitude ?? null,
+    networkLongitude: event.networkLongitude ?? null,
     createdAt: event.createdAt,
   };
 }
@@ -83,6 +88,9 @@ export function matchesIncidentFilters(event, filters = {}) {
     event.networkOrg,
     event.networkType,
     event.networkProvider,
+    event.networkCountry,
+    event.networkCountryCode,
+    event.networkCity,
     ...(event.reasonCodes || []),
   ].some((value) => String(value || "").toLowerCase().includes(search));
 }

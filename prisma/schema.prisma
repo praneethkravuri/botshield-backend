@@ -8,58 +8,68 @@ datasource db {
 }
 
 model BotEvent {
-  id            Int      @id @default(autoincrement())
-  shop          String
-  ipAddress     String
-  userAgent     String
-  threatLevel   String
-  action        String
-  path          String?
-  riskScore     Int      @default(0)
-  reasonSummary String?
-  source        String   @default("local-engine")
-  networkAsn    Int?
-  networkOrg    String?
-  networkType   String?
-  networkProvider String?
-  createdAt     DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  shop               String
+  ipAddress          String
+  userAgent          String
+  threatLevel        String
+  action             String
+  path               String?
+  riskScore          Int      @default(0)
+  reasonSummary      String?
+  source             String   @default("local-engine")
+  networkAsn         Int?
+  networkOrg         String?
+  networkType        String?
+  networkProvider    String?
+  networkCountry     String?
+  networkCountryCode String?
+  networkCity        String?
+  networkLatitude    Float?
+  networkLongitude   Float?
+  createdAt          DateTime @default(now())
 
   @@index([shop, createdAt])
   @@index([shop, ipAddress, createdAt])
 }
 
 model NetworkIntel {
-  id            Int      @id @default(autoincrement())
-  ipAddress     String   @unique
-  asn           Int?
-  organization  String?
-  networkType   String?
-  provider      String?
-  isVpn         Boolean  @default(false)
-  isProxy       Boolean  @default(false)
-  isDatacenter  Boolean  @default(false)
-  isTor         Boolean  @default(false)
-  isAbuser      Boolean  @default(false)
-  rawJson       String?
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  ipAddress    String   @unique
+  asn          Int?
+  organization String?
+  networkType  String?
+  provider     String?
+  country      String?
+  countryCode  String?
+  city         String?
+  latitude     Float?
+  longitude    Float?
+  isVpn        Boolean  @default(false)
+  isProxy      Boolean  @default(false)
+  isDatacenter Boolean  @default(false)
+  isTor        Boolean  @default(false)
+  isAbuser     Boolean  @default(false)
+  rawJson      String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([expiresAt])
 }
 
 model BlockedIP {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   shop       String
   ipAddress  String
   reason     String?
-  source     String   @default("local-engine")
-  hits       Int      @default(0)
-  active     Boolean  @default(true)
+  source     String    @default("local-engine")
+  hits       Int       @default(0)
+  active     Boolean   @default(true)
   expiresAt  DateTime?
   lastSeenAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@unique([shop, ipAddress])
   @@index([shop, updatedAt])
@@ -92,21 +102,21 @@ model AppSetting {
 }
 
 model Session {
-  id                     String   @id
-  shop                   String
-  state                  String
-  isOnline               Boolean  @default(false)
-  scope                  String?
-  expires                DateTime?
-  accessToken            String
-  userId                 String?
-  firstName              String?
-  lastName               String?
-  email                  String?
-  accountOwner           Boolean  @default(false)
-  locale                 String?
-  collaborator           Boolean  @default(false)
-  emailVerified          Boolean  @default(false)
-  refreshToken           String?
-  refreshTokenExpires    DateTime?
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              String?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean   @default(false)
+  emailVerified       Boolean   @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
 }

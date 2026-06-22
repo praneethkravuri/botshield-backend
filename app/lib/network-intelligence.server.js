@@ -37,6 +37,21 @@ export async function lookupNetworkIntelligence(ipAddress) {
     .findUnique({ where: { ipAddress: normalizedIp } })
     .catch(() => null);
   if (cached && cached.expiresAt.getTime() > Date.now()) {
+    if (
+      cached.rawJson &&
+      (!cached.country || cached.latitude == null || cached.longitude == null)
+    ) {
+      try {
+        const normalized = normalizeNetworkIntel(JSON.parse(cached.rawJson));
+        const enriched = await db.networkIntel.update({
+          where: { ipAddress: normalizedIp },
+          data: normalized,
+        });
+        return { status: "cached_enriched", intel: enriched };
+      } catch {
+        // Keep the valid cached network record if legacy raw data cannot parse.
+      }
+    }
     return { status: "cached", intel: cached };
   }
 

@@ -218,6 +218,11 @@ async function writeBotEvent({
       networkOrg: networkIntel?.organization || null,
       networkType: networkIntel?.networkType || null,
       networkProvider: networkIntel?.provider || null,
+      networkCountry: networkIntel?.country || null,
+      networkCountryCode: networkIntel?.countryCode || null,
+      networkCity: networkIntel?.city || null,
+      networkLatitude: networkIntel?.latitude ?? null,
+      networkLongitude: networkIntel?.longitude ?? null,
     },
   });
 }
@@ -455,6 +460,11 @@ export async function evaluateStorefrontRequest(request, shop) {
           organization: networkIntel.organization,
           type: networkIntel.networkType,
           provider: networkIntel.provider,
+          country: networkIntel.country,
+          countryCode: networkIntel.countryCode,
+          city: networkIntel.city,
+          latitude: networkIntel.latitude,
+          longitude: networkIntel.longitude,
           vpn: Boolean(networkIntel.isVpn || networkIntel.isProxy),
           datacenter: networkIntel.isDatacenter,
         }

@@ -97,11 +97,21 @@ test("VPN datacenter and ASN intelligence changes real request scoring", () => {
     is_datacenter: true,
     asn: { asn: 64500, org: "Example Hosting", type: "hosting" },
     datacenter: { datacenter: "Example Cloud" },
+    location: {
+      country: "United States",
+      country_code: "US",
+      city: "Dallas",
+      latitude: 32.7767,
+      longitude: -96.797,
+    },
   });
   const signals = getNetworkIntelSignals(networkIntel);
   const detection = detectBotThreat({ ...baseRequest, networkIntel });
 
   assert.equal(networkIntel.asn, 64500);
+  assert.equal(networkIntel.countryCode, "US");
+  assert.equal(networkIntel.city, "Dallas");
+  assert.equal(networkIntel.latitude, 32.7767);
   assert.ok(signals.reasonCodes.includes("VPN_DETECTED"));
   assert.ok(signals.reasonCodes.includes("DATACENTER_IP"));
   assert.ok(signals.reasonCodes.includes("HOSTING_PROVIDER"));
@@ -330,6 +340,11 @@ test("security events expose structured reason codes and masked IPs", () => {
     reasonSummary:
       "[SUSPICIOUS_USER_AGENT] | [SENSITIVE_PATH] | Suspicious automation signature",
     source: "storefront-proxy",
+    networkCountry: "United States",
+    networkCountryCode: "US",
+    networkCity: "Dallas",
+    networkLatitude: 32.7767,
+    networkLongitude: -96.797,
     createdAt: new Date("2026-06-20T00:00:00Z"),
   });
 
@@ -339,6 +354,9 @@ test("security events expose structured reason codes and masked IPs", () => {
     "SENSITIVE_PATH",
   ]);
   assert.equal(event.maskedIpAddress, "203.0.xxx.27");
+  assert.equal(event.networkCountryCode, "US");
+  assert.equal(event.networkCity, "Dallas");
+  assert.equal(matchesIncidentFilters(event, { search: "Dallas" }), true);
   assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:…:1");
   assert.equal(matchesIncidentFilters(event, { source: "real" }), true);
   assert.equal(

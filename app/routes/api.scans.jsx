@@ -17,6 +17,13 @@ export async function loader({ request }) {
     riskScore: r.riskScore ?? 0,
     reasons: r.reasonSummary ?? "",
     source: r.source ?? "local-engine",
+    networkCountry: r.networkCountry ?? "",
+    networkCountryCode: r.networkCountryCode ?? "",
+    networkCity: r.networkCity ?? "",
+    networkLatitude: r.networkLatitude ?? null,
+    networkLongitude: r.networkLongitude ?? null,
+    networkOrg: r.networkOrg ?? "",
+    networkType: r.networkType ?? "",
     createdAt: r.createdAt,
   }));
   return Response.json({ scans });
