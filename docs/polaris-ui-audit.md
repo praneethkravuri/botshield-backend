@@ -25,6 +25,19 @@ The rebuild follows Shopify's current App Home guidance:
 The legacy custom route remains in the repository as isolated migration debt,
 but it is not rendered by the production app experience.
 
+### Product-depth pass
+
+The new Admin experience now surfaces additional real merchant value without
+adding fabricated metrics:
+
+- Seven-day storefront activity compared with the previous seven days.
+- Security-score factors and the next verified setup improvement.
+- Top real threat signals and approximate traffic origins.
+- Activity summary metrics before the full investigation table.
+- Plain-language detection sensitivity guidance and network intelligence scope.
+- Alert and weekly-report delivery history with visible failure states.
+- Diagnostic-data cleanup that never removes real storefront events.
+
 ## Architecture decision
 
 BotShield uses Shopify's React Router application template with

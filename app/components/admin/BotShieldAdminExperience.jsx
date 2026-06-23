@@ -6,6 +6,7 @@ import {
   BotShieldAsyncButton,
   BotShieldBanner,
   BotShieldCard,
+  BotShieldDangerZone,
   BotShieldEmptyState,
   BotShieldInlineHelp,
   BotShieldSaveState,
@@ -66,6 +67,21 @@ function formatReasons(value) {
     .join(" · ");
 }
 
+function inRecentDays(value, days, offsetDays = 0) {
+  if (!value) return false;
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) return false;
+  const end = Date.now() - offsetDays * 24 * 60 * 60 * 1000;
+  const start = end - days * 24 * 60 * 60 * 1000;
+  return timestamp >= start && timestamp < end;
+}
+
+function formatDelta(current, previous) {
+  if (previous === 0) return current === 0 ? "No change" : "New activity";
+  const change = Math.round(((current - previous) / previous) * 100);
+  return `${change > 0 ? "+" : ""}${change}% from previous 7 days`;
+}
+
 function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
   return (
     <s-page heading={title} inlineSize={maxWidth}>
@@ -97,6 +113,40 @@ function Metric({ label, value, detail, status }) {
         </s-stack>
       </s-stack>
     </s-box>
+  );
+}
+
+function InsightList({ items, emptyMessage }) {
+  if (!items.length) {
+    return <s-text color="subdued">{emptyMessage}</s-text>;
+  }
+  const highestCount = Math.max(...items.map((item) => item.count), 1);
+  return (
+    <s-stack>
+      {items.map((item) => (
+        <s-box key={item.label} paddingBlock="base" borderBlockEnd="base">
+          <s-stack gap="small">
+            <s-stack
+              direction="inline"
+              gap="base"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <s-text type="strong">{item.label}</s-text>
+              <s-text color="subdued">{item.count}</s-text>
+            </s-stack>
+            <s-box background="subdued" borderRadius="full" minBlockSize="4px">
+              <s-box
+                background="strong"
+                borderRadius="full"
+                minBlockSize="4px"
+                inlineSize={`${Math.max(8, Math.round((item.count / highestCount) * 100))}%`}
+              />
+            </s-box>
+          </s-stack>
+        </s-box>
+      ))}
+    </s-stack>
   );
 }
 
@@ -201,6 +251,30 @@ function OverviewPage({ model, actions }) {
       : model.protectionStatus.themeEmbedDetected
         ? "monitoring_only"
         : "setup_required";
+  const recentEvents = model.storefrontScans.filter((event) =>
+    inRecentDays(event.createdAt, 7),
+  );
+  const previousEvents = model.storefrontScans.filter((event) =>
+    inRecentDays(event.createdAt, 7, 7),
+  );
+  const recentBlocked = recentEvents.filter(
+    (event) => event.actionTaken === "blocked",
+  ).length;
+  const recentChallenged = recentEvents.filter(
+    (event) => event.actionTaken === "challenged",
+  ).length;
+  const threatSignals = (model.securityPosture?.report?.topReasonCodes || [])
+    .slice(0, 5)
+    .map((item) => ({
+      label: formatReasons([item.label]),
+      count: item.count,
+    }));
+  const topOrigins = model.trafficOrigins.slice(0, 5).map((origin) => ({
+    label:
+      [origin.city, origin.country].filter(Boolean).join(", ") ||
+      "Location unavailable",
+    count: origin.count,
+  }));
 
   return (
     <Screen
@@ -281,6 +355,46 @@ function OverviewPage({ model, actions }) {
           status={model.blockedCount ? "blocked" : "active"}
         />
       </s-grid>
+
+      <BotShieldCard
+        title="Last 7 days"
+        subtitle="A verified comparison using real storefront events."
+      >
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
+          gap="base"
+        >
+          <Metric
+            label="Traffic analyzed"
+            value={recentEvents.length}
+            detail={formatDelta(recentEvents.length, previousEvents.length)}
+          />
+          <Metric
+            label="Blocked"
+            value={recentBlocked}
+            detail="Requests stopped automatically"
+            status={recentBlocked ? "blocked" : "active"}
+          />
+          <Metric
+            label="Challenged"
+            value={recentChallenged}
+            detail="Visitors asked to verify"
+            status={recentChallenged ? "challenged" : "active"}
+          />
+          <Metric
+            label="High risk"
+            value={
+              recentEvents.filter((event) => event.threatLevel === "high").length
+            }
+            detail="Events requiring attention"
+            status={
+              recentEvents.some((event) => event.threatLevel === "high")
+                ? "high"
+                : "low"
+            }
+          />
+        </s-grid>
+      </BotShieldCard>
 
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))"
@@ -382,7 +496,57 @@ function OverviewPage({ model, actions }) {
               {model.securityPosture?.score?.suggestions?.[0] ||
                 "No immediate setup improvements are required."}
             </s-text>
+            <s-stack>
+              {(model.securityPosture?.score?.factors || []).map((factor) => (
+                <s-stack
+                  key={factor.key}
+                  direction="inline"
+                  gap="base"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <s-text color="subdued">{factor.label}</s-text>
+                  <BotShieldStatusBadge
+                    status={
+                      factor.earned === factor.points
+                        ? "active"
+                        : "setup_required"
+                    }
+                    label={`${factor.earned}/${factor.points}`}
+                  />
+                </s-stack>
+              ))}
+            </s-stack>
           </s-stack>
+        </BotShieldCard>
+      </s-grid>
+
+      <s-grid
+        gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))"
+        gap="base"
+      >
+        <BotShieldCard
+          title="Top threat signals"
+          subtitle="Most frequent suspicious signals from real storefront activity."
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+              Investigate
+            </BotShieldActionButton>
+          }
+        >
+          <InsightList
+            items={threatSignals}
+            emptyMessage="No elevated threat signals have been recorded."
+          />
+        </BotShieldCard>
+        <BotShieldCard
+          title="Traffic origins"
+          subtitle="Approximate locations from enriched storefront requests."
+        >
+          <InsightList
+            items={topOrigins}
+            emptyMessage="Location intelligence appears after traffic is enriched."
+          />
         </BotShieldCard>
       </s-grid>
 
@@ -515,6 +679,15 @@ function ActivityTable({ model, actions }) {
 }
 
 function ActivityPage({ model, actions }) {
+  const blocked = model.incidents.filter(
+    (incident) => incident.decision === "blocked",
+  ).length;
+  const challenged = model.incidents.filter(
+    (incident) => incident.decision === "challenged",
+  ).length;
+  const highRisk = model.incidents.filter(
+    (incident) => incident.threatLevel === "high",
+  ).length;
   return (
     <Screen
       title="Activity"
@@ -530,6 +703,35 @@ function ActivityPage({ model, actions }) {
         </BotShieldAsyncButton>
       }
     >
+      <s-grid
+        gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+        gap="base"
+      >
+        <Metric
+          label="Real storefront"
+          value={model.incidentCounts.real}
+          detail="Verified production events"
+          status="real_storefront"
+        />
+        <Metric
+          label="Blocked"
+          value={blocked}
+          detail="Requests stopped"
+          status={blocked ? "blocked" : "active"}
+        />
+        <Metric
+          label="Challenged"
+          value={challenged}
+          detail="Verification requested"
+          status={challenged ? "challenged" : "active"}
+        />
+        <Metric
+          label="High risk"
+          value={highRisk}
+          detail="Events requiring review"
+          status={highRisk ? "high" : "low"}
+        />
+      </s-grid>
       <BotShieldCard>
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
@@ -722,6 +924,30 @@ function ProtectionPage({ model, actions }) {
                 }))
               }
             />
+            <BotShieldInlineHelp>
+              Low responds only to obvious abuse. Medium balances protection and
+              false-positive risk. High responds to more suspicious automation.
+              Strict Mode applies the strongest profile.
+            </BotShieldInlineHelp>
+          </s-stack>
+        </BotShieldCard>
+
+        <s-stack gap="small">
+          <s-heading>Network intelligence</s-heading>
+          <s-paragraph color="subdued">
+            Use enriched network data to explain suspicious storefront activity.
+          </s-paragraph>
+        </s-stack>
+        <BotShieldCard badge={<BotShieldStatusBadge status="active" label="Enabled" />}>
+          <s-stack gap="base">
+            <s-text>
+              VPN, proxy, datacenter, hosting provider, and ASN signals contribute
+              to real storefront risk scores.
+            </s-text>
+            <BotShieldInlineHelp>
+              Network intelligence is approximate and does not identify a
+              visitor’s exact physical location.
+            </BotShieldInlineHelp>
           </s-stack>
         </BotShieldCard>
 
@@ -924,6 +1150,15 @@ function SettingsPage({ model, actions }) {
         </s-stack>
         <BotShieldCard badge={<BotShieldStatusBadge status={emailStatus.technicalStatus} />}>
           <s-stack gap="large">
+            {!model.emailProviderConfigured ? (
+              <BotShieldBanner
+                tone="warning"
+                title="Email provider not configured"
+              >
+                Configure the Resend API key and verified sending domain before
+                enabling merchant notifications.
+              </BotShieldBanner>
+            ) : null}
             <BotShieldTextField
               label="Alert email"
               value={draft.alertEmail}
@@ -996,6 +1231,36 @@ function SettingsPage({ model, actions }) {
                 Send report now
               </BotShieldAsyncButton>
             </s-stack>
+            <s-grid
+              gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
+              gap="base"
+            >
+              <Metric
+                label="Last alert"
+                value={model.lastAlertStatus || "Not sent"}
+                detail={formatDate(model.lastAlertSentAt)}
+                status={
+                  model.lastAlertStatus === "sent"
+                    ? "sent"
+                    : model.lastAlertStatus || "pending"
+                }
+              />
+              <Metric
+                label="Last weekly report"
+                value={model.lastWeeklyReportStatus || "Not sent"}
+                detail={formatDate(model.lastWeeklyReportAt)}
+                status={
+                  model.lastWeeklyReportStatus === "sent"
+                    ? "sent"
+                    : model.lastWeeklyReportStatus || "pending"
+                }
+              />
+            </s-grid>
+            {model.lastAlertError || model.lastWeeklyReportError ? (
+              <BotShieldBanner tone="critical" title="Most recent delivery failed">
+                {model.lastAlertError || model.lastWeeklyReportError}
+              </BotShieldBanner>
+            ) : null}
           </s-stack>
         </BotShieldCard>
 
@@ -1048,6 +1313,19 @@ function SettingsPage({ model, actions }) {
         onRemove={actions.removeTrustedIp}
         addLabel="Trust IP"
         emptyTitle="No trusted visitors"
+      />
+      <BotShieldDangerZone
+        title="Clear diagnostic data"
+        description="Delete diagnostic and simulated events. Real storefront activity is preserved."
+        action={
+          <BotShieldAsyncButton
+            action={actions.clearSimulationData}
+            successMessage="Diagnostic data cleared"
+            tone="critical"
+          >
+            Clear diagnostic data
+          </BotShieldAsyncButton>
+        }
       />
     </Screen>
   );
@@ -1110,11 +1388,52 @@ function BillingPage({ model, actions }) {
 }
 
 function SetupPage({ model, actions }) {
+  const complete = model.readinessItems.filter((item) => item.complete).length;
   return (
     <Screen
       title="Setup"
       subtitle="Complete installation and learn how BotShield protects the storefront."
     >
+      <BotShieldCard>
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
+          gap="base"
+        >
+          <Metric
+            label="Setup progress"
+            value={`${complete}/${model.readinessItems.length}`}
+            detail="Verified automatically"
+            status={
+              complete === model.readinessItems.length
+                ? "active"
+                : "setup_required"
+            }
+          />
+          <Metric
+            label="Storefront"
+            value={
+              model.protectionStatus.themeEmbedDetected
+                ? "Connected"
+                : "Not connected"
+            }
+            detail={formatDate(
+              model.protectionStatus.lastStorefrontDecisionAt,
+              "No storefront event yet",
+            )}
+            status={
+              model.protectionStatus.themeEmbedDetected
+                ? "theme_embed_connected"
+                : "theme_embed_missing"
+            }
+          />
+          <Metric
+            label="Protection"
+            value={model.protectionPaused ? "Paused" : "Active"}
+            detail={model.autoBlock ? "Auto Block enabled" : "Monitoring only"}
+            status={model.protectionPaused ? "paused" : "active"}
+          />
+        </s-grid>
+      </BotShieldCard>
       <SetupGuide model={model} actions={actions} />
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"

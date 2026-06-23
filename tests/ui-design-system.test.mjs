@@ -101,6 +101,9 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Connect your storefront/);
   assert.match(source, /Setup guide/);
   assert.match(source, /Protection status/);
+  assert.match(source, /Last 7 days/);
+  assert.match(source, /Top threat signals/);
+  assert.match(source, /Traffic origins/);
   assert.match(source, /Recent activity/);
   assert.match(source, /title="Activity"/);
   assert.match(source, /title="Protection"/);
