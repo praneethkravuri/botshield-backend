@@ -38,8 +38,9 @@ export default function App() {
             alignItems: "center",
             gap: "8px",
             minHeight: "50px",
-            fontSize: "23px",
-            lineHeight: "28px",
+            fontFamily: "Inter, sans-serif",
+            fontSize: "24px",
+            lineHeight: 1.1,
             fontWeight: 700,
             letterSpacing: "-0.02em",
             color: "#303030",
@@ -50,7 +51,7 @@ export default function App() {
               width: "30px",
               height: "30px",
               flex: "0 0 30px",
-              borderRadius: "7px",
+              borderRadius: "6px",
               overflow: "hidden",
               display: "inline-flex",
             }}
@@ -66,7 +67,9 @@ export default function App() {
               }}
             />
           </span>
-          <span>BotShield: Fraud &amp; Bot Detector</span>
+          <span style={{ fontFamily: "Inter, sans-serif" }}>
+            BotShield: Fraud &amp; Bot Detector
+          </span>
         </div>
 
         <div
