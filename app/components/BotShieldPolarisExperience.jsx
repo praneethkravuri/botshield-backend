@@ -563,6 +563,31 @@ function PremiumDashboardPage({ model, actions }) {
       }
       banner={<PremiumSetupBanner model={model} actions={actions} />}
     >
+      <s-box
+        background="base"
+        border="base"
+        borderRadius="large"
+        padding="large-500"
+      >
+        <s-stack gap="base">
+          <s-badge tone="success">Storefront security</s-badge>
+          <div
+            style={{
+              fontSize: "32px",
+              lineHeight: "38px",
+              fontWeight: 750,
+              letterSpacing: "-0.035em",
+            }}
+          >
+            BotShield: Fraud &amp; Bot Detector
+          </div>
+          <s-paragraph color="subdued">
+            Detect suspicious visitors, stop automated abuse, and monitor your
+            Shopify storefront from one place.
+          </s-paragraph>
+        </s-stack>
+      </s-box>
+
       <BotShieldCard>
         <s-stack>
           <BotShieldStatusRow
