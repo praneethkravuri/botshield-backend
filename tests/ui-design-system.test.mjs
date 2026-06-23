@@ -85,18 +85,33 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
   assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro/);
 });
 
-test("Polaris dashboard presents a protection command center before metrics", async () => {
+test("Polaris dashboard presents a merchant-facing security center", async () => {
   const source = await readFile(
     new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /Protection overview/);
+  assert.match(source, /BotShield Security Center/);
+  assert.match(source, /Theme App Embed Required/);
   assert.match(source, /Your storefront is protected/);
-  assert.match(source, /Activity snapshot/);
-  assert.match(source, /Setup progress/);
+  assert.match(source, /Security outcomes/);
+  assert.match(source, /Store protection overview/);
+  assert.match(source, /Store setup progress/);
+  assert.match(source, /Recent security activity/);
+  assert.match(source, /PremiumDashboardPage/);
   assert.match(source, /Reason", "Source"/);
   assert.doesNotMatch(source, /world map/i);
+});
+
+test("merchant-facing reason labels replace raw detection codes", async () => {
+  const source = await readFile(
+    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /Elevated request volume detected/);
+  assert.match(source, /Known hosting provider traffic/);
+  assert.match(source, /Automated browser behavior detected/);
 });
 
 test("Setup experience uses verified checklist rows with contextual actions", async () => {

@@ -39,6 +39,26 @@ giving each page a clearer hierarchy:
 No backend endpoint, storefront enforcement path, billing verification logic, or
 email delivery behavior was changed by this sprint.
 
+## Shopify App Store composition rebuild
+
+The premium composition rebuild replaces the dashboard's developer-oriented
+card grid with a merchant-facing Security Center:
+
+- Protection status and the next meaningful action lead the page.
+- Theme app embed setup becomes the dominant onboarding callout when missing.
+- Security outcomes use merchant language: verified visitors, threats stopped,
+  suspicious visitors, and requests analyzed.
+- Security health explains the score and surfaces the next improvement.
+- Operational health is consolidated into a Store Protection Overview instead
+  of four disconnected status tiles.
+- Setup progress is guided and verifiable.
+- Recent activity is summarized as readable security events; the full table is
+  reserved for the Investigation Center.
+- Technical reason codes are translated into merchant-readable explanations.
+
+The supporting screens are framed by merchant purpose: Investigation Center,
+Threat Detection, Response Policy, Subscription, and Setup & Support.
+
 ## Interactive control audit
 
 | Control | Endpoint/action | Previous UX | Migrated UX |

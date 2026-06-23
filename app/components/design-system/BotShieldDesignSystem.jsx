@@ -216,7 +216,16 @@ export function BotShieldCommandCard({
                 {eyebrow}
               </s-text>
             ) : null}
-            <s-heading>{title}</s-heading>
+            <div
+              style={{
+                fontSize: "26px",
+                lineHeight: "32px",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {title}
+            </div>
             {description ? (
               <s-paragraph color="subdued">{description}</s-paragraph>
             ) : null}
@@ -270,6 +279,76 @@ export function BotShieldSignalCard({
           alignItems="end"
         >
           <s-text color="subdued">{detail}</s-text>
+          {action}
+        </s-stack>
+      </s-stack>
+    </s-box>
+  );
+}
+
+export function BotShieldOutcomeMetric({
+  label,
+  value,
+  detail,
+  status,
+  loading,
+}) {
+  return (
+    <s-box padding="base">
+      <s-stack gap="small">
+        <s-stack
+          direction="inline"
+          gap="small"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <s-text color="subdued">{label}</s-text>
+          {status ? <BotShieldStatusBadge status={status} /> : null}
+        </s-stack>
+        {loading ? (
+          <s-spinner accessibilityLabel={`Loading ${label}`} />
+        ) : (
+          <div
+            style={{
+              fontSize: "30px",
+              lineHeight: "36px",
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+            }}
+          >
+            {value}
+          </div>
+        )}
+        <s-text color="subdued">{detail}</s-text>
+      </s-stack>
+    </s-box>
+  );
+}
+
+export function BotShieldStatusRow({
+  label,
+  value,
+  detail,
+  status,
+  action,
+}) {
+  return (
+    <s-box paddingBlock="base" borderBlockEnd="base">
+      <s-stack
+        direction="inline"
+        gap="base"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <s-stack gap="small-200">
+          <s-stack direction="inline" gap="small" alignItems="center">
+            <s-text type="strong">{label}</s-text>
+            <BotShieldStatusBadge status={status} />
+          </s-stack>
+          <s-text color="subdued">{detail}</s-text>
+        </s-stack>
+        <s-stack direction="inline" gap="base" alignItems="center">
+          <s-text type="strong">{value}</s-text>
           {action}
         </s-stack>
       </s-stack>
