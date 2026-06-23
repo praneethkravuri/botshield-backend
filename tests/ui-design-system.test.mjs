@@ -84,3 +84,36 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
   assert.match(source, /trialDays \|\| 7/);
   assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro/);
 });
+
+test("Polaris dashboard presents a protection command center before metrics", async () => {
+  const source = await readFile(
+    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /Protection overview/);
+  assert.match(source, /Your storefront is protected/);
+  assert.match(source, /Activity snapshot/);
+  assert.match(source, /Setup progress/);
+  assert.match(source, /Reason", "Source"/);
+  assert.doesNotMatch(source, /world map/i);
+});
+
+test("Setup experience uses verified checklist rows with contextual actions", async () => {
+  const source = await readFile(
+    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    "utf8",
+  );
+  const designSystem = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(source, /Launch readiness/);
+  assert.match(source, /BotShieldChecklistItem/);
+  assert.match(source, /Enable theme embed/);
+  assert.match(designSystem, /Action needed/);
+});

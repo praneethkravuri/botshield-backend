@@ -186,6 +186,138 @@ export function BotShieldMetricCard({ label, value, detail, status, loading }) {
   );
 }
 
+export function BotShieldCommandCard({
+  eyebrow,
+  title,
+  description,
+  status,
+  statusLabel,
+  primaryAction,
+  secondaryAction,
+  children,
+}) {
+  return (
+    <s-box
+      background="base"
+      border="base"
+      borderRadius="large"
+      padding="large"
+    >
+      <s-stack gap="large">
+        <s-stack
+          direction="inline"
+          gap="large"
+          justifyContent="space-between"
+          alignItems="start"
+        >
+          <s-stack gap="small">
+            {eyebrow ? (
+              <s-text color="subdued" type="strong">
+                {eyebrow}
+              </s-text>
+            ) : null}
+            <s-heading>{title}</s-heading>
+            {description ? (
+              <s-paragraph color="subdued">{description}</s-paragraph>
+            ) : null}
+          </s-stack>
+          {status ? (
+            <BotShieldStatusBadge status={status} label={statusLabel} />
+          ) : null}
+        </s-stack>
+        {children}
+        {primaryAction || secondaryAction ? (
+          <s-stack direction="inline" gap="small">
+            {primaryAction}
+            {secondaryAction}
+          </s-stack>
+        ) : null}
+      </s-stack>
+    </s-box>
+  );
+}
+
+export function BotShieldSignalCard({
+  label,
+  value,
+  detail,
+  status,
+  action,
+}) {
+  return (
+    <s-box
+      background="base"
+      border="base"
+      borderRadius="large"
+      padding="base"
+      minBlockSize="132px"
+    >
+      <s-stack gap="base">
+        <s-stack
+          direction="inline"
+          gap="small"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <s-text color="subdued">{label}</s-text>
+          {status ? <BotShieldStatusBadge status={status} /> : null}
+        </s-stack>
+        <s-text type="strong">{value}</s-text>
+        <s-stack
+          direction="inline"
+          gap="small"
+          justifyContent="space-between"
+          alignItems="end"
+        >
+          <s-text color="subdued">{detail}</s-text>
+          {action}
+        </s-stack>
+      </s-stack>
+    </s-box>
+  );
+}
+
+export function BotShieldChecklistItem({
+  index,
+  label,
+  detail,
+  complete,
+  action,
+}) {
+  return (
+    <s-box paddingBlock="base" borderBlockEnd="base">
+      <s-stack
+        direction="inline"
+        gap="base"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <s-stack direction="inline" gap="base" alignItems="center">
+          <s-box
+            background={complete ? "success-subdued" : "subdued"}
+            borderRadius="full"
+            padding="small"
+            minInlineSize="36px"
+          >
+            <s-text type="strong">{complete ? "✓" : index}</s-text>
+          </s-box>
+          <s-stack gap="small-200">
+            <s-text type="strong">{label}</s-text>
+            <s-text color="subdued">{detail}</s-text>
+          </s-stack>
+        </s-stack>
+        <s-stack direction="inline" gap="small" alignItems="center">
+          <BotShieldStatusBadge
+            status={complete ? "active" : "setup_required"}
+            label={complete ? "Ready" : "Action needed"}
+          />
+          {action}
+        </s-stack>
+      </s-stack>
+    </s-box>
+  );
+}
+
 export function BotShieldStatusBadge({ status, label, tone }) {
   const model = getUiStatus(status);
   return <s-badge tone={tone || model.tone}>{label || model.label}</s-badge>;

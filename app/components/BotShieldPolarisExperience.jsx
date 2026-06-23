@@ -6,6 +6,8 @@ import {
   BotShieldAsyncButton,
   BotShieldBanner,
   BotShieldCard,
+  BotShieldChecklistItem,
+  BotShieldCommandCard,
   BotShieldDangerZone,
   BotShieldEmptyState,
   BotShieldInlineHelp,
@@ -13,6 +15,7 @@ import {
   BotShieldPage,
   BotShieldSaveState,
   BotShieldSelect,
+  BotShieldSignalCard,
   BotShieldStatusBadge,
   BotShieldTextField,
   BotShieldToggle,
@@ -32,6 +35,25 @@ function formatDate(value, fallback = "Not yet") {
   if (!value) return fallback;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString();
+}
+
+function formatReasons(reasons) {
+  const list = Array.isArray(reasons)
+    ? reasons
+    : String(reasons || "")
+        .split(",")
+        .map((reason) => reason.trim())
+        .filter(Boolean);
+  if (!list.length) return "No elevated signal";
+  return list
+    .slice(0, 2)
+    .map((reason) =>
+      reason
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase()),
+    )
+    .join(", ");
 }
 
 function ShopifyTable({ headings, rows, loading, empty }) {
@@ -124,6 +146,27 @@ function SetupBanner({ model, actions }) {
 }
 
 function DashboardPage({ model, actions }) {
+  const protectionStatus = model.protectionPaused
+    ? "paused"
+    : model.protectionReady
+      ? "active"
+      : model.protectionStatus.themeEmbedDetected
+        ? "monitoring_only"
+        : "setup_required";
+  const protectionTitle = model.protectionPaused
+    ? "Protection is paused"
+    : model.protectionReady
+      ? "Your storefront is protected"
+      : model.protectionStatus.themeEmbedDetected
+        ? "Storefront monitoring is connected"
+        : "Finish connecting your storefront";
+  const protectionDescription = model.protectionPaused
+    ? "BotShield is recording decisions but will not automatically block visitors until protection resumes."
+    : model.protectionReady
+      ? `BotShield is evaluating real storefront traffic with ${model.blockLevel.toLowerCase()} sensitivity${model.strictMode ? " and strict mode" : ""}.`
+      : model.protectionStatus.themeEmbedDetected
+        ? "Real traffic is being recorded. Turn on automated response when your policy is ready."
+        : "Enable the theme app embed so BotShield can begin evaluating real storefront visits.";
   const primaryAction = !model.protectionStatus.themeEmbedDetected ? (
     <BotShieldActionButton variant="primary" onClick={actions.openThemeEditor}>
       Finish setup
@@ -144,6 +187,9 @@ function DashboardPage({ model, actions }) {
       </s-stack>,
       <BotShieldStatusBadge key="decision" status={event.actionTaken} />,
       <BotShieldStatusBadge key="risk" status={event.threatLevel} />,
+      <s-text key="reason" color="subdued">
+        {formatReasons(event.reasonCodes || event.reasons)}
+      </s-text>,
       <BotShieldStatusBadge
         key="source"
         status={getEventSourceStatus(event.source).technicalStatus}
@@ -166,7 +212,6 @@ function DashboardPage({ model, actions }) {
           }
         />
       }
-      primaryAction={primaryAction}
       secondaryActions={
         <BotShieldAsyncButton
           action={actions.refresh}
@@ -178,74 +223,146 @@ function DashboardPage({ model, actions }) {
       }
       banner={<SetupBanner model={model} actions={actions} />}
     >
+      <BotShieldCommandCard
+        eyebrow="Protection overview"
+        title={protectionTitle}
+        description={protectionDescription}
+        status={protectionStatus}
+        primaryAction={primaryAction}
+        secondaryAction={
+          model.protectionStatus.themeEmbedDetected ? (
+            <BotShieldActionButton onClick={() => actions.setPage("detection")}>
+              Review policy
+            </BotShieldActionButton>
+          ) : null
+        }
+      >
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))"
+          gap="base"
+        >
+          <s-stack gap="small-200">
+            <s-text color="subdued">Real events</s-text>
+            <s-heading>{model.storefrontScans.length}</s-heading>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Threats stopped</s-text>
+            <s-heading>{model.blockedCount + model.challengedCount}</s-heading>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Security score</s-text>
+            <s-heading>
+              {model.securityPosture
+                ? `${model.securityPosture.score.score}/100`
+                : "Calculating"}
+            </s-heading>
+          </s-stack>
+        </s-grid>
+      </BotShieldCommandCard>
+
       <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(190px, 1fr))"
+        gridTemplateColumns="repeat(auto-fit, minmax(210px, 1fr))"
         gap="base"
       >
-        <BotShieldMetricCard
-          label="Requests analyzed"
-          value={model.storefrontScans.length}
-          detail="Real storefront events"
-          loading={model.syncing && model.storefrontScans.length === 0}
-        />
-        <BotShieldMetricCard
-          label="Allowed"
-          value={model.allowedCount}
-          status="allowed"
-        />
-        <BotShieldMetricCard
-          label="Challenged"
-          value={model.challengedCount}
-          status="challenged"
-        />
-        <BotShieldMetricCard
-          label="Blocked"
-          value={model.blockedCount}
-          status="blocked"
-        />
-        <BotShieldMetricCard
-          label="High-risk events"
-          value={model.highRiskCount}
-          status={model.highRiskCount ? "high" : "low"}
-        />
-        <BotShieldMetricCard
-          label="Security score"
+        <BotShieldSignalCard
+          label="Storefront connection"
           value={
-            model.securityPosture
-              ? `${model.securityPosture.score.score}/100`
-              : "Calculating"
+            model.protectionStatus.themeEmbedDetected ? "Connected" : "Not connected"
           }
-          detail={model.securityPosture?.score?.grade || "Verified setup score"}
+          detail={
+            model.protectionStatus.lastStorefrontDecisionAt
+              ? `Last event ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}`
+              : "Waiting for the first storefront event"
+          }
+          status={
+            model.protectionStatus.themeEmbedDetected
+              ? "theme_embed_connected"
+              : "theme_embed_missing"
+          }
+        />
+        <BotShieldSignalCard
+          label="Automated response"
+          value={model.autoBlock ? "Auto Block on" : "Monitoring only"}
+          detail={`${model.blockLevel} sensitivity${model.strictMode ? " · Strict mode" : ""}`}
+          status={model.autoBlock ? "active" : "monitoring_only"}
+        />
+        <BotShieldSignalCard
+          label="Email alerts"
+          value={model.emailAlerts ? "Alerts enabled" : "Alerts off"}
+          detail={
+            model.emailProviderConfigured
+              ? model.alertEmail || "Recipient not set"
+              : "Resend needs configuration"
+          }
+          status={
+            model.emailProviderConfigured && model.emailAlerts
+              ? "provider_connected"
+              : "provider_not_configured"
+          }
+        />
+        <BotShieldSignalCard
+          label="Shopify billing"
+          value={
+            model.billingStatus?.active
+              ? model.billingStatus.subscription?.name || "Plan active"
+              : "Plan not active"
+          }
+          detail={
+            model.billingStatus?.active
+              ? "Subscription verified"
+              : "Complete App Pricing setup"
+          }
+          status={model.billingStatus?.active ? "active" : "setup_required"}
         />
       </s-grid>
 
-      <BotShieldCard
-        title="Protection readiness"
-        subtitle="Every status below is backed by production data."
-      >
-        <s-grid
-          gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
-          gap="base"
+      <s-grid gridTemplateColumns="minmax(0, 2fr) minmax(280px, 1fr)" gap="base">
+        <BotShieldCard
+          title="Activity snapshot"
+          subtitle="Verified storefront decisions only."
         >
-          {model.readinessItems.map((item) => (
-            <s-box
-              key={item.label}
-              background="subdued"
-              borderRadius="large"
-              padding="base"
-            >
-              <s-stack gap="small">
+          <s-grid
+            gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
+            gap="base"
+          >
+            <BotShieldMetricCard label="Allowed" value={model.allowedCount} status="allowed" />
+            <BotShieldMetricCard label="Challenged" value={model.challengedCount} status="challenged" />
+            <BotShieldMetricCard label="Blocked" value={model.blockedCount} status="blocked" />
+            <BotShieldMetricCard
+              label="High risk"
+              value={model.highRiskCount}
+              status={model.highRiskCount ? "high" : "low"}
+            />
+          </s-grid>
+        </BotShieldCard>
+        <BotShieldCard
+          title="Setup progress"
+          subtitle={`${model.readinessItems.filter((item) => item.complete).length} of ${model.readinessItems.length} checks ready`}
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+              View setup
+            </BotShieldActionButton>
+          }
+        >
+          <s-stack gap="small">
+            {model.readinessItems.slice(0, 4).map((item) => (
+              <s-stack
+                key={item.label}
+                direction="inline"
+                gap="small"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <s-text color={item.complete ? "subdued" : "base"}>{item.label}</s-text>
                 <BotShieldStatusBadge
                   status={item.complete ? "active" : "setup_required"}
-                  label={item.complete ? "Complete" : "Needs attention"}
+                  label={item.complete ? "Ready" : "Required"}
                 />
-                <s-text type="strong">{item.label}</s-text>
-                <s-text color="subdued">{item.detail}</s-text>
               </s-stack>
-            </s-box>
-          ))}
-        </s-grid>
-      </BotShieldCard>
+            ))}
+          </s-stack>
+        </BotShieldCard>
+      </s-grid>
 
       <BotShieldCard
         title="Recent storefront activity"
@@ -257,7 +374,7 @@ function DashboardPage({ model, actions }) {
         }
       >
         <ShopifyTable
-          headings={["Time", "Visitor and path", "Decision", "Risk", "Source"]}
+          headings={["Time", "Visitor and path", "Decision", "Risk", "Reason", "Source"]}
           rows={recentRows}
           empty={
             <BotShieldEmptyState
@@ -342,6 +459,15 @@ function IncidentsPage({ model, actions }) {
       </s-stack>,
       <BotShieldStatusBadge key="decision" status={incident.decision} />,
       <BotShieldStatusBadge key="risk" status={incident.threatLevel} />,
+      <s-stack gap="small-200" key="signal">
+        <s-text>{formatReasons(incident.reasonCodes || incident.reasons)}</s-text>
+        <s-text color="subdued">
+          {[incident.networkCity, incident.networkCountry]
+            .filter(Boolean)
+            .join(", ") ||
+            "Location unavailable"}
+        </s-text>
+      </s-stack>,
       <BotShieldStatusBadge
         key="source"
         status={getEventSourceStatus(incident.source).technicalStatus}
@@ -434,7 +560,7 @@ function IncidentsPage({ model, actions }) {
       >
         <ShopifyTable
           loading={model.incidentLoading}
-          headings={["Time", "Visitor", "Decision", "Risk", "Source", "Actions"]}
+          headings={["Time", "Visitor", "Decision", "Risk", "Signal", "Source", "Actions"]}
           rows={rows}
           empty={
             <BotShieldEmptyState
@@ -517,6 +643,48 @@ function DetectionPage({ model, actions }) {
         }
       />
 
+      <BotShieldCommandCard
+        eyebrow="Active policy"
+        title={`${draft.blockLevel} sensitivity${draft.strictMode ? " with Strict Mode" : ""}`}
+        description={
+          draft.autoBlock
+            ? "BotShield can automatically respond when real storefront traffic crosses the active risk threshold."
+            : "BotShield is evaluating and recording traffic without automatically blocking visitors."
+        }
+        status={
+          model.protectionPaused
+            ? "paused"
+            : draft.autoBlock
+              ? "active"
+              : "monitoring_only"
+        }
+        primaryAction={
+          dirty ? (
+            <BotShieldActionButton variant="primary" loading={saving} onClick={save}>
+              Save policy
+            </BotShieldActionButton>
+          ) : null
+        }
+      >
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(160px, 1fr))"
+          gap="base"
+        >
+          <s-stack gap="small-200">
+            <s-text color="subdued">Sensitivity</s-text>
+            <s-text type="strong">{draft.blockLevel}</s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Automated response</s-text>
+            <s-text type="strong">{draft.autoBlock ? "Enabled" : "Off"}</s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Strict Mode</s-text>
+            <s-text type="strong">{draft.strictMode ? "Enabled" : "Off"}</s-text>
+          </s-stack>
+        </s-grid>
+      </BotShieldCommandCard>
+
       <BotShieldCard
         title="Protection mode"
         subtitle="Pause only when investigating a false positive. Events continue to be recorded while paused."
@@ -568,7 +736,7 @@ function DetectionPage({ model, actions }) {
           />
           <BotShieldToggle
             label="Strict mode"
-            details="Uses the strongest rule profile and enables automated response."
+            details="Uses the strongest rule profile, High sensitivity, and automated response."
             checked={draft.strictMode}
             onChange={(strictMode) =>
               setDraft((current) => ({
@@ -752,6 +920,60 @@ function PolicyPage({ model, actions }) {
           sending merchant alerts.
         </BotShieldBanner>
       ) : null}
+
+      <BotShieldCommandCard
+        eyebrow="Notification status"
+        title={
+          model.emailProviderConfigured
+            ? draft.emailAlerts
+              ? "Security alerts are enabled"
+              : "Email delivery is connected"
+            : "Connect Resend to activate alerts"
+        }
+        description={
+          model.emailProviderConfigured
+            ? draft.alertEmail
+              ? `Security notices and reports are configured for ${draft.alertEmail}.`
+              : "Add a recipient before enabling alerts or weekly reports."
+            : "BotShield will keep recording incidents, but it cannot notify the merchant until the provider is configured."
+        }
+        status={emailStatus.technicalStatus}
+        primaryAction={
+          dirty ? (
+            <BotShieldActionButton variant="primary" loading={saving} onClick={save}>
+              Save notification policy
+            </BotShieldActionButton>
+          ) : null
+        }
+      >
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
+          gap="base"
+        >
+          <s-stack gap="small-200">
+            <s-text color="subdued">Provider</s-text>
+            <s-text type="strong">
+              {model.emailProviderConfigured ? "Resend connected" : "Not configured"}
+            </s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Incident alerts</s-text>
+            <s-text type="strong">{draft.emailAlerts ? "Enabled" : "Off"}</s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Weekly reports</s-text>
+            <s-text type="strong">
+              {draft.weeklyReportsEnabled ? "Enabled" : "Off"}
+            </s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Last delivery</s-text>
+            <s-text type="strong">
+              {getUiStatus(model.lastAlertStatus || "pending").label}
+            </s-text>
+          </s-stack>
+        </s-grid>
+      </BotShieldCommandCard>
 
       <BotShieldCard
         title="Email alerts"
@@ -970,10 +1192,22 @@ function BillingPage({ model, actions }) {
         </BotShieldAsyncButton>
       }
     >
-      <BotShieldCard
+      <BotShieldCommandCard
+        eyebrow="BotShield subscription"
         title={model.billingStatus?.planName || "BotShield Basic"}
-        subtitle={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)}/month · ${Number(model.billingStatus?.trialDays || 7)}-day trial`}
-        badge={<BotShieldStatusBadge status={status.technicalStatus} />}
+        description={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)} per month after a ${Number(model.billingStatus?.trialDays || 7)}-day trial. Managed securely through Shopify.`}
+        status={status.technicalStatus}
+        primaryAction={
+          model.billingStatus?.pricingUrl && !model.billingStatus?.active ? (
+            <BotShieldActionButton
+              variant="primary"
+              href={model.billingStatus.pricingUrl}
+              target="_top"
+            >
+              Start plan
+            </BotShieldActionButton>
+          ) : null
+        }
       >
         <s-stack gap="large">
           <s-grid
@@ -1005,52 +1239,79 @@ function BillingPage({ model, actions }) {
               should remain disabled until the paid and reviewer plans are verified.
             </BotShieldBanner>
           ) : null}
-          {model.billingStatus?.pricingUrl ? (
-            <BotShieldActionButton
-              variant="primary"
-              href={model.billingStatus.pricingUrl}
-              target="_top"
-            >
-              Choose plan
-            </BotShieldActionButton>
-          ) : null}
         </s-stack>
-      </BotShieldCard>
+      </BotShieldCommandCard>
     </BotShieldPage>
   );
 }
 
 function SetupPage({ model, actions }) {
+  const actionForItem = (item) => {
+    if (item.complete) return null;
+    if (item.label.includes("Theme")) {
+      return (
+        <BotShieldActionButton onClick={actions.openThemeEditor}>
+          Enable
+        </BotShieldActionButton>
+      );
+    }
+    if (item.label.includes("Email") || item.label.includes("Alert")) {
+      return (
+        <BotShieldActionButton onClick={() => actions.setPage("policy")}>
+          Configure
+        </BotShieldActionButton>
+      );
+    }
+    if (item.label.includes("Billing")) {
+      return (
+        <BotShieldActionButton onClick={() => actions.setPage("billing")}>
+          Review
+        </BotShieldActionButton>
+      );
+    }
+    return null;
+  };
+  const readyCount = model.readinessItems.filter((item) => item.complete).length;
+
   return (
     <BotShieldPage
       title="Setup and help"
       subtitle="Complete setup and understand what BotShield protects."
     >
-      <BotShieldCard title="Protection setup">
-        <s-stack gap="base">
-          {model.readinessItems.map((item) => (
-            <s-box key={item.label} background="subdued" borderRadius="large" padding="base">
-              <s-stack
-                direction="inline"
-                gap="base"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <s-stack gap="small-200">
-                  <s-text type="strong">{item.label}</s-text>
-                  <s-text color="subdued">{item.detail}</s-text>
-                </s-stack>
-                <BotShieldStatusBadge
-                  status={item.complete ? "active" : "setup_required"}
-                />
-              </s-stack>
-            </s-box>
-          ))}
-          {!model.protectionStatus.themeEmbedDetected ? (
+      <BotShieldCommandCard
+        eyebrow="Launch readiness"
+        title={
+          readyCount === model.readinessItems.length
+            ? "BotShield setup is complete"
+            : `${model.readinessItems.length - readyCount} setup steps need attention`
+        }
+        description={`${readyCount} of ${model.readinessItems.length} checks are backed by verified production data.`}
+        status={
+          readyCount === model.readinessItems.length ? "active" : "setup_required"
+        }
+        primaryAction={
+          !model.protectionStatus.themeEmbedDetected ? (
             <BotShieldActionButton variant="primary" onClick={actions.openThemeEditor}>
-              Open theme editor
+              Enable theme embed
             </BotShieldActionButton>
-          ) : null}
+          ) : null
+        }
+      />
+      <BotShieldCard
+        title="Protection setup"
+        subtitle="Complete these steps in order. BotShield verifies each one automatically."
+      >
+        <s-stack>
+          {model.readinessItems.map((item, index) => (
+            <BotShieldChecklistItem
+              key={item.label}
+              index={index + 1}
+              label={item.label}
+              detail={item.detail}
+              complete={item.complete}
+              action={actionForItem(item)}
+            />
+          ))}
         </s-stack>
       </BotShieldCard>
       <BotShieldCard title="Support and legal">

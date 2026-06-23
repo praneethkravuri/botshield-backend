@@ -19,6 +19,26 @@ Polaris web components and App Bridge APIs instead of adding the legacy
 | Billing | Working status API, buried in custom status panels | Dedicated plan/status page using dynamic Basic pricing |
 | Setup/help | Information distributed across dashboard/footer | Dedicated readiness, legal, support, and limitation page |
 
+## Visual composition sprint
+
+The follow-up composition pass preserves the Polaris/App Bridge foundation while
+giving each page a clearer hierarchy:
+
+- Dashboard leads with one protection command center, followed by four compact
+  operational signals, verified activity metrics, setup progress, and recent
+  storefront activity.
+- Incident rows now expose merchant-readable reason codes and approximate
+  network location alongside the decision and recovery controls.
+- Detection and policy pages summarize the active configuration before exposing
+  detailed controls, with a single save action when settings are dirty.
+- Billing presents the plan, price, trial, subscription truth, and Shopify action
+  as one coherent subscription surface.
+- Setup uses ordered, verified checklist rows with contextual actions instead of
+  a grid of equally weighted status boxes.
+
+No backend endpoint, storefront enforcement path, billing verification logic, or
+email delivery behavior was changed by this sprint.
+
 ## Interactive control audit
 
 | Control | Endpoint/action | Previous UX | Migrated UX |
@@ -60,3 +80,9 @@ experience completes embedded production QA.
 The repository-wide ESLint command also reports pre-existing errors in legacy
 dashboard components, legal pages, and Node environment configuration. All new
 Polaris files pass targeted ESLint.
+
+Embedded screenshot QA could not be completed in the Codex desktop session
+because the in-app browser connection was unavailable. The changed files pass
+targeted ESLint, the MVP test suite, TypeScript validation, and the production
+React Router build. A final visual pass in Shopify Admin remains required after
+deployment.
