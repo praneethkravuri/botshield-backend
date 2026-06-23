@@ -102,17 +102,98 @@ function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
 }
 
 function Metric({ label, value, detail, status }) {
+  const tone =
+    status === "blocked" || status === "high"
+      ? "critical"
+      : status === "challenged" || status === "setup_required"
+        ? "warning"
+        : status === "real_storefront"
+          ? "info"
+          : status
+            ? "success"
+            : "neutral";
   return (
-    <s-box background="base" border="base" borderRadius="large" padding="base">
+    <div className={`botshield-metric botshield-metric--${tone}`}>
       <s-stack gap="small">
         <s-text color="subdued">{label}</s-text>
-        <s-heading>{value}</s-heading>
+        <div className="botshield-metric-value">{value}</div>
         <s-stack direction="inline" gap="small" alignItems="center">
           {status ? <BotShieldStatusBadge status={status} /> : null}
           <s-text color="subdued">{detail}</s-text>
         </s-stack>
       </s-stack>
-    </s-box>
+    </div>
+  );
+}
+
+function ProtectionSummary({ model, actions, status }) {
+  const title = model.protectionPaused
+    ? "Protection paused"
+    : model.protectionReady
+      ? "Storefront protection is active"
+      : model.protectionStatus.themeEmbedDetected
+        ? "Storefront monitoring is active"
+        : "Connect your storefront";
+  const description = model.protectionPaused
+    ? "BotShield continues recording activity, but automated blocking is temporarily disabled."
+    : model.protectionReady
+      ? "BotShield is evaluating real storefront traffic and applying the current response policy."
+      : model.protectionStatus.themeEmbedDetected
+        ? "Real storefront traffic is being evaluated without full automated response."
+        : "Enable the theme app embed to start receiving real storefront decisions.";
+
+  return (
+    <BotShieldCard
+      raised
+      badge={<BotShieldStatusBadge status={status} />}
+      actions={
+        !model.protectionStatus.themeEmbedDetected ? (
+          <BotShieldActionButton
+            variant="primary"
+            onClick={actions.openThemeEditor}
+          >
+            Connect storefront
+          </BotShieldActionButton>
+        ) : (
+          <BotShieldActionButton onClick={() => actions.setPage("detection")}>
+            Manage protection
+          </BotShieldActionButton>
+        )
+      }
+    >
+      <s-stack gap="large">
+        <s-stack gap="small">
+          <s-heading>{title}</s-heading>
+          <s-paragraph color="subdued">{description}</s-paragraph>
+        </s-stack>
+        <s-grid
+          gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))"
+          gap="base"
+        >
+          <s-stack gap="small-200">
+            <s-text color="subdued">Mode</s-text>
+            <s-text type="strong">
+              {model.autoBlock ? "Automated response" : "Monitoring only"}
+            </s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Sensitivity</s-text>
+            <s-text type="strong">
+              {model.strictMode ? "Strict Mode" : model.blockLevel}
+            </s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Last storefront event</s-text>
+            <s-text type="strong">
+              {formatDate(
+                model.protectionStatus.lastStorefrontDecisionAt,
+                "Waiting for traffic",
+              )}
+            </s-text>
+          </s-stack>
+        </s-grid>
+      </s-stack>
+    </BotShieldCard>
   );
 }
 
@@ -325,6 +406,12 @@ function OverviewPage({ model, actions }) {
       ) : null}
 
       {!setupComplete ? <SetupGuide model={model} actions={actions} compact /> : null}
+
+      <ProtectionSummary
+        model={model}
+        actions={actions}
+        status={protectionStatus}
+      />
 
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"

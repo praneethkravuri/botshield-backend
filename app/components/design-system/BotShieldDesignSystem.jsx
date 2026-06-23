@@ -54,9 +54,61 @@ export function useBotShieldToast() {
 export function BotShieldAppFrame({ children }) {
   return (
     <BotShieldToastProvider>
-      <s-box background="subdued" minBlockSize="100vh" paddingBlockEnd="large-500">
-        {children}
-      </s-box>
+      <style>{`
+        .botshield-admin-shell {
+          min-height: 100vh;
+          background: #f6f6f7;
+          padding-bottom: 48px;
+        }
+        .botshield-surface {
+          box-sizing: border-box;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.09);
+          border-radius: 16px;
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.06),
+            0 8px 24px rgba(0, 0, 0, 0.035);
+          padding: 20px;
+        }
+        .botshield-surface--raised {
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.08),
+            0 14px 38px rgba(0, 0, 0, 0.055);
+        }
+        .botshield-metric {
+          position: relative;
+          overflow: hidden;
+          min-height: 132px;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+          padding: 18px;
+        }
+        .botshield-metric::before {
+          content: "";
+          position: absolute;
+          inset: 0 auto 0 0;
+          width: 3px;
+          background: #8a8a8a;
+        }
+        .botshield-metric--success::before { background: #29845a; }
+        .botshield-metric--warning::before { background: #b98900; }
+        .botshield-metric--critical::before { background: #c5280c; }
+        .botshield-metric--info::before { background: #2c6ecb; }
+        .botshield-metric-value {
+          font-size: 30px;
+          line-height: 36px;
+          font-weight: 700;
+          letter-spacing: -0.03em;
+          color: #202223;
+        }
+        @media (max-width: 640px) {
+          .botshield-surface { padding: 16px; border-radius: 12px; }
+          .botshield-metric { min-height: 112px; padding: 16px; }
+        }
+      `}</style>
+      <div className="botshield-admin-shell">{children}</div>
     </BotShieldToastProvider>
   );
 }
@@ -113,9 +165,12 @@ export function BotShieldCard({
   empty,
   loading,
   error,
+  raised = false,
 }) {
   return (
-    <s-section>
+    <div
+      className={`botshield-surface${raised ? " botshield-surface--raised" : ""}`}
+    >
       <s-stack gap="base">
         {title || subtitle || badge || actions ? (
           <s-stack
@@ -137,7 +192,7 @@ export function BotShieldCard({
         {error ? <BotShieldBanner tone="critical">{error}</BotShieldBanner> : null}
         {loading ? <BotShieldLoadingState /> : empty || children}
       </s-stack>
-    </s-section>
+    </div>
   );
 }
 

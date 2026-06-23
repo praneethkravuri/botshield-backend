@@ -38,6 +38,19 @@ adding fabricated metrics:
 - Alert and weekly-report delivery history with visible failure states.
 - Diagnostic-data cleanup that never removes real storefront events.
 
+### SaaS visual-depth pass
+
+The production design system now gives every screen a consistent visual layer:
+
+- Neutral Shopify Admin background with elevated white surfaces.
+- Consistent 16px card radii, subtle borders, and restrained two-level shadows.
+- Stronger metric typography with status-colored edge accents.
+- A raised protection summary that establishes hierarchy before detailed data.
+- Responsive padding and card density for narrower Admin viewports.
+
+The visual depth is intentionally restrained: no gradients, glass effects,
+decorative branding, or fabricated data.
+
 ## Architecture decision
 
 BotShield uses Shopify's React Router application template with

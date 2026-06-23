@@ -104,11 +104,27 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Last 7 days/);
   assert.match(source, /Top threat signals/);
   assert.match(source, /Traffic origins/);
+  assert.match(source, /ProtectionSummary/);
   assert.match(source, /Recent activity/);
   assert.match(source, /title="Activity"/);
   assert.match(source, /title="Protection"/);
   assert.match(source, /title="Settings"/);
   assert.doesNotMatch(source, /world map/i);
+});
+
+test("admin design system provides elevated SaaS surfaces without branding", async () => {
+  const source = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(source, /botshield-surface--raised/);
+  assert.match(source, /botshield-metric--critical/);
+  assert.match(source, /box-shadow/);
+  assert.doesNotMatch(source, /botshield-logo/);
 });
 
 test("merchant-facing reason labels replace raw detection codes", async () => {
