@@ -59,6 +59,25 @@ card grid with a merchant-facing Security Center:
 The supporting screens are framed by merchant purpose: Investigation Center,
 Threat Detection, Response Policy, Subscription, and Setup & Support.
 
+## Competitor-reference simplification pass
+
+After reviewing the supplied Blockify dashboard screenshots, the primary
+BotShield dashboard was simplified again around the strongest Shopify app
+patterns visible in that reference:
+
+- A short welcome header replaces the oversized security-center presentation.
+- One compact status panel exposes theme embed, protection, and setup state with
+  direct actions.
+- The Overview contains two large merchant outcomes and one plain protection
+  settings list.
+- Recent storefront activity is limited to four readable rows.
+- Support, setup guidance, and diagnostics are presented as three compact cards.
+- Promotional cross-sells, competitor branding, and the competitor's orange
+  visual identity were deliberately not copied.
+
+Every displayed status and control remains connected to the existing BotShield
+model and action layer.
+
 ## Interactive control audit
 
 | Control | Endpoint/action | Previous UX | Migrated UX |

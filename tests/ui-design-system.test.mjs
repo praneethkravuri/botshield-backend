@@ -91,13 +91,14 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
     "utf8",
   );
 
-  assert.match(source, /BotShield Security Center/);
+  assert.match(source, /Welcome to BotShield/);
   assert.match(source, /Theme App Embed Required/);
-  assert.match(source, /Your storefront is protected/);
-  assert.match(source, /Security outcomes/);
-  assert.match(source, /Store protection overview/);
-  assert.match(source, /Store setup progress/);
-  assert.match(source, /Recent security activity/);
+  assert.match(source, /Enable app embed on theme/);
+  assert.match(source, /Tracked by BotShield/);
+  assert.match(source, /Suspicious visitors detected/);
+  assert.match(source, /Bot protection/);
+  assert.match(source, /Recent storefront activity/);
+  assert.match(source, /Run a diagnostic/);
   assert.match(source, /PremiumDashboardPage/);
   assert.match(source, /Reason", "Source"/);
   assert.doesNotMatch(source, /world map/i);
