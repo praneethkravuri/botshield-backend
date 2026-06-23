@@ -27,45 +27,58 @@ export default function App() {
         style={{
           background: "#f1f1f1",
           borderBottom: "1px solid #dedede",
-          padding: "0 24px 18px",
+          padding: "0 24px 16px",
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            minHeight: "52px",
-            fontSize: "24px",
-            lineHeight: 1.2,
+            gap: "8px",
+            minHeight: "50px",
+            fontSize: "23px",
+            lineHeight: "28px",
             fontWeight: 700,
-            letterSpacing: "-0.025em",
+            letterSpacing: "-0.02em",
             color: "#303030",
           }}
         >
-          <img
-            src="/botshield-logo.png"
-            alt=""
-            width="34"
-            height="34"
+          <span
             style={{
-              borderRadius: "8px",
-              objectFit: "cover",
-              display: "block",
+              width: "30px",
+              height: "30px",
+              flex: "0 0 30px",
+              borderRadius: "7px",
+              overflow: "hidden",
+              display: "inline-flex",
             }}
-          />
+          >
+            <img
+              src="/botshield-logo.png"
+              alt=""
+              style={{
+                width: "30px",
+                height: "30px",
+                objectFit: "cover",
+                display: "block",
+              }}
+            />
+          </span>
           <span>BotShield: Fraud &amp; Bot Detector</span>
         </div>
 
         <div
           style={{
-            maxWidth: "1180px",
+            width: "min(1180px, calc(100% - 24px))",
             margin: "0 auto",
+            boxSizing: "border-box",
             background: "#ffffff",
             border: "1px solid #d5d5d5",
             borderRadius: "14px",
-            boxShadow: "0 2px 3px rgba(0, 0, 0, 0.10)",
-            padding: "12px 16px",
+            boxShadow: "0 1px 2px rgba(0, 0, 0, 0.12)",
+            padding: "10px 14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -73,19 +86,37 @@ export default function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <img
-              src="/botshield-logo.png"
-              alt="BotShield"
-              width="42"
-              height="42"
+            <span
               style={{
-                borderRadius: "10px",
-                objectFit: "cover",
-                display: "block",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.18)",
+                width: "40px",
+                height: "40px",
+                flex: "0 0 40px",
+                borderRadius: "9px",
+                overflow: "hidden",
+                display: "inline-flex",
+                boxShadow: "0 2px 7px rgba(0, 0, 0, 0.16)",
               }}
-            />
-            <span style={{ color: "#4a4a4a", fontSize: "15px" }}>
+            >
+              <img
+                src="/botshield-logo.png"
+                alt="BotShield"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+            </span>
+            <span
+              style={{
+                color: "#4a4a4a",
+                fontSize: "15px",
+                lineHeight: "20px",
+                fontWeight: 400,
+                letterSpacing: 0,
+              }}
+            >
               Detect suspicious visitors, stop automated abuse, and protect your
               Shopify storefront.
             </span>
@@ -98,7 +129,11 @@ export default function App() {
               padding: "8px 16px",
               color: "#303030",
               background: "#ffffff",
-              fontWeight: 650,
+              fontFamily:
+                "-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif",
+              fontSize: "14px",
+              lineHeight: "18px",
+              fontWeight: 600,
               textDecoration: "none",
               whiteSpace: "nowrap",
             }}
