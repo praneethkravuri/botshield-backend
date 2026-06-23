@@ -76,7 +76,10 @@ test("safeFetchJson returns readable provider errors", async () => {
 
 test("Polaris experience uses current BotShield Basic pricing", async () => {
   const source = await readFile(
-    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
     "utf8",
   );
 
@@ -87,37 +90,44 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
 
 test("Polaris dashboard presents a merchant-facing security center", async () => {
   const source = await readFile(
-    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
     "utf8",
   );
 
-  assert.match(source, /Welcome to BotShield/);
-  assert.match(source, /Theme App Embed Required/);
-  assert.match(source, /Enable app embed on theme/);
-  assert.match(source, /Tracked by BotShield/);
-  assert.match(source, /Suspicious visitors detected/);
-  assert.match(source, /Bot protection/);
-  assert.match(source, /Recent storefront activity/);
-  assert.match(source, /Run a diagnostic/);
-  assert.match(source, /PremiumDashboardPage/);
-  assert.match(source, /Reason", "Source"/);
+  assert.match(source, /title="Overview"/);
+  assert.match(source, /Connect your storefront/);
+  assert.match(source, /Setup guide/);
+  assert.match(source, /Protection status/);
+  assert.match(source, /Recent activity/);
+  assert.match(source, /title="Activity"/);
+  assert.match(source, /title="Protection"/);
+  assert.match(source, /title="Settings"/);
   assert.doesNotMatch(source, /world map/i);
 });
 
 test("merchant-facing reason labels replace raw detection codes", async () => {
   const source = await readFile(
-    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
     "utf8",
   );
 
-  assert.match(source, /Elevated request volume detected/);
-  assert.match(source, /Known hosting provider traffic/);
-  assert.match(source, /Automated browser behavior detected/);
+  assert.match(source, /Elevated request volume/);
+  assert.match(source, /Hosting provider traffic/);
+  assert.match(source, /Automated browser behavior/);
 });
 
 test("Setup experience uses verified checklist rows with contextual actions", async () => {
   const source = await readFile(
-    new URL("../app/components/BotShieldPolarisExperience.jsx", import.meta.url),
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
     "utf8",
   );
   const designSystem = await readFile(
@@ -128,8 +138,22 @@ test("Setup experience uses verified checklist rows with contextual actions", as
     "utf8",
   );
 
-  assert.match(source, /Launch readiness/);
-  assert.match(source, /BotShieldChecklistItem/);
-  assert.match(source, /Enable theme embed/);
+  assert.match(source, /Setup guide/);
+  assert.match(source, /Open theme editor/);
+  assert.match(source, /View setup/);
   assert.match(designSystem, /Action needed/);
+});
+
+test("new app shell removes custom branding and uses task-based navigation", async () => {
+  const source = await readFile(
+    new URL("../app/routes/app.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, />Overview</);
+  assert.match(source, />Activity</);
+  assert.match(source, />Protection</);
+  assert.match(source, />Settings</);
+  assert.match(source, />Setup</);
+  assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });

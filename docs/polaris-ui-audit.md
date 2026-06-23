@@ -1,5 +1,30 @@
 # BotShield Polaris UI Audit
 
+## Ground-up Admin experience rebuild
+
+The production admin now renders
+`app/components/admin/BotShieldAdminExperience.jsx`. This is a new interface,
+not another composition pass over the previous prototype.
+
+The rebuild follows Shopify's current App Home guidance:
+
+- Task-based navigation is limited to Overview, Activity, Protection, Settings,
+  and Setup.
+- The custom branded masthead and in-product logo were removed.
+- Overview provides setup state, immediate actions, verified metrics, protection
+  status, security health, and recent real activity.
+- Activity uses a full-width index-style table with filters and row-level
+  recovery actions.
+- Protection and Settings use the Shopify settings layout: context in the
+  narrow column, controls in the wide column, and an explicit save state.
+- Subscription remains available from Settings without consuming permanent app
+  navigation.
+- Setup uses automatically verified steps, contextual actions, support, legal
+  links, and an honest enforcement limitation.
+
+The legacy custom route remains in the repository as isolated migration debt,
+but it is not rendered by the production app experience.
+
 ## Architecture decision
 
 BotShield uses Shopify's React Router application template with

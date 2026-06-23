@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { partitionSecurityEvents } from "../lib/event-classification";
-import BotShieldPolarisExperience from "../components/BotShieldPolarisExperience";
+import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 import { safeFetchJson } from "../lib/safe-fetch";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -3685,7 +3685,7 @@ export default function Index() {
 
   if (page !== "legacy") {
     return (
-      <BotShieldPolarisExperience
+      <BotShieldAdminExperience
         model={polarisModel}
         actions={polarisActions}
       />
