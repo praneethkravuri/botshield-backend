@@ -168,6 +168,13 @@ export function BotShieldAppFrame({ children }) {
           background: #e3f1df;
           color: #108043;
         }
+        .botshield-rule-card {
+          min-height: 132px;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 12px;
+          padding: 18px;
+        }
         .botshield-briefing-row {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;

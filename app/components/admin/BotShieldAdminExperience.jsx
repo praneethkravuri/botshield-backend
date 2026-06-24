@@ -480,6 +480,21 @@ function SetupProgressCard({ model, actions }) {
   );
 }
 
+function RuleSummaryCard({ title, status, description, action }) {
+  return (
+    <div className="botshield-rule-card">
+      <s-stack gap="base">
+        <s-stack direction="inline" gap="base" justifyContent="space-between">
+          <s-text type="strong">{title}</s-text>
+          <BotShieldStatusBadge status={status} />
+        </s-stack>
+        <s-text color="subdued">{description}</s-text>
+        {action}
+      </s-stack>
+    </div>
+  );
+}
+
 function InsightList({ items, emptyMessage }) {
   if (!items.length) {
     return <s-text color="subdued">{emptyMessage}</s-text>;
@@ -969,7 +984,7 @@ function ActivityTable({ model, actions }) {
   return (
     <s-table loading={model.incidentLoading} variant="auto">
       <s-table-header-row>
-        {["Time", "Visitor", "Decision", "Risk", "Signal", "Source", "Actions"].map(
+        {["Visitor", "Outcome", "Risk", "Reason", "Location", "Source", "Actions"].map(
           (heading) => (
             <s-table-header key={heading}>{heading}</s-table-header>
           ),
@@ -978,30 +993,33 @@ function ActivityTable({ model, actions }) {
       <s-table-body>
         {model.incidents.map((incident) => (
           <s-table-row key={incident.id}>
-            <s-table-cell>{formatDate(incident.createdAt)}</s-table-cell>
             <s-table-cell>
               <s-stack gap="small-200">
                 <s-text type="strong">{incident.maskedIpAddress}</s-text>
-                <s-text color="subdued">{incident.path}</s-text>
-              </s-stack>
-            </s-table-cell>
-            <s-table-cell>
-              <BotShieldStatusBadge status={incident.decision} />
-            </s-table-cell>
-            <s-table-cell>
-              <BotShieldStatusBadge status={incident.threatLevel} />
-            </s-table-cell>
-            <s-table-cell>
-              <s-stack gap="small-200">
-                <s-text>
-                  {formatReasons(incident.reasonCodes || incident.reasons)}
-                </s-text>
                 <s-text color="subdued">
-                  {[incident.networkCity, incident.networkCountry]
-                    .filter(Boolean)
-                    .join(", ") || "Location unavailable"}
+                  {incident.path || "Storefront"} · {formatDate(incident.createdAt)}
                 </s-text>
               </s-stack>
+            </s-table-cell>
+            <s-table-cell>
+              <BotShieldStatusBadge
+                status={incident.decision}
+                label={getOutcomeLabel(incident.decision)}
+              />
+            </s-table-cell>
+            <s-table-cell>
+              <BotShieldStatusBadge
+                status={incident.threatLevel}
+                label={getRiskLabel(incident.threatLevel)}
+              />
+            </s-table-cell>
+            <s-table-cell>
+              {formatReasons(incident.reasonCodes || incident.reasons)}
+            </s-table-cell>
+            <s-table-cell>
+              {[incident.networkCity, incident.networkCountry]
+                .filter(Boolean)
+                .join(", ") || "Location unavailable"}
             </s-table-cell>
             <s-table-cell>
               <BotShieldStatusBadge
@@ -1045,8 +1063,8 @@ function ActivityPage({ model, actions }) {
   ).length;
   return (
     <Screen
-      title="Activity"
-      subtitle="Review real storefront decisions and recover from false positives."
+      title="Visitor Analytics"
+      subtitle="Review storefront decisions, suspicious visitors, and recovery actions."
       maxWidth="full"
       actions={
         <BotShieldAsyncButton
@@ -1063,19 +1081,19 @@ function ActivityPage({ model, actions }) {
         gap="base"
       >
         <Metric
-          label="Real storefront"
+          label="Real storefront visits"
           value={model.incidentCounts.real}
-          detail="Verified production events"
+          detail="Storefront visits analyzed"
           status="real_storefront"
         />
         <Metric
-          label="Blocked"
+          label="Blocked visitors"
           value={blocked}
-          detail="Requests stopped"
+          detail="Visitors stopped"
           status={blocked ? "blocked" : "active"}
         />
         <Metric
-          label="Challenged"
+          label="Challenged visitors"
           value={challenged}
           detail="Verification requested"
           status={challenged ? "challenged" : "active"}
@@ -1109,7 +1127,7 @@ function ActivityPage({ model, actions }) {
             options={[
               { label: "All decisions", value: "all" },
               { label: "Allowed", value: "allowed" },
-              { label: "Challenged", value: "challenged" },
+              { label: "Verification requested", value: "challenged" },
               { label: "Blocked", value: "blocked" },
             ]}
           />
@@ -1133,7 +1151,7 @@ function ActivityPage({ model, actions }) {
         </s-grid>
       </BotShieldCard>
       <BotShieldCard
-        title="Storefront decisions"
+        title="Visitor decisions"
         subtitle={`${model.incidentCounts.real} real events · ${model.incidentCounts.simulation} simulations`}
       >
         <ActivityTable model={model} actions={actions} />
@@ -1183,8 +1201,8 @@ function ProtectionPage({ model, actions }) {
 
   return (
     <Screen
-      title="Protection"
-      subtitle="Control how BotShield evaluates and responds to storefront traffic."
+      title="Protection Rules"
+      subtitle="Control how BotShield evaluates visitors and responds to suspicious storefront activity."
     >
       <BotShieldSaveState
         dirty={dirty}
@@ -1201,7 +1219,7 @@ function ProtectionPage({ model, actions }) {
       />
       <s-grid gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)" gap="large">
         <s-stack gap="small">
-          <s-heading>Protection mode</s-heading>
+          <s-heading>Automated response</s-heading>
           <s-paragraph color="subdued">
             Pause automated blocking while investigating false positives. Event
             collection continues.
@@ -1235,6 +1253,45 @@ function ProtectionPage({ model, actions }) {
           <BotShieldInlineHelp>
             Pausing prevents new automated blocks but keeps recording decisions.
           </BotShieldInlineHelp>
+        </BotShieldCard>
+
+        <s-stack gap="small">
+          <s-heading>Traffic signals</s-heading>
+          <s-paragraph color="subdued">
+            Real signals BotShield uses when evaluating storefront visitors.
+          </s-paragraph>
+        </s-stack>
+        <BotShieldCard>
+          <s-grid
+            gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
+            gap="base"
+          >
+            <RuleSummaryCard
+              title="Repeated visitor activity"
+              status="active"
+              description="Flags unusually frequent visits from the same visitor pattern."
+            />
+            <RuleSummaryCard
+              title="Known hosting provider traffic"
+              status="active"
+              description="Uses network intelligence to identify hosting, proxy, or datacenter-like traffic."
+            />
+            <RuleSummaryCard
+              title="Automated browser behavior"
+              status="active"
+              description="Looks for user-agent and browser patterns commonly used by bots."
+            />
+            <RuleSummaryCard
+              title="Blocklist and trusted visitors"
+              status="active"
+              description="Blocks manually listed visitors and lets trusted visitors bypass automated blocking."
+              action={
+                <BotShieldActionButton onClick={() => actions.setPage("policy")}>
+                  Manage access
+                </BotShieldActionButton>
+              }
+            />
+          </s-grid>
         </BotShieldCard>
 
         <s-stack gap="small">
@@ -1479,8 +1536,8 @@ function SettingsPage({ model, actions }) {
 
   return (
     <Screen
-      title="Settings"
-      subtitle="Manage notifications, reports, blocked visitors, and trusted visitors."
+      title="Alerts & Reports"
+      subtitle="Manage security notifications, weekly summaries, and visitor access controls."
     >
       <BotShieldSaveState
         dirty={dirty}
@@ -1498,7 +1555,7 @@ function SettingsPage({ model, actions }) {
       />
       <s-grid gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)" gap="large">
         <s-stack gap="small">
-          <s-heading>Notifications</s-heading>
+          <s-heading>Email alerts</s-heading>
           <s-paragraph color="subdued">
             Choose where and when BotShield sends security alerts.
           </s-paragraph>
@@ -1620,7 +1677,7 @@ function SettingsPage({ model, actions }) {
         </BotShieldCard>
 
         <s-stack gap="small">
-          <s-heading>Subscription</s-heading>
+          <s-heading>Billing summary</s-heading>
           <s-paragraph color="subdued">
             Review the Shopify-managed BotShield plan and billing status.
           </s-paragraph>
@@ -1641,6 +1698,12 @@ function SettingsPage({ model, actions }) {
         </BotShieldCard>
       </s-grid>
 
+      <s-stack gap="small">
+        <s-heading>Access control</s-heading>
+        <s-paragraph color="subdued">
+          Manually block suspicious visitors or trust visitors who should bypass automated blocking.
+        </s-paragraph>
+      </s-stack>
       <IpList
         title="Blocked visitors"
         subtitle="Visitors manually or automatically excluded from the storefront."
@@ -1746,8 +1809,8 @@ function SetupPage({ model, actions }) {
   const complete = model.readinessItems.filter((item) => item.complete).length;
   return (
     <Screen
-      title="Setup"
-      subtitle="Complete installation and learn how BotShield protects the storefront."
+      title="Setup BotShield"
+      subtitle="Complete the steps required to connect storefront protection, alerts, billing, and support."
     >
       <BotShieldCard>
         <s-grid

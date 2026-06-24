@@ -17,9 +17,10 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app?view=dashboard">Overview</s-link>
-        <s-link href="/app?view=incidents">Activity</s-link>
-        <s-link href="/app?view=detection">Protection</s-link>
-        <s-link href="/app?view=policy">Settings</s-link>
+        <s-link href="/app?view=incidents">Visitor Analytics</s-link>
+        <s-link href="/app?view=detection">Protection Rules</s-link>
+        <s-link href="/app?view=policy">Access & Alerts</s-link>
+        <s-link href="/app?view=billing">Billing</s-link>
         <s-link href="/app?view=setup">Setup</s-link>
       </s-app-nav>
       <Outlet />

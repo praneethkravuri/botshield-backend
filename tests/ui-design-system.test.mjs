@@ -114,9 +114,9 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Setup Progress/);
   assert.match(source, /Response mode/);
   assert.match(source, /Recent Security Activity/);
-  assert.match(source, /title="Activity"/);
-  assert.match(source, /title="Protection"/);
-  assert.match(source, /title="Settings"/);
+  assert.match(source, /title="Visitor Analytics"/);
+  assert.match(source, /title="Protection Rules"/);
+  assert.match(source, /title="Alerts & Reports"/);
   assert.doesNotMatch(source, /world map/i);
 });
 
@@ -178,9 +178,10 @@ test("new app shell removes custom branding and uses task-based navigation", asy
   );
 
   assert.match(source, />Overview</);
-  assert.match(source, />Activity</);
-  assert.match(source, />Protection</);
-  assert.match(source, />Settings</);
+  assert.match(source, />Visitor Analytics</);
+  assert.match(source, />Protection Rules</);
+  assert.match(source, />Access & Alerts</);
+  assert.match(source, />Billing</);
   assert.match(source, />Setup</);
   assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });
