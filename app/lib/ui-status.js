@@ -105,7 +105,7 @@ const STATUS_MAP = {
     description: "The request was blocked.",
   },
   challenged: {
-    label: "Challenged",
+    label: "Verification requested",
     tone: "warning",
     description: "The visitor was asked to complete a challenge.",
   },

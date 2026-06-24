@@ -99,8 +99,9 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
 
   assert.match(source, /title="Overview"/);
   assert.match(source, /Connect your storefront/);
-  assert.match(source, /StoreProtectionHero/);
-  assert.match(source, /Store Protection/);
+  assert.match(source, /ProtectionStatusCard/);
+  assert.match(source, /Protection Status/);
+  assert.match(source, /Quick Actions/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
@@ -111,7 +112,7 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Security Health/);
   assert.match(source, /Store Health/);
   assert.match(source, /Setup Progress/);
-  assert.match(source, /Protection status/);
+  assert.match(source, /Response mode/);
   assert.match(source, /Recent Security Activity/);
   assert.match(source, /title="Activity"/);
   assert.match(source, /title="Protection"/);
