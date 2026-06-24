@@ -99,13 +99,20 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
 
   assert.match(source, /title="Overview"/);
   assert.match(source, /Connect your storefront/);
-  assert.match(source, /Setup guide/);
+  assert.match(source, /StoreProtectionHero/);
+  assert.match(source, /Store Protection/);
+  assert.match(source, /Protected/);
+  assert.match(source, /Monitoring/);
+  assert.match(source, /Setup Required/);
+  assert.match(source, /Paused/);
+  assert.match(source, /Visitors Evaluated/);
+  assert.match(source, /Threats Stopped/);
+  assert.match(source, /Suspicious Activity/);
+  assert.match(source, /Security Health/);
+  assert.match(source, /Store Health/);
+  assert.match(source, /Setup Progress/);
   assert.match(source, /Protection status/);
-  assert.match(source, /Last 7 days/);
-  assert.match(source, /Top threat signals/);
-  assert.match(source, /Traffic origins/);
-  assert.match(source, /ProtectionSummary/);
-  assert.match(source, /Recent activity/);
+  assert.match(source, /Recent Security Activity/);
   assert.match(source, /title="Activity"/);
   assert.match(source, /title="Protection"/);
   assert.match(source, /title="Settings"/);
@@ -136,9 +143,9 @@ test("merchant-facing reason labels replace raw detection codes", async () => {
     "utf8",
   );
 
-  assert.match(source, /Elevated request volume/);
-  assert.match(source, /Hosting provider traffic/);
-  assert.match(source, /Automated browser behavior/);
+  assert.match(source, /Repeated visitor activity detected/);
+  assert.match(source, /Known hosting provider traffic/);
+  assert.match(source, /Automated browser behavior detected/);
 });
 
 test("Setup experience uses verified checklist rows with contextual actions", async () => {

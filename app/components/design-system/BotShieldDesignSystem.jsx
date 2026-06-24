@@ -205,6 +205,60 @@ export function BotShieldAppFrame({ children }) {
           letter-spacing: -0.03em;
           color: #202223;
         }
+        .botshield-outcome-card {
+          position: relative;
+          overflow: hidden;
+          min-height: 168px;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 18px;
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.05),
+            0 10px 28px rgba(0, 0, 0, 0.04);
+          padding: 22px;
+        }
+        .botshield-outcome-card::after {
+          content: "";
+          position: absolute;
+          inset: auto -28px -42px auto;
+          width: 118px;
+          height: 118px;
+          border-radius: 999px;
+          background: rgba(44, 110, 203, 0.08);
+        }
+        .botshield-outcome-card--blocked::after,
+        .botshield-outcome-card--critical::after {
+          background: rgba(197, 40, 12, 0.09);
+        }
+        .botshield-outcome-card--challenged::after,
+        .botshield-outcome-card--warning::after {
+          background: rgba(185, 137, 0, 0.12);
+        }
+        .botshield-outcome-card--active::after,
+        .botshield-outcome-card--success::after {
+          background: rgba(41, 132, 90, 0.1);
+        }
+        .botshield-outcome-value {
+          position: relative;
+          z-index: 1;
+          color: #202223;
+          font-size: clamp(34px, 5vw, 52px);
+          line-height: 1;
+          font-weight: 760;
+          letter-spacing: -0.05em;
+        }
+        .botshield-progress-track {
+          overflow: hidden;
+          min-block-size: 12px;
+          background: #ebebeb;
+          border-radius: 999px;
+        }
+        .botshield-progress-bar {
+          min-block-size: 12px;
+          background: linear-gradient(90deg, #29845a, #36a66a);
+          border-radius: 999px;
+          transition: inline-size 180ms ease;
+        }
         .botshield-briefing-row {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
