@@ -2814,7 +2814,6 @@ export default function Index() {
     const savedData = localStorage.getItem("botshield_dashboard_data");
     if (savedData) {
       const parsed = JSON.parse(savedData);
-      setPage(parsed.page ?? "dashboard");
       setThreatLevel(parsed.threatLevel ?? "low");
       setInsight(parsed.insight ?? "");
       setRecommendation(parsed.recommendation ?? "");
@@ -2831,6 +2830,7 @@ export default function Index() {
     const requestedView = new URLSearchParams(window.location.search).get("view");
     const pageMap = {
       dashboard: "dashboard",
+      activity: "incidents",
       incidents: "incidents",
       detection: "security",
       policy: "settings",
@@ -2839,12 +2839,13 @@ export default function Index() {
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
+    } else {
+      setPage("dashboard");
     }
   }, []);
 
   useEffect(() => {
     const dataToSave = {
-      page,
       threatLevel,
       insight,
       recommendation,
@@ -2858,7 +2859,6 @@ export default function Index() {
 
     localStorage.setItem("botshield_dashboard_data", JSON.stringify(dataToSave));
   }, [
-    page,
     threatLevel,
     insight,
     recommendation,

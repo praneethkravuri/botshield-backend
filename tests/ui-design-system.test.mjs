@@ -183,3 +183,16 @@ test("new app shell removes custom branding and uses task-based navigation", asy
   assert.match(source, />Setup</);
   assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });
+
+test("dashboard route is the default and activity route is explicit", async () => {
+  const source = await readFile(
+    new URL("../app/routes/app._index.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /dashboard: "dashboard"/);
+  assert.match(source, /activity: "incidents"/);
+  assert.match(source, /incidents: "incidents"/);
+  assert.match(source, /setPage\("dashboard"\)/);
+  assert.doesNotMatch(source, /setPage\(parsed\.page/);
+});
