@@ -57,8 +57,95 @@ export function BotShieldAppFrame({ children }) {
       <style>{`
         .botshield-admin-shell {
           min-height: 100vh;
-          background: #f6f6f7;
+          background:
+            radial-gradient(circle at 18% 0%, rgba(44, 110, 203, 0.08), transparent 28%),
+            linear-gradient(180deg, #f3f4f6 0%, #f6f6f7 34%, #f7f7f8 100%);
           padding-bottom: 48px;
+        }
+        .botshield-command-center {
+          position: relative;
+          overflow: hidden;
+          color: #ffffff;
+          background:
+            radial-gradient(circle at 92% 8%, rgba(90, 190, 255, 0.22), transparent 28%),
+            radial-gradient(circle at 8% 0%, rgba(89, 209, 139, 0.16), transparent 30%),
+            linear-gradient(135deg, #101828 0%, #162033 48%, #0b1220 100%);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 20px;
+          box-shadow:
+            0 1px 0 rgba(255, 255, 255, 0.12) inset,
+            0 22px 60px rgba(16, 24, 40, 0.18);
+          padding: 24px;
+        }
+        .botshield-command-center::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+          background-size: 36px 36px;
+          mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 72%);
+          pointer-events: none;
+        }
+        .botshield-command-center > * {
+          position: relative;
+          z-index: 1;
+        }
+        .botshield-command-header {
+          display: flex;
+          gap: 20px;
+          align-items: flex-start;
+          justify-content: space-between;
+        }
+        .botshield-command-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: flex-end;
+          min-width: 220px;
+        }
+        .botshield-command-title {
+          max-width: 720px;
+          font-size: clamp(28px, 4vw, 46px);
+          line-height: 1.04;
+          font-weight: 750;
+          letter-spacing: -0.045em;
+        }
+        .botshield-command-subtitle {
+          max-width: 680px;
+          color: rgba(255, 255, 255, 0.76);
+          font-size: 15px;
+          line-height: 22px;
+        }
+        .botshield-command-panel {
+          background: rgba(255, 255, 255, 0.09);
+          border: 1px solid rgba(255, 255, 255, 0.14);
+          border-radius: 16px;
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+          padding: 16px;
+          backdrop-filter: blur(10px);
+        }
+        .botshield-command-kicker {
+          color: rgba(255, 255, 255, 0.62);
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .botshield-command-value {
+          color: #ffffff;
+          font-size: 22px;
+          line-height: 28px;
+          font-weight: 720;
+          letter-spacing: -0.03em;
+        }
+        .botshield-live-dot {
+          width: 9px;
+          height: 9px;
+          border-radius: 999px;
+          background: #4ade80;
+          box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.16);
         }
         .botshield-surface {
           box-sizing: border-box;
@@ -70,10 +157,25 @@ export function BotShieldAppFrame({ children }) {
             0 8px 24px rgba(0, 0, 0, 0.035);
           padding: 20px;
         }
+        .botshield-surface:hover {
+          border-color: rgba(0, 0, 0, 0.13);
+        }
         .botshield-surface--raised {
           box-shadow:
             0 1px 2px rgba(0, 0, 0, 0.08),
             0 14px 38px rgba(0, 0, 0, 0.055);
+        }
+        .botshield-surface--accent {
+          background:
+            linear-gradient(180deg, rgba(44, 110, 203, 0.045), rgba(255, 255, 255, 0) 34%),
+            #ffffff;
+        }
+        .botshield-card-label {
+          color: #6d7175;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
         }
         .botshield-metric {
           position: relative;
@@ -103,9 +205,53 @@ export function BotShieldAppFrame({ children }) {
           letter-spacing: -0.03em;
           color: #202223;
         }
+        .botshield-briefing-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 16px;
+          align-items: center;
+          padding: 14px 0;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .botshield-briefing-row:last-child {
+          border-bottom: 0;
+        }
+        .botshield-next-action {
+          border-radius: 14px;
+          border: 1px solid rgba(44, 110, 203, 0.18);
+          background:
+            linear-gradient(135deg, rgba(44, 110, 203, 0.08), rgba(255, 255, 255, 0) 42%),
+            #ffffff;
+          padding: 16px;
+        }
+        .botshield-evidence-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          width: fit-content;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 999px;
+          background: #ffffff;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+          padding: 7px 10px;
+          color: #4a4a4a;
+          font-size: 13px;
+        }
+        .botshield-evidence-chip::before {
+          content: "";
+          width: 7px;
+          height: 7px;
+          border-radius: 999px;
+          background: #29845a;
+        }
         @media (max-width: 640px) {
+          .botshield-command-center { padding: 18px; border-radius: 16px; }
+          .botshield-command-header { flex-direction: column; }
+          .botshield-command-actions { justify-content: flex-start; min-width: 0; }
+          .botshield-command-title { font-size: 30px; }
           .botshield-surface { padding: 16px; border-radius: 12px; }
           .botshield-metric { min-height: 112px; padding: 16px; }
+          .botshield-briefing-row { grid-template-columns: 1fr; }
         }
       `}</style>
       <div className="botshield-admin-shell">{children}</div>
@@ -166,10 +312,11 @@ export function BotShieldCard({
   loading,
   error,
   raised = false,
+  accent = false,
 }) {
   return (
     <div
-      className={`botshield-surface${raised ? " botshield-surface--raised" : ""}`}
+      className={`botshield-surface${raised ? " botshield-surface--raised" : ""}${accent ? " botshield-surface--accent" : ""}`}
     >
       <s-stack gap="base">
         {title || subtitle || badge || actions ? (
