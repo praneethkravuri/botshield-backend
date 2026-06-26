@@ -213,8 +213,15 @@ test("dashboard route is the default and activity route is explicit", async () =
   );
 
   assert.match(source, /dashboard: "dashboard"/);
+  assert.match(source, /rules: "security"/);
+  assert.match(source, /visitors: "incidents"/);
+  assert.match(source, /blocklist: "blocklist"/);
+  assert.match(source, /trusted: "trusted"/);
+  assert.match(source, /settings: "detection-settings"/);
   assert.match(source, /activity: "incidents"/);
   assert.match(source, /incidents: "incidents"/);
+  assert.match(source, /useLocation/);
+  assert.match(source, /\[location\.search\]/);
   assert.match(source, /setPage\("dashboard"\)/);
   assert.doesNotMatch(source, /setPage\(parsed\.page/);
 });

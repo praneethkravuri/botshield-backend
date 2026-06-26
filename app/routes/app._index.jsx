@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 import { safeFetchJson } from "../lib/safe-fetch";
@@ -1275,6 +1276,7 @@ function SettingsPage({
 }
 
 export default function Index() {
+  const location = useLocation();
   const [page, setPage] = useState("dashboard");
 
   const [threatLevel, setThreatLevel] = useState("low");
@@ -2827,7 +2829,7 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const requestedView = new URLSearchParams(window.location.search).get("view");
+    const requestedView = new URLSearchParams(location.search).get("view");
     const pageMap = {
       dashboard: "dashboard",
       rules: "security",
@@ -2847,7 +2849,7 @@ export default function Index() {
     } else {
       setPage("dashboard");
     }
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     const dataToSave = {
