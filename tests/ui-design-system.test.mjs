@@ -59,10 +59,13 @@ test("email and billing UI models reflect verified backend state", () => {
 test("safeFetchJson returns readable provider errors", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () =>
-    new Response(JSON.stringify({ delivery: { error: "Domain not verified" } }), {
-      status: 503,
-      headers: { "Content-Type": "application/json" },
-    });
+    new Response(
+      JSON.stringify({ delivery: { error: "Domain not verified" } }),
+      {
+        status: 503,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
   try {
     await assert.rejects(
@@ -111,11 +114,17 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Suspicious Activity/);
   assert.match(source, /Security Health/);
   assert.match(source, /Store Health/);
-  assert.match(source, /Setup Progress/);
+  assert.match(source, /Get started in 3 steps/);
   assert.match(source, /Response mode/);
   assert.match(source, /Recent Security Activity/);
+  assert.match(source, /Support channels/);
   assert.match(source, /title="Visitor Analytics"/);
+  assert.match(source, /Blocked visitors/);
+  assert.match(source, /High-risk visitors/);
   assert.match(source, /title="Protection Rules"/);
+  assert.match(source, /Protection mode/);
+  assert.match(source, /Blocking conditions/);
+  assert.match(source, /VPN, proxy, and datacenter traffic/);
   assert.match(source, /title="Alerts & Reports"/);
   assert.doesNotMatch(source, /world map/i);
 });
@@ -131,6 +140,8 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
 
   assert.match(source, /botshield-surface--raised/);
   assert.match(source, /botshield-metric--critical/);
+  assert.match(source, /botshield-mode-card/);
+  assert.match(source, /botshield-support-card/);
   assert.match(source, /box-shadow/);
   assert.doesNotMatch(source, /botshield-logo/);
 });

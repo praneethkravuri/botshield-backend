@@ -1,11 +1,5 @@
 /* eslint-disable react/prop-types */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-} from "react";
+import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { getUiStatus } from "../../lib/ui-status";
@@ -44,7 +38,9 @@ export function BotShieldToastProvider({ children }) {
     [show],
   );
 
-  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+  return (
+    <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
+  );
 }
 
 export function useBotShieldToast() {
@@ -175,6 +171,33 @@ export function BotShieldAppFrame({ children }) {
           border-radius: 12px;
           padding: 18px;
         }
+        .botshield-mode-card,
+        .botshield-support-card {
+          width: 100%;
+          min-height: 132px;
+          text-align: start;
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 12px;
+          padding: 18px;
+          color: inherit;
+        }
+        .botshield-mode-card {
+          cursor: pointer;
+          transition:
+            border-color 120ms ease,
+            box-shadow 120ms ease,
+            background 120ms ease;
+        }
+        .botshield-mode-card:hover {
+          border-color: rgba(44, 110, 203, 0.38);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+        .botshield-mode-card--selected {
+          border-color: rgba(44, 110, 203, 0.55);
+          background: #f7faff;
+          box-shadow: inset 0 0 0 1px rgba(44, 110, 203, 0.18);
+        }
         .botshield-briefing-row {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
@@ -245,7 +268,11 @@ export function BotShieldPage({
           justifyContent="space-between"
           alignItems="center"
         >
-          <BotShieldPageHeader title={title} subtitle={subtitle} badge={badge} />
+          <BotShieldPageHeader
+            title={title}
+            subtitle={subtitle}
+            badge={badge}
+          />
           {primaryAction || secondaryActions ? (
             <s-stack direction="inline" gap="small">
               {secondaryActions}
@@ -296,7 +323,9 @@ export function BotShieldCard({
           >
             <s-stack gap="small-200">
               {title ? <s-heading>{title}</s-heading> : null}
-              {subtitle ? <s-paragraph color="subdued">{subtitle}</s-paragraph> : null}
+              {subtitle ? (
+                <s-paragraph color="subdued">{subtitle}</s-paragraph>
+              ) : null}
             </s-stack>
             <s-stack direction="inline" gap="small">
               {badge}
@@ -304,7 +333,9 @@ export function BotShieldCard({
             </s-stack>
           </s-stack>
         ) : null}
-        {error ? <BotShieldBanner tone="critical">{error}</BotShieldBanner> : null}
+        {error ? (
+          <BotShieldBanner tone="critical">{error}</BotShieldBanner>
+        ) : null}
         {loading ? <BotShieldLoadingState /> : empty || children}
       </s-stack>
     </div>
@@ -322,7 +353,9 @@ export function BotShieldSection({ title, description, action, children }) {
       >
         <s-stack gap="small-200">
           <s-heading>{title}</s-heading>
-          {description ? <s-paragraph color="subdued">{description}</s-paragraph> : null}
+          {description ? (
+            <s-paragraph color="subdued">{description}</s-paragraph>
+          ) : null}
         </s-stack>
         {action}
       </s-stack>
@@ -367,12 +400,7 @@ export function BotShieldCommandCard({
   children,
 }) {
   return (
-    <s-box
-      background="base"
-      border="base"
-      borderRadius="large"
-      padding="large"
-    >
+    <s-box background="base" border="base" borderRadius="large" padding="large">
       <s-stack gap="large">
         <s-stack
           direction="inline"
@@ -416,13 +444,7 @@ export function BotShieldCommandCard({
   );
 }
 
-export function BotShieldSignalCard({
-  label,
-  value,
-  detail,
-  status,
-  action,
-}) {
+export function BotShieldSignalCard({ label, value, detail, status, action }) {
   return (
     <s-box
       background="base"
@@ -495,13 +517,7 @@ export function BotShieldOutcomeMetric({
   );
 }
 
-export function BotShieldStatusRow({
-  label,
-  value,
-  detail,
-  status,
-  action,
-}) {
+export function BotShieldStatusRow({ label, value, detail, status, action }) {
   return (
     <s-box paddingBlock="base" borderBlockEnd="base">
       <s-stack
@@ -739,9 +755,12 @@ export function BotShieldSaveState({
         alignItems="center"
       >
         <s-stack gap="small-200">
-          <s-text type="strong">{error ? "Changes not saved" : "Unsaved changes"}</s-text>
+          <s-text type="strong">
+            {error ? "Changes not saved" : "Unsaved changes"}
+          </s-text>
           <s-text color="subdued">
-            {error || "Save or discard your changes before leaving this screen."}
+            {error ||
+              "Save or discard your changes before leaving this screen."}
           </s-text>
         </s-stack>
         <s-button-group>
