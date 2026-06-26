@@ -59,8 +59,8 @@ export function BotShieldAppFrame({ children }) {
         .botshield-surface {
           box-sizing: border-box;
           background: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.09);
-          border-radius: 12px;
+          border: 1px solid rgba(15, 118, 110, 0.12);
+          border-radius: 14px;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
           padding: 24px;
         }
@@ -73,7 +73,10 @@ export function BotShieldAppFrame({ children }) {
             0 14px 38px rgba(0, 0, 0, 0.055);
         }
         .botshield-surface--accent {
-          background: #ffffff;
+          background:
+            linear-gradient(135deg, rgba(236, 253, 245, 0.85), rgba(255, 255, 255, 0) 52%),
+            #ffffff;
+          border-color: rgba(15, 118, 110, 0.24);
         }
         .botshield-card-label {
           color: #6d7175;
@@ -99,10 +102,10 @@ export function BotShieldAppFrame({ children }) {
           width: 3px;
           background: #8a8a8a;
         }
-        .botshield-metric--success::before { background: #29845a; }
-        .botshield-metric--warning::before { background: #b98900; }
-        .botshield-metric--critical::before { background: #c5280c; }
-        .botshield-metric--info::before { background: #2c6ecb; }
+        .botshield-metric--success::before { background: #16a34a; }
+        .botshield-metric--warning::before { background: #f59e0b; }
+        .botshield-metric--critical::before { background: #dc2626; }
+        .botshield-metric--info::before { background: #0f766e; }
         .botshield-metric-value {
           font-size: 30px;
           line-height: 36px;
@@ -115,10 +118,29 @@ export function BotShieldAppFrame({ children }) {
           overflow: hidden;
           min-height: 150px;
           background: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 12px;
+          border: 1px solid rgba(15, 118, 110, 0.12);
+          border-radius: 14px;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
           padding: 24px;
+        }
+        .botshield-outcome-card::after {
+          content: "";
+          position: absolute;
+          inset: auto 18px 16px 18px;
+          height: 3px;
+          border-radius: 999px;
+          background: #0f766e;
+          opacity: 0.16;
+        }
+        .botshield-outcome-card--blocked::after,
+        .botshield-outcome-card--high::after {
+          background: #dc2626;
+          opacity: 0.24;
+        }
+        .botshield-outcome-card--challenged::after,
+        .botshield-outcome-card--setup_required::after {
+          background: #f59e0b;
+          opacity: 0.24;
         }
         .botshield-outcome-value {
           position: relative;
@@ -161,14 +183,14 @@ export function BotShieldAppFrame({ children }) {
           font-weight: 700;
         }
         .botshield-check-icon--complete {
-          background: #e3f1df;
-          color: #108043;
+          background: #ecfdf5;
+          color: #0f766e;
         }
         .botshield-rule-card {
           min-height: 132px;
           background: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 12px;
+          border: 1px solid rgba(15, 118, 110, 0.12);
+          border-radius: 14px;
           padding: 18px;
         }
         .botshield-mode-card,
@@ -177,8 +199,8 @@ export function BotShieldAppFrame({ children }) {
           min-height: 132px;
           text-align: start;
           background: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 12px;
+          border: 1px solid rgba(15, 118, 110, 0.12);
+          border-radius: 14px;
           padding: 18px;
           color: inherit;
         }
@@ -190,13 +212,13 @@ export function BotShieldAppFrame({ children }) {
             background 120ms ease;
         }
         .botshield-mode-card:hover {
-          border-color: rgba(44, 110, 203, 0.38);
+          border-color: rgba(15, 118, 110, 0.38);
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
         }
         .botshield-mode-card--selected {
-          border-color: rgba(44, 110, 203, 0.55);
-          background: #f7faff;
-          box-shadow: inset 0 0 0 1px rgba(44, 110, 203, 0.18);
+          border-color: rgba(15, 118, 110, 0.55);
+          background: #ecfdf5;
+          box-shadow: inset 0 0 0 1px rgba(15, 118, 110, 0.16);
         }
         .botshield-briefing-row {
           display: grid;

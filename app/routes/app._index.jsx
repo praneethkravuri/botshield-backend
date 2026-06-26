@@ -2830,10 +2830,15 @@ export default function Index() {
     const requestedView = new URLSearchParams(window.location.search).get("view");
     const pageMap = {
       dashboard: "dashboard",
+      rules: "security",
+      visitors: "incidents",
       activity: "incidents",
       incidents: "incidents",
       detection: "security",
+      blocklist: "blocklist",
+      trusted: "trusted",
       policy: "settings",
+      settings: "detection-settings",
       billing: "billing",
       setup: "setup",
     };

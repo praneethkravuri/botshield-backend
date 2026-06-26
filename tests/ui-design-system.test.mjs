@@ -88,7 +88,7 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
 
   assert.match(source, /14\.99/);
   assert.match(source, /trialDays \|\| 7/);
-  assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro/);
+  assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro\b/);
 });
 
 test("Polaris dashboard presents a merchant-facing security center", async () => {
@@ -100,25 +100,29 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
     "utf8",
   );
 
-  assert.match(source, /title="Overview"/);
-  assert.match(source, /Connect your storefront/);
-  assert.match(source, /ProtectionStatusCard/);
-  assert.match(source, /Protection Status/);
-  assert.match(source, /Quick Actions/);
+  assert.match(source, /title="Hi, botshield-test/);
+  assert.match(source, /BotShield Store Protection/);
+  assert.match(source, /BotShield is disabled in your live theme/);
+  assert.match(source, /StoreProtectionPanel/);
+  assert.match(source, /BotShield Protection/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
   assert.match(source, /Paused/);
-  assert.match(source, /Visitors Evaluated/);
-  assert.match(source, /Threats Stopped/);
-  assert.match(source, /Suspicious Activity/);
-  assert.match(source, /Security Health/);
-  assert.match(source, /Store Health/);
+  assert.match(source, /Overall analysis/);
+  assert.match(source, /Total storefront visits/);
+  assert.match(source, /Allowed visitors/);
+  assert.match(source, /Challenged visitors/);
+  assert.match(source, /Blocked visitors/);
+  assert.match(source, /Block rate/);
+  assert.match(source, /High-risk visitors/);
   assert.match(source, /Get started in 3 steps/);
   assert.match(source, /Response mode/);
   assert.match(source, /Recent Security Activity/);
   assert.match(source, /Support channels/);
-  assert.match(source, /title="Visitor Analytics"/);
+  assert.match(source, /title="Visitors"/);
+  assert.match(source, /title="Blocklist"/);
+  assert.match(source, /title="Trusted Visitors"/);
   assert.match(source, /Blocked visitors/);
   assert.match(source, /High-risk visitors/);
   assert.match(source, /title="Protection Rules"/);
@@ -142,6 +146,8 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
   assert.match(source, /botshield-metric--critical/);
   assert.match(source, /botshield-mode-card/);
   assert.match(source, /botshield-support-card/);
+  assert.match(source, /#0f766e/i);
+  assert.match(source, /#ecfdf5/i);
   assert.match(source, /box-shadow/);
   assert.doesNotMatch(source, /botshield-logo/);
 });
@@ -189,11 +195,14 @@ test("new app shell removes custom branding and uses task-based navigation", asy
   );
 
   assert.match(source, />Overview</);
-  assert.match(source, />Visitor Analytics</);
   assert.match(source, />Protection Rules</);
-  assert.match(source, />Access & Alerts</);
+  assert.match(source, />Visitors</);
+  assert.match(source, />Blocklist</);
+  assert.match(source, />Trusted Visitors</);
+  assert.match(source, />Alerts & Reports</);
   assert.match(source, />Billing</);
-  assert.match(source, />Setup</);
+  assert.match(source, />Settings</);
+  assert.match(source, />Setup & Help</);
   assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });
 
