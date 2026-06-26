@@ -96,20 +96,31 @@ function formatDelta(current, previous) {
 
 function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
   return (
-    <s-page heading={title} inlineSize={maxWidth}>
-      <s-stack gap="large">
-        <s-stack
-          direction="inline"
-          gap="base"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <s-paragraph color="subdued">{subtitle}</s-paragraph>
+    <div className="botshield-page">
+      <div className="botshield-titlebar">
+        <div className="botshield-titlebar-brand">
+          <span className="botshield-brand-mark">∕</span>
+          <span>BotShield Fraud & Bot Detector</span>
+        </div>
+        <s-text color="subdued">•••</s-text>
+      </div>
+      <main
+        className={`botshield-page-content${
+          maxWidth === "full" ? " botshield-page-content--wide" : ""
+        }`}
+      >
+        <div className="botshield-page-heading">
+          <div>
+            <h1 className="botshield-page-title">{title}</h1>
+            {subtitle ? (
+              <p className="botshield-page-subtitle">{subtitle}</p>
+            ) : null}
+          </div>
           {actions}
-        </s-stack>
-        {children}
-      </s-stack>
-    </s-page>
+        </div>
+        <s-stack gap="large">{children}</s-stack>
+      </main>
+    </div>
   );
 }
 
@@ -273,6 +284,47 @@ function OutcomeCard({ label, value, description, status }) {
         <s-text color="subdued">{description}</s-text>
       </s-stack>
     </div>
+  );
+}
+
+function InfoNotice({ title, children, action }) {
+  return (
+    <div className="botshield-info-notice">
+      <div className="botshield-info-notice-header">
+        <span>ⓘ {title}</span>
+        <span>×</span>
+      </div>
+      <div className="botshield-info-notice-body">
+        <s-stack gap="base">
+          <s-text>{children}</s-text>
+          {action}
+        </s-stack>
+      </div>
+    </div>
+  );
+}
+
+function HelpStrip({ actions }) {
+  return (
+    <BotShieldCard>
+      <s-stack
+        direction="inline"
+        gap="base"
+        alignItems="center"
+        justifyContent="space-between"
+      >
+        <s-stack direction="inline" gap="base" alignItems="center">
+          <span className="botshield-rule-icon">ⓘ</span>
+          <s-text>
+            Not sure which setup fits your store? Start with Balanced mode and
+            adjust rules later. 🥰
+          </s-text>
+        </s-stack>
+        <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+          Get help
+        </BotShieldActionButton>
+      </s-stack>
+    </BotShieldCard>
   );
 }
 
@@ -640,13 +692,25 @@ function GettingStartedCard({ model, actions }) {
       title="Get started in 3 steps"
       subtitle={`You've completed ${complete} of ${steps.length} steps`}
       actions={
-        <BotShieldStatusBadge
-          status={complete === steps.length ? "active" : "setup_required"}
-          label={`${Math.round((complete / steps.length) * 100)}%`}
-        />
+        <BotShieldActionButton disabled={complete !== steps.length}>
+          Finish
+        </BotShieldActionButton>
       }
     >
-      <s-stack>
+      <s-stack gap="large">
+        <s-stack direction="inline" gap="base" alignItems="center">
+          <s-text>{`You've done ${complete} of ${steps.length} steps`}</s-text>
+          <s-box inlineSize="100%">
+            <div className="botshield-progress-track">
+              <div
+                className="botshield-progress-fill"
+                style={{
+                  width: `${Math.round((complete / steps.length) * 100)}%`,
+                }}
+              />
+            </div>
+          </s-box>
+        </s-stack>
         {steps.map((step) => (
           <div className="botshield-checklist-row" key={step.label}>
             <s-stack direction="inline" gap="base" alignItems="start">
@@ -676,15 +740,29 @@ function GettingStartedCard({ model, actions }) {
   );
 }
 
-function RuleSummaryCard({ title, status, description, action }) {
+function RuleSummaryCard({
+  title,
+  status,
+  description,
+  action,
+  icon = "◉",
+  count,
+}) {
   return (
     <div className="botshield-rule-card">
-      <s-stack gap="base">
+      <s-stack gap="large">
         <s-stack direction="inline" gap="base" justifyContent="space-between">
-          <s-text type="strong">{title}</s-text>
-          <BotShieldStatusBadge status={status} />
+          <span className="botshield-rule-icon">{icon}</span>
+          {count !== undefined ? (
+            <span className="botshield-rule-count">{count}</span>
+          ) : (
+            <BotShieldStatusBadge status={status} />
+          )}
         </s-stack>
-        <s-text color="subdued">{description}</s-text>
+        <s-stack gap="small">
+          <s-heading>{title} →</s-heading>
+          <s-text color="subdued">{description}</s-text>
+        </s-stack>
         {action}
       </s-stack>
     </div>
@@ -718,44 +796,58 @@ function SupportChannelsCard() {
     {
       title: "User guide",
       detail: "Setup steps, protection limits, and common troubleshooting.",
+      icon: "▣",
       href: "/support",
     },
     {
-      title: "Privacy policy",
-      detail: "How storefront event and visitor data are handled.",
-      href: "/privacy",
+      title: "Feature requests",
+      detail: "Send ideas for rules, reporting, and merchant workflows.",
+      icon: "↗",
+      href: "mailto:support@botshieldapp.com?subject=BotShield%20feature%20request",
     },
     {
-      title: "Terms",
-      detail: "Billing, service limits, and responsible use terms.",
-      href: "/terms",
+      title: "Privacy policy",
+      detail: "Discover how visitor and storefront event data is handled.",
+      icon: "▣",
+      href: "/privacy",
     },
   ];
 
   return (
-    <BotShieldCard
-      title="Support channels"
-      subtitle="Help merchants understand setup, data use, and recovery."
-    >
-      <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
-        gap="base"
-      >
-        {channels.map((channel) => (
-          <div className="botshield-support-card" key={channel.title}>
-            <s-stack gap="base">
-              <s-stack gap="small-200">
+    <s-stack gap="large">
+      <s-heading>Support Channels</s-heading>
+      <BotShieldCard>
+        <div className="botshield-support-grid">
+          {channels.map((channel) => (
+            <a
+              className="botshield-support-card"
+              href={channel.href}
+              key={channel.title}
+            >
+              <s-stack gap="base" alignItems="center">
+                <s-text>{channel.icon}</s-text>
                 <s-text type="strong">{channel.title}</s-text>
                 <s-text color="subdued">{channel.detail}</s-text>
               </s-stack>
-              <BotShieldActionButton href={channel.href}>
-                Open
-              </BotShieldActionButton>
-            </s-stack>
-          </div>
-        ))}
-      </s-grid>
-    </BotShieldCard>
+            </a>
+          ))}
+        </div>
+      </BotShieldCard>
+      <BotShieldCard
+        title="Contact for free support 😊"
+        subtitle="We provide assistance for setup, incidents, and false positives. Email support@botshieldapp.com for support."
+        actions={
+          <s-stack direction="inline" gap="small">
+            <BotShieldActionButton href="/support">
+              Open support
+            </BotShieldActionButton>
+            <BotShieldActionButton href="mailto:support@botshieldapp.com">
+              Send email
+            </BotShieldActionButton>
+          </s-stack>
+        }
+      />
+    </s-stack>
   );
 }
 
@@ -1616,6 +1708,12 @@ function ProtectionPage({ model, actions }) {
           })
         }
       />
+      <InfoNotice title="Note: Blocked traffic can still show in Shopify analytics">
+        Blocked visitors may still appear in Shopify Analytics because Shopify
+        records some storefront activity independently. BotShield stops them in
+        the storefront app-proxy flow when the theme embed runs.
+      </InfoNotice>
+      <HelpStrip actions={actions} />
       <s-grid
         gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
         gap="large"
@@ -1733,11 +1831,15 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="Bots and automated browsers"
               status="active"
+              icon="🤖"
+              count="●"
               description="Looks for browser and user-agent patterns commonly used by bots."
             />
             <RuleSummaryCard
               title="IP address blocklist"
               status="active"
+              icon="📍"
+              count={model.blockedIPs.length}
               description={`${model.blockedIPs.length} manually blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}.`}
               action={
                 <BotShieldActionButton
@@ -1750,6 +1852,8 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="Trusted visitors"
               status="active"
+              icon="👥"
+              count={model.whitelist.length}
               description={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"} can bypass automated blocks.`}
               action={
                 <BotShieldActionButton
@@ -1762,16 +1866,22 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="VPN, proxy, and datacenter traffic"
               status="active"
+              icon="🌐"
+              count="●"
               description="Uses network intelligence to identify anonymous or hosting-provider traffic."
             />
             <RuleSummaryCard
               title="Repeated visitor activity"
               status="active"
+              icon="↻"
+              count="●"
               description="Flags unusually frequent visits from the same visitor pattern."
             />
             <RuleSummaryCard
               title="Blocked page"
               status="active"
+              icon="▣"
+              count="●"
               description="Stopped visitors are redirected to BotShield's app-proxy blocked page."
             />
           </s-grid>
