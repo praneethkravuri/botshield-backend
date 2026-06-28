@@ -55,6 +55,13 @@ export function BotShieldAppFrame({ children }) {
           min-height: 100vh;
           background: #eeeeef;
           padding-bottom: 48px;
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          color: #202223;
+        }
+        .botshield-admin-shell *,
+        .botshield-admin-shell *::before,
+        .botshield-admin-shell *::after {
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
         }
         .botshield-page {
           min-height: 100vh;
@@ -75,9 +82,9 @@ export function BotShieldAppFrame({ children }) {
           align-items: center;
           gap: 9px;
           color: #303030;
-          font-size: 22px;
+          font-size: 23px;
           line-height: 1.1;
-          font-weight: 700;
+          font-weight: 750;
           letter-spacing: -0.02em;
         }
         .botshield-brand-mark {
@@ -93,9 +100,9 @@ export function BotShieldAppFrame({ children }) {
           box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18);
         }
         .botshield-page-content {
-          width: min(1188px, calc(100vw - 48px));
+          width: min(1204px, calc(100vw - 64px));
           margin: 0 auto;
-          padding: 34px 0 72px;
+          padding: 32px 0 72px;
         }
         .botshield-page-content--wide {
           width: min(1560px, calc(100vw - 32px));
@@ -110,7 +117,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-page-title {
           margin: 0;
           color: #303030;
-          font-size: 25px;
+          font-size: 26px;
           line-height: 1.18;
           font-weight: 760;
           letter-spacing: -0.02em;
@@ -370,20 +377,7 @@ export function BotShieldAppFrame({ children }) {
           border-right: 0;
         }
         .botshield-chat-bubble {
-          position: fixed;
-          right: 28px;
-          bottom: 28px;
-          z-index: 30;
-          width: 66px;
-          height: 66px;
-          display: grid;
-          place-items: center;
-          border-radius: 999px;
-          background: #090909;
-          color: #ffffff;
-          text-decoration: none;
-          font-size: 30px;
-          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+          display: none;
         }
         .botshield-next-action {
           border-radius: 14px;

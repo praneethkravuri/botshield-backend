@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 import { safeFetchJson } from "../lib/safe-fetch";
@@ -1277,6 +1277,7 @@ function SettingsPage({
 
 export default function Index() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [page, setPage] = useState("dashboard");
 
   const [threatLevel, setThreatLevel] = useState("low");
@@ -3589,8 +3590,27 @@ export default function Index() {
     readinessItems: polarisReadinessItems,
   };
 
+  const openPolarisPage = (nextPage) => {
+    const pageToView = {
+      dashboard: "dashboard",
+      security: "rules",
+      detection: "rules",
+      incidents: "visitors",
+      blocklist: "blocklist",
+      trusted: "trusted",
+      settings: "policy",
+      policy: "policy",
+      "detection-settings": "settings",
+      billing: "billing",
+      setup: "setup",
+    };
+    const view = pageToView[nextPage] || nextPage;
+    setPage(nextPage);
+    navigate(`/app?view=${view}`, { replace: false });
+  };
+
   const polarisActions = {
-    setPage,
+    setPage: openPolarisPage,
     refresh: refreshBackendState,
     openThemeEditor,
     refreshSettings: loadSettings,

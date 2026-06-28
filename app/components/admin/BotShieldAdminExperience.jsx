@@ -748,13 +748,30 @@ function RuleSummaryCard({
   icon = "◉",
   count,
 }) {
+  const cleanIcon =
+    title === "Bots and automated browsers"
+      ? "Bot"
+      : title === "IP address blocklist"
+        ? "IP"
+        : title === "Trusted visitors"
+          ? "Trust"
+          : title === "VPN, proxy, and datacenter traffic"
+            ? "Net"
+            : title === "Repeated visitor activity"
+              ? "Rate"
+              : title === "Blocked page"
+                ? "Page"
+                : icon;
+  const cleanCount =
+    typeof count === "number" || /^[0-9]+$/.test(String(count)) ? count : "•";
+
   return (
     <div className="botshield-rule-card">
       <s-stack gap="large">
         <s-stack direction="inline" gap="base" justifyContent="space-between">
-          <span className="botshield-rule-icon">{icon}</span>
+          <span className="botshield-rule-icon">{cleanIcon}</span>
           {count !== undefined ? (
-            <span className="botshield-rule-count">{count}</span>
+            <span className="botshield-rule-count">{cleanCount}</span>
           ) : (
             <BotShieldStatusBadge status={status} />
           )}
@@ -1714,10 +1731,7 @@ function ProtectionPage({ model, actions }) {
         the storefront app-proxy flow when the theme embed runs.
       </InfoNotice>
       <HelpStrip actions={actions} />
-      <s-grid
-        gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
-        gap="large"
-      >
+      <s-grid gridTemplateColumns="1fr" gap="large">
         <s-stack gap="small">
           <s-heading>Protection mode</s-heading>
           <s-paragraph color="subdued">
@@ -1843,7 +1857,7 @@ function ProtectionPage({ model, actions }) {
               description={`${model.blockedIPs.length} manually blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}.`}
               action={
                 <BotShieldActionButton
-                  onClick={() => actions.setPage("policy")}
+                  onClick={() => actions.setPage("blocklist")}
                 >
                   Manage blocklist
                 </BotShieldActionButton>
@@ -1857,7 +1871,7 @@ function ProtectionPage({ model, actions }) {
               description={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"} can bypass automated blocks.`}
               action={
                 <BotShieldActionButton
-                  onClick={() => actions.setPage("policy")}
+                  onClick={() => actions.setPage("trusted")}
                 >
                   Manage trusted list
                 </BotShieldActionButton>
