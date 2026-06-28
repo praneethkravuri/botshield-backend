@@ -13,7 +13,11 @@ const defaultToastValue = {
 const ToastContext = createContext(defaultToastValue);
 
 export function BotShieldToastProvider({ children }) {
-  if (typeof window === "undefined") {
+  const isPreviewRoute =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/ui-preview");
+
+  if (typeof window === "undefined" || isPreviewRoute) {
     return (
       <ToastContext.Provider value={defaultToastValue}>{children}</ToastContext.Provider>
     );
