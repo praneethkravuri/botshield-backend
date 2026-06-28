@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useRouteError } from "react-router";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 
@@ -347,5 +348,37 @@ export default function UiPreview() {
     <AppProvider embedded={false}>
       <BotShieldAdminExperience model={model} actions={actions} />
     </AppProvider>
+  );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  const message =
+    error instanceof Error
+      ? `${error.message}\n\n${error.stack || ""}`
+      : JSON.stringify(error, null, 2);
+
+  return (
+    <main
+      style={{
+        padding: "32px",
+        fontFamily: "Inter, sans-serif",
+        background: "#fff",
+        color: "#202223",
+      }}
+    >
+      <h1>BotShield UI Preview Error</h1>
+      <pre
+        style={{
+          whiteSpace: "pre-wrap",
+          background: "#f6f6f7",
+          border: "1px solid #d6d6d6",
+          borderRadius: "8px",
+          padding: "16px",
+        }}
+      >
+        {message}
+      </pre>
+    </main>
   );
 }
