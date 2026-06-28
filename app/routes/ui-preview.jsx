@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useRouteError } from "react-router";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 
@@ -231,9 +230,10 @@ export default function UiPreview() {
         (event) => event.decision === "challenged",
       ).length,
       trafficOrigins: [
-        { label: "United States", count: 5 },
-        { label: "Known hosting providers", count: 3 },
-        { label: "Repeated activity", count: 2 },
+        { city: "Dallas", country: "United States", count: 2 },
+        { city: "Chicago", country: "United States", count: 1 },
+        { city: "Irving", country: "United States", count: 1 },
+        { city: "Austin", country: "United States", count: 1 },
       ],
       protectionStatus: {
         appInstalled: true,
@@ -262,9 +262,9 @@ export default function UiPreview() {
         },
         report: {
           topReasonCodes: [
-            { reason: "RATE_PATTERN", count: 2 },
-            { reason: "DATACENTER_IP", count: 1 },
-            { reason: "SUSPICIOUS_USER_AGENT", count: 1 },
+            { label: "RATE_PATTERN", count: 2 },
+            { label: "DATACENTER_IP", count: 1 },
+            { label: "SUSPICIOUS_USER_AGENT", count: 1 },
           ],
         },
       },
@@ -348,37 +348,5 @@ export default function UiPreview() {
     <AppProvider embedded={false}>
       <BotShieldAdminExperience model={model} actions={actions} />
     </AppProvider>
-  );
-}
-
-export function ErrorBoundary() {
-  const error = useRouteError();
-  const message =
-    error instanceof Error
-      ? `${error.message}\n\n${error.stack || ""}`
-      : JSON.stringify(error, null, 2);
-
-  return (
-    <main
-      style={{
-        padding: "32px",
-        fontFamily: "Inter, sans-serif",
-        background: "#fff",
-        color: "#202223",
-      }}
-    >
-      <h1>BotShield UI Preview Error</h1>
-      <pre
-        style={{
-          whiteSpace: "pre-wrap",
-          background: "#f6f6f7",
-          border: "1px solid #d6d6d6",
-          borderRadius: "8px",
-          padding: "16px",
-        }}
-      >
-        {message}
-      </pre>
-    </main>
   );
 }
