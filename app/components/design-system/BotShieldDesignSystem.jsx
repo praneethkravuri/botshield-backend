@@ -4,13 +4,25 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { getUiStatus } from "../../lib/ui-status";
 
-const ToastContext = createContext({
+const defaultToastValue = {
   success: () => {},
   error: () => {},
   warning: () => {},
-});
+};
+
+const ToastContext = createContext(defaultToastValue);
 
 export function BotShieldToastProvider({ children }) {
+  if (typeof window === "undefined") {
+    return (
+      <ToastContext.Provider value={defaultToastValue}>{children}</ToastContext.Provider>
+    );
+  }
+
+  return <BrowserBotShieldToastProvider>{children}</BrowserBotShieldToastProvider>;
+}
+
+function BrowserBotShieldToastProvider({ children }) {
   const shopify = useAppBridge();
   const lastToast = useRef({ message: "", at: 0 });
 
