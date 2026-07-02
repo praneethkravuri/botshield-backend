@@ -162,12 +162,12 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
   assert.match(source, /box-shadow/);
   assert.match(source, /botshield-route-shell/);
   assert.match(source, /botshield-route-transition/);
-  assert.match(source, /botshield-route-progress/);
-  assert.match(source, /botshield-route-loading-pill/);
+  assert.doesNotMatch(source, /botshield-route-progress/);
+  assert.doesNotMatch(source, /botshield-route-loading-pill/);
   assert.doesNotMatch(source, /botshield-logo/);
 });
 
-test("admin navigation gives merchants page-change feedback", async () => {
+test("admin navigation moves immediately to the top of the next page", async () => {
   const source = await readFile(
     new URL(
       "../app/components/admin/BotShieldAdminExperience.jsx",
@@ -176,10 +176,9 @@ test("admin navigation gives merchants page-change feedback", async () => {
     "utf8",
   );
 
-  assert.match(source, /routeBusy/);
-  assert.match(source, /routeLabels/);
-  assert.match(source, /Opening \{routeLabels\[screen\] \|\| "page"\}/);
-  assert.match(source, /botshield-route-shell--busy/);
+  assert.match(source, /window\.scrollTo\(0, 0\)/);
+  assert.doesNotMatch(source, /routeBusy/);
+  assert.doesNotMatch(source, /Opening \{/);
   assert.match(source, /botshield-route-transition/);
 });
 

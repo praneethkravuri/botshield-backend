@@ -294,7 +294,7 @@ export default function UiPreview() {
       const url = new URL(window.location.href);
       url.searchParams.set("view", nextPage);
       window.history.pushState({}, "", url.toString());
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo(0, 0);
     }
   };
 

@@ -88,87 +88,18 @@ export function BotShieldAppFrame({ children }) {
           min-height: 100vh;
         }
         .botshield-route-transition {
-          animation: botshield-route-enter 220ms cubic-bezier(0.2, 0, 0, 1);
+          animation: botshield-route-enter 160ms cubic-bezier(0.2, 0, 0, 1);
           will-change: opacity, transform;
-        }
-        .botshield-route-shell--busy .botshield-route-transition {
-          opacity: 0.96;
-        }
-        .botshield-route-progress {
-          position: fixed;
-          z-index: 60;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 3px;
-          overflow: hidden;
-          pointer-events: none;
-          background: rgba(15, 118, 110, 0.1);
-        }
-        .botshield-route-progress::after {
-          content: "";
-          display: block;
-          width: 42%;
-          height: 100%;
-          border-radius: 999px;
-          background: #0f766e;
-          box-shadow: 0 0 18px rgba(15, 118, 110, 0.38);
-          animation: botshield-route-progress 520ms cubic-bezier(0.2, 0, 0, 1) infinite;
-        }
-        .botshield-route-loading-pill {
-          position: fixed;
-          z-index: 61;
-          top: 68px;
-          right: 22px;
-          display: inline-flex;
-          align-items: center;
-          gap: 9px;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.96);
-          box-shadow:
-            0 1px 2px rgba(0, 0, 0, 0.08),
-            0 12px 34px rgba(0, 0, 0, 0.12);
-          padding: 8px 12px;
-          color: #303030;
-          font-size: 13px;
-          font-weight: 650;
-          animation: botshield-route-pill 180ms ease-out;
-        }
-        .botshield-route-spinner {
-          width: 12px;
-          height: 12px;
-          border-radius: 999px;
-          border: 2px solid rgba(15, 118, 110, 0.16);
-          border-top-color: #0f766e;
-          animation: botshield-spin 640ms linear infinite;
         }
         @keyframes botshield-route-enter {
           from {
             opacity: 0;
-            transform: translateY(8px) scale(0.998);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes botshield-route-progress {
-          from { transform: translateX(-110%); }
-          to { transform: translateX(260%); }
-        }
-        @keyframes botshield-route-pill {
-          from {
-            opacity: 0;
-            transform: translateY(-4px);
+            transform: translateY(6px);
           }
           to {
             opacity: 1;
             transform: translateY(0);
           }
-        }
-        @keyframes botshield-spin {
-          to { transform: rotate(360deg); }
         }
         .botshield-titlebar {
           min-height: 56px;
