@@ -2232,6 +2232,15 @@ function SettingsPage({ model, actions }) {
     configured: model.emailProviderConfigured,
     lastStatus: model.lastAlertStatus,
   });
+  const billingStatus = getBillingStatusModel(model.billingStatus);
+  const alertReady =
+    model.emailProviderConfigured &&
+    draft.emailAlerts &&
+    EMAIL_PATTERN.test(draft.alertEmail);
+  const reportReady =
+    model.emailProviderConfigured &&
+    draft.weeklyReportsEnabled &&
+    EMAIL_PATTERN.test(draft.alertEmail);
 
   const save = async () => {
     if (
@@ -2276,6 +2285,80 @@ function SettingsPage({ model, actions }) {
         }
       />
       <s-grid
+        gridTemplateColumns="minmax(0, 1.2fr) minmax(300px, 0.8fr)"
+        gap="large"
+      >
+        <BotShieldCard
+          title="Alert delivery"
+          subtitle="BotShield sends security incidents and weekly summaries to the merchant."
+          badge={
+            <BotShieldStatusBadge
+              status={alertReady ? "provider_connected" : "setup_required"}
+              label={alertReady ? "Ready" : "Needs setup"}
+            />
+          }
+          accent
+        >
+          <s-stack gap="large">
+            <div className="botshield-status-value">
+              {alertReady ? "Alerts ready" : "Alerts need setup"}
+            </div>
+            <s-paragraph color="subdued">
+              {alertReady
+                ? `Security alerts are configured for ${draft.alertEmail}.`
+                : "Configure a valid recipient, enable alerts, and verify the email provider before launch."}
+            </s-paragraph>
+            <s-grid
+              gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
+              gap="base"
+            >
+              <s-stack gap="small-200">
+                <s-text color="subdued">Provider</s-text>
+                <s-text type="strong">
+                  {model.emailProviderConfigured ? "Connected" : "Not configured"}
+                </s-text>
+              </s-stack>
+              <s-stack gap="small-200">
+                <s-text color="subdued">Security alerts</s-text>
+                <s-text type="strong">{draft.emailAlerts ? "On" : "Off"}</s-text>
+              </s-stack>
+              <s-stack gap="small-200">
+                <s-text color="subdued">Weekly report</s-text>
+                <s-text type="strong">
+                  {draft.weeklyReportsEnabled ? "On" : "Off"}
+                </s-text>
+              </s-stack>
+            </s-grid>
+          </s-stack>
+        </BotShieldCard>
+
+        <BotShieldCard
+          title="Delivery proof"
+          subtitle="Use test sends before submitting or charging merchants."
+        >
+          <s-stack>
+            <StatusRow
+              label="Last alert"
+              detail={`${model.lastAlertStatus || "Not sent"} · ${formatDate(model.lastAlertSentAt)}`}
+              status={
+                model.lastAlertStatus === "sent"
+                  ? "sent"
+                  : model.lastAlertStatus || "pending"
+              }
+            />
+            <StatusRow
+              label="Last weekly report"
+              detail={`${model.lastWeeklyReportStatus || "Not sent"} · ${formatDate(model.lastWeeklyReportAt)}`}
+              status={
+                model.lastWeeklyReportStatus === "sent"
+                  ? "sent"
+                  : model.lastWeeklyReportStatus || "pending"
+              }
+            />
+          </s-stack>
+        </BotShieldCard>
+      </s-grid>
+      <s-grid
         gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
         gap="large"
       >
@@ -2286,6 +2369,8 @@ function SettingsPage({ model, actions }) {
           </s-paragraph>
         </s-stack>
         <BotShieldCard
+          title="Notification settings"
+          subtitle="Choose the recipient and notification types."
           badge={<BotShieldStatusBadge status={emailStatus.technicalStatus} />}
         >
           <s-stack gap="large">
@@ -2375,24 +2460,16 @@ function SettingsPage({ model, actions }) {
               gap="base"
             >
               <Metric
-                label="Last alert"
-                value={model.lastAlertStatus || "Not sent"}
-                detail={formatDate(model.lastAlertSentAt)}
-                status={
-                  model.lastAlertStatus === "sent"
-                    ? "sent"
-                    : model.lastAlertStatus || "pending"
-                }
+                label="Security alerts"
+                value={alertReady ? "Ready" : "Needs setup"}
+                detail={draft.alertEmail || "No recipient configured"}
+                status={alertReady ? "provider_connected" : "setup_required"}
               />
               <Metric
-                label="Last weekly report"
-                value={model.lastWeeklyReportStatus || "Not sent"}
-                detail={formatDate(model.lastWeeklyReportAt)}
-                status={
-                  model.lastWeeklyReportStatus === "sent"
-                    ? "sent"
-                    : model.lastWeeklyReportStatus || "pending"
-                }
+                label="Weekly report"
+                value={reportReady ? "Ready" : "Needs setup"}
+                detail={`Last report: ${formatDate(model.lastWeeklyReportAt)}`}
+                status={reportReady ? "provider_connected" : "setup_required"}
               />
             </s-grid>
             {model.lastAlertError || model.lastWeeklyReportError ? (
@@ -2412,11 +2489,15 @@ function SettingsPage({ model, actions }) {
             Review the Shopify-managed BotShield plan and billing status.
           </s-paragraph>
         </s-stack>
-        <BotShieldCard>
+        <BotShieldCard
+          title="Subscription status"
+          subtitle="Billing remains managed by Shopify."
+          badge={<BotShieldStatusBadge status={billingStatus.technicalStatus} />}
+        >
           <StatusRow
             label={model.billingStatus?.planName || "BotShield Basic"}
             detail={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)}/month · ${Number(model.billingStatus?.trialDays || 7)}-day trial`}
-            status={getBillingStatusModel(model.billingStatus).technicalStatus}
+            status={billingStatus.technicalStatus}
             action={
               <BotShieldActionButton onClick={() => actions.setPage("billing")}>
                 Manage subscription

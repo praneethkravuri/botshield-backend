@@ -137,6 +137,10 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Active protections/);
   assert.match(source, /VPN, proxy, and datacenter traffic/);
   assert.match(source, /title="Alerts & Reports"/);
+  assert.match(source, /Alert delivery/);
+  assert.match(source, /Delivery proof/);
+  assert.match(source, /Notification settings/);
+  assert.match(source, /Subscription status/);
   assert.doesNotMatch(source, /world map/i);
 });
 
