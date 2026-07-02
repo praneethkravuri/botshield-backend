@@ -99,7 +99,7 @@ function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
     <div className="botshield-page">
       <div className="botshield-titlebar">
         <div className="botshield-titlebar-brand">
-          <span className="botshield-brand-mark">∕</span>
+          <span className="botshield-brand-mark">B</span>
           <span>BotShield Fraud & Bot Detector</span>
         </div>
         <s-text color="subdued">•••</s-text>
@@ -323,120 +323,6 @@ function HelpStrip({ actions }) {
         <BotShieldActionButton onClick={() => actions.setPage("setup")}>
           Get help
         </BotShieldActionButton>
-      </s-stack>
-    </BotShieldCard>
-  );
-}
-
-function StoreProtectionPanel({ model, actions }) {
-  const executiveStatus = getExecutiveStatus(model);
-  const embedMissing = !model.protectionStatus.themeEmbedDetected;
-
-  return (
-    <BotShieldCard
-      title="BotShield Store Protection"
-      subtitle={
-        embedMissing
-          ? "BotShield is disabled in your live theme."
-          : "BotShield is connected to your storefront."
-      }
-      badge={<BotShieldStatusBadge status={executiveStatus.status} />}
-      actions={
-        <s-stack direction="inline" gap="small">
-          <BotShieldActionButton
-            variant={embedMissing ? "primary" : "secondary"}
-            onClick={embedMissing ? actions.openThemeEditor : actions.refresh}
-          >
-            {embedMissing ? "Enable" : "Refresh"}
-          </BotShieldActionButton>
-          <BotShieldActionButton onClick={() => actions.setPage("setup")}>
-            View setup guide
-          </BotShieldActionButton>
-        </s-stack>
-      }
-      accent
-    >
-      <s-stack gap="large">
-        <div className="botshield-status-value">{executiveStatus.label}</div>
-        <s-paragraph color="subdued">{executiveStatus.detail}</s-paragraph>
-        <s-grid
-          gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))"
-          gap="base"
-        >
-          <s-stack gap="small-200">
-            <s-text color="subdued">Theme embed</s-text>
-            <s-text type="strong">
-              {model.protectionStatus.themeEmbedDetected
-                ? "Enabled"
-                : "Disabled"}
-            </s-text>
-          </s-stack>
-          <s-stack gap="small-200">
-            <s-text color="subdued">Protection mode</s-text>
-            <s-text type="strong">
-              {model.protectionPaused
-                ? "Paused"
-                : model.autoBlock
-                  ? "Auto Block"
-                  : "Monitoring"}
-            </s-text>
-          </s-stack>
-          <s-stack gap="small-200">
-            <s-text color="subdued">Last visit</s-text>
-            <s-text type="strong">
-              {formatDate(
-                model.protectionStatus.lastStorefrontDecisionAt,
-                "Waiting",
-              )}
-            </s-text>
-          </s-stack>
-        </s-grid>
-      </s-stack>
-    </BotShieldCard>
-  );
-}
-
-function BotShieldProtectionIntro({ model, actions }) {
-  const status = model.protectionStatus.themeEmbedDetected
-    ? model.protectionPaused
-      ? "paused"
-      : "active"
-    : "setup_required";
-
-  return (
-    <BotShieldCard
-      title="BotShield Protection"
-      subtitle="BotShield monitors, challenges, or blocks suspicious storefront visitors based on your protection rules."
-      badge={<BotShieldStatusBadge status={status} />}
-      actions={
-        <BotShieldActionButton onClick={() => actions.setPage("detection")}>
-          View rules
-        </BotShieldActionButton>
-      }
-    >
-      <s-stack gap="base">
-        <StatusRow
-          label="Auto Block"
-          detail={
-            model.autoBlock
-              ? "High-risk visitors can be stopped automatically."
-              : "Suspicious traffic is recorded without automatic blocking."
-          }
-          status={model.autoBlock ? "active" : "monitoring_only"}
-        />
-        <StatusRow
-          label="Alerts"
-          detail={
-            model.emailAlerts && model.emailProviderConfigured
-              ? `Alerts send to ${model.alertEmail || "the configured email"}.`
-              : "Configure alerts before launch."
-          }
-          status={
-            model.emailAlerts && model.emailProviderConfigured
-              ? "provider_connected"
-              : "setup_required"
-          }
-        />
       </s-stack>
     </BotShieldCard>
   );
@@ -1030,8 +916,8 @@ function OverviewPage({ model, actions }) {
 
   return (
     <Screen
-      title="Hi, botshield-test 👋"
-      subtitle="Welcome to BotShield."
+      title="Dashboard"
+      subtitle="Monitor storefront protection, setup readiness, and recent security activity."
       actions={
         <BotShieldAsyncButton
           action={actions.refresh}
@@ -1080,72 +966,62 @@ function OverviewPage({ model, actions }) {
         gridTemplateColumns="minmax(0, 1.35fr) minmax(300px, 0.85fr)"
         gap="large"
       >
-        <StoreProtectionPanel model={model} actions={actions} />
-        <BotShieldProtectionIntro model={model} actions={actions} />
+        <ProtectionStatusCard model={model} actions={actions} />
+        <QuickActionsCard model={model} actions={actions} />
       </s-grid>
 
-      <GettingStartedCard model={model} actions={actions} />
-
       <s-stack gap="base">
-        <s-heading>Overall analysis</s-heading>
+        <s-heading>Storefront activity</s-heading>
         <s-paragraph color="subdued">
-          Real storefront visits analyzed by BotShield. Diagnostic simulations
-          are excluded.
+          Real storefront visits analyzed by BotShield. Diagnostic and simulated
+          events are excluded from these totals.
         </s-paragraph>
       </s-stack>
 
       <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
+        gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
         gap="large"
       >
         <OutcomeCard
-          label="Total storefront visits"
+          label="Visitors evaluated"
           value={model.storefrontScans.length}
-          description="Real visits evaluated."
+          description="Real storefront visits analyzed."
           status="real_storefront"
-        />
-        <OutcomeCard
-          label="Allowed visitors"
-          value={model.allowedCount}
-          description="Visitors allowed to continue."
-          status="active"
         />
         <OutcomeCard
           label="Challenged visitors"
           value={model.challengedCount}
-          description="Visitors asked to verify."
+          description="Visitors asked to verify before continuing."
           status={model.challengedCount ? "challenged" : "active"}
         />
         <OutcomeCard
           label="Blocked visitors"
           value={model.blockedCount}
-          description="Visitors stopped."
+          description="Visitors stopped before continuing."
           status={model.blockedCount ? "blocked" : "active"}
         />
         <OutcomeCard
-          label="Block rate"
-          value={
-            model.storefrontScans.length
-              ? `${Math.round((model.blockedCount / model.storefrontScans.length) * 100)}%`
-              : "0%"
-          }
-          description="Blocked divided by total visits."
-          status={model.blockedCount ? "blocked" : "active"}
-        />
-        <OutcomeCard
-          label="High-risk visitors"
+          label="Needs review"
           value={
             model.storefrontScans.filter(
               (event) => event.threatLevel === "high",
             ).length
           }
-          description="Events requiring review."
+          description="High-risk events that may need merchant review."
           status={
             model.storefrontScans.some((event) => event.threatLevel === "high")
               ? "high"
               : "active"
           }
         />
+      </s-grid>
+
+      <s-grid
+        gridTemplateColumns="minmax(0, 1fr) minmax(0, 1fr)"
+        gap="large"
+      >
+        <StoreHealthCard model={model} actions={actions} />
+        <SetupProgressCard model={model} actions={actions} />
       </s-grid>
 
       {showLegacyDashboardDetails ? (
@@ -1374,7 +1250,7 @@ function OverviewPage({ model, actions }) {
       ) : null}
 
       <BotShieldCard
-        title="Recent Security Activity"
+        title="Recent security activity"
         subtitle={`${model.simulatedScans.length} diagnostic and simulated events excluded`}
         actions={
           <BotShieldActionButton onClick={() => actions.setPage("incidents")}>

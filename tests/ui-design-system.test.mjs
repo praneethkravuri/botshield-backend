@@ -100,25 +100,23 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
     "utf8",
   );
 
-  assert.match(source, /title="Hi, botshield-test/);
-  assert.match(source, /BotShield Store Protection/);
-  assert.match(source, /BotShield is disabled in your live theme/);
-  assert.match(source, /StoreProtectionPanel/);
-  assert.match(source, /BotShield Protection/);
+  assert.match(source, /title="Dashboard"/);
+  assert.match(source, /Monitor storefront protection, setup readiness/);
+  assert.match(source, /Protection Status/);
+  assert.match(source, /Quick Actions/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
   assert.match(source, /Paused/);
-  assert.match(source, /Overall analysis/);
-  assert.match(source, /Total storefront visits/);
-  assert.match(source, /Allowed visitors/);
+  assert.match(source, /Storefront activity/);
+  assert.match(source, /Visitors evaluated/);
   assert.match(source, /Challenged visitors/);
   assert.match(source, /Blocked visitors/);
-  assert.match(source, /Block rate/);
-  assert.match(source, /High-risk visitors/);
-  assert.match(source, /Get started in 3 steps/);
+  assert.match(source, /Needs review/);
+  assert.match(source, /Store Health/);
+  assert.match(source, /Setup Progress/);
   assert.match(source, /Response mode/);
-  assert.match(source, /Recent Security Activity/);
+  assert.match(source, /Recent security activity/);
   assert.match(source, /Support Channels/);
   assert.match(source, /title="Visitors"/);
   assert.match(source, /title="Blocklist"/);
