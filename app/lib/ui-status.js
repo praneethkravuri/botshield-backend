@@ -176,7 +176,9 @@ export function getUiStatus(status) {
 }
 
 export function getEventSourceStatus(source) {
-  if (source === "storefront-proxy") return getUiStatus("real_storefront");
+  if (["storefront", "storefront-proxy"].includes(source)) {
+    return getUiStatus("real_storefront");
+  }
   if (String(source || "").includes("simulation")) return getUiStatus("simulation");
   return getUiStatus("diagnostic");
 }
