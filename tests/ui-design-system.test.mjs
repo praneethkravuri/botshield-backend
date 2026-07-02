@@ -141,6 +141,12 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Delivery proof/);
   assert.match(source, /Notification settings/);
   assert.match(source, /Subscription status/);
+  assert.match(source, /Subscription verified/);
+  assert.match(source, /Subscription details/);
+  assert.match(source, /Launch checklist/);
+  assert.match(source, /Reviewer test plan/);
+  assert.doesNotMatch(source, /BotShield Fraud & Bot Detector/);
+  assert.doesNotMatch(source, /botshield-titlebar-brand/);
   assert.doesNotMatch(source, /world map/i);
 });
 

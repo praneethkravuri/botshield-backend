@@ -97,13 +97,6 @@ function formatDelta(current, previous) {
 function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
   return (
     <div className="botshield-page">
-      <div className="botshield-titlebar">
-        <div className="botshield-titlebar-brand">
-          <span className="botshield-brand-mark">B</span>
-          <span>BotShield Fraud & Bot Detector</span>
-        </div>
-        <s-text color="subdued">•••</s-text>
-      </div>
       <main
         className={`botshield-page-content${
           maxWidth === "full" ? " botshield-page-content--wide" : ""
@@ -834,8 +827,8 @@ function SupportChannelsCard() {
         </div>
       </BotShieldCard>
       <BotShieldCard
-        title="Contact for free support 😊"
-        subtitle="We provide assistance for setup, incidents, and false positives. Email support@botshieldapp.com for support."
+        title="Need help?"
+        subtitle="Get help with setup, incident review, false positives, or Shopify review questions. Email support@botshieldapp.com."
         actions={
           <s-stack direction="inline" gap="small">
             <BotShieldActionButton href="/support">
@@ -2433,7 +2426,7 @@ function SettingsPage({ model, actions }) {
             status={billingStatus.technicalStatus}
             action={
               <BotShieldActionButton onClick={() => actions.setPage("billing")}>
-                Manage subscription
+                Review subscription
               </BotShieldActionButton>
             }
           />
@@ -2449,7 +2442,7 @@ function SettingsPage({ model, actions }) {
           subtitle={`${model.blockedIPs.length} blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}`}
           actions={
             <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
-              Manage
+              Manage blocklist
             </BotShieldActionButton>
           }
         />
@@ -2458,7 +2451,7 @@ function SettingsPage({ model, actions }) {
           subtitle={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"}`}
           actions={
             <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
-              Manage
+              Manage trusted list
             </BotShieldActionButton>
           }
           accent
@@ -2653,47 +2646,44 @@ function TrustedVisitorsPage({ model, actions }) {
 
 function BillingPage({ model, actions }) {
   const status = getBillingStatusModel(model.billingStatus);
+  const planName = model.billingStatus?.planName || "BotShield Basic";
+  const monthlyPrice = Number(model.billingStatus?.monthlyPrice || 14.99);
+  const trialDays = Number(model.billingStatus?.trialDays || 7);
+  const subscriptionName =
+    model.billingStatus?.subscription?.name || "No active subscription";
+  const billingActive = Boolean(model.billingStatus?.active);
+  const enforcementEnabled = Boolean(model.billingStatus?.enforcementEnabled);
+  const trialRemaining =
+    model.billingStatus?.subscription?.trialDaysRemaining ?? null;
   return (
     <Screen
       title="Subscription"
-      subtitle="BotShield billing is managed securely through Shopify."
+      subtitle="Review the Shopify-managed plan, trial, billing verification, and enforcement mode."
       actions={
-        <BotShieldAsyncButton
-          action={actions.refreshBilling}
-          successMessage="Billing refreshed"
-          icon="refresh"
-        >
-          Refresh
-        </BotShieldAsyncButton>
+        <s-stack direction="inline" gap="small">
+          <BotShieldActionButton onClick={() => actions.setPage("policy")}>
+            Back to alerts
+          </BotShieldActionButton>
+          <BotShieldAsyncButton
+            action={actions.refreshBilling}
+            successMessage="Billing refreshed"
+            icon="refresh"
+          >
+            Refresh billing
+          </BotShieldAsyncButton>
+        </s-stack>
       }
     >
-      <BotShieldActionButton onClick={() => actions.setPage("policy")}>
-        Back to settings
-      </BotShieldActionButton>
       <BotShieldCard
-        title={model.billingStatus?.planName || "BotShield Basic"}
-        subtitle={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)}/month after a ${Number(model.billingStatus?.trialDays || 7)}-day trial`}
+        title={billingActive ? "Subscription verified" : "Subscription needs review"}
+        subtitle={
+          billingActive
+            ? "Shopify billing has been verified for this store."
+            : "Finish Shopify billing setup before charging real merchants."
+        }
         badge={<BotShieldStatusBadge status={status.technicalStatus} />}
-      >
-        <s-stack gap="large">
-          <StatusRow
-            label="Subscription status"
-            detail={
-              model.billingStatus?.subscription?.name ||
-              "No active subscription"
-            }
-            status={status.technicalStatus}
-          />
-          <StatusRow
-            label="Billing enforcement"
-            detail="Billing enforcement remains disabled until paid and reviewer plans are verified."
-            status={
-              model.billingStatus?.enforcementEnabled
-                ? "active"
-                : "enforcement_disabled"
-            }
-          />
-          {model.billingStatus?.pricingUrl && !model.billingStatus?.active ? (
+        actions={
+          model.billingStatus?.pricingUrl && !billingActive ? (
             <BotShieldActionButton
               variant="primary"
               href={model.billingStatus.pricingUrl}
@@ -2701,9 +2691,134 @@ function BillingPage({ model, actions }) {
             >
               Choose plan
             </BotShieldActionButton>
-          ) : null}
+          ) : null
+        }
+        raised
+        accent
+      >
+        <s-stack gap="large">
+          <s-grid
+            gridTemplateColumns="repeat(auto-fit, minmax(190px, 1fr))"
+            gap="base"
+          >
+            <Metric
+              label="Current plan"
+              value={planName}
+              detail={`$${monthlyPrice.toFixed(2)}/month`}
+              status={status.technicalStatus}
+            />
+            <Metric
+              label="Trial"
+              value={`${trialDays} days`}
+              detail={
+                trialRemaining !== null
+                  ? `${trialRemaining} days remaining`
+                  : "Configured plan trial"
+              }
+              status={trialRemaining > 0 ? "trial" : "active"}
+            />
+            <Metric
+              label="Verification"
+              value={billingActive ? "Verified" : "Needs review"}
+              detail={status.description}
+              status={status.technicalStatus}
+            />
+            <Metric
+              label="Enforcement"
+              value={enforcementEnabled ? "On" : "Monitoring"}
+              detail={
+                enforcementEnabled
+                  ? "Unpaid stores are restricted."
+                  : "Safe for review and testing."
+              }
+              status={enforcementEnabled ? "active" : "enforcement_disabled"}
+            />
+          </s-grid>
+          {!billingActive ? (
+            <BotShieldBanner tone="warning" title="Billing is not fully verified">
+              Keep billing enforcement disabled until the public Shopify plan,
+              private reviewer plan, Partner API credentials, and return flow
+              are verified end to end.
+            </BotShieldBanner>
+          ) : (
+            <BotShieldBanner tone="success" title="Billing verification passed">
+              BotShield can confirm the Shopify subscription state for this
+              store.
+            </BotShieldBanner>
+          )}
         </s-stack>
       </BotShieldCard>
+
+      <s-grid
+        gridTemplateColumns="minmax(0, 1.2fr) minmax(320px, 0.8fr)"
+        gap="base"
+      >
+        <BotShieldCard
+          title="Subscription details"
+          subtitle="The billing state BotShield uses before enforcing paid access."
+        >
+          <s-stack>
+          <StatusRow
+            label="Subscription status"
+              detail={subscriptionName}
+            status={status.technicalStatus}
+          />
+            <StatusRow
+              label="Plan"
+              detail={`${planName} · $${monthlyPrice.toFixed(2)}/month · ${trialDays}-day trial`}
+              status={status.technicalStatus}
+            />
+            <StatusRow
+              label="Private test plan"
+              detail={
+                model.billingStatus?.subscription?.isTest
+                  ? "A reviewer or development test plan is active."
+                  : "No private test plan is active for this store."
+              }
+              status={
+                model.billingStatus?.subscription?.isTest
+                  ? "test_plan"
+                  : "monitoring_only"
+              }
+            />
+          <StatusRow
+            label="Billing enforcement"
+            detail="Billing enforcement remains disabled until paid and reviewer plans are verified."
+            status={
+                enforcementEnabled
+                ? "active"
+                : "enforcement_disabled"
+            }
+          />
+          </s-stack>
+        </BotShieldCard>
+        <BotShieldCard
+          title="Launch checklist"
+          subtitle="Complete these before enabling billing enforcement."
+        >
+          <s-stack>
+            <StatusRow
+              label="Public plan configured"
+              detail={`${planName} should exist in Shopify with handle basic.`}
+              status={model.billingStatus?.configured ? "active" : "setup_required"}
+            />
+            <StatusRow
+              label="Reviewer test plan"
+              detail="Private test plan should return reviewers to /app/billing-return."
+              status={
+                model.billingStatus?.subscription?.isTest || billingActive
+                  ? "active"
+                  : "setup_required"
+              }
+            />
+            <StatusRow
+              label="Safe fallback"
+              detail="If billing cannot be verified, BotShield remains monitoring-only."
+              status="active"
+            />
+          </s-stack>
+        </BotShieldCard>
+      </s-grid>
     </Screen>
   );
 }
