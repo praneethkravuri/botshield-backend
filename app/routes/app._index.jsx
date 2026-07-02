@@ -2834,23 +2834,57 @@ export default function Index() {
     const pageMap = {
       dashboard: "dashboard",
       rules: "security",
+      "protection-rules": "security",
       visitors: "incidents",
       activity: "incidents",
       incidents: "incidents",
       detection: "security",
       blocklist: "blocklist",
       trusted: "trusted",
+      "trusted-visitors": "trusted",
       policy: "settings",
+      "alerts-reports": "settings",
       settings: "detection-settings",
       billing: "billing",
       setup: "setup",
     };
+    const pathPageMap = {
+      "/app": "dashboard",
+      "/app/protection-rules": "security",
+      "/app/visitors": "incidents",
+      "/app/blocklist": "blocklist",
+      "/app/trusted-visitors": "trusted",
+      "/app/alerts-reports": "settings",
+      "/app/billing": "billing",
+      "/app/settings": "detection-settings",
+      "/app/setup": "setup",
+    };
+    const legacyViewPathMap = {
+      dashboard: "/app",
+      rules: "/app/protection-rules",
+      "protection-rules": "/app/protection-rules",
+      visitors: "/app/visitors",
+      activity: "/app/visitors",
+      incidents: "/app/visitors",
+      detection: "/app/protection-rules",
+      blocklist: "/app/blocklist",
+      trusted: "/app/trusted-visitors",
+      "trusted-visitors": "/app/trusted-visitors",
+      policy: "/app/alerts-reports",
+      "alerts-reports": "/app/alerts-reports",
+      settings: "/app/settings",
+      billing: "/app/billing",
+      setup: "/app/setup",
+    };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
+      navigate(legacyViewPathMap[requestedView], { replace: true });
+    } else if (pathPageMap[location.pathname]) {
+      setPage(pathPageMap[location.pathname]);
     } else {
       setPage("dashboard");
     }
-  }, [location.search]);
+  }, [location.pathname, location.search, navigate]);
 
   useEffect(() => {
     const dataToSave = {
@@ -3592,21 +3626,21 @@ export default function Index() {
 
   const openPolarisPage = (nextPage) => {
     const pageToView = {
-      dashboard: "dashboard",
-      security: "rules",
-      detection: "rules",
-      incidents: "visitors",
-      blocklist: "blocklist",
-      trusted: "trusted",
-      settings: "policy",
-      policy: "policy",
-      "detection-settings": "settings",
-      billing: "billing",
-      setup: "setup",
+      dashboard: "/app",
+      security: "/app/protection-rules",
+      detection: "/app/protection-rules",
+      incidents: "/app/visitors",
+      blocklist: "/app/blocklist",
+      trusted: "/app/trusted-visitors",
+      settings: "/app/alerts-reports",
+      policy: "/app/alerts-reports",
+      "detection-settings": "/app/settings",
+      billing: "/app/billing",
+      setup: "/app/setup",
     };
-    const view = pageToView[nextPage] || nextPage;
+    const path = pageToView[nextPage] || "/app";
     setPage(nextPage);
-    navigate(`/app?view=${view}`, { replace: false });
+    navigate(path, { replace: false });
   };
 
   const polarisActions = {

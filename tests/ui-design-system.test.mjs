@@ -233,10 +233,16 @@ test("new app shell removes custom branding and uses task-based navigation", asy
   assert.match(source, />Billing</);
   assert.match(source, />Settings</);
   assert.match(source, />Setup & Help</);
+  assert.match(source, /href="\/app"/);
+  assert.match(source, /href="\/app\/protection-rules"/);
+  assert.match(source, /href="\/app\/visitors"/);
+  assert.match(source, /href="\/app\/blocklist"/);
+  assert.match(source, /href="\/app\/trusted-visitors"/);
+  assert.doesNotMatch(source, /href="\/app\?view=/);
   assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });
 
-test("dashboard route is the default and activity route is explicit", async () => {
+test("dashboard routes use real paths with legacy query compatibility", async () => {
   const source = await readFile(
     new URL("../app/routes/app._index.jsx", import.meta.url),
     "utf8",
@@ -244,14 +250,24 @@ test("dashboard route is the default and activity route is explicit", async () =
 
   assert.match(source, /dashboard: "dashboard"/);
   assert.match(source, /rules: "security"/);
+  assert.match(source, /"protection-rules": "security"/);
   assert.match(source, /visitors: "incidents"/);
   assert.match(source, /blocklist: "blocklist"/);
   assert.match(source, /trusted: "trusted"/);
+  assert.match(source, /"trusted-visitors": "trusted"/);
   assert.match(source, /settings: "detection-settings"/);
   assert.match(source, /activity: "incidents"/);
   assert.match(source, /incidents: "incidents"/);
+  assert.match(source, /"\/app\/protection-rules": "security"/);
+  assert.match(source, /"\/app\/visitors": "incidents"/);
+  assert.match(source, /"\/app\/blocklist": "blocklist"/);
+  assert.match(source, /"\/app\/trusted-visitors": "trusted"/);
+  assert.match(source, /legacyViewPathMap/);
   assert.match(source, /useLocation/);
-  assert.match(source, /\[location\.search\]/);
+  assert.match(source, /\[location\.pathname, location\.search, navigate\]/);
   assert.match(source, /setPage\("dashboard"\)/);
+  assert.match(source, /navigate\(legacyViewPathMap\[requestedView\], \{ replace: true \}\)/);
+  assert.match(source, /navigate\(path, \{ replace: false \}\)/);
+  assert.doesNotMatch(source, /navigate\(`\/app\?view=/);
   assert.doesNotMatch(source, /setPage\(parsed\.page/);
 });
