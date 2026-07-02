@@ -88,6 +88,13 @@ function inRecentDays(value, days, offsetDays = 0) {
   return timestamp >= start && timestamp < end;
 }
 
+function hasStorefrontConnection(model) {
+  return Boolean(
+    model?.protectionStatus?.themeEmbedDetected ||
+      model?.protectionStatus?.lastStorefrontDecisionAt,
+  );
+}
+
 function formatDelta(current, previous) {
   if (previous === 0) return current === 0 ? "No change" : "New activity";
   const change = Math.round(((current - previous) / previous) * 100);
@@ -143,6 +150,7 @@ function Metric({ label, value, detail, status }) {
 }
 
 function getExecutiveStatus(model) {
+  const storefrontConnected = hasStorefrontConnection(model);
   if (model.protectionPaused) {
     return {
       label: "Paused",
@@ -151,7 +159,7 @@ function getExecutiveStatus(model) {
         "BotShield is still recording visits, but automatic blocking is paused.",
     };
   }
-  if (!model.protectionStatus.themeEmbedDetected) {
+  if (!storefrontConnected) {
     return {
       label: "Setup Required",
       status: "setup_required",
@@ -177,6 +185,7 @@ function getExecutiveStatus(model) {
 
 function ProtectionStatusCard({ model, actions }) {
   const executiveStatus = getExecutiveStatus(model);
+  const storefrontConnected = hasStorefrontConnection(model);
 
   return (
     <BotShieldCard
@@ -187,14 +196,12 @@ function ProtectionStatusCard({ model, actions }) {
         <BotShieldActionButton
           variant="primary"
           onClick={
-            model.protectionStatus.themeEmbedDetected
+            storefrontConnected
               ? () => actions.setPage("detection")
               : actions.openThemeEditor
           }
         >
-          {model.protectionStatus.themeEmbedDetected
-            ? "Manage protection"
-            : "Connect storefront"}
+          {storefrontConnected ? "Manage protection" : "Connect storefront"}
         </BotShieldActionButton>
       }
     >
@@ -235,6 +242,7 @@ function ProtectionStatusCard({ model, actions }) {
 }
 
 function QuickActionsCard({ model, actions }) {
+  const storefrontConnected = hasStorefrontConnection(model);
   return (
     <BotShieldCard
       title="Quick Actions"
@@ -242,9 +250,7 @@ function QuickActionsCard({ model, actions }) {
     >
       <s-stack gap="base">
         <BotShieldActionButton
-          variant={
-            !model.protectionStatus.themeEmbedDetected ? "primary" : "secondary"
-          }
+          variant={!storefrontConnected ? "primary" : "secondary"}
           onClick={actions.openThemeEditor}
         >
           Open theme editor
@@ -419,6 +425,7 @@ function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
 function StoreHealthCard({ model, actions }) {
   const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const billingReady = Boolean(model.billingStatus?.active);
+  const storefrontConnected = hasStorefrontConnection(model);
   const trafficConnected = Boolean(
     model.protectionStatus.lastStorefrontDecisionAt,
   );
@@ -433,17 +440,13 @@ function StoreHealthCard({ model, actions }) {
         <StatusRow
           label="Theme Embed"
           detail={
-            model.protectionStatus.themeEmbedDetected
-              ? "BotShield is installed on the active storefront theme."
+            storefrontConnected
+              ? "BotShield has received real storefront traffic."
               : "Enable the theme app embed so BotShield can see storefront visits."
           }
-          status={
-            model.protectionStatus.themeEmbedDetected
-              ? "theme_embed_connected"
-              : "theme_embed_missing"
-          }
+          status={storefrontConnected ? "theme_embed_connected" : "theme_embed_missing"}
           action={
-            !model.protectionStatus.themeEmbedDetected ? (
+            !storefrontConnected ? (
               <BotShieldActionButton onClick={actions.openThemeEditor}>
                 Enable
               </BotShieldActionButton>
@@ -525,6 +528,7 @@ function StoreHealthCard({ model, actions }) {
 function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
   const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const billingReady = Boolean(model.billingStatus?.active);
+  const storefrontConnected = hasStorefrontConnection(model);
   const storefrontEventsReceived = Boolean(
     model.protectionStatus.lastStorefrontDecisionAt,
   );
@@ -537,10 +541,10 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
     },
     {
       label: "Theme embed enabled",
-      detail: model.protectionStatus.themeEmbedDetected
-        ? "The storefront theme is connected."
+      detail: storefrontConnected
+        ? "Storefront traffic has been received."
         : "Enable the theme app embed to connect storefront traffic.",
-      complete: model.protectionStatus.themeEmbedDetected,
+      complete: storefrontConnected,
       action: actions.openThemeEditor,
       actionLabel: "Enable",
     },
@@ -632,13 +636,14 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
 function GettingStartedCard({ model, actions }) {
   const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const rulesReady = Boolean(model.autoBlock || model.strictMode);
+  const storefrontConnected = hasStorefrontConnection(model);
   const steps = [
     {
       label: "Enable the storefront app embed",
-      detail: model.protectionStatus.themeEmbedDetected
-        ? "BotShield is connected to the live theme."
+      detail: storefrontConnected
+        ? "BotShield has received real storefront traffic."
         : "Connect BotShield so storefront visits can be evaluated.",
-      complete: model.protectionStatus.themeEmbedDetected,
+      complete: storefrontConnected,
       actionLabel: "Enable app embed",
       action: actions.openThemeEditor,
     },
@@ -903,11 +908,12 @@ function StatusRow({ label, detail, status, action }) {
 function OverviewPage({ model, actions }) {
   const showLegacyDashboardDetails = false;
   const latestEvents = model.storefrontScans.slice(0, 5);
+  const storefrontConnected = hasStorefrontConnection(model);
   const protectionStatus = model.protectionPaused
     ? "paused"
     : model.protectionReady
       ? "active"
-      : model.protectionStatus.themeEmbedDetected
+      : storefrontConnected
         ? "monitoring_only"
         : "setup_required";
   const recentEvents = model.storefrontScans.filter((event) =>
@@ -949,7 +955,7 @@ function OverviewPage({ model, actions }) {
         </BotShieldAsyncButton>
       }
     >
-      {!model.protectionStatus.themeEmbedDetected ? (
+      {!storefrontConnected ? (
         <BotShieldBanner
           tone="warning"
           title="Connect your storefront"
@@ -1117,12 +1123,12 @@ function OverviewPage({ model, actions }) {
                       : "Waiting for the first storefront event"
                   }
                   status={
-                    model.protectionStatus.themeEmbedDetected
+                    storefrontConnected
                       ? "theme_embed_connected"
                       : "theme_embed_missing"
                   }
                   action={
-                    !model.protectionStatus.themeEmbedDetected ? (
+                    !storefrontConnected ? (
                       <BotShieldActionButton onClick={actions.openThemeEditor}>
                         Connect
                       </BotShieldActionButton>
@@ -1322,7 +1328,7 @@ function OverviewPage({ model, actions }) {
             title="No storefront activity yet"
             description="Enable the theme app embed and visit the storefront to begin receiving real events."
             action={
-              !model.protectionStatus.themeEmbedDetected ? (
+              !storefrontConnected ? (
                 <BotShieldActionButton onClick={actions.openThemeEditor}>
                   Open theme editor
                 </BotShieldActionButton>
@@ -2828,6 +2834,7 @@ function SetupPage({ model, actions }) {
   const total = model.readinessItems.length;
   const setupComplete = complete === total;
   const nextItem = model.readinessItems.find((item) => !item.complete);
+  const storefrontConnected = hasStorefrontConnection(model);
   const executiveStatus = getExecutiveStatus(model);
   const emailStatus = getEmailStatus({
     configured: model.emailProviderConfigured,
@@ -2837,9 +2844,10 @@ function SetupPage({ model, actions }) {
   const testSteps = [
     {
       label: "Enable the theme app embed",
-      detail:
-        "Open the theme editor, enable BotShield, save the theme, then return here.",
-      complete: model.protectionStatus.themeEmbedDetected,
+      detail: storefrontConnected
+        ? "BotShield has received real storefront traffic from the active store."
+        : "Open the theme editor, enable BotShield, save the theme, then return here.",
+      complete: storefrontConnected,
       action: (
         <BotShieldActionButton onClick={actions.openThemeEditor}>
           Open theme editor
@@ -2914,7 +2922,7 @@ function SetupPage({ model, actions }) {
           />
         }
         actions={
-          !model.protectionStatus.themeEmbedDetected ? (
+          !storefrontConnected ? (
             <BotShieldActionButton
               variant="primary"
               onClick={actions.openThemeEditor}
@@ -2954,7 +2962,7 @@ function SetupPage({ model, actions }) {
             <Metric
               label="Storefront"
               value={
-                model.protectionStatus.themeEmbedDetected
+                storefrontConnected
                   ? "Connected"
                   : "Not connected"
               }
@@ -2963,7 +2971,7 @@ function SetupPage({ model, actions }) {
                 "No storefront event yet",
               )}
               status={
-                model.protectionStatus.themeEmbedDetected
+                storefrontConnected
                   ? "theme_embed_connected"
                   : "theme_embed_missing"
               }
@@ -3023,17 +3031,13 @@ function SetupPage({ model, actions }) {
             <StatusRow
               label="Theme app embed"
               detail={
-                model.protectionStatus.themeEmbedDetected
-                  ? "Storefront embed has been detected."
+                storefrontConnected
+                  ? "BotShield has received real storefront traffic."
                   : "Enable the embed in the active theme."
               }
-              status={
-                model.protectionStatus.themeEmbedDetected
-                  ? "active"
-                  : "setup_required"
-              }
+              status={storefrontConnected ? "active" : "setup_required"}
               action={
-                !model.protectionStatus.themeEmbedDetected ? (
+                !storefrontConnected ? (
                   <BotShieldActionButton onClick={actions.openThemeEditor}>
                     Open
                   </BotShieldActionButton>
