@@ -160,7 +160,27 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
   assert.match(source, /#0f766e/i);
   assert.match(source, /#ecfdf5/i);
   assert.match(source, /box-shadow/);
+  assert.match(source, /botshield-route-shell/);
+  assert.match(source, /botshield-route-transition/);
+  assert.match(source, /botshield-route-progress/);
+  assert.match(source, /botshield-route-loading-pill/);
   assert.doesNotMatch(source, /botshield-logo/);
+});
+
+test("admin navigation gives merchants page-change feedback", async () => {
+  const source = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(source, /routeBusy/);
+  assert.match(source, /routeLabels/);
+  assert.match(source, /Opening \{routeLabels\[screen\] \|\| "page"\}/);
+  assert.match(source, /botshield-route-shell--busy/);
+  assert.match(source, /botshield-route-transition/);
 });
 
 test("merchant-facing reason labels replace raw detection codes", async () => {

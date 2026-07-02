@@ -2877,9 +2877,30 @@ export default function BotShieldAdminExperience({ model, actions }) {
         : model.page === "detection-settings"
           ? "detection-settings"
           : model.page;
+  const [routeBusy, setRouteBusy] = useState(false);
+  const [lastScreen, setLastScreen] = useState(screen);
+  const routeLabels = {
+    dashboard: "Dashboard",
+    incidents: "Visitor Activity",
+    detection: "Protection Rules",
+    policy: "Alerts & Reports",
+    blocklist: "Blocklist",
+    trusted: "Trusted Visitors",
+    billing: "Subscription",
+    setup: "Setup",
+    "detection-settings": "Protection Rules",
+  };
 
-  return (
-    <BotShieldAppFrame>
+  useEffect(() => {
+    if (screen === lastScreen) return undefined;
+    setLastScreen(screen);
+    setRouteBusy(true);
+    const timer = window.setTimeout(() => setRouteBusy(false), 420);
+    return () => window.clearTimeout(timer);
+  }, [lastScreen, screen]);
+
+  const routeContent = (
+    <div className="botshield-route-transition" key={screen}>
       {screen === "dashboard" ? (
         <OverviewPage model={model} actions={actions} />
       ) : null}
@@ -2907,6 +2928,27 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "setup" ? (
         <SetupPage model={model} actions={actions} />
       ) : null}
+    </div>
+  );
+
+  return (
+    <BotShieldAppFrame>
+      <div
+        className={`botshield-route-shell${
+          routeBusy ? " botshield-route-shell--busy" : ""
+        }`}
+      >
+        {routeBusy ? (
+          <>
+            <div className="botshield-route-progress" aria-hidden="true" />
+            <div className="botshield-route-loading-pill" role="status">
+              <span className="botshield-route-spinner" />
+              Opening {routeLabels[screen] || "page"}
+            </div>
+          </>
+        ) : null}
+        {routeContent}
+      </div>
     </BotShieldAppFrame>
   );
 }
