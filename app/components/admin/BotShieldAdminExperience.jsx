@@ -1501,6 +1501,124 @@ function ActivityTable({ model, actions }) {
   );
 }
 
+function ActivityInvestigationSummary({
+  blocked,
+  challenged,
+  highRisk,
+  model,
+  actions,
+}) {
+  const reviewCount = blocked + challenged + highRisk;
+  const latestReviewEvent =
+    model.incidents.find(
+      (incident) =>
+        incident.threatLevel === "high" ||
+        incident.decision === "blocked" ||
+        incident.decision === "challenged",
+    ) || model.incidents[0];
+  const trafficLabel =
+    model.incidentFilters.source === "simulation"
+      ? "Simulation data"
+      : model.incidentFilters.source === "all"
+        ? "Real and simulated data"
+        : "Real storefront traffic";
+
+  return (
+    <s-grid
+      gridTemplateColumns="minmax(0, 1.2fr) minmax(300px, 0.8fr)"
+      gap="large"
+    >
+      <BotShieldCard
+        title="Investigation summary"
+        subtitle="The fastest way to understand recent storefront activity."
+        badge={
+          <BotShieldStatusBadge
+            status={reviewCount ? "challenged" : "active"}
+            label={reviewCount ? "Review recommended" : "No urgent review"}
+          />
+        }
+        accent
+      >
+        <s-stack gap="large">
+          <div className="botshield-status-value">
+            {reviewCount ? `${reviewCount} need review` : "No urgent issues"}
+          </div>
+          <s-paragraph color="subdued">
+            {reviewCount
+              ? "Review blocked, challenged, and high-risk visitors to confirm BotShield is responding correctly."
+              : "BotShield has not found urgent storefront activity in the current view."}
+          </s-paragraph>
+          <s-grid
+            gridTemplateColumns="repeat(auto-fit, minmax(140px, 1fr))"
+            gap="base"
+          >
+            <s-stack gap="small-200">
+              <s-text color="subdued">Current view</s-text>
+              <s-text type="strong">{trafficLabel}</s-text>
+            </s-stack>
+            <s-stack gap="small-200">
+              <s-text color="subdued">Real events</s-text>
+              <s-text type="strong">{model.incidentCounts.real}</s-text>
+            </s-stack>
+            <s-stack gap="small-200">
+              <s-text color="subdued">Simulations</s-text>
+              <s-text type="strong">{model.incidentCounts.simulation}</s-text>
+            </s-stack>
+          </s-grid>
+        </s-stack>
+      </BotShieldCard>
+
+      <BotShieldCard
+        title="Suggested action"
+        subtitle="Use recovery actions when a real visitor was stopped by mistake."
+      >
+        <s-stack>
+          <StatusRow
+            label="Review risky visitors"
+            detail={
+              latestReviewEvent
+                ? `${getOutcomeLabel(latestReviewEvent.decision)} · ${formatReasons(latestReviewEvent.reasonCodes || latestReviewEvent.reasons)}`
+                : "No visitor decisions match the current filters."
+            }
+            status={
+              latestReviewEvent?.threatLevel === "high"
+                ? "high"
+                : latestReviewEvent?.decision || "active"
+            }
+            action={
+              <BotShieldActionButton
+                onClick={() => {
+                  actions.setIncidentFilter("source", "real");
+                  actions.setIncidentFilter("decision", "all");
+                  actions.setIncidentFilter("risk", "high");
+                }}
+              >
+                Show high risk
+              </BotShieldActionButton>
+            }
+          />
+          <StatusRow
+            label="Recover false positives"
+            detail="Blocked visitors can be unblocked or added to trusted visitors from the table."
+            status={blocked ? "blocked" : "active"}
+            action={
+              <BotShieldActionButton
+                onClick={() => {
+                  actions.setIncidentFilter("source", "real");
+                  actions.setIncidentFilter("decision", "blocked");
+                  actions.setIncidentFilter("risk", "all");
+                }}
+              >
+                Show blocked
+              </BotShieldActionButton>
+            }
+          />
+        </s-stack>
+      </BotShieldCard>
+    </s-grid>
+  );
+}
+
 function ActivityPage({ model, actions }) {
   const blocked = model.incidents.filter(
     (incident) => incident.decision === "blocked",
@@ -1519,8 +1637,8 @@ function ActivityPage({ model, actions }) {
 
   return (
     <Screen
-      title="Visitors"
-      subtitle="Review storefront decisions, suspicious visitors, and recovery actions."
+      title="Visitor Activity"
+      subtitle="Investigate storefront decisions, suspicious visitors, and recovery actions."
       maxWidth="full"
       actions={
         <BotShieldAsyncButton
@@ -1532,6 +1650,13 @@ function ActivityPage({ model, actions }) {
         </BotShieldAsyncButton>
       }
     >
+      <ActivityInvestigationSummary
+        blocked={blocked}
+        challenged={challenged}
+        highRisk={highRisk}
+        model={model}
+        actions={actions}
+      />
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(170px, 1fr))"
         gap="base"
@@ -1628,7 +1753,7 @@ function ActivityPage({ model, actions }) {
         </s-stack>
       </BotShieldCard>
       <BotShieldCard
-        title="Visitor activity"
+        title="Visitor decisions"
         subtitle={`${model.incidentCounts.real} real events · ${model.incidentCounts.simulation} simulations`}
       >
         <ActivityTable model={model} actions={actions} />
