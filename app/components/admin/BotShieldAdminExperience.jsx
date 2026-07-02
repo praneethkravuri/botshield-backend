@@ -2126,16 +2126,24 @@ function IpList({
   addLabel,
   emptyTitle,
 }) {
+  const trusted = title.toLowerCase().includes("trusted");
+
   return (
-    <BotShieldCard title={title} subtitle={subtitle}>
-      <s-stack gap="base">
-        <s-stack direction="inline" gap="base" alignItems="end">
+    <s-stack gap="large">
+      <s-stack gap="small">
+        <s-heading>{title}</s-heading>
+        <s-paragraph color="subdued">{subtitle}</s-paragraph>
+      </s-stack>
+      <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="base">
+        <s-box>
           <BotShieldTextField
             label="IP address"
             value={value}
             onChange={onChange}
             placeholder="203.0.113.10"
           />
+        </s-box>
+        <s-stack alignItems="end" justifyContent="end">
           <BotShieldAsyncButton
             action={onAdd}
             successMessage={`${title} updated`}
@@ -2145,51 +2153,45 @@ function IpList({
             {addLabel}
           </BotShieldAsyncButton>
         </s-stack>
-        {rows.length ? (
-          <s-table variant="auto">
-            <s-table-header-row>
-              <s-table-header>IP address</s-table-header>
-              <s-table-header>Status</s-table-header>
-              <s-table-header>Action</s-table-header>
-            </s-table-header-row>
-            <s-table-body>
-              {rows.map((row) => {
-                const ip = typeof row === "string" ? row : row.ip;
-                return (
-                  <s-table-row key={ip}>
-                    <s-table-cell>{ip}</s-table-cell>
-                    <s-table-cell>
-                      <BotShieldStatusBadge
-                        status={
-                          title.includes("Trusted") ? "active" : "blocked"
-                        }
-                        label={
-                          title.includes("Trusted") ? "Trusted" : "Blocked"
-                        }
-                      />
-                    </s-table-cell>
-                    <s-table-cell>
-                      <BotShieldAsyncButton
-                        action={() => onRemove(ip)}
-                        successMessage="IP removed"
-                        tone="critical"
-                      >
-                        Remove
-                      </BotShieldAsyncButton>
-                    </s-table-cell>
-                  </s-table-row>
-                );
-              })}
-            </s-table-body>
-          </s-table>
-        ) : (
-          <BotShieldEmptyState
-            title={emptyTitle}
-            description="Add an IP address above when needed."
-          />
-        )}
-      </s-stack>
-    </BotShieldCard>
+      </s-grid>
+      {rows.length ? (
+        <s-stack>
+          {rows.map((row) => {
+            const ip = typeof row === "string" ? row : row.ip;
+            return (
+              <StatusRow
+                key={ip}
+                label={ip}
+                detail={
+                  trusted
+                    ? "Allowed through automated protection rules."
+                    : "Stopped before continuing through the storefront."
+                }
+                status={trusted ? "active" : "blocked"}
+                action={
+                  <BotShieldAsyncButton
+                    action={() => onRemove(ip)}
+                    successMessage="IP removed"
+                    tone="critical"
+                  >
+                    Remove
+                  </BotShieldAsyncButton>
+                }
+              />
+            );
+          })}
+        </s-stack>
+      ) : (
+        <BotShieldEmptyState
+          title={emptyTitle}
+          description={
+            trusted
+              ? "Add trusted visitor IPs for admins, agencies, or partners."
+              : "Add a visitor IP when a known source should be blocked."
+          }
+        />
+      )}
+    </s-stack>
   );
 }
 
@@ -2473,19 +2475,62 @@ function BlocklistPage({ model, actions }) {
       title="Blocklist"
       subtitle="Manage visitors that BotShield should block from your storefront."
     >
+      <s-grid
+        gridTemplateColumns="minmax(0, 1.2fr) minmax(280px, 0.8fr)"
+        gap="large"
+      >
+        <BotShieldCard
+          title="Manual blocking"
+          subtitle="Use this for known abusive visitors, test IPs, or sources you want BotShield to stop immediately."
+          badge={
+            <BotShieldStatusBadge
+              status={model.blockedIPs.length ? "blocked" : "monitoring_only"}
+              label={`${model.blockedIPs.length} blocked`}
+            />
+          }
+          accent
+        >
+          <s-stack gap="large">
+            <div className="botshield-status-value">
+              {model.blockedIPs.length || "No"} blocked
+            </div>
+            <s-paragraph color="subdued">
+              Blocklisted visitors are stopped before continuing through the
+              storefront app-proxy flow.
+            </s-paragraph>
+          </s-stack>
+        </BotShieldCard>
+        <BotShieldCard
+          title="When to block"
+          subtitle="Block only when you are confident the visitor should not continue."
+        >
+          <s-stack>
+            <StatusRow
+              label="Known abusive traffic"
+              detail="Use for repeated scrapers, hostile automation, or confirmed attack sources."
+              status="blocked"
+            />
+            <StatusRow
+              label="Avoid false positives"
+              detail="Use Trusted Visitors instead when a real customer, admin, or partner was blocked by mistake."
+              status="monitoring_only"
+              action={
+                <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
+                  Open trusted visitors
+                </BotShieldActionButton>
+              }
+            />
+          </s-stack>
+        </BotShieldCard>
+      </s-grid>
+
       <BotShieldCard
         title="Block specific visitors"
-        subtitle="Use this when you know a visitor or IP should not be allowed to continue through the storefront."
-        badge={
-          <BotShieldStatusBadge
-            status={model.blockedIPs.length ? "blocked" : "monitoring_only"}
-            label={`${model.blockedIPs.length} blocked`}
-          />
-        }
+        subtitle="Add or remove IP addresses from the manual blocklist."
       >
         <IpList
           title="Blocked visitors"
-          subtitle="Visitors manually or automatically excluded from the storefront."
+          subtitle="Visitors manually excluded from the storefront."
           rows={model.blockedIPs}
           value={blockIp}
           onChange={setBlockIp}
@@ -2515,15 +2560,58 @@ function TrustedVisitorsPage({ model, actions }) {
       title="Trusted Visitors"
       subtitle="Allow trusted visitors to bypass automated blocking."
     >
+      <s-grid
+        gridTemplateColumns="minmax(0, 1.2fr) minmax(280px, 0.8fr)"
+        gap="large"
+      >
+        <BotShieldCard
+          title="Trusted access"
+          subtitle="Use this for admins, agencies, partners, and known visitors who should not be blocked by automated rules."
+          badge={
+            <BotShieldStatusBadge
+              status={model.whitelist.length ? "active" : "monitoring_only"}
+              label={`${model.whitelist.length} trusted`}
+            />
+          }
+          accent
+        >
+          <s-stack gap="large">
+            <div className="botshield-status-value">
+              {model.whitelist.length || "No"} trusted
+            </div>
+            <s-paragraph color="subdued">
+              Trusted visitors are still recorded for visibility, but automated
+              blocking allows them through.
+            </s-paragraph>
+          </s-stack>
+        </BotShieldCard>
+        <BotShieldCard
+          title="False-positive recovery"
+          subtitle="Use trust rules to quickly recover a real visitor who should have access."
+        >
+          <s-stack>
+            <StatusRow
+              label="Admins and partners"
+              detail="Add known internal users, agencies, or testing devices."
+              status="active"
+            />
+            <StatusRow
+              label="Blocked by mistake"
+              detail="If BotShield stopped a legitimate visitor, trust their IP after review."
+              status="challenged"
+              action={
+                <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                  Review activity
+                </BotShieldActionButton>
+              }
+            />
+          </s-stack>
+        </BotShieldCard>
+      </s-grid>
+
       <BotShieldCard
         title="Add trusted visitors"
-        subtitle="Use this for admins, agencies, partners, or known users who should not be blocked by automated rules."
-        badge={
-          <BotShieldStatusBadge
-            status={model.whitelist.length ? "active" : "monitoring_only"}
-            label={`${model.whitelist.length} trusted`}
-          />
-        }
+        subtitle="Add or remove IP addresses from the trusted visitor list."
         accent
       >
         <IpList
