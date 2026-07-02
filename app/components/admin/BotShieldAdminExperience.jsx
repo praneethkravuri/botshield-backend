@@ -317,7 +317,7 @@ function HelpStrip({ actions }) {
           <span className="botshield-rule-icon">ⓘ</span>
           <s-text>
             Not sure which setup fits your store? Start with Balanced mode and
-            adjust rules later. 🥰
+            adjust rules after reviewing real storefront activity.
           </s-text>
         </s-stack>
         <BotShieldActionButton onClick={() => actions.setPage("setup")}>
@@ -325,6 +325,101 @@ function HelpStrip({ actions }) {
         </BotShieldActionButton>
       </s-stack>
     </BotShieldCard>
+  );
+}
+
+function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
+  const executiveStatus = getExecutiveStatus(model);
+  const selectedMode = draft.strictMode
+    ? "Strict"
+    : draft.blockLevel === "Low" && !draft.autoBlock
+      ? "Relaxed"
+      : draft.blockLevel === "High"
+        ? "Strict"
+        : "Balanced";
+
+  return (
+    <s-grid
+      gridTemplateColumns="minmax(0, 1.25fr) minmax(280px, 0.75fr)"
+      gap="large"
+    >
+      <BotShieldCard
+        title="Current protection policy"
+        subtitle="The active storefront response profile merchants rely on."
+        badge={<BotShieldStatusBadge status={executiveStatus.status} />}
+        actions={
+          <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+            View activity
+          </BotShieldActionButton>
+        }
+        accent
+      >
+        <s-stack gap="large">
+          <div className="botshield-status-value">{executiveStatus.label}</div>
+          <s-paragraph color="subdued">{executiveStatus.detail}</s-paragraph>
+          <s-grid
+            gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
+            gap="base"
+          >
+            <s-stack gap="small-200">
+              <s-text color="subdued">Recommended mode</s-text>
+              <s-text type="strong">{selectedMode}</s-text>
+            </s-stack>
+            <s-stack gap="small-200">
+              <s-text color="subdued">Auto response</s-text>
+              <s-text type="strong">
+                {draft.autoBlock ? "Auto Block on" : "Monitoring only"}
+              </s-text>
+            </s-stack>
+            <s-stack gap="small-200">
+              <s-text color="subdued">Sensitivity</s-text>
+              <s-text type="strong">
+                {draft.strictMode ? "Strict Mode" : draft.blockLevel}
+              </s-text>
+            </s-stack>
+          </s-grid>
+        </s-stack>
+      </BotShieldCard>
+
+      <BotShieldCard
+        title="Recommended next step"
+        subtitle="Keep setup simple while the store gathers real activity."
+      >
+        <s-stack gap="base">
+          <StatusRow
+            label="Start with Balanced"
+            detail="Balanced blocks suspicious behavior while reducing false positives."
+            status={selectedMode === "Balanced" ? "active" : "monitoring_only"}
+            action={
+              selectedMode !== "Balanced" ? (
+                <BotShieldActionButton
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      blockLevel: "Medium",
+                      strictMode: false,
+                      autoBlock: true,
+                    }))
+                  }
+                >
+                  Apply Balanced
+                </BotShieldActionButton>
+              ) : null
+            }
+          />
+          <StatusRow
+            label="Review real events"
+            detail="Use the activity page to recover false positives and tune rules."
+            status="real_storefront"
+            action={
+              <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                Open activity
+              </BotShieldActionButton>
+            }
+          />
+        </s-stack>
+      </BotShieldCard>
+    </s-grid>
   );
 }
 
@@ -1586,7 +1681,7 @@ function ProtectionPage({ model, actions }) {
   return (
     <Screen
       title="Protection Rules"
-      subtitle="Control how BotShield evaluates visitors and responds to suspicious storefront activity."
+      subtitle="Choose how BotShield monitors, verifies, and stops risky storefront visitors."
     >
       <BotShieldSaveState
         dirty={dirty}
@@ -1600,6 +1695,12 @@ function ProtectionPage({ model, actions }) {
             blockLevel: model.blockLevel,
           })
         }
+      />
+      <ProtectionPolicySummary
+        model={model}
+        draft={draft}
+        setDraft={setDraft}
+        actions={actions}
       />
       <InfoNotice title="Note: Blocked traffic can still show in Shopify analytics">
         Blocked visitors may still appear in Shopify Analytics because Shopify
@@ -1621,7 +1722,7 @@ function ProtectionPage({ model, actions }) {
           >
             <ProtectionModeCard
               title="Relaxed"
-              description="Allow most visitors. Best when you only want to stop obvious automated abuse."
+              description="Allow most visitors. Best for stores that only want to stop obvious automated abuse."
               selected={
                 draft.blockLevel === "Low" &&
                 !draft.strictMode &&
@@ -1638,7 +1739,7 @@ function ProtectionPage({ model, actions }) {
             />
             <ProtectionModeCard
               title="Balanced"
-              description="Recommended. Blocks suspicious behavior while minimizing false positives."
+              description="Recommended for most stores. Blocks suspicious behavior while reducing false positives."
               selected={
                 draft.blockLevel === "Medium" &&
                 !draft.strictMode &&
@@ -1655,7 +1756,7 @@ function ProtectionPage({ model, actions }) {
             />
             <ProtectionModeCard
               title="Strict"
-              description="Aggressively responds to risky traffic. Use when the store is under attack."
+              description="Responds aggressively to risky traffic. Use when the store is under attack."
               selected={draft.blockLevel === "High" && draft.strictMode}
               onSelect={() =>
                 setDraft((current) => ({
@@ -1707,10 +1808,10 @@ function ProtectionPage({ model, actions }) {
         </BotShieldCard>
 
         <s-stack gap="small">
-          <s-heading>Blocking conditions</s-heading>
+          <s-heading>Active protections</s-heading>
           <s-paragraph color="subdued">
-            Real storefront signals BotShield can use today. Unsupported rule
-            types are intentionally not shown as active controls.
+            Real storefront signals BotShield can evaluate today. Unsupported
+            rule types are intentionally not shown as active controls.
           </s-paragraph>
         </s-stack>
         <BotShieldCard>
@@ -1785,9 +1886,9 @@ function ProtectionPage({ model, actions }) {
         </BotShieldCard>
 
         <s-stack gap="small">
-          <s-heading>Detection profile</s-heading>
+          <s-heading>Detection sensitivity</s-heading>
           <s-paragraph color="subdued">
-            Choose the amount of suspicious behavior required before BotShield
+            Fine-tune how much suspicious behavior is required before BotShield
             responds.
           </s-paragraph>
         </s-stack>
@@ -1876,7 +1977,7 @@ function ProtectionPage({ model, actions }) {
                 action={actions.runSimulation}
                 successMessage="Simulation recorded"
               >
-                Generate simulation
+                Record simulation
               </BotShieldAsyncButton>
             </s-stack>
             <s-text color="subdued">
