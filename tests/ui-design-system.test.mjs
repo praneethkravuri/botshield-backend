@@ -212,9 +212,13 @@ test("Setup experience uses verified checklist rows with contextual actions", as
     "utf8",
   );
 
-  assert.match(source, /Setup guide/);
+  assert.match(source, /Setup & Help/);
+  assert.match(source, /Finish setup/);
+  assert.match(source, /Launch readiness/);
+  assert.match(source, /Verify protection in 4 steps/);
+  assert.match(source, /Reviewer and merchant guidance/);
   assert.match(source, /Open theme editor/);
-  assert.match(source, /View setup/);
+  assert.match(source, /View visitor activity/);
   assert.match(designSystem, /Action needed/);
 });
 
