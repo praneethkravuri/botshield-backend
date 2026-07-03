@@ -19,7 +19,6 @@ import { safeFetchJson } from "../../lib/safe-fetch";
 import {
   getBillingStatusModel,
   getEmailStatus,
-  getEventSourceStatus,
 } from "../../lib/ui-status";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1445,10 +1444,19 @@ function OverviewPage({ model, actions }) {
 
 function ActivityTable({ model, actions }) {
   if (!model.incidentLoading && !model.incidents.length) {
+    const realOnly = model.incidentFilters.source === "real";
     return (
       <BotShieldEmptyState
-        title="No activity found"
-        description="Adjust the filters or wait for new storefront traffic."
+        title={
+          realOnly
+            ? "No storefront visitors match these filters."
+            : "No visitor activity matches these filters."
+        }
+        description={
+          realOnly
+            ? "New storefront decisions will appear here after visitors load your store."
+            : "Try changing the filters or search term."
+        }
       />
     );
   }
@@ -1457,11 +1465,11 @@ function ActivityTable({ model, actions }) {
       <s-table-header-row>
         {[
           "Visitor",
+          "Time",
           "Outcome",
           "Risk",
           "Reason",
           "Location",
-          "Source",
           "Actions",
         ].map((heading) => (
           <s-table-header key={heading}>{heading}</s-table-header>
@@ -1473,11 +1481,11 @@ function ActivityTable({ model, actions }) {
             <s-table-cell>
               <s-stack gap="small-200">
                 <s-text type="strong">{incident.maskedIpAddress}</s-text>
-                <s-text color="subdued">
-                  {incident.path || "Storefront"} ·{" "}
-                  {formatDate(incident.createdAt)}
-                </s-text>
+                <s-text color="subdued">{incident.path || "Storefront"}</s-text>
               </s-stack>
+            </s-table-cell>
+            <s-table-cell>
+              <s-text color="subdued">{formatDate(incident.createdAt)}</s-text>
             </s-table-cell>
             <s-table-cell>
               <BotShieldStatusBadge
@@ -1498,11 +1506,6 @@ function ActivityTable({ model, actions }) {
               {[incident.networkCity, incident.networkCountry]
                 .filter(Boolean)
                 .join(", ") || "Location unavailable"}
-            </s-table-cell>
-            <s-table-cell>
-              <BotShieldStatusBadge
-                status={getEventSourceStatus(incident.source).technicalStatus}
-              />
             </s-table-cell>
             <s-table-cell>
               {incident.decision === "blocked" ? (
@@ -1561,8 +1564,8 @@ function ActivityInvestigationSummary({
       gap="large"
     >
       <BotShieldCard
-        title="Investigation summary"
-        subtitle="The fastest way to understand recent storefront activity."
+        title="Review queue"
+        subtitle="Visitors that may need a merchant decision."
         badge={
           <BotShieldStatusBadge
             status={reviewCount ? "challenged" : "active"}
@@ -1573,7 +1576,9 @@ function ActivityInvestigationSummary({
       >
         <s-stack gap="large">
           <div className="botshield-status-value">
-            {reviewCount ? `${reviewCount} need review` : "No urgent issues"}
+            {reviewCount
+              ? `${reviewCount} visitor decisions available for review`
+              : "No urgent issues"}
           </div>
           <s-paragraph color="subdued">
             {reviewCount
@@ -1601,8 +1606,8 @@ function ActivityInvestigationSummary({
       </BotShieldCard>
 
       <BotShieldCard
-        title="Suggested action"
-        subtitle="Use recovery actions when a real visitor was stopped by mistake."
+        title="Next best action"
+        subtitle="Fast recovery tools for false positives."
       >
         <s-stack>
           <StatusRow
@@ -1670,7 +1675,7 @@ function ActivityPage({ model, actions }) {
   return (
     <Screen
       title="Visitor Activity"
-      subtitle="Investigate storefront decisions, suspicious visitors, and recovery actions."
+      subtitle="Review storefront decisions, suspicious visitors, and false-positive recovery."
       maxWidth="full"
       actions={
         <BotShieldAsyncButton
@@ -1718,7 +1723,10 @@ function ActivityPage({ model, actions }) {
           status={highRisk ? "high" : "low"}
         />
       </s-grid>
-      <BotShieldCard>
+      <BotShieldCard
+        title="Filter activity"
+        subtitle="Focus the table on the visitors you want to review."
+      >
         <s-stack gap="base">
           <s-stack direction="inline" gap="small" alignItems="center">
             <BotShieldActionButton onClick={() => setActivityTab("all")}>
@@ -1786,7 +1794,7 @@ function ActivityPage({ model, actions }) {
       </BotShieldCard>
       <BotShieldCard
         title="Visitor decisions"
-        subtitle={`${model.incidentCounts.real} real events · ${model.incidentCounts.simulation} simulations`}
+        subtitle={`${model.incidentCounts.real} real storefront decisions · ${model.incidentCounts.simulation} diagnostic or simulated events excluded from storefront totals`}
       >
         <ActivityTable model={model} actions={actions} />
       </BotShieldCard>
