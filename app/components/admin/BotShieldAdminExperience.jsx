@@ -2267,6 +2267,12 @@ function SettingsPage({ model, actions }) {
     model.emailProviderConfigured &&
     draft.weeklyReportsEnabled &&
     EMAIL_PATTERN.test(draft.alertEmail);
+  const lastAlertDetail = model.lastAlertStatus
+    ? `${model.lastAlertStatus} · ${formatDate(model.lastAlertSentAt)}`
+    : "No alert delivery recorded yet";
+  const lastReportDetail = model.lastWeeklyReportStatus
+    ? `${model.lastWeeklyReportStatus} · ${formatDate(model.lastWeeklyReportAt)}`
+    : "No weekly report delivery recorded yet";
 
   const save = async () => {
     if (
@@ -2315,8 +2321,8 @@ function SettingsPage({ model, actions }) {
         gap="large"
       >
         <BotShieldCard
-          title="Alert delivery"
-          subtitle="Security incidents and weekly summaries are sent to your chosen recipient."
+          title="Notification center"
+          subtitle="Keep the right person informed when BotShield stops, verifies, or detects risky storefront traffic."
           badge={
             <BotShieldStatusBadge
               status={alertReady ? "provider_connected" : "setup_required"}
@@ -2329,14 +2335,14 @@ function SettingsPage({ model, actions }) {
             <div className="botshield-status-value">
               {alertReady
                 ? reportReady
-                  ? "Alerts and reports ready"
-                  : "Security alerts ready"
-                : "Alerts need setup"}
+                  ? "Notifications are ready"
+                  : "Security alerts are ready"
+                : "Notifications need setup"}
             </div>
             <s-paragraph color="subdued">
               {alertReady
-                ? `Security alerts are configured for ${draft.alertEmail}.`
-                : "Add a valid recipient and enable the notifications you want to receive."}
+                ? `BotShield will send merchant-facing security updates to ${draft.alertEmail}.`
+                : "Add a recipient, enable the notifications you want, then send a test email before launch."}
             </s-paragraph>
             <s-grid
               gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
@@ -2363,13 +2369,13 @@ function SettingsPage({ model, actions }) {
         </BotShieldCard>
 
         <BotShieldCard
-          title="Delivery proof"
-          subtitle="Recent delivery attempts for alerts and weekly reports."
+          title="Recent email activity"
+          subtitle="A quick audit trail for alert and weekly report delivery."
         >
           <s-stack>
             <StatusRow
               label="Last alert"
-              detail={`${model.lastAlertStatus || "Not sent"} · ${formatDate(model.lastAlertSentAt)}`}
+              detail={lastAlertDetail}
               status={
                 model.lastAlertStatus === "sent"
                   ? "sent"
@@ -2378,7 +2384,7 @@ function SettingsPage({ model, actions }) {
             />
             <StatusRow
               label="Last weekly report"
-              detail={`${model.lastWeeklyReportStatus || "Not sent"} · ${formatDate(model.lastWeeklyReportAt)}`}
+              detail={lastReportDetail}
               status={
                 model.lastWeeklyReportStatus === "sent"
                   ? "sent"
@@ -2400,7 +2406,7 @@ function SettingsPage({ model, actions }) {
         </s-stack>
         <BotShieldCard
           title="Notification settings"
-          subtitle="Choose the recipient and notification types."
+          subtitle="Changes apply to future storefront incidents and weekly reports."
           badge={<BotShieldStatusBadge status={emailStatus.technicalStatus} />}
         >
           <s-stack gap="large">
@@ -2485,6 +2491,10 @@ function SettingsPage({ model, actions }) {
                 Send report now
               </BotShieldAsyncButton>
             </s-stack>
+            <BotShieldInlineHelp>
+              BotShield uses cooldown protection so repeated incidents from the
+              same pattern do not create duplicate email bursts.
+            </BotShieldInlineHelp>
             <s-grid
               gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
               gap="base"
