@@ -6,7 +6,6 @@ import {
   BotShieldAsyncButton,
   BotShieldBanner,
   BotShieldCard,
-  BotShieldDangerZone,
   BotShieldEmptyState,
   BotShieldInlineHelp,
   BotShieldSaveState,
@@ -24,6 +23,8 @@ import {
 } from "../../lib/ui-status";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const IP_PATTERN =
+  /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.|$)){4}$|^[a-f0-9:]{3,}$/i;
 
 const REASON_COPY = {
   RATE_PATTERN: "Repeated visitor activity detected",
@@ -39,6 +40,40 @@ const REASON_COPY = {
   ASN_MATCH: "Known hosting provider traffic",
   NO_SIGNIFICANT_RISK: "No elevated signals",
 };
+
+function getResponseMode(model) {
+  if (model?.protectionPaused) {
+    return {
+      label: "Paused",
+      status: "paused",
+      detail:
+        "BotShield is recording visits, but automated responses are paused.",
+    };
+  }
+  if (model?.autoBlock) {
+    return {
+      label: "Auto Block",
+      status: "active",
+      detail:
+        "BotShield automatically blocks visitors above the active risk threshold.",
+    };
+  }
+  return {
+    label: "Monitor",
+    status: "monitoring_only",
+    detail: "BotShield records suspicious activity without stopping visitors.",
+  };
+}
+
+function getProtectionProfile(model) {
+  if (model?.strictMode || model?.blockLevel === "High") {
+    return "Strict";
+  }
+  if (model?.blockLevel === "Low") {
+    return "Relaxed";
+  }
+  return "Balanced";
+}
 
 function formatDate(value, fallback = "Not yet") {
   if (!value) return fallback;
@@ -212,6 +247,7 @@ function Metric({ label, value, detail, status }) {
 
 function getExecutiveStatus(model) {
   const storefrontConnected = hasStorefrontConnection(model);
+  const responseMode = getResponseMode(model);
   if (model.protectionPaused) {
     return {
       label: "Paused",
@@ -228,25 +264,26 @@ function getExecutiveStatus(model) {
         "Enable the theme app embed to start monitoring storefront visitors.",
     };
   }
-  if (model.protectionReady && model.autoBlock) {
+  if (model.protectionReady && responseMode.label === "Auto Block") {
     return {
       label: "Protected",
       status: "active",
       detail:
-        "BotShield is evaluating real storefront traffic and can respond automatically.",
+        "BotShield is evaluating real storefront traffic and blocking high-risk visitors.",
     };
   }
   return {
-    label: "Monitoring",
-    status: "monitoring_only",
-    detail:
-      "BotShield is watching storefront activity without automatically blocking visitors.",
+    label: responseMode.label === "Auto Block" ? "Protected" : "Monitoring",
+    status: responseMode.status,
+    detail: responseMode.detail,
   };
 }
 
 function ProtectionStatusCard({ model, actions }) {
   const executiveStatus = getExecutiveStatus(model);
   const storefrontConnected = hasStorefrontConnection(model);
+  const responseMode = getResponseMode(model);
+  const profile = getProtectionProfile(model);
 
   return (
     <BotShieldCard
@@ -277,9 +314,11 @@ function ProtectionStatusCard({ model, actions }) {
         >
           <s-stack gap="small-200">
             <s-text color="subdued">Response mode</s-text>
-            <s-text type="strong">
-              {model.autoBlock ? "Auto Block" : "Monitoring only"}
-            </s-text>
+            <s-text type="strong">{responseMode.label}</s-text>
+          </s-stack>
+          <s-stack gap="small-200">
+            <s-text color="subdued">Protection profile</s-text>
+            <s-text type="strong">{profile}</s-text>
           </s-stack>
           <s-stack gap="small-200">
             <s-text color="subdued">Sensitivity</s-text>
@@ -390,6 +429,7 @@ function HelpStrip({ actions }) {
 
 function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
   const executiveStatus = getExecutiveStatus(model);
+  const responseMode = getResponseMode({ ...model, ...draft });
   const selectedMode = draft.strictMode
     ? "Strict"
     : draft.blockLevel === "Low" && !draft.autoBlock
@@ -422,14 +462,12 @@ function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
             gap="base"
           >
             <s-stack gap="small-200">
-              <s-text color="subdued">Recommended mode</s-text>
+              <s-text color="subdued">Protection profile</s-text>
               <s-text type="strong">{selectedMode}</s-text>
             </s-stack>
             <s-stack gap="small-200">
-              <s-text color="subdued">Auto response</s-text>
-              <s-text type="strong">
-                {draft.autoBlock ? "Auto Block on" : "Monitoring only"}
-              </s-text>
+              <s-text color="subdued">Response mode</s-text>
+              <s-text type="strong">{responseMode.label}</s-text>
             </s-stack>
             <s-stack gap="small-200">
               <s-text color="subdued">Sensitivity</s-text>
@@ -487,6 +525,7 @@ function StoreHealthCard({ model, actions }) {
   const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const billingReady = Boolean(model.billingStatus?.active);
   const storefrontConnected = hasStorefrontConnection(model);
+  const responseMode = getResponseMode(model);
   const trafficConnected = Boolean(
     model.protectionStatus.lastStorefrontDecisionAt,
   );
@@ -494,7 +533,7 @@ function StoreHealthCard({ model, actions }) {
   return (
     <BotShieldCard
       title="Store Health"
-      subtitle="The setup signals that determine whether BotShield can protect the store."
+      subtitle="Finish setup so BotShield can protect your storefront."
       accent
     >
       <s-stack>
@@ -519,7 +558,7 @@ function StoreHealthCard({ model, actions }) {
           detail={
             emailReady
               ? `Alerts are sent to ${model.alertEmail || "the configured recipient"}.`
-              : "Configure alerts so high-risk incidents reach the merchant."
+              : "Configure alerts so high-risk incidents reach you."
           }
           status={emailReady ? "provider_connected" : "setup_required"}
           action={
@@ -536,7 +575,7 @@ function StoreHealthCard({ model, actions }) {
             billingReady
               ? model.billingStatus.subscription?.name ||
                 "Shopify billing is active."
-              : "Activate the Shopify subscription before charging merchants."
+              : "Activate the Shopify subscription to finish setup."
           }
           status={billingReady ? "active" : "setup_required"}
           action={
@@ -550,11 +589,11 @@ function StoreHealthCard({ model, actions }) {
         <StatusRow
           label="Auto Block"
           detail={
-            model.autoBlock
-              ? "BotShield can automatically stop visitors that cross the risk threshold."
+            responseMode.label === "Auto Block"
+              ? responseMode.detail
               : "BotShield is monitoring activity without automatic blocking."
           }
-          status={model.autoBlock ? "active" : "monitoring_only"}
+          status={responseMode.status}
           action={
             !model.autoBlock ? (
               <BotShieldActionButton
@@ -787,7 +826,7 @@ function RuleSummaryCard({
   status,
   description,
   action,
-  icon = "◉",
+  icon = "?",
   count,
 }) {
   const cleanIcon =
@@ -894,7 +933,7 @@ function SupportChannelsCard() {
       </BotShieldCard>
       <BotShieldCard
         title="Need help?"
-        subtitle="Get help with setup, incident review, false positives, or Shopify review questions. Email support@botshieldapp.com."
+        subtitle="Get help with setup, incident review, or false positives. Email support@botshieldapp.com."
         actions={
           <s-stack direction="inline" gap="small">
             <BotShieldActionButton href="/support">
@@ -1198,7 +1237,7 @@ function OverviewPage({ model, actions }) {
                 />
                 <StatusRow
                   label="Automated response"
-                  detail={`${model.strictMode ? "Strict Mode" : `${model.blockLevel} sensitivity`} · ${model.autoBlock ? "Auto Block on" : "Monitoring only"}`}
+                  detail={`${model.strictMode ? "Strict Mode" : `${model.blockLevel} sensitivity`} · ${getResponseMode(model).label}`}
                   status={protectionStatus}
                   action={
                     <BotShieldActionButton
@@ -1940,14 +1979,14 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="Bots and automated browsers"
               status="active"
-              icon="🤖"
-              count="●"
+              icon="ðŸ¤–"
+              count="?"
               description="Looks for browser and user-agent patterns commonly used by bots."
             />
             <RuleSummaryCard
               title="IP address blocklist"
               status="active"
-              icon="📍"
+              icon="ðŸ“"
               count={model.blockedIPs.length}
               description={`${model.blockedIPs.length} manually blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}.`}
               action={
@@ -1961,7 +2000,7 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="Trusted visitors"
               status="active"
-              icon="👥"
+              icon="ðŸ‘¥"
               count={model.whitelist.length}
               description={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"} can bypass automated blocks.`}
               action={
@@ -1975,22 +2014,22 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="VPN, proxy, and datacenter traffic"
               status="active"
-              icon="🌐"
-              count="●"
+              icon="ðŸŒ"
+              count="?"
               description="Uses network intelligence to identify anonymous or hosting-provider traffic."
             />
             <RuleSummaryCard
               title="Repeated visitor activity"
               status="active"
               icon="↻"
-              count="●"
+              count="?"
               description="Flags unusually frequent visits from the same visitor pattern."
             />
             <RuleSummaryCard
               title="Blocked page"
               status="active"
               icon="▣"
-              count="●"
+              count="?"
               description="Stopped visitors are redirected to BotShield's app-proxy blocked page."
             />
           </s-grid>
@@ -2120,6 +2159,8 @@ function IpList({
   emptyTitle,
 }) {
   const trusted = title.toLowerCase().includes("trusted");
+  const trimmedValue = value.trim();
+  const validIp = !trimmedValue || IP_PATTERN.test(trimmedValue);
 
   return (
     <s-stack gap="large">
@@ -2134,6 +2175,7 @@ function IpList({
             value={value}
             onChange={onChange}
             placeholder="203.0.113.10"
+            error={!validIp ? "Enter a valid IPv4 or IPv6 address" : ""}
           />
         </s-box>
         <s-stack alignItems="end" justifyContent="end">
@@ -2141,7 +2183,7 @@ function IpList({
             action={onAdd}
             successMessage={`${title} updated`}
             variant="primary"
-            disabled={!value.trim()}
+            disabled={!trimmedValue || !validIp}
           >
             {addLabel}
           </BotShieldAsyncButton>
@@ -2179,8 +2221,8 @@ function IpList({
           title={emptyTitle}
           description={
             trusted
-              ? "Add trusted visitor IPs for admins, agencies, or partners."
-              : "Add a visitor IP when a known source should be blocked."
+              ? "Trusted IPs will appear here."
+              : "Blocked IPs will appear here."
           }
         />
       )}
@@ -2225,7 +2267,6 @@ function SettingsPage({ model, actions }) {
     configured: model.emailProviderConfigured,
     lastStatus: model.lastAlertStatus,
   });
-  const billingStatus = getBillingStatusModel(model.billingStatus);
   const alertReady =
     model.emailProviderConfigured &&
     draft.emailAlerts &&
@@ -2261,7 +2302,7 @@ function SettingsPage({ model, actions }) {
   return (
     <Screen
       title="Alerts & Reports"
-      subtitle="Manage security notifications, weekly summaries, and delivery status."
+      subtitle="Choose where BotShield sends security notifications and weekly summaries."
     >
       <BotShieldSaveState
         dirty={dirty}
@@ -2283,23 +2324,27 @@ function SettingsPage({ model, actions }) {
       >
         <BotShieldCard
           title="Alert delivery"
-          subtitle="BotShield sends security incidents and weekly summaries to the merchant."
+          subtitle="Security incidents and weekly summaries are sent to your chosen recipient."
           badge={
             <BotShieldStatusBadge
               status={alertReady ? "provider_connected" : "setup_required"}
-              label={alertReady ? "Ready" : "Needs setup"}
+              label={alertReady && reportReady ? "Ready" : "Needs setup"}
             />
           }
           accent
         >
           <s-stack gap="large">
             <div className="botshield-status-value">
-              {alertReady ? "Alerts ready" : "Alerts need setup"}
+              {alertReady
+                ? reportReady
+                  ? "Alerts and reports ready"
+                  : "Security alerts ready"
+                : "Alerts need setup"}
             </div>
             <s-paragraph color="subdued">
               {alertReady
                 ? `Security alerts are configured for ${draft.alertEmail}.`
-                : "Configure a valid recipient, enable alerts, and verify the email provider before launch."}
+                : "Add a valid recipient and enable the notifications you want to receive."}
             </s-paragraph>
             <s-grid
               gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
@@ -2327,7 +2372,7 @@ function SettingsPage({ model, actions }) {
 
         <BotShieldCard
           title="Delivery proof"
-          subtitle="Use test sends before submitting or charging merchants."
+          subtitle="Recent delivery attempts for alerts and weekly reports."
         >
           <s-stack>
             <StatusRow
@@ -2476,67 +2521,7 @@ function SettingsPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
 
-        <s-stack gap="small">
-          <s-heading>Billing summary</s-heading>
-          <s-paragraph color="subdued">
-            Review the Shopify-managed BotShield plan and billing status.
-          </s-paragraph>
-        </s-stack>
-        <BotShieldCard
-          title="Subscription status"
-          subtitle="Billing remains managed by Shopify."
-          badge={<BotShieldStatusBadge status={billingStatus.technicalStatus} />}
-        >
-          <StatusRow
-            label={model.billingStatus?.planName || "BotShield Basic"}
-            detail={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)}/month · ${Number(model.billingStatus?.trialDays || 7)}-day trial`}
-            status={billingStatus.technicalStatus}
-            action={
-              <BotShieldActionButton onClick={() => actions.setPage("billing")}>
-                Review subscription
-              </BotShieldActionButton>
-            }
-          />
-        </BotShieldCard>
       </s-grid>
-
-      <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
-        gap="base"
-      >
-        <BotShieldCard
-          title="Blocklist"
-          subtitle={`${model.blockedIPs.length} blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}`}
-          actions={
-            <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
-              Manage blocklist
-            </BotShieldActionButton>
-          }
-        />
-        <BotShieldCard
-          title="Trusted visitors"
-          subtitle={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"}`}
-          actions={
-            <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
-              Manage trusted list
-            </BotShieldActionButton>
-          }
-          accent
-        />
-      </s-grid>
-      <BotShieldDangerZone
-        title="Clear diagnostic data"
-        description="Delete diagnostic and simulated events. Real storefront activity is preserved."
-        action={
-          <BotShieldAsyncButton
-            action={actions.clearSimulationData}
-            successMessage="Diagnostic data cleared"
-            tone="critical"
-          >
-            Clear diagnostic data
-          </BotShieldAsyncButton>
-        }
-      />
     </Screen>
   );
 }
@@ -2566,7 +2551,9 @@ function BlocklistPage({ model, actions }) {
         >
           <s-stack gap="large">
             <div className="botshield-status-value">
-              {model.blockedIPs.length || "No"} blocked
+              {model.blockedIPs.length
+                ? `${model.blockedIPs.length} blocked`
+                : "No blocked visitors yet"}
             </div>
             <s-paragraph color="subdued">
               Blocklisted visitors are stopped before continuing through the
@@ -2614,7 +2601,7 @@ function BlocklistPage({ model, actions }) {
           }}
           onRemove={actions.removeBlockedIp}
           addLabel="Block visitor"
-          emptyTitle="No blocked visitors"
+          emptyTitle="No blocked visitors yet."
         />
       </BotShieldCard>
       <BotShieldInlineHelp>
@@ -2651,7 +2638,9 @@ function TrustedVisitorsPage({ model, actions }) {
         >
           <s-stack gap="large">
             <div className="botshield-status-value">
-              {model.whitelist.length || "No"} trusted
+              {model.whitelist.length
+                ? `${model.whitelist.length} trusted`
+                : "No trusted visitors yet"}
             </div>
             <s-paragraph color="subdued">
               Trusted visitors are still recorded for visibility, but automated
@@ -2700,7 +2689,7 @@ function TrustedVisitorsPage({ model, actions }) {
           }}
           onRemove={actions.removeTrustedIp}
           addLabel="Trust visitor"
-          emptyTitle="No trusted visitors"
+          emptyTitle="No trusted visitors yet."
         />
       </BotShieldCard>
       <BotShieldInlineHelp>
@@ -2719,18 +2708,14 @@ function BillingPage({ model, actions }) {
   const subscriptionName =
     model.billingStatus?.subscription?.name || "No active subscription";
   const billingActive = Boolean(model.billingStatus?.active);
-  const enforcementEnabled = Boolean(model.billingStatus?.enforcementEnabled);
   const trialRemaining =
     model.billingStatus?.subscription?.trialDaysRemaining ?? null;
   return (
     <Screen
       title="Subscription"
-      subtitle="Review the Shopify-managed plan, trial, billing verification, and enforcement mode."
+      subtitle="Manage your BotShield plan and billing status."
       actions={
         <s-stack direction="inline" gap="small">
-          <BotShieldActionButton onClick={() => actions.setPage("policy")}>
-            Back to alerts
-          </BotShieldActionButton>
           <BotShieldAsyncButton
             action={actions.refreshBilling}
             successMessage="Billing refreshed"
@@ -2742,11 +2727,11 @@ function BillingPage({ model, actions }) {
       }
     >
       <BotShieldCard
-        title={billingActive ? "Subscription verified" : "Subscription needs review"}
+        title="Current plan"
         subtitle={
           billingActive
-            ? "Shopify billing has been verified for this store."
-            : "Finish Shopify billing setup before charging real merchants."
+            ? "Your subscription is active and managed by Shopify."
+            : "BotShield will continue monitoring your storefront until billing is active."
         }
         badge={<BotShieldStatusBadge status={status.technicalStatus} />}
         actions={
@@ -2785,27 +2770,25 @@ function BillingPage({ model, actions }) {
               status={trialRemaining > 0 ? "trial" : "active"}
             />
             <Metric
-              label="Verification"
-              value={billingActive ? "Verified" : "Needs review"}
+              label="Billing status"
+              value={billingActive ? "Active" : "Needs activation"}
               detail={status.description}
               status={status.technicalStatus}
             />
             <Metric
-              label="Enforcement"
-              value={enforcementEnabled ? "On" : "Monitoring"}
+              label="Protection"
+              value={billingActive ? "Plan active" : "Monitoring"}
               detail={
-                enforcementEnabled
-                  ? "Unpaid stores are restricted."
-                  : "Safe for review and testing."
+                billingActive
+                  ? "Billing is verified for this store."
+                  : "Protection remains in monitoring mode until billing is active."
               }
-              status={enforcementEnabled ? "active" : "enforcement_disabled"}
+              status={billingActive ? "active" : "monitoring_only"}
             />
           </s-grid>
           {!billingActive ? (
             <BotShieldBanner tone="warning" title="Billing is not fully verified">
-              Keep billing enforcement disabled until the public Shopify plan,
-              private reviewer plan, Partner API credentials, and return flow
-              are verified end to end.
+              Activate the Shopify subscription to finish billing setup.
             </BotShieldBanner>
           ) : (
             <BotShieldBanner tone="success" title="Billing verification passed">
@@ -2822,7 +2805,7 @@ function BillingPage({ model, actions }) {
       >
         <BotShieldCard
           title="Subscription details"
-          subtitle="The billing state BotShield uses before enforcing paid access."
+          subtitle="Billing is managed by Shopify."
         >
           <s-stack>
           <StatusRow
@@ -2836,51 +2819,43 @@ function BillingPage({ model, actions }) {
               status={status.technicalStatus}
             />
             <StatusRow
-              label="Private test plan"
+              label="Trial"
               detail={
-                model.billingStatus?.subscription?.isTest
-                  ? "A reviewer or development test plan is active."
-                  : "No private test plan is active for this store."
+                trialRemaining !== null
+                  ? `${trialRemaining} days remaining`
+                  : `${trialDays}-day trial`
               }
-              status={
-                model.billingStatus?.subscription?.isTest
-                  ? "test_plan"
-                  : "monitoring_only"
-              }
+              status={trialRemaining > 0 ? "trial" : status.technicalStatus}
             />
-          <StatusRow
-            label="Billing enforcement"
-            detail="Billing enforcement remains disabled until paid and reviewer plans are verified."
-            status={
-                enforcementEnabled
-                ? "active"
-                : "enforcement_disabled"
-            }
-          />
           </s-stack>
         </BotShieldCard>
         <BotShieldCard
-          title="Launch checklist"
-          subtitle="Complete these before enabling billing enforcement."
+          title="What happens next"
+          subtitle="BotShield keeps storefront monitoring available while billing is being activated."
         >
           <s-stack>
             <StatusRow
-              label="Public plan configured"
-              detail={`${planName} should exist in Shopify with handle basic.`}
-              status={model.billingStatus?.configured ? "active" : "setup_required"}
-            />
-            <StatusRow
-              label="Reviewer test plan"
-              detail="Private test plan should return reviewers to /app/billing-return."
-              status={
-                model.billingStatus?.subscription?.isTest || billingActive
-                  ? "active"
-                  : "setup_required"
+              label="Subscription"
+              detail={
+                billingActive
+                  ? "Your BotShield subscription is active."
+                  : "Choose the Shopify plan to activate billing."
+              }
+              status={billingActive ? "active" : "setup_required"}
+              action={
+                model.billingStatus?.pricingUrl && !billingActive ? (
+                  <BotShieldActionButton
+                    href={model.billingStatus.pricingUrl}
+                    target="_top"
+                  >
+                    Choose plan
+                  </BotShieldActionButton>
+                ) : null
               }
             />
             <StatusRow
-              label="Safe fallback"
-              detail="If billing cannot be verified, BotShield remains monitoring-only."
+              label="Billing provider"
+              detail="Plan approval, trial, and subscription changes are handled by Shopify."
               status="active"
             />
           </s-stack>
@@ -2932,8 +2907,8 @@ function SetupPage({ model, actions }) {
     {
       label: "Configure alerts",
       detail: model.emailProviderConfigured
-        ? "Email provider is configured. Send a test alert before launch."
-        : "Add an alert email and verify Resend delivery before charging merchants.",
+        ? "Email provider is configured. Send a test alert to confirm delivery."
+        : "Add an alert email and verify delivery.",
       complete: model.emailProviderConfigured,
       action: (
         <BotShieldActionButton onClick={() => actions.setPage("policy")}>
@@ -2945,7 +2920,7 @@ function SetupPage({ model, actions }) {
       label: "Confirm subscription flow",
       detail: model.billingStatus?.active
         ? "Billing is verified for this store."
-        : "Review the plan, trial, and billing verification before submission.",
+        : "Review the plan, trial, and subscription status.",
       complete: Boolean(model.billingStatus?.active),
       action: (
         <BotShieldActionButton onClick={() => actions.setPage("billing")}>
@@ -2976,7 +2951,7 @@ function SetupPage({ model, actions }) {
             ? "Every required setup item is verified from live app data."
             : nextItem
               ? `Next step: ${nextItem.label}`
-              : "Review each setup area before submission."
+              : "Review each setup area to finish BotShield setup."
         }
         badge={
           <BotShieldStatusBadge
@@ -3065,7 +3040,7 @@ function SetupPage({ model, actions }) {
               }
             >
               Complete the remaining checklist items before relying on BotShield
-              for paid merchants.
+              for automated storefront response.
             </BotShieldBanner>
           ) : (
             <BotShieldBanner tone="success" title="Setup verified">
@@ -3150,7 +3125,7 @@ function SetupPage({ model, actions }) {
 
       <BotShieldCard
         title="Verify protection in 4 steps"
-        subtitle="Use these steps before recording screenshots or submitting to Shopify."
+        subtitle="Use these steps to confirm BotShield is connected and ready."
       >
         <s-stack>
           {testSteps.map((step, index) => (
@@ -3180,8 +3155,8 @@ function SetupPage({ model, actions }) {
       </BotShieldCard>
 
       <BotShieldCard
-        title="Reviewer and merchant guidance"
-        subtitle="Clear expectations reduce confusion during review and setup."
+        title="How BotShield works"
+        subtitle="Important details about storefront protection."
       >
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
