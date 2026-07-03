@@ -135,8 +135,11 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Current protection policy/);
   assert.match(source, /Recommended next step/);
   assert.match(source, /Protection mode/);
+  assert.match(source, /Automated response is active/);
   assert.match(source, /Active protections/);
-  assert.match(source, /VPN, proxy, and datacenter traffic/);
+  assert.match(source, /Bot detection/);
+  assert.match(source, /Network intelligence/);
+  assert.match(source, /Storefront signals BotShield uses today/);
   assert.match(source, /title="Alerts & Reports"/);
   assert.match(source, /Alert delivery/);
   assert.match(source, /Delivery proof/);

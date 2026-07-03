@@ -385,23 +385,6 @@ function OutcomeCard({ label, value, description, status }) {
   );
 }
 
-function InfoNotice({ title, children, action }) {
-  return (
-    <div className="botshield-info-notice">
-      <div className="botshield-info-notice-header">
-        <span>ⓘ {title}</span>
-        <span>×</span>
-      </div>
-      <div className="botshield-info-notice-body">
-        <s-stack gap="base">
-          <s-text>{children}</s-text>
-          {action}
-        </s-stack>
-      </div>
-    </div>
-  );
-}
-
 function HelpStrip({ actions }) {
   return (
     <BotShieldCard>
@@ -825,25 +808,22 @@ function RuleSummaryCard({
   status,
   description,
   action,
-  icon = "?",
   count,
 }) {
   const cleanIcon =
-    title === "Bots and automated browsers"
+    title === "Bot detection"
       ? "Bot"
       : title === "IP address blocklist"
         ? "IP"
         : title === "Trusted visitors"
           ? "Trust"
-          : title === "VPN, proxy, and datacenter traffic"
+          : title === "Network intelligence"
             ? "Net"
             : title === "Repeated visitor activity"
               ? "Rate"
               : title === "Blocked page"
                 ? "Page"
-                : icon;
-  const cleanCount =
-    typeof count === "number" || /^[0-9]+$/.test(String(count)) ? count : "•";
+                : "Rule";
 
   return (
     <div className="botshield-rule-card">
@@ -851,20 +831,21 @@ function RuleSummaryCard({
         <s-stack direction="inline" gap="base" justifyContent="space-between">
           <span className="botshield-rule-icon">{cleanIcon}</span>
           {count !== undefined ? (
-            <span className="botshield-rule-count">{cleanCount}</span>
+            <span className="botshield-rule-count">{count}</span>
           ) : (
             <BotShieldStatusBadge status={status} />
           )}
         </s-stack>
         <s-stack gap="small">
-          <s-heading>{title} →</s-heading>
+          <s-heading>{title}</s-heading>
           <s-text color="subdued">{description}</s-text>
         </s-stack>
-        {action}
+        {action ? <s-box paddingBlockStart="base">{action}</s-box> : null}
       </s-stack>
     </div>
   );
 }
+
 
 function ProtectionModeCard({ title, description, selected, onSelect }) {
   return (
@@ -1867,17 +1848,12 @@ function ProtectionPage({ model, actions }) {
         setDraft={setDraft}
         actions={actions}
       />
-      <InfoNotice title="Note: Blocked traffic can still show in Shopify analytics">
-        Blocked visitors may still appear in Shopify Analytics because Shopify
-        records some storefront activity independently. BotShield stops them in
-        the storefront app-proxy flow when the theme embed runs.
-      </InfoNotice>
       <HelpStrip actions={actions} />
       <s-grid gridTemplateColumns="1fr" gap="large">
         <s-stack gap="small">
           <s-heading>Protection mode</s-heading>
           <s-paragraph color="subdued">
-            Start with a recommended mode, then fine-tune the advanced settings.
+            Start with a recommended profile, then fine-tune sensitivity if needed.
           </s-paragraph>
         </s-stack>
         <BotShieldCard>
@@ -1935,48 +1911,63 @@ function ProtectionPage({ model, actions }) {
           </s-grid>
         </BotShieldCard>
 
-        <s-stack gap="small">
-          <s-heading>Automated response</s-heading>
-          <s-paragraph color="subdued">
-            Pause automated blocking while investigating false positives. Event
-            collection continues.
-          </s-paragraph>
-        </s-stack>
-        <BotShieldCard
-          badge={
-            <BotShieldStatusBadge
-              status={model.protectionPaused ? "paused" : "active"}
-            />
-          }
-          actions={
-            model.protectionPaused ? (
-              <BotShieldAsyncButton
-                action={actions.resumeProtection}
-                successMessage="Protection resumed"
-                variant="primary"
-              >
-                Resume protection
-              </BotShieldAsyncButton>
-            ) : (
-              <BotShieldAsyncButton
-                action={() => actions.pauseProtection(10)}
-                successMessage="Protection paused for 10 minutes"
-              >
-                Pause for 10 minutes
-              </BotShieldAsyncButton>
-            )
-          }
+        <s-grid
+          gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
+          gap="large"
         >
-          <BotShieldInlineHelp>
-            Pausing prevents new automated blocks but keeps recording decisions.
-          </BotShieldInlineHelp>
-        </BotShieldCard>
+          <s-stack gap="small">
+            <s-heading>Automated response</s-heading>
+            <s-paragraph color="subdued">
+              Temporarily pause blocking while reviewing a possible false
+              positive. Event collection continues.
+            </s-paragraph>
+          </s-stack>
+          <BotShieldCard
+            title={
+              model.protectionPaused
+                ? "Automated response is paused"
+                : "Automated response is active"
+            }
+            subtitle={
+              model.protectionPaused
+                ? "BotShield is still recording decisions, but new automated blocks are paused."
+                : "BotShield can respond to suspicious storefront visitors based on the selected profile."
+            }
+            badge={
+              <BotShieldStatusBadge
+                status={
+                  model.protectionPaused ? "paused" : getResponseMode(draft).status
+                }
+                label={
+                  model.protectionPaused ? "Paused" : getResponseMode(draft).label
+                }
+              />
+            }
+            actions={
+              model.protectionPaused ? (
+                <BotShieldAsyncButton
+                  action={actions.resumeProtection}
+                  successMessage="Protection resumed"
+                  variant="primary"
+                >
+                  Resume protection
+                </BotShieldAsyncButton>
+              ) : (
+                <BotShieldAsyncButton
+                  action={() => actions.pauseProtection(10)}
+                  successMessage="Protection paused for 10 minutes"
+                >
+                  Pause for 10 minutes
+                </BotShieldAsyncButton>
+              )
+            }
+          />
+        </s-grid>
 
         <s-stack gap="small">
           <s-heading>Active protections</s-heading>
           <s-paragraph color="subdued">
-            Real storefront signals BotShield can evaluate today. Unsupported
-            rule types are intentionally not shown as active controls.
+            Storefront signals BotShield uses today to evaluate visitor risk.
           </s-paragraph>
         </s-stack>
         <BotShieldCard>
@@ -1985,16 +1976,14 @@ function ProtectionPage({ model, actions }) {
             gap="base"
           >
             <RuleSummaryCard
-              title="Bots and automated browsers"
+              title="Bot detection"
               status="active"
-              icon="ðŸ¤–"
-              count="?"
-              description="Looks for browser and user-agent patterns commonly used by bots."
+              count="Active"
+              description="Detects automated browsers and suspicious user-agent patterns."
             />
             <RuleSummaryCard
               title="IP address blocklist"
               status="active"
-              icon="ðŸ“"
               count={model.blockedIPs.length}
               description={`${model.blockedIPs.length} manually blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}.`}
               action={
@@ -2008,7 +1997,6 @@ function ProtectionPage({ model, actions }) {
             <RuleSummaryCard
               title="Trusted visitors"
               status="active"
-              icon="ðŸ‘¥"
               count={model.whitelist.length}
               description={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"} can bypass automated blocks.`}
               action={
@@ -2020,32 +2008,28 @@ function ProtectionPage({ model, actions }) {
               }
             />
             <RuleSummaryCard
-              title="VPN, proxy, and datacenter traffic"
+              title="Network intelligence"
               status="active"
-              icon="ðŸŒ"
-              count="?"
-              description="Uses network intelligence to identify anonymous or hosting-provider traffic."
+              count="Enabled"
+              description="Uses VPN, proxy, datacenter, hosting provider, and ASN signals."
             />
             <RuleSummaryCard
               title="Repeated visitor activity"
               status="active"
-              icon="↻"
-              count="?"
+              count="Active"
               description="Flags unusually frequent visits from the same visitor pattern."
             />
             <RuleSummaryCard
               title="Blocked page"
               status="active"
-              icon="▣"
-              count="?"
+              count="Configured"
               description="Stopped visitors are redirected to BotShield's app-proxy blocked page."
             />
           </s-grid>
           <s-box paddingBlockStart="base">
             <BotShieldInlineHelp>
-              BotShield does not currently provide checkout/order blocking,
-              country rules, referral rules, or heatmaps. Those should not be
-              claimed until they are real product features.
+              BotShield protects JavaScript-enabled storefront visits through the
+              theme app embed and Shopify app proxy.
             </BotShieldInlineHelp>
           </s-box>
         </BotShieldCard>
