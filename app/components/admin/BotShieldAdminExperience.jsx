@@ -2933,7 +2933,7 @@ function SetupPage({ model, actions }) {
   return (
     <Screen
       title="Setup & Help"
-      subtitle="Finish the required steps to make BotShield protect the storefront, alert the merchant, and pass review."
+      subtitle="Finish BotShield setup, confirm storefront connection, and get help."
       actions={
         <BotShieldAsyncButton
           action={actions.refresh}

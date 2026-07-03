@@ -15,7 +15,7 @@ const STATUS_MAP = {
     description: "Protection is temporarily paused.",
   },
   monitoring_only: {
-    label: "Monitoring only",
+    label: "Monitor",
     tone: "warning",
     description: "Traffic is recorded without automated blocking.",
   },
