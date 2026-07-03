@@ -95,6 +95,22 @@ function hasStorefrontConnection(model) {
   );
 }
 
+function getUiReadinessItems(model) {
+  const storefrontConnected = hasStorefrontConnection(model);
+  return (model.readinessItems || []).map((item) => {
+    if (item.label?.includes("Theme embed")) {
+      return {
+        ...item,
+        complete: storefrontConnected,
+        detail: storefrontConnected
+          ? "Storefront traffic has been received."
+          : item.detail,
+      };
+    }
+    return item;
+  });
+}
+
 function formatDelta(current, previous) {
   if (previous === 0) return current === 0 ? "No change" : "New activity";
   const change = Math.round(((current - previous) / previous) * 100);
@@ -1143,7 +1159,7 @@ function OverviewPage({ model, actions }) {
                     <BotShieldActionButton
                       onClick={() => actions.setPage("detection")}
                     >
-                      Manage
+                      Manage protection
                     </BotShieldActionButton>
                   }
                 />
@@ -2830,10 +2846,11 @@ function BillingPage({ model, actions }) {
 }
 
 function SetupPage({ model, actions }) {
-  const complete = model.readinessItems.filter((item) => item.complete).length;
-  const total = model.readinessItems.length;
+  const readinessItems = getUiReadinessItems(model);
+  const complete = readinessItems.filter((item) => item.complete).length;
+  const total = readinessItems.length;
   const setupComplete = complete === total;
-  const nextItem = model.readinessItems.find((item) => !item.complete);
+  const nextItem = readinessItems.find((item) => !item.complete);
   const storefrontConnected = hasStorefrontConnection(model);
   const executiveStatus = getExecutiveStatus(model);
   const emailStatus = getEmailStatus({

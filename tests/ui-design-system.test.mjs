@@ -223,6 +223,8 @@ test("Setup experience uses verified checklist rows with contextual actions", as
   assert.match(source, /Launch readiness/);
   assert.match(source, /Verify protection in 4 steps/);
   assert.match(source, /Reviewer and merchant guidance/);
+  assert.match(source, /getUiReadinessItems/);
+  assert.match(source, /Storefront traffic has been received/);
   assert.match(source, /Open theme editor/);
   assert.match(source, /View visitor activity/);
   assert.match(designSystem, /Action needed/);
