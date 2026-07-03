@@ -200,6 +200,9 @@ test("merchant-facing reason labels replace raw detection codes", async () => {
   assert.match(source, /Repeated visitor activity detected/);
   assert.match(source, /Known hosting provider traffic/);
   assert.match(source, /Automated browser behavior detected/);
+  assert.match(source, /formatMerchantReasons/);
+  assert.match(source, /asn\\s\+match\|asn\\s\+as\\d\+/);
+  assert.match(source, /rate pattern\|repeated traffic\|request rate/);
 });
 
 test("Setup experience uses verified checklist rows with contextual actions", async () => {

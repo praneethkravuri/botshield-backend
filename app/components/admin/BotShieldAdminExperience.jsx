@@ -46,6 +46,9 @@ function formatDate(value, fallback = "Not yet") {
   return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString();
 }
 
+// Legacy formatter kept temporarily for backwards compatibility while older
+// views move to merchant-safe reason labels.
+// eslint-disable-next-line no-unused-vars
 function formatReasons(value) {
   const reasons = Array.isArray(value)
     ? value
@@ -65,6 +68,48 @@ function formatReasons(value) {
           .replace(/\b\w/g, (character) => character.toUpperCase()),
     )
     .join(" · ");
+}
+
+function formatMerchantReasons(value) {
+  const rawReasons = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(",")
+        .map((item) => item.trim());
+  const reasons = rawReasons
+    .flatMap((item) =>
+      String(item || "")
+        .split("|")
+        .map((part) => part.trim()),
+    )
+    .filter(Boolean)
+    .map((reason) => reason.replace(/^\[|\]$/g, "").trim())
+    .map((reason) => {
+      const key = reason.toUpperCase().replaceAll(" ", "_");
+      if (REASON_COPY[key]) return REASON_COPY[key];
+      if (/asn\s+match|asn\s+as\d+|hosting provider/i.test(reason)) {
+        return "Known hosting provider traffic";
+      }
+      if (/rate pattern|repeated traffic|request rate/i.test(reason)) {
+        return "Repeated visitor activity detected";
+      }
+      if (/challenge required|verification/i.test(reason)) {
+        return "Verification requested";
+      }
+      if (/suspicious user agent|automated browser|bot/i.test(reason)) {
+        return "Automated browser behavior detected";
+      }
+      if (/no significant risk|no elevated/i.test(reason)) {
+        return "No elevated signals";
+      }
+      return reason
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+    })
+    .filter((reason, index, all) => all.indexOf(reason) === index);
+  if (!reasons.length) return "No elevated signals";
+  return reasons.slice(0, 2).join(" · ");
 }
 
 function getOutcomeLabel(action) {
@@ -947,7 +992,7 @@ function OverviewPage({ model, actions }) {
   const threatSignals = (model.securityPosture?.report?.topReasonCodes || [])
     .slice(0, 5)
     .map((item) => ({
-      label: formatReasons([item.label]),
+      label: formatMerchantReasons([item.label]),
       count: item.count,
     }));
   const topOrigins = model.trafficOrigins.slice(0, 5).map((origin) => ({
@@ -1313,7 +1358,7 @@ function OverviewPage({ model, actions }) {
                 >
                   <s-stack gap="small-200">
                     <s-text type="strong">
-                      {formatReasons(event.reasons)}
+                      {formatMerchantReasons(event.reasons)}
                     </s-text>
                     <s-text color="subdued">
                       {event.actionTaken === "blocked"
@@ -1408,7 +1453,7 @@ function ActivityTable({ model, actions }) {
               />
             </s-table-cell>
             <s-table-cell>
-              {formatReasons(incident.reasonCodes || incident.reasons)}
+              {formatMerchantReasons(incident.reasonCodes || incident.reasons)}
             </s-table-cell>
             <s-table-cell>
               {[incident.networkCity, incident.networkCountry]
@@ -1525,7 +1570,7 @@ function ActivityInvestigationSummary({
             label="Review risky visitors"
             detail={
               latestReviewEvent
-                ? `${getOutcomeLabel(latestReviewEvent.decision)} · ${formatReasons(latestReviewEvent.reasonCodes || latestReviewEvent.reasons)}`
+                ? `${getOutcomeLabel(latestReviewEvent.decision)} · ${formatMerchantReasons(latestReviewEvent.reasonCodes || latestReviewEvent.reasons)}`
                 : "No visitor decisions match the current filters."
             }
             status={
