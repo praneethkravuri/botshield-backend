@@ -100,7 +100,7 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
     "utf8",
   );
 
-  assert.match(source, /title="Dashboard"/);
+  assert.match(source, /title="Overview"/);
   assert.match(source, /Monitor storefront protection, setup readiness/);
   assert.match(source, /Protection Status/);
   assert.match(source, /Quick Actions/);
@@ -240,7 +240,7 @@ test("Setup experience uses verified checklist rows with contextual actions", as
   assert.doesNotMatch(source, /Reviewer and merchant guidance/);
   assert.doesNotMatch(source, /before submitting/i);
   assert.doesNotMatch(source, /before recording/i);
-  assert.match(source, /getUiReadinessItems/);
+  assert.match(source, /getSetupChecklistItems/);
   assert.match(source, /Storefront traffic has been received/);
   assert.match(source, /Open theme editor/);
   assert.match(source, /View visitor activity/);

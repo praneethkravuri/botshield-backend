@@ -19,6 +19,7 @@ import { safeFetchJson } from "../../lib/safe-fetch";
 import {
   getBillingStatusModel,
   getEmailStatus,
+  getUiStatus,
 } from "../../lib/ui-status";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,6 +79,13 @@ function formatDate(value, fallback = "Not yet") {
   if (!value) return fallback;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString();
+}
+
+function formatDeliveryDetail(status, timestamp, fallback) {
+  if (!status) return fallback;
+  const statusLabel = getUiStatus(status).label;
+  const deliveredAt = formatDate(timestamp);
+  return `${statusLabel} · ${deliveredAt}`;
 }
 
 // Legacy formatter kept temporarily for backwards compatibility while older
@@ -172,22 +180,6 @@ function hasStorefrontConnection(model) {
     model?.protectionStatus?.themeEmbedDetected ||
       model?.protectionStatus?.lastStorefrontDecisionAt,
   );
-}
-
-function getUiReadinessItems(model) {
-  const storefrontConnected = hasStorefrontConnection(model);
-  return (model.readinessItems || []).map((item) => {
-    if (item.label?.includes("Theme embed")) {
-      return {
-        ...item,
-        complete: storefrontConnected,
-        detail: storefrontConnected
-          ? "Storefront traffic has been received."
-          : item.detail,
-      };
-    }
-    return item;
-  });
 }
 
 function formatDelta(current, previous) {
@@ -607,14 +599,15 @@ function StoreHealthCard({ model, actions }) {
   );
 }
 
-function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
+function getSetupChecklistItems(model, actions = {}) {
   const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const billingReady = Boolean(model.billingStatus?.active);
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontEventsReceived = Boolean(
     model.protectionStatus.lastStorefrontDecisionAt,
   );
-  const items = [
+
+  return [
     {
       label: "App installed",
       detail: "BotShield is installed and loading inside Shopify Admin.",
@@ -636,7 +629,7 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
         ? `Last event ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}.`
         : "Visit the storefront after enabling the embed.",
       complete: storefrontEventsReceived,
-      action: () => actions.setPage("setup"),
+      action: () => actions.setPage?.("setup"),
       actionLabel: "View steps",
     },
     {
@@ -645,7 +638,7 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
         ? "Shopify billing is active or verified for testing."
         : "Review the Shopify subscription setup.",
       complete: billingReady,
-      action: () => actions.setPage("billing"),
+      action: () => actions.setPage?.("billing"),
       actionLabel: "Review",
     },
     {
@@ -654,7 +647,7 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
         ? `Alerts are configured for ${model.alertEmail || "the merchant"}.`
         : "Configure the alert recipient and email provider.",
       complete: emailReady,
-      action: () => actions.setPage("policy"),
+      action: () => actions.setPage?.("policy"),
       actionLabel: "Configure",
     },
     {
@@ -663,10 +656,14 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
         ? "High-risk storefront traffic can be stopped automatically."
         : "Turn on Auto Block when you are ready to enforce protection.",
       complete: model.autoBlock,
-      action: () => actions.setPage("detection"),
+      action: () => actions.setPage?.("detection"),
       actionLabel: "Turn on",
     },
   ];
+}
+
+function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
+  const items = getSetupChecklistItems(model, actions);
   const complete = items.filter((item) => item.complete).length;
 
   return (
@@ -690,7 +687,7 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
                   item.complete ? " botshield-check-icon--complete" : ""
                 }`}
               >
-                {item.complete ? "✓" : "•"}
+                {item.complete ? "Done" : "Next"}
               </span>
               <s-stack gap="small-200">
                 <s-text type="strong">{item.label}</s-text>
@@ -782,7 +779,7 @@ function GettingStartedCard({ model, actions }) {
                   step.complete ? " botshield-check-icon--complete" : ""
                 }`}
               >
-                {step.complete ? "✓" : "•"}
+                {step.complete ? "Done" : "Next"}
               </span>
               <s-stack gap="small-200">
                 <s-text type="strong">{step.label}</s-text>
@@ -986,7 +983,7 @@ function StatusRow({ label, detail, status, action }) {
 }
 
 function OverviewPage({ model, actions }) {
-  const showLegacyDashboardDetails = false;
+  const showLegacyOverviewDetails = false;
   const latestEvents = model.storefrontScans.slice(0, 5);
   const storefrontConnected = hasStorefrontConnection(model);
   const protectionStatus = model.protectionPaused
@@ -1023,7 +1020,7 @@ function OverviewPage({ model, actions }) {
 
   return (
     <Screen
-      title="Dashboard"
+      title="Overview"
       subtitle="Monitor storefront protection, setup readiness, and recent security activity."
       actions={
         <BotShieldAsyncButton
@@ -1131,7 +1128,7 @@ function OverviewPage({ model, actions }) {
         <SetupProgressCard model={model} actions={actions} />
       </s-grid>
 
-      {showLegacyDashboardDetails ? (
+      {showLegacyOverviewDetails ? (
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(260px, 1fr))"
           gap="large"
@@ -1143,7 +1140,7 @@ function OverviewPage({ model, actions }) {
         </s-grid>
       ) : null}
 
-      {showLegacyDashboardDetails ? (
+      {showLegacyOverviewDetails ? (
         <s-grid
           gridTemplateColumns="repeat(auto-fit, minmax(210px, 1fr))"
           gap="large"
@@ -1183,7 +1180,7 @@ function OverviewPage({ model, actions }) {
         </s-grid>
       ) : null}
 
-      {showLegacyDashboardDetails ? (
+      {showLegacyOverviewDetails ? (
         <>
           <s-grid
             gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))"
@@ -2272,10 +2269,13 @@ function SettingsPage({ model, actions }) {
     draft.weeklyReportsEnabled &&
     EMAIL_PATTERN.test(draft.alertEmail);
   const lastAlertDetail = model.lastAlertStatus
-    ? `${model.lastAlertStatus} · ${formatDate(model.lastAlertSentAt)}`
+    ? formatDeliveryDetail(model.lastAlertStatus, model.lastAlertSentAt)
     : "No alert delivery recorded yet";
   const lastReportDetail = model.lastWeeklyReportStatus
-    ? `${model.lastWeeklyReportStatus} · ${formatDate(model.lastWeeklyReportAt)}`
+    ? formatDeliveryDetail(
+        model.lastWeeklyReportStatus,
+        model.lastWeeklyReportAt,
+      )
     : "No weekly report delivery recorded yet";
 
   const save = async () => {
@@ -2879,11 +2879,11 @@ function BillingPage({ model, actions }) {
 }
 
 function SetupPage({ model, actions }) {
-  const readinessItems = getUiReadinessItems(model);
-  const complete = readinessItems.filter((item) => item.complete).length;
-  const total = readinessItems.length;
+  const setupChecklistItems = getSetupChecklistItems(model, actions);
+  const complete = setupChecklistItems.filter((item) => item.complete).length;
+  const total = setupChecklistItems.length;
   const setupComplete = complete === total;
-  const nextItem = readinessItems.find((item) => !item.complete);
+  const nextItem = setupChecklistItems.find((item) => !item.complete);
   const storefrontConnected = hasStorefrontConnection(model);
   const executiveStatus = getExecutiveStatus(model);
   const emailStatus = getEmailStatus({
@@ -3149,7 +3149,7 @@ function SetupPage({ model, actions }) {
                     step.complete ? " botshield-check-icon--complete" : ""
                   }`}
                 >
-                  {step.complete ? "✓" : index + 1}
+                  {step.complete ? "Done" : index + 1}
                 </span>
                 <s-stack gap="small-200">
                   <s-text type="strong">{step.label}</s-text>
