@@ -125,10 +125,11 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Visitor decisions/);
   assert.match(source, /title="Blocklist"/);
   assert.match(source, /title="Trusted Visitors"/);
-  assert.match(source, /Manual blocking/);
-  assert.match(source, /When to block/);
+  assert.match(source, /Manual blocklist/);
+  assert.match(source, /Block safely/);
   assert.match(source, /Trusted access/);
-  assert.match(source, /False-positive recovery/);
+  assert.match(source, /Recovery workflow/);
+  assert.match(source, /Changes to the \{listLabel\}/);
   assert.match(source, /Blocked visitors/);
   assert.match(source, /High-risk visitors/);
   assert.match(source, /title="Protection Rules"/);
