@@ -211,6 +211,82 @@ export function BotShieldAppFrame({ children }) {
           letter-spacing: 0.04em;
           text-transform: uppercase;
         }
+        .botshield-command-center {
+          position: relative;
+          overflow: hidden;
+          background:
+            radial-gradient(circle at 92% 12%, rgba(15, 118, 110, 0.12), transparent 30%),
+            linear-gradient(180deg, #ffffff, #fbfbfb);
+          border: 1px solid var(--botshield-border);
+          border-radius: 18px;
+          box-shadow: var(--botshield-shadow-raised);
+          padding: 30px;
+        }
+        .botshield-command-center::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-top: 3px solid var(--botshield-teal);
+          pointer-events: none;
+        }
+        .botshield-command-grid {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+          gap: 28px;
+          align-items: center;
+        }
+        .botshield-command-kicker {
+          color: var(--botshield-subdued);
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+        .botshield-command-title {
+          margin: 8px 0 0;
+          color: var(--botshield-text);
+          font-size: clamp(34px, 4.8vw, 56px);
+          line-height: 1;
+          font-weight: 760;
+          letter-spacing: -0.055em;
+        }
+        .botshield-command-copy {
+          max-width: 680px;
+          margin: 14px 0 0;
+          color: var(--botshield-subdued);
+          font-size: 16px;
+          line-height: 1.5;
+        }
+        .botshield-command-evidence {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 22px;
+        }
+        .botshield-command-panel {
+          border: 1px solid var(--botshield-border);
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.78);
+          box-shadow: var(--botshield-shadow-soft);
+          padding: 18px;
+        }
+        .botshield-command-panel-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 12px;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--botshield-border);
+        }
+        .botshield-command-panel-row:first-child {
+          padding-top: 0;
+        }
+        .botshield-command-panel-row:last-child {
+          padding-bottom: 0;
+          border-bottom: 0;
+        }
         .botshield-metric {
           position: relative;
           overflow: hidden;
@@ -505,10 +581,33 @@ export function BotShieldAppFrame({ children }) {
           border-radius: 999px;
           background: var(--botshield-teal);
         }
+        .botshield-section-heading {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 18px;
+          margin-top: 4px;
+        }
+        .botshield-section-title {
+          margin: 0;
+          color: var(--botshield-text);
+          font-size: 19px;
+          line-height: 1.25;
+          font-weight: 700;
+          letter-spacing: -0.015em;
+        }
+        .botshield-section-copy {
+          margin: 6px 0 0;
+          color: var(--botshield-subdued);
+          font-size: 14px;
+          line-height: 1.45;
+        }
         @media (max-width: 640px) {
           .botshield-page-content,
           .botshield-page-content--wide { width: calc(100vw - 24px); padding-top: 22px; }
           .botshield-page-heading { display: block; }
+          .botshield-command-grid { grid-template-columns: 1fr; }
+          .botshield-command-center { padding: 22px; }
           .botshield-titlebar-brand { font-size: 18px; }
           .botshield-surface { padding: 16px; border-radius: 12px; }
           .botshield-metric { min-height: 112px; padding: 16px; }

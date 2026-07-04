@@ -986,6 +986,8 @@ function OverviewPage({ model, actions }) {
   const showLegacyOverviewDetails = false;
   const latestEvents = model.storefrontScans.slice(0, 5);
   const storefrontConnected = hasStorefrontConnection(model);
+  const executiveStatus = getExecutiveStatus(model);
+  const responseMode = getResponseMode(model);
   const protectionStatus = model.protectionPaused
     ? "paused"
     : model.protectionReady
@@ -1066,6 +1068,61 @@ function OverviewPage({ model, actions }) {
         </BotShieldBanner>
       ) : null}
 
+      <div className="botshield-command-center">
+        <div className="botshield-command-grid">
+          <div>
+            <div className="botshield-command-kicker">Store protection</div>
+            <h2 className="botshield-command-title">{executiveStatus.label}</h2>
+            <p className="botshield-command-copy">{executiveStatus.detail}</p>
+            <div className="botshield-command-evidence">
+              <span className="botshield-evidence-chip">
+                {storefrontConnected
+                  ? "Storefront connected"
+                  : "Storefront not connected"}
+              </span>
+              <span className="botshield-evidence-chip">
+                {model.autoBlock ? "Auto Block active" : "Monitoring mode"}
+              </span>
+              <span className="botshield-evidence-chip">
+                {model.emailProviderConfigured && model.emailAlerts
+                  ? "Alerts configured"
+                  : "Alerts need setup"}
+              </span>
+            </div>
+          </div>
+          <div className="botshield-command-panel">
+            <div className="botshield-command-panel-row">
+              <s-stack gap="small-200">
+                <s-text color="subdued">Visitors analyzed</s-text>
+                <s-text type="strong">{model.storefrontScans.length}</s-text>
+              </s-stack>
+              <BotShieldStatusBadge status="real_storefront" />
+            </div>
+            <div className="botshield-command-panel-row">
+              <s-stack gap="small-200">
+                <s-text color="subdued">Response mode</s-text>
+                <s-text type="strong">{responseMode.label}</s-text>
+              </s-stack>
+              <BotShieldStatusBadge status={responseMode.status} />
+            </div>
+            <div className="botshield-command-panel-row">
+              <s-stack gap="small-200">
+                <s-text color="subdued">Last storefront event</s-text>
+                <s-text type="strong">
+                  {formatDate(
+                    model.protectionStatus.lastStorefrontDecisionAt,
+                    "Waiting for traffic",
+                  )}
+                </s-text>
+              </s-stack>
+              <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                Review
+              </BotShieldActionButton>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <s-grid
         gridTemplateColumns="minmax(0, 1.35fr) minmax(300px, 0.85fr)"
         gap="large"
@@ -1074,13 +1131,15 @@ function OverviewPage({ model, actions }) {
         <QuickActionsCard model={model} actions={actions} />
       </s-grid>
 
-      <s-stack gap="base">
-        <s-heading>Storefront activity</s-heading>
-        <s-paragraph color="subdued">
-          Real storefront visits analyzed by BotShield. Diagnostic and simulated
-          events are excluded from these totals.
-        </s-paragraph>
-      </s-stack>
+      <div className="botshield-section-heading">
+        <div>
+          <h2 className="botshield-section-title">Storefront activity</h2>
+          <p className="botshield-section-copy">
+            Real storefront visits analyzed by BotShield. Diagnostic and
+            simulated events are excluded from these totals.
+          </p>
+        </div>
+      </div>
 
       <s-grid
         gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
