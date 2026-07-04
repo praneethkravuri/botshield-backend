@@ -988,6 +988,9 @@ function OverviewPage({ model, actions }) {
   const storefrontConnected = hasStorefrontConnection(model);
   const executiveStatus = getExecutiveStatus(model);
   const responseMode = getResponseMode(model);
+  const setupItems = getSetupChecklistItems(model, actions);
+  const setupComplete = setupItems.filter((item) => item.complete).length;
+  const emailReady = model.emailProviderConfigured && model.emailAlerts;
   const protectionStatus = model.protectionPaused
     ? "paused"
     : model.protectionReady
@@ -1089,6 +1092,24 @@ function OverviewPage({ model, actions }) {
                   : "Alerts need setup"}
               </span>
             </div>
+            <div className="botshield-command-actions">
+              <BotShieldActionButton
+                variant="primary"
+                onClick={
+                  storefrontConnected
+                    ? () => actions.setPage("detection")
+                    : actions.openThemeEditor
+                }
+              >
+                {storefrontConnected ? "Manage protection" : "Connect storefront"}
+              </BotShieldActionButton>
+              <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                View activity
+              </BotShieldActionButton>
+              <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+                Finish setup
+              </BotShieldActionButton>
+            </div>
           </div>
           <div className="botshield-command-panel">
             <div className="botshield-command-panel-row">
@@ -1124,11 +1145,105 @@ function OverviewPage({ model, actions }) {
       </div>
 
       <s-grid
-        gridTemplateColumns="minmax(0, 1.35fr) minmax(300px, 0.85fr)"
+        gridTemplateColumns="repeat(auto-fit, minmax(260px, 1fr))"
         gap="large"
       >
-        <ProtectionStatusCard model={model} actions={actions} />
-        <QuickActionsCard model={model} actions={actions} />
+        <BotShieldCard
+          title="Protection policy"
+          subtitle="How BotShield responds to storefront visitors."
+          badge={<BotShieldStatusBadge status={responseMode.status} />}
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("detection")}>
+              Manage
+            </BotShieldActionButton>
+          }
+        >
+          <s-stack gap="base">
+            <div className="botshield-status-value">{responseMode.label}</div>
+            <s-text color="subdued">{responseMode.detail}</s-text>
+            <s-stack direction="inline" gap="small">
+              <BotShieldStatusBadge
+                status={model.strictMode ? "active" : "monitoring_only"}
+                label={model.strictMode ? "Strict Mode" : model.blockLevel}
+              />
+              <BotShieldStatusBadge
+                status={model.autoBlock ? "active" : "monitoring_only"}
+                label={model.autoBlock ? "Auto Block on" : "Monitoring only"}
+              />
+            </s-stack>
+          </s-stack>
+        </BotShieldCard>
+        <BotShieldCard
+          title="Setup readiness"
+          subtitle="Launch-critical setup items completed."
+          badge={
+            <BotShieldStatusBadge
+              status={
+                setupComplete === setupItems.length ? "active" : "setup_required"
+              }
+              label={`${setupComplete}/${setupItems.length} ready`}
+            />
+          }
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+              Review
+            </BotShieldActionButton>
+          }
+        >
+          <s-stack gap="base">
+            <div className="botshield-progress-track">
+              <div
+                className="botshield-progress-fill"
+                style={{
+                  width: `${Math.round((setupComplete / setupItems.length) * 100)}%`,
+                }}
+              />
+            </div>
+            <s-text color="subdued">
+              {setupComplete === setupItems.length
+                ? "BotShield is fully configured for the current launch checklist."
+                : `${setupItems.length - setupComplete} setup item${
+                    setupItems.length - setupComplete === 1 ? "" : "s"
+                  } still need attention.`}
+            </s-text>
+          </s-stack>
+        </BotShieldCard>
+        <BotShieldCard
+          title="Merchant notifications"
+          subtitle="Alerts and billing status for production operation."
+          badge={
+            <BotShieldStatusBadge
+              status={emailReady ? "active" : "setup_required"}
+              label={emailReady ? "Alerts ready" : "Action needed"}
+            />
+          }
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("policy")}>
+              Configure
+            </BotShieldActionButton>
+          }
+        >
+          <s-stack>
+            <StatusRow
+              label="Email alerts"
+              detail={
+                emailReady
+                  ? model.alertEmail || "Recipient configured"
+                  : "Configure the provider and recipient."
+              }
+              status={emailReady ? "active" : "setup_required"}
+            />
+            <StatusRow
+              label="Billing"
+              detail={
+                model.billingStatus?.active
+                  ? model.billingStatus.subscription?.name || "Active plan"
+                  : "Subscription is not verified yet."
+              }
+              status={model.billingStatus?.active ? "active" : "setup_required"}
+            />
+          </s-stack>
+        </BotShieldCard>
       </s-grid>
 
       <div className="botshield-section-heading">

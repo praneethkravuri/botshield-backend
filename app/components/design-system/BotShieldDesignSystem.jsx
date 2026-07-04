@@ -265,6 +265,12 @@ export function BotShieldAppFrame({ children }) {
           gap: 10px;
           margin-top: 22px;
         }
+        .botshield-command-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 24px;
+        }
         .botshield-command-panel {
           border: 1px solid var(--botshield-border);
           border-radius: 14px;
