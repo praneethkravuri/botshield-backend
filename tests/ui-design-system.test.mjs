@@ -145,9 +145,12 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Recent email activity/);
   assert.match(source, /cooldown protection/);
   assert.match(source, /Notification settings/);
-  assert.match(source, /Current plan/);
-  assert.match(source, /Subscription details/);
-  assert.match(source, /What happens next/);
+  assert.match(source, /Billing overview/);
+  assert.match(source, /Plan details/);
+  assert.match(source, /Activation checklist/);
+  assert.match(source, /Safe fallback/);
+  assert.match(source, /Readiness checks/);
+  assert.match(source, /Merchant setup flow/);
   assert.doesNotMatch(source, /Launch checklist/);
   assert.doesNotMatch(source, /Reviewer test plan/);
   assert.doesNotMatch(source, /Partner API credentials/);
@@ -229,9 +232,9 @@ test("Setup experience uses verified checklist rows with contextual actions", as
   );
 
   assert.match(source, /Setup & Help/);
-  assert.match(source, /Finish setup/);
-  assert.match(source, /Launch readiness/);
-  assert.match(source, /Verify protection in 4 steps/);
+  assert.match(source, /Finish launch setup/);
+  assert.match(source, /Readiness checks/);
+  assert.match(source, /Merchant setup flow/);
   assert.match(source, /How BotShield works/);
   assert.doesNotMatch(source, /Reviewer and merchant guidance/);
   assert.doesNotMatch(source, /before submitting/i);

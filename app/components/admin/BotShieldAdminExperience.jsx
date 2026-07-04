@@ -2712,10 +2712,11 @@ function BillingPage({ model, actions }) {
   const billingActive = Boolean(model.billingStatus?.active);
   const trialRemaining =
     model.billingStatus?.subscription?.trialDaysRemaining ?? null;
+  const planDetail = `${planName} · $${monthlyPrice.toFixed(2)}/month · ${trialDays}-day trial`;
   return (
     <Screen
       title="Subscription"
-      subtitle="Manage your BotShield plan and billing status."
+      subtitle="Review plan access, Shopify billing verification, and what happens before activation."
       actions={
         <s-stack direction="inline" gap="small">
           <BotShieldAsyncButton
@@ -2729,11 +2730,11 @@ function BillingPage({ model, actions }) {
       }
     >
       <BotShieldCard
-        title="Current plan"
+        title="Billing overview"
         subtitle={
           billingActive
-            ? "Your subscription is active and managed by Shopify."
-            : "BotShield will continue monitoring your storefront until billing is active."
+            ? "Shopify has verified the active subscription for this store."
+            : "BotShield is ready for billing activation through Shopify."
         }
         badge={<BotShieldStatusBadge status={status.technicalStatus} />}
         actions={
@@ -2773,24 +2774,25 @@ function BillingPage({ model, actions }) {
             />
             <Metric
               label="Billing status"
-              value={billingActive ? "Active" : "Needs activation"}
+              value={billingActive ? "Verified" : "Needs activation"}
               detail={status.description}
               status={status.technicalStatus}
             />
             <Metric
               label="Protection"
-              value={billingActive ? "Plan active" : "Monitoring"}
+              value={billingActive ? "Full access" : "Monitoring"}
               detail={
                 billingActive
-                  ? "Billing is verified for this store."
-                  : "Protection remains in monitoring mode until billing is active."
+                  ? "Plan access is verified for this store."
+                  : "Keep monitoring available until the Shopify plan is approved."
               }
               status={billingActive ? "active" : "monitoring_only"}
             />
           </s-grid>
           {!billingActive ? (
             <BotShieldBanner tone="warning" title="Billing is not fully verified">
-              Activate the Shopify subscription to finish billing setup.
+              Activate the Shopify subscription before charging live merchants
+              or turning on paid-plan access controls.
             </BotShieldBanner>
           ) : (
             <BotShieldBanner tone="success" title="Billing verification passed">
@@ -2806,8 +2808,8 @@ function BillingPage({ model, actions }) {
         gap="base"
       >
         <BotShieldCard
-          title="Subscription details"
-          subtitle="Billing is managed by Shopify."
+          title="Plan details"
+          subtitle="The plan merchants approve in Shopify."
         >
           <s-stack>
           <StatusRow
@@ -2817,7 +2819,7 @@ function BillingPage({ model, actions }) {
           />
             <StatusRow
               label="Plan"
-              detail={`${planName} · $${monthlyPrice.toFixed(2)}/month · ${trialDays}-day trial`}
+              detail={planDetail}
               status={status.technicalStatus}
             />
             <StatusRow
@@ -2832,8 +2834,8 @@ function BillingPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
         <BotShieldCard
-          title="What happens next"
-          subtitle="BotShield keeps storefront monitoring available while billing is being activated."
+          title="Activation checklist"
+          subtitle="Keep launch behavior clear while billing is being finalized."
         >
           <s-stack>
             <StatusRow
@@ -2859,6 +2861,11 @@ function BillingPage({ model, actions }) {
               label="Billing provider"
               detail="Plan approval, trial, and subscription changes are handled by Shopify."
               status="active"
+            />
+            <StatusRow
+              label="Safe fallback"
+              detail="If billing cannot be verified, BotShield stays in monitoring-only mode."
+              status="monitoring_only"
             />
           </s-stack>
         </BotShieldCard>
@@ -2935,7 +2942,7 @@ function SetupPage({ model, actions }) {
   return (
     <Screen
       title="Setup & Help"
-      subtitle="Finish BotShield setup, confirm storefront connection, and get help."
+      subtitle="Confirm BotShield is connected, configured, and ready for real storefront protection."
       actions={
         <BotShieldAsyncButton
           action={actions.refresh}
@@ -2947,13 +2954,13 @@ function SetupPage({ model, actions }) {
       }
     >
       <BotShieldCard
-        title={setupComplete ? "BotShield is ready" : "Finish setup"}
+        title={setupComplete ? "Launch checks complete" : "Finish launch setup"}
         subtitle={
           setupComplete
             ? "Every required setup item is verified from live app data."
             : nextItem
               ? `Next step: ${nextItem.label}`
-              : "Review each setup area to finish BotShield setup."
+              : "Review each setup area before launch."
         }
         badge={
           <BotShieldStatusBadge
@@ -3041,13 +3048,13 @@ function SetupPage({ model, actions }) {
                 ) : null
               }
             >
-              Complete the remaining checklist items before relying on BotShield
-              for automated storefront response.
+              Complete the remaining checklist items before treating BotShield
+              as launch-ready for a live merchant.
             </BotShieldBanner>
           ) : (
             <BotShieldBanner tone="success" title="Setup verified">
               BotShield has verified storefront connection, protection status,
-              and launch readiness checks from production data.
+              and setup readiness from production data.
             </BotShieldBanner>
           )}
         </s-stack>
@@ -3063,8 +3070,8 @@ function SetupPage({ model, actions }) {
           showViewSetupAction={false}
         />
         <BotShieldCard
-          title="Launch readiness"
-          subtitle="Live checks BotShield can verify automatically."
+          title="Readiness checks"
+          subtitle="Live signals BotShield can verify automatically."
         >
           <s-stack>
             <StatusRow
@@ -3126,8 +3133,8 @@ function SetupPage({ model, actions }) {
       </s-grid>
 
       <BotShieldCard
-        title="Verify protection in 4 steps"
-        subtitle="Use these steps to confirm BotShield is connected and ready."
+        title="Merchant setup flow"
+        subtitle="The exact steps a merchant follows after installing BotShield."
       >
         <s-stack>
           {testSteps.map((step, index) => (
