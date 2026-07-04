@@ -149,24 +149,31 @@ export function BotShieldAppFrame({ children }) {
           box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
         }
         .botshield-page-content {
-          width: min(1180px, calc(100vw - 64px));
+          width: min(1160px, calc(100vw - 64px));
           margin: 0 auto;
-          padding: 36px 0 76px;
+          padding: 32px 0 80px;
         }
         .botshield-page-content--wide {
-          width: min(1560px, calc(100vw - 32px));
+          width: min(1480px, calc(100vw - 40px));
         }
         .botshield-page-heading {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 24px;
+          gap: 24px;
+          margin-bottom: 28px;
+          padding: 22px 24px;
+          background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 250, 250, 0.96)),
+            var(--botshield-surface);
+          border: 1px solid var(--botshield-border);
+          border-radius: 16px;
+          box-shadow: var(--botshield-shadow-soft);
         }
         .botshield-page-title {
           margin: 0;
           color: var(--botshield-text);
-          font-size: 28px;
+          font-size: 30px;
           line-height: 1.15;
           font-weight: 700;
           letter-spacing: -0.02em;
@@ -183,7 +190,7 @@ export function BotShieldAppFrame({ children }) {
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           box-shadow: var(--botshield-shadow-soft);
-          padding: 26px;
+          padding: 28px;
         }
         .botshield-surface:hover {
           border-color: var(--botshield-border-strong);
@@ -208,17 +215,19 @@ export function BotShieldAppFrame({ children }) {
           position: relative;
           overflow: hidden;
           min-height: 134px;
-          background: var(--botshield-surface);
+          background:
+            linear-gradient(180deg, #ffffff, #fbfbfb),
+            var(--botshield-surface);
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           box-shadow: var(--botshield-shadow-soft);
-          padding: 20px;
+          padding: 22px;
         }
         .botshield-metric::before {
           content: "";
           position: absolute;
           inset: 0 auto 0 0;
-          width: 2px;
+          width: 3px;
           background: var(--botshield-muted);
         }
         .botshield-metric--success::before { background: #16a34a; }
@@ -236,11 +245,22 @@ export function BotShieldAppFrame({ children }) {
           position: relative;
           overflow: hidden;
           min-height: 156px;
-          background: var(--botshield-surface);
+          background:
+            linear-gradient(180deg, #ffffff, #fbfbfb),
+            var(--botshield-surface);
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           box-shadow: var(--botshield-shadow-soft);
-          padding: 24px;
+          padding: 26px;
+          transition:
+            border-color 120ms ease,
+            box-shadow 120ms ease,
+            transform 120ms ease;
+        }
+        .botshield-outcome-card:hover {
+          border-color: var(--botshield-border-strong);
+          box-shadow: var(--botshield-shadow-raised);
+          transform: translateY(-1px);
         }
         .botshield-outcome-card::after {
           content: "";
@@ -283,8 +303,15 @@ export function BotShieldAppFrame({ children }) {
           grid-template-columns: minmax(0, 1fr) auto;
           gap: 16px;
           align-items: center;
-          padding: 17px 0;
+          margin: 0 -10px;
+          padding: 17px 10px;
           border-bottom: 1px solid var(--botshield-border);
+          border-radius: 10px;
+          transition: background 120ms ease;
+        }
+        .botshield-checklist-row:hover,
+        .botshield-activity-row:hover {
+          background: #fafafa;
         }
         .botshield-checklist-row:last-child,
         .botshield-activity-row:last-child {
@@ -311,7 +338,9 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-rule-card {
           min-height: 214px;
-          background: var(--botshield-surface);
+          background:
+            linear-gradient(180deg, #ffffff, #fbfbfb),
+            var(--botshield-surface);
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           box-shadow: var(--botshield-shadow-soft);
@@ -356,7 +385,9 @@ export function BotShieldAppFrame({ children }) {
           width: 100%;
           min-height: 136px;
           text-align: start;
-          background: var(--botshield-surface);
+          background:
+            linear-gradient(180deg, #ffffff, #fbfbfb),
+            var(--botshield-surface);
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           padding: 20px;
@@ -375,7 +406,9 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-mode-card--selected {
           border-color: #85cbbf;
-          background: #ecfdf5;
+          background:
+            linear-gradient(180deg, #f1fbf7, #ffffff),
+            #ecfdf5;
           box-shadow: inset 0 0 0 1px rgba(12, 127, 117, 0.12);
         }
         .botshield-briefing-row {
@@ -385,6 +418,9 @@ export function BotShieldAppFrame({ children }) {
           align-items: center;
           padding: 16px 0;
           border-bottom: 1px solid var(--botshield-border);
+        }
+        .botshield-briefing-row:hover {
+          background: #fafafa;
         }
         .botshield-briefing-row:last-child {
           border-bottom: 0;
@@ -445,9 +481,9 @@ export function BotShieldAppFrame({ children }) {
           border-radius: 14px;
           border: 1px solid rgba(44, 110, 203, 0.18);
           background:
-            linear-gradient(135deg, rgba(44, 110, 203, 0.08), rgba(255, 255, 255, 0) 42%),
+            linear-gradient(135deg, rgba(44, 110, 203, 0.08), rgba(255, 255, 255, 0) 48%),
             #ffffff;
-          padding: 16px;
+          padding: 18px;
         }
         .botshield-evidence-chip {
           display: inline-flex;
