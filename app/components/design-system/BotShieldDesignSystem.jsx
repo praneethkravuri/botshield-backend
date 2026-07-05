@@ -184,6 +184,67 @@ export function BotShieldAppFrame({ children }) {
           font-size: 15px;
           line-height: 1.45;
         }
+        .botshield-overview-app-title {
+          display: inline-flex;
+          align-items: center;
+          gap: 9px;
+          color: var(--botshield-text);
+          font-size: 22px;
+          line-height: 1.1;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+        }
+        .botshield-overview-app-mark {
+          width: 24px;
+          height: 24px;
+          display: inline-grid;
+          place-items: center;
+          border-radius: 7px;
+          background: var(--botshield-teal);
+          color: #ffffff;
+          font-size: 16px;
+          font-weight: 760;
+          box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+        }
+        .botshield-overview-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 24px;
+          padding: 18px 0 2px;
+        }
+        .botshield-overview-metric-card {
+          min-height: 138px;
+          box-sizing: border-box;
+          background: #ffffff;
+          border: 1px solid var(--botshield-border);
+          border-radius: var(--botshield-radius);
+          box-shadow: var(--botshield-shadow-soft);
+          padding: 22px 24px;
+        }
+        .botshield-overview-metric-value {
+          color: var(--botshield-text);
+          font-size: 34px;
+          line-height: 38px;
+          font-weight: 760;
+          letter-spacing: -0.035em;
+        }
+        .botshield-overview-row {
+          padding: 16px 0;
+          border-bottom: 1px solid var(--botshield-border);
+        }
+        .botshield-overview-row:first-child {
+          padding-top: 0;
+        }
+        .botshield-overview-row:last-child {
+          padding-bottom: 0;
+          border-bottom: 0;
+        }
+        .botshield-overview-progress {
+          width: min(360px, 100%);
+          height: 6px;
+          margin-top: 4px;
+        }
         .botshield-surface {
           box-sizing: border-box;
           background: var(--botshield-surface);

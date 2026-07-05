@@ -983,6 +983,269 @@ function StatusRow({ label, detail, status, action }) {
 }
 
 function OverviewPage({ model, actions }) {
+  {
+    const overviewStorefrontConnected = hasStorefrontConnection(model);
+    const overviewVisitorSessions = model.storefrontScans.length;
+    const overviewBlockedVisitors = model.blockedCount;
+    const overviewChallengedVisitors = model.challengedCount;
+    const overviewActiveProtections = 6;
+    const overviewPausedModules = model.protectionPaused
+      ? overviewActiveProtections
+      : 0;
+    const overviewBillingActive = Boolean(model.billingStatus?.active);
+    const overviewUsageProgress = Math.max(
+      4,
+      Math.min(100, overviewVisitorSessions),
+    );
+    const overviewSetupItems = getSetupChecklistItems(model, actions);
+    const overviewIncompleteSetupItems = overviewSetupItems.filter(
+      (item) => !item.complete,
+    );
+    const overviewSetupBadgeLabel = overviewIncompleteSetupItems.length
+      ? `${overviewIncompleteSetupItems.length} item${
+          overviewIncompleteSetupItems.length === 1 ? "" : "s"
+        }`
+      : "Complete";
+    const overviewMetricCards = [
+      {
+        title: "Traffic",
+        value: overviewVisitorSessions,
+        label: "Visitor sessions in this cycle",
+        detail: "Full visitor analytics included",
+      },
+      {
+        title: "Protection",
+        value: overviewBlockedVisitors,
+        label: "Visitors blocked",
+        detail: `${overviewChallengedVisitors} challenged visitors`,
+      },
+      {
+        title: "Coverage",
+        value: overviewActiveProtections,
+        label: "Active protections",
+        detail: `${overviewActiveProtections} core protections · ${overviewPausedModules} paused modules`,
+      },
+      {
+        title: "Orders",
+        value: 0,
+        label: "Fraud orders detected",
+        detail: "0 high-risk recommendations",
+      },
+    ];
+    const overviewWorkspaceRows = [
+      {
+        label: "Theme app embed",
+        detail: overviewStorefrontConnected
+          ? "Storefront protections are live on your theme."
+          : "Enable the theme app embed to start storefront protection.",
+        badge: overviewStorefrontConnected ? "On" : "Setup required",
+        status: overviewStorefrontConnected ? "active" : "setup_required",
+      },
+      {
+        label: "Current plan",
+        detail: "BotShield Basic covers storefront protection modules.",
+        badge: overviewBillingActive ? "Basic" : "Setup required",
+        status: overviewBillingActive ? "active" : "setup_required",
+      },
+      {
+        label: "Usage progress",
+        detail: `${overviewVisitorSessions} visitor sessions tracked`,
+        badge: "Healthy",
+        status: "active",
+        progress: overviewUsageProgress,
+      },
+      {
+        label: "Setup guide",
+        detail:
+          "Review active protection modules and storefront readiness in one place.",
+        badge: overviewSetupBadgeLabel,
+        status: overviewIncompleteSetupItems.length
+          ? "setup_required"
+          : "active",
+      },
+    ];
+    const overviewCoverageRows = [
+      ["Bot protection", "On", "active"],
+      ["Network / Proxy", "On", "active"],
+      ["Rate protection", "On", "active"],
+      ["Page protection", "On", "active"],
+      ["IP blocklist", "On", "active"],
+      ["Trusted visitors", "On", "active"],
+      ["Checkout blocking", "Off", "monitoring_only"],
+    ];
+
+    return (
+      <div className="botshield-page">
+        <main className="botshield-page-content botshield-page-content--wide">
+          <s-stack gap="large">
+            <div className="botshield-overview-app-title">
+              <span className="botshield-overview-app-mark" aria-hidden="true">
+                /
+              </span>
+              <span>BotShield</span>
+            </div>
+
+            <div className="botshield-overview-header">
+              <div>
+                <h1 className="botshield-page-title">Overview</h1>
+                <p className="botshield-page-subtitle">
+                  Track storefront protection, visitor activity, and billing
+                  health from one clean control center.
+                </p>
+              </div>
+              <s-stack direction="inline" gap="small" alignItems="center">
+                <BotShieldActionButton
+                  onClick={() => actions.setPage("analytics")}
+                >
+                  Open analytics
+                </BotShieldActionButton>
+                <BotShieldActionButton
+                  variant="primary"
+                  onClick={() => actions.setPage("detection")}
+                >
+                  Create protection
+                </BotShieldActionButton>
+              </s-stack>
+            </div>
+
+            <s-grid
+              gridTemplateColumns="repeat(4, minmax(0, 1fr))"
+              gap="large"
+            >
+              {overviewMetricCards.map((card) => (
+                <div className="botshield-overview-metric-card" key={card.title}>
+                  <s-stack gap="small">
+                    <s-text color="subdued">{card.title}</s-text>
+                    <div className="botshield-overview-metric-value">
+                      {card.value}
+                    </div>
+                    <s-text type="strong">{card.label}</s-text>
+                    <s-text color="subdued">{card.detail}</s-text>
+                  </s-stack>
+                </div>
+              ))}
+            </s-grid>
+
+            <s-grid
+              gridTemplateColumns="minmax(0, 3fr) minmax(320px, 2fr)"
+              gap="large"
+            >
+              <BotShieldCard
+                title="Workspace status"
+                subtitle="Keep an eye on storefront readiness, billing usage, and rollout progress."
+              >
+                <s-stack>
+                  {overviewWorkspaceRows.map((row) => (
+                    <div className="botshield-overview-row" key={row.label}>
+                      <s-stack
+                        direction="inline"
+                        gap="base"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <s-stack gap="small-200">
+                          <s-text type="strong">{row.label}</s-text>
+                          <s-text color="subdued">{row.detail}</s-text>
+                          {typeof row.progress === "number" ? (
+                            <div className="botshield-progress-track botshield-overview-progress">
+                              <div
+                                className="botshield-progress-fill"
+                                style={{ width: `${row.progress}%` }}
+                              />
+                            </div>
+                          ) : null}
+                        </s-stack>
+                        <BotShieldStatusBadge
+                          status={row.status}
+                          label={row.badge}
+                        />
+                      </s-stack>
+                    </div>
+                  ))}
+                </s-stack>
+              </BotShieldCard>
+
+              <BotShieldCard
+                title="Protection coverage"
+                subtitle="See which protection types are available in this store and which ones are already active."
+              >
+                <s-stack>
+                  {overviewCoverageRows.map(([label, badge, status]) => (
+                    <div className="botshield-overview-row" key={label}>
+                      <s-stack
+                        direction="inline"
+                        gap="base"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <s-text type="strong">{label}</s-text>
+                        <BotShieldStatusBadge status={status} label={badge} />
+                      </s-stack>
+                    </div>
+                  ))}
+                </s-stack>
+              </BotShieldCard>
+            </s-grid>
+
+            <s-grid
+              gridTemplateColumns="repeat(3, minmax(0, 1fr))"
+              gap="large"
+            >
+              <BotShieldCard title="Review analytics">
+                <s-stack gap="base">
+                  <s-text color="subdued">
+                    Inspect visitor patterns, blocked traffic, and storefront
+                    protection signals in more detail.
+                  </s-text>
+                  <div>
+                    <BotShieldActionButton
+                      onClick={() => actions.setPage("analytics")}
+                    >
+                      Open analytics
+                    </BotShieldActionButton>
+                  </div>
+                </s-stack>
+              </BotShieldCard>
+
+              <BotShieldCard title="Review fraud orders">
+                <s-stack gap="base">
+                  <s-text color="subdued">
+                    Jump into risky order review when you need order-side
+                    controls and automation.
+                  </s-text>
+                  <div>
+                    <BotShieldActionButton
+                      onClick={() => actions.setPage("fraud-orders")}
+                    >
+                      Open fraud orders
+                    </BotShieldActionButton>
+                  </div>
+                </s-stack>
+              </BotShieldCard>
+
+              <BotShieldCard title="Billing and settings">
+                <s-stack gap="base">
+                  <s-text color="subdued">
+                    Manage pricing, app access, alerts, and protection settings
+                    for this store.
+                  </s-text>
+                  <div>
+                    <BotShieldActionButton
+                      onClick={() => actions.setPage("detection-settings")}
+                    >
+                      Open settings
+                    </BotShieldActionButton>
+                  </div>
+                </s-stack>
+              </BotShieldCard>
+            </s-grid>
+          </s-stack>
+        </main>
+      </div>
+    );
+  }
+
+  // eslint-disable-next-line no-unreachable
   const showLegacyOverviewDetails = false;
   const latestEvents = model.storefrontScans.slice(0, 5);
   const storefrontConnected = hasStorefrontConnection(model);

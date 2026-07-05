@@ -3633,9 +3633,11 @@ export default function Index() {
   const openPolarisPage = (nextPage) => {
     const pageToView = {
       dashboard: "/app",
+      analytics: "/app/analytics",
       security: "/app/protection-rules",
       detection: "/app/protection-rules",
       incidents: "/app/visitors",
+      "fraud-orders": "/app/fraud-orders",
       blocklist: "/app/blocklist",
       trusted: "/app/trusted-visitors",
       settings: "/app/alerts-reports",
