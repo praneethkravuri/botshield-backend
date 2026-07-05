@@ -253,7 +253,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
     "utf8",
   );
 
-  assert.match(source, />Analytics</);
+  assert.match(source, />Overview</);
   assert.match(source, />Protection</);
   assert.match(source, />Visitors</);
   assert.match(source, />Settings</);
@@ -261,7 +261,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
   assert.match(source, /href="\/app\/protection-rules"/);
   assert.match(source, /href="\/app\/visitors"/);
   assert.match(source, /href="\/app\/settings"/);
-  assert.doesNotMatch(source, />Overview</);
+  assert.doesNotMatch(source, />Analytics</);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Blocklist</);
   assert.doesNotMatch(source, />Trusted Visitors</);
