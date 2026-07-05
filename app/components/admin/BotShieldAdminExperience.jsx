@@ -999,12 +999,12 @@ function OverviewPage({ model, actions }) {
     const overviewStorefrontConnected = hasStorefrontConnection(model);
     const overviewVisitorSessions = model.storefrontScans.length;
     const overviewBlockedVisitors = model.blockedCount;
-    const overviewChallengedVisitors = model.challengedCount;
-    const overviewActiveProtections = 6;
-    const overviewPausedModules = model.protectionPaused
-      ? overviewActiveProtections
-      : 0;
     const overviewBillingActive = Boolean(model.billingStatus?.active);
+    const overviewShopDomain =
+      model.protectionStatus?.shop || "this store";
+    const overviewBlockRate = overviewVisitorSessions
+      ? Math.round((overviewBlockedVisitors / overviewVisitorSessions) * 100)
+      : 0;
     const overviewUsageProgress = Math.max(
       4,
       Math.min(100, overviewVisitorSessions),
@@ -1018,6 +1018,47 @@ function OverviewPage({ model, actions }) {
           overviewIncompleteSetupItems.length === 1 ? "" : "s"
         }`
       : "Complete";
+    const ipProtectionOn = model.blockedIPs.length > 0;
+    const locationProtectionOn = model.trafficOrigins.length > 0;
+    const pageProtectionOn = overviewStorefrontConnected;
+    const productProtectionOn = false;
+    const referrerProtectionOn = false;
+    const vpnProtectionOn = Boolean(
+      model.securityPosture?.report?.topReasonCodes?.some((item) =>
+        /VPN|DATACENTER|HOSTING_PROVIDER|ASN|HIGH_RISK_NETWORK/i.test(
+          item.label,
+        ),
+      ),
+    );
+    const checkoutBlockingOn = false;
+    const overviewCoverageRows = [
+      ["IP protection", ipProtectionOn],
+      ["Location protection", locationProtectionOn],
+      ["Page protection", pageProtectionOn],
+      ["Product protection", productProtectionOn],
+      ["Referrer protection", referrerProtectionOn],
+      ["VPN / Proxy", vpnProtectionOn],
+      ["Checkout blocking", checkoutBlockingOn],
+    ];
+    const overviewCoreProtections = overviewCoverageRows.filter(
+      ([label, enabled]) =>
+        enabled &&
+        [
+          "IP protection",
+          "Location protection",
+          "Page protection",
+          "Product protection",
+        ].includes(label),
+    ).length;
+    const overviewExtendedModules = overviewCoverageRows.filter(
+      ([label, enabled]) =>
+        enabled &&
+        ["Referrer protection", "VPN / Proxy", "Checkout blocking"].includes(
+          label,
+        ),
+    ).length;
+    const overviewActiveProtections =
+      overviewCoreProtections + overviewExtendedModules;
     const overviewMetricCards = [
       {
         title: "Traffic",
@@ -1029,13 +1070,13 @@ function OverviewPage({ model, actions }) {
         title: "Protection",
         value: overviewBlockedVisitors,
         label: "Visitors blocked",
-        detail: `${overviewChallengedVisitors} challenged visitors`,
+        detail: `${overviewBlockRate}% blocked rate`,
       },
       {
         title: "Coverage",
         value: overviewActiveProtections,
         label: "Active protections",
-        detail: `${overviewActiveProtections} core protections · ${overviewPausedModules} paused modules`,
+        detail: `${overviewCoreProtections} core protections · ${overviewExtendedModules} extended modules`,
       },
       {
         title: "Orders",
@@ -1050,13 +1091,17 @@ function OverviewPage({ model, actions }) {
         detail: overviewStorefrontConnected
           ? "Storefront protections are live on your theme."
           : "Enable the theme app embed to start storefront protection.",
-        badge: overviewStorefrontConnected ? "On" : "Setup required",
+        badge: overviewStorefrontConnected ? "On" : "Off",
         status: overviewStorefrontConnected ? "active" : "setup_required",
       },
       {
         label: "Current plan",
-        detail: "BotShield Basic covers storefront protection modules.",
-        badge: overviewBillingActive ? "Basic" : "Setup required",
+        detail: overviewBillingActive
+          ? `${model.billingStatus?.subscription?.name || "BotShield Basic"} covers all protection modules.`
+          : "BotShield Basic covers storefront protection modules.",
+        badge: overviewBillingActive
+          ? model.billingStatus?.subscription?.name || "Basic"
+          : "Setup required",
         status: overviewBillingActive ? "active" : "setup_required",
       },
       {
@@ -1076,29 +1121,15 @@ function OverviewPage({ model, actions }) {
           : "active",
       },
     ];
-    const overviewCoverageRows = [
-      ["Bot protection", "On", "active"],
-      ["Network / Proxy", "On", "active"],
-      ["Rate protection", "On", "active"],
-      ["Page protection", "On", "active"],
-      ["IP blocklist", "On", "active"],
-      ["Trusted visitors", "On", "active"],
-      ["Checkout blocking", "Off", "monitoring_only"],
-    ];
-
     return (
       <div className="botshield-page">
         <main className="botshield-page-content botshield-overview-content">
           <s-stack gap="large">
-            <div className="botshield-overview-app-title">
-              <s-text type="strong">BotShield</s-text>
-            </div>
-
             <div className="botshield-overview-header">
               <div>
                 <h1 className="botshield-overview-title">Overview</h1>
                 <p className="botshield-overview-subtitle">
-                  Track storefront protection, visitor activity, and billing
+                  Track storefront protection, fraud workflows, and billing
                   health from one clean control center.
                 </p>
               </div>
@@ -1176,7 +1207,7 @@ function OverviewPage({ model, actions }) {
                 subtitle="See which protection types are available in this store and which ones are already active."
               >
                 <s-stack>
-                  {overviewCoverageRows.map(([label, badge]) => (
+                  {overviewCoverageRows.map(([label, enabled]) => (
                     <div className="botshield-overview-row" key={label}>
                       <s-stack
                         direction="inline"
@@ -1185,8 +1216,8 @@ function OverviewPage({ model, actions }) {
                         alignItems="center"
                       >
                         <s-text type="strong">{label}</s-text>
-                        <OverviewBadge muted={badge === "Off"}>
-                          {badge}
+                        <OverviewBadge muted={!enabled}>
+                          {enabled ? "On" : "Off"}
                         </OverviewBadge>
                       </s-stack>
                     </div>
@@ -1231,8 +1262,8 @@ function OverviewPage({ model, actions }) {
               <BotShieldCard title="Billing and settings">
                 <s-stack gap="base">
                   <s-text color="subdued">
-                    Manage pricing, app access, alerts, and protection settings
-                    for this store.
+                    Manage pricing, app access, and content protection for{" "}
+                    {overviewShopDomain}.
                   </s-text>
                   <div>
                     <BotShieldActionButton
