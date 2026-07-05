@@ -253,15 +253,15 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
     "utf8",
   );
 
-  assert.match(source, />Overview</);
+  assert.match(source, />Analytics</);
   assert.match(source, />Protection</);
   assert.match(source, />Visitors</);
   assert.match(source, />Settings</);
-  assert.match(source, /href="\/app"/);
+  assert.match(source, /href="\/app\/analytics"/);
   assert.match(source, /href="\/app\/protection-rules"/);
   assert.match(source, /href="\/app\/visitors"/);
   assert.match(source, /href="\/app\/settings"/);
-  assert.doesNotMatch(source, />Analytics</);
+  assert.doesNotMatch(source, />Overview</);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Blocklist</);
   assert.doesNotMatch(source, />Trusted Visitors</);
@@ -284,6 +284,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   );
 
   assert.match(source, /dashboard: "dashboard"/);
+  assert.match(source, /analytics: "analytics"/);
   assert.match(source, /rules: "security"/);
   assert.match(source, /"protection-rules": "security"/);
   assert.match(source, /visitors: "incidents"/);
@@ -294,6 +295,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /activity: "incidents"/);
   assert.match(source, /incidents: "incidents"/);
   assert.match(source, /"\/app\/protection-rules": "security"/);
+  assert.match(source, /"\/app\/analytics": "analytics"/);
   assert.match(source, /"\/app\/visitors": "incidents"/);
   assert.match(source, /"\/app\/blocklist": "blocklist"/);
   assert.match(source, /"\/app\/trusted-visitors": "trusted"/);

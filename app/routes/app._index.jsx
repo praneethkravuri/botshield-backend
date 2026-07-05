@@ -2833,6 +2833,7 @@ export default function Index() {
     const requestedView = new URLSearchParams(location.search).get("view");
     const pageMap = {
       dashboard: "dashboard",
+      analytics: "analytics",
       rules: "security",
       "protection-rules": "security",
       visitors: "incidents",
@@ -2850,6 +2851,7 @@ export default function Index() {
     };
     const pathPageMap = {
       "/app": "dashboard",
+      "/app/analytics": "analytics",
       "/app/protection-rules": "security",
       "/app/visitors": "incidents",
       "/app/blocklist": "blocklist",
@@ -2861,6 +2863,7 @@ export default function Index() {
     };
     const legacyViewPathMap = {
       dashboard: "/app",
+      analytics: "/app/analytics",
       rules: "/app/protection-rules",
       "protection-rules": "/app/protection-rules",
       visitors: "/app/visitors",

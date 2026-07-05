@@ -1594,6 +1594,130 @@ function OverviewPage({ model, actions }) {
   );
 }
 
+function AnalyticsPage({ model, actions }) {
+  const recentEvents = model.storefrontScans.filter((event) =>
+    inRecentDays(event.createdAt, 7),
+  );
+  const previousEvents = model.storefrontScans.filter((event) =>
+    inRecentDays(event.createdAt, 7, 7),
+  );
+  const recentBlocked = recentEvents.filter(
+    (event) => event.actionTaken === "blocked",
+  ).length;
+  const recentChallenged = recentEvents.filter(
+    (event) => event.actionTaken === "challenged",
+  ).length;
+  const highRiskEvents = model.storefrontScans.filter(
+    (event) => event.threatLevel === "high",
+  ).length;
+  const threatSignals = (model.securityPosture?.report?.topReasonCodes || [])
+    .slice(0, 6)
+    .map((item) => ({
+      label: formatMerchantReasons([item.label]),
+      count: item.count,
+    }));
+  const topOrigins = model.trafficOrigins.slice(0, 6).map((origin) => ({
+    label:
+      [origin.city, origin.country].filter(Boolean).join(", ") ||
+      "Location unavailable",
+    count: origin.count,
+  }));
+
+  return (
+    <Screen
+      title="Analytics"
+      subtitle="Understand real storefront traffic, suspicious activity, and protection outcomes."
+      actions={
+        <BotShieldAsyncButton
+          action={actions.refresh}
+          successMessage="Analytics refreshed"
+          icon="refresh"
+        >
+          Refresh
+        </BotShieldAsyncButton>
+      }
+    >
+      <s-grid
+        gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
+        gap="large"
+      >
+        <OutcomeCard
+          label="Visitors evaluated"
+          value={model.storefrontScans.length}
+          description={`Real storefront traffic. ${formatDelta(
+            recentEvents.length,
+            previousEvents.length,
+          )}.`}
+          status="real_storefront"
+        />
+        <OutcomeCard
+          label="Threats stopped"
+          value={model.blockedCount}
+          description={`${recentBlocked} blocked in the last 7 days.`}
+          status={model.blockedCount ? "blocked" : "active"}
+        />
+        <OutcomeCard
+          label="Verification requested"
+          value={model.challengedCount}
+          description={`${recentChallenged} challenges in the last 7 days.`}
+          status={model.challengedCount ? "challenged" : "active"}
+        />
+        <OutcomeCard
+          label="High-risk activity"
+          value={highRiskEvents}
+          description="Events merchants may want to review."
+          status={highRiskEvents ? "high" : "active"}
+        />
+      </s-grid>
+
+      <s-grid
+        gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))"
+        gap="large"
+      >
+        <BotShieldCard
+          title="Top threat signals"
+          subtitle="Most frequent suspicious signals from real storefront activity."
+          actions={
+            <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+              View visitors
+            </BotShieldActionButton>
+          }
+        >
+          <InsightList
+            items={threatSignals}
+            emptyMessage="No elevated threat signals have been recorded yet."
+          />
+        </BotShieldCard>
+        <BotShieldCard
+          title="Traffic origins"
+          subtitle="Approximate locations from enriched storefront requests."
+        >
+          <InsightList
+            items={topOrigins}
+            emptyMessage="Traffic origins appear after storefront events are enriched."
+          />
+        </BotShieldCard>
+      </s-grid>
+
+      <BotShieldCard
+        title="Analytics source"
+        subtitle="BotShield separates real production analytics from diagnostics."
+      >
+        <s-stack gap="base">
+          <BotShieldInlineHelp>
+            Analytics uses real storefront decisions recorded through the
+            BotShield theme app embed and Shopify app proxy.
+          </BotShieldInlineHelp>
+          <BotShieldInlineHelp>
+            Diagnostic scans and simulations are excluded from these analytics
+            so merchant-facing numbers stay honest.
+          </BotShieldInlineHelp>
+        </s-stack>
+      </BotShieldCard>
+    </Screen>
+  );
+}
+
 function ActivityTable({ model, actions }) {
   if (!model.incidentLoading && !model.incidents.length) {
     const realOnly = model.incidentFilters.source === "real";
@@ -3432,6 +3556,9 @@ export default function BotShieldAdminExperience({ model, actions }) {
     <div className="botshield-route-transition" key={screen}>
       {screen === "dashboard" ? (
         <OverviewPage model={model} actions={actions} />
+      ) : null}
+      {screen === "analytics" ? (
+        <AnalyticsPage model={model} actions={actions} />
       ) : null}
       {screen === "incidents" ? (
         <ActivityPage model={model} actions={actions} />
