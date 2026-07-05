@@ -982,6 +982,18 @@ function StatusRow({ label, detail, status, action }) {
   );
 }
 
+function OverviewBadge({ children, muted = false }) {
+  return (
+    <span
+      className={`botshield-overview-badge${
+        muted ? " botshield-overview-badge--muted" : ""
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
 function OverviewPage({ model, actions }) {
   {
     const overviewStorefrontConnected = hasStorefrontConnection(model);
@@ -1084,11 +1096,11 @@ function OverviewPage({ model, actions }) {
 
             <div className="botshield-overview-header">
               <div>
-                <s-heading>Overview</s-heading>
-                <s-text color="subdued">
+                <h1 className="botshield-overview-title">Overview</h1>
+                <p className="botshield-overview-subtitle">
                   Track storefront protection, visitor activity, and billing
                   health from one clean control center.
-                </s-text>
+                </p>
               </div>
               <s-stack direction="inline" gap="small" alignItems="center">
                 <BotShieldActionButton
@@ -1109,10 +1121,18 @@ function OverviewPage({ model, actions }) {
               {overviewMetricCards.map((card) => (
                 <div className="botshield-overview-metric-card" key={card.title}>
                   <s-stack gap="small">
-                    <s-text color="subdued">{card.title}</s-text>
-                    <s-heading>{card.value}</s-heading>
-                    <s-text type="strong">{card.label}</s-text>
-                    <s-text color="subdued">{card.detail}</s-text>
+                    <div className="botshield-overview-metric-title">
+                      {card.title}
+                    </div>
+                    <div className="botshield-overview-metric-value">
+                      {card.value}
+                    </div>
+                    <div className="botshield-overview-metric-label">
+                      {card.label}
+                    </div>
+                    <div className="botshield-overview-metric-helper">
+                      {card.detail}
+                    </div>
                   </s-stack>
                 </div>
               ))}
@@ -1144,10 +1164,7 @@ function OverviewPage({ model, actions }) {
                             </div>
                           ) : null}
                         </s-stack>
-                        <BotShieldStatusBadge
-                          status={row.status}
-                          label={row.badge}
-                        />
+                        <OverviewBadge>{row.badge}</OverviewBadge>
                       </s-stack>
                     </div>
                   ))}
@@ -1159,7 +1176,7 @@ function OverviewPage({ model, actions }) {
                 subtitle="See which protection types are available in this store and which ones are already active."
               >
                 <s-stack>
-                  {overviewCoverageRows.map(([label, badge, status]) => (
+                  {overviewCoverageRows.map(([label, badge]) => (
                     <div className="botshield-overview-row" key={label}>
                       <s-stack
                         direction="inline"
@@ -1168,7 +1185,9 @@ function OverviewPage({ model, actions }) {
                         alignItems="center"
                       >
                         <s-text type="strong">{label}</s-text>
-                        <BotShieldStatusBadge status={status} label={badge} />
+                        <OverviewBadge muted={badge === "Off"}>
+                          {badge}
+                        </OverviewBadge>
                       </s-stack>
                     </div>
                   ))}

@@ -182,51 +182,91 @@ export function BotShieldAppFrame({ children }) {
           display: flex;
           align-items: center;
           min-height: 24px;
-          margin-bottom: -2px;
+          margin-bottom: 2px;
           color: var(--botshield-text);
         }
         .botshield-overview-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 18px;
-          padding: 10px 0 0;
+          gap: 24px;
+          padding: 14px 0 4px;
         }
         .botshield-overview-content {
-          width: min(1168px, calc(100vw - 56px));
-          padding-top: 28px;
+          width: min(1232px, calc(100vw - 56px));
+          padding-top: 30px;
         }
         .botshield-overview-content .botshield-surface {
-          padding: 20px;
+          padding: 26px;
+          box-shadow: none;
+          border-color: #d9d9d9;
+        }
+        .botshield-overview-title {
+          margin: 0;
+          color: #111111;
+          font-size: 32px;
+          line-height: 1.18;
+          font-weight: 700;
+        }
+        .botshield-overview-subtitle {
+          margin: 8px 0 0;
+          color: #616161;
+          font-size: 16px;
+          line-height: 1.45;
         }
         .botshield-overview-metric-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 16px;
+          gap: 20px;
         }
         .botshield-overview-metric-card {
-          min-height: 114px;
+          min-height: 148px;
           box-sizing: border-box;
           background: #ffffff;
-          border: 1px solid var(--botshield-border);
+          border: 1px solid #d9d9d9;
           border-radius: var(--botshield-radius);
-          box-shadow: var(--botshield-shadow-soft);
-          padding: 18px 20px;
+          box-shadow: none;
+          padding: 24px;
+        }
+        .botshield-overview-metric-title {
+          color: #616161;
+          font-size: 14px;
+          line-height: 1.25;
+        }
+        .botshield-overview-metric-value {
+          color: #111111;
+          font-size: 36px;
+          line-height: 1.05;
+          font-weight: 760;
+        }
+        .botshield-overview-metric-label {
+          color: #303030;
+          font-size: 16px;
+          line-height: 1.35;
+          font-weight: 650;
+        }
+        .botshield-overview-metric-helper {
+          color: #6b6b6b;
+          font-size: 14px;
+          line-height: 1.4;
         }
         .botshield-overview-middle-grid {
           display: grid;
-          grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
-          gap: 16px;
+          grid-template-columns: minmax(0, 3fr) minmax(340px, 2fr);
+          gap: 20px;
           align-items: start;
         }
         .botshield-overview-action-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 16px;
+          gap: 20px;
+        }
+        .botshield-overview-action-grid .botshield-surface {
+          min-height: 170px;
         }
         .botshield-overview-row {
-          padding: 12px 0;
-          border-bottom: 1px solid var(--botshield-border);
+          padding: 16px 0;
+          border-bottom: 1px solid #e3e3e3;
         }
         .botshield-overview-row:first-child {
           padding-top: 0;
@@ -238,7 +278,31 @@ export function BotShieldAppFrame({ children }) {
         .botshield-overview-progress {
           width: min(360px, 100%);
           height: 5px;
-          margin-top: 4px;
+          margin-top: 6px;
+          background: #ececec;
+        }
+        .botshield-overview-progress .botshield-progress-fill {
+          background: #1f1f1f;
+        }
+        .botshield-overview-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 22px;
+          padding: 2px 9px;
+          border-radius: 999px;
+          border: 1px solid #c9c9c9;
+          background: #f7f7f7;
+          color: #303030;
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 650;
+          white-space: nowrap;
+        }
+        .botshield-overview-badge--muted {
+          background: #ffffff;
+          color: #6b6b6b;
+          border-color: #d9d9d9;
         }
         .botshield-surface {
           box-sizing: border-box;
