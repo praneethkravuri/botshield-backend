@@ -86,13 +86,7 @@ export function BotShieldAppFrame({ children }) {
           min-height: 100vh;
           background: var(--botshield-bg);
           padding-bottom: 48px;
-          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           color: var(--botshield-text);
-        }
-        .botshield-admin-shell *,
-        .botshield-admin-shell *::before,
-        .botshield-admin-shell *::after {
-          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
         }
         .botshield-page {
           min-height: 100vh;
@@ -185,52 +179,53 @@ export function BotShieldAppFrame({ children }) {
           line-height: 1.45;
         }
         .botshield-overview-app-title {
-          display: inline-flex;
+          display: flex;
           align-items: center;
-          gap: 9px;
+          min-height: 24px;
+          margin-bottom: -2px;
           color: var(--botshield-text);
-          font-size: 22px;
-          line-height: 1.1;
-          font-weight: 700;
-          letter-spacing: -0.02em;
-        }
-        .botshield-overview-app-mark {
-          width: 24px;
-          height: 24px;
-          display: inline-grid;
-          place-items: center;
-          border-radius: 7px;
-          background: var(--botshield-teal);
-          color: #ffffff;
-          font-size: 16px;
-          font-weight: 760;
-          box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
         }
         .botshield-overview-header {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
-          gap: 24px;
-          padding: 18px 0 2px;
+          gap: 18px;
+          padding: 10px 0 0;
+        }
+        .botshield-overview-content {
+          width: min(1168px, calc(100vw - 56px));
+          padding-top: 28px;
+        }
+        .botshield-overview-content .botshield-surface {
+          padding: 20px;
+        }
+        .botshield-overview-metric-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
         }
         .botshield-overview-metric-card {
-          min-height: 138px;
+          min-height: 114px;
           box-sizing: border-box;
           background: #ffffff;
           border: 1px solid var(--botshield-border);
           border-radius: var(--botshield-radius);
           box-shadow: var(--botshield-shadow-soft);
-          padding: 22px 24px;
+          padding: 18px 20px;
         }
-        .botshield-overview-metric-value {
-          color: var(--botshield-text);
-          font-size: 34px;
-          line-height: 38px;
-          font-weight: 760;
-          letter-spacing: -0.035em;
+        .botshield-overview-middle-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
+          gap: 16px;
+          align-items: start;
+        }
+        .botshield-overview-action-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
         }
         .botshield-overview-row {
-          padding: 16px 0;
+          padding: 12px 0;
           border-bottom: 1px solid var(--botshield-border);
         }
         .botshield-overview-row:first-child {
@@ -242,7 +237,7 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-overview-progress {
           width: min(360px, 100%);
-          height: 6px;
+          height: 5px;
           margin-top: 4px;
         }
         .botshield-surface {
@@ -673,6 +668,11 @@ export function BotShieldAppFrame({ children }) {
           .botshield-page-content,
           .botshield-page-content--wide { width: calc(100vw - 24px); padding-top: 22px; }
           .botshield-page-heading { display: block; }
+          .botshield-overview-content { width: calc(100vw - 24px); padding-top: 22px; }
+          .botshield-overview-header { display: block; }
+          .botshield-overview-metric-grid,
+          .botshield-overview-middle-grid,
+          .botshield-overview-action-grid { grid-template-columns: 1fr; }
           .botshield-command-grid { grid-template-columns: 1fr; }
           .botshield-command-center { padding: 22px; }
           .botshield-titlebar-brand { font-size: 18px; }

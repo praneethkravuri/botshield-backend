@@ -1076,22 +1076,19 @@ function OverviewPage({ model, actions }) {
 
     return (
       <div className="botshield-page">
-        <main className="botshield-page-content botshield-page-content--wide">
+        <main className="botshield-page-content botshield-overview-content">
           <s-stack gap="large">
             <div className="botshield-overview-app-title">
-              <span className="botshield-overview-app-mark" aria-hidden="true">
-                /
-              </span>
-              <span>BotShield</span>
+              <s-text type="strong">BotShield</s-text>
             </div>
 
             <div className="botshield-overview-header">
               <div>
-                <h1 className="botshield-page-title">Overview</h1>
-                <p className="botshield-page-subtitle">
+                <s-heading>Overview</s-heading>
+                <s-text color="subdued">
                   Track storefront protection, visitor activity, and billing
                   health from one clean control center.
-                </p>
+                </s-text>
               </div>
               <s-stack direction="inline" gap="small" alignItems="center">
                 <BotShieldActionButton
@@ -1108,28 +1105,20 @@ function OverviewPage({ model, actions }) {
               </s-stack>
             </div>
 
-            <s-grid
-              gridTemplateColumns="repeat(4, minmax(0, 1fr))"
-              gap="large"
-            >
+            <div className="botshield-overview-metric-grid">
               {overviewMetricCards.map((card) => (
                 <div className="botshield-overview-metric-card" key={card.title}>
                   <s-stack gap="small">
                     <s-text color="subdued">{card.title}</s-text>
-                    <div className="botshield-overview-metric-value">
-                      {card.value}
-                    </div>
+                    <s-heading>{card.value}</s-heading>
                     <s-text type="strong">{card.label}</s-text>
                     <s-text color="subdued">{card.detail}</s-text>
                   </s-stack>
                 </div>
               ))}
-            </s-grid>
+            </div>
 
-            <s-grid
-              gridTemplateColumns="minmax(0, 3fr) minmax(320px, 2fr)"
-              gap="large"
-            >
+            <div className="botshield-overview-middle-grid">
               <BotShieldCard
                 title="Workspace status"
                 subtitle="Keep an eye on storefront readiness, billing usage, and rollout progress."
@@ -1185,12 +1174,9 @@ function OverviewPage({ model, actions }) {
                   ))}
                 </s-stack>
               </BotShieldCard>
-            </s-grid>
+            </div>
 
-            <s-grid
-              gridTemplateColumns="repeat(3, minmax(0, 1fr))"
-              gap="large"
-            >
+            <div className="botshield-overview-action-grid">
               <BotShieldCard title="Review analytics">
                 <s-stack gap="base">
                   <s-text color="subdued">
@@ -1238,7 +1224,7 @@ function OverviewPage({ model, actions }) {
                   </div>
                 </s-stack>
               </BotShieldCard>
-            </s-grid>
+            </div>
           </s-stack>
         </main>
       </div>
