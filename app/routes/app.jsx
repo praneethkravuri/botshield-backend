@@ -16,15 +16,10 @@ export default function App() {
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
-        <s-link href="/app">Overview</s-link>
-        <s-link href="/app/protection-rules">Protection Rules</s-link>
+        <s-link href="/app">Analytics</s-link>
+        <s-link href="/app/protection-rules">Protection</s-link>
         <s-link href="/app/visitors">Visitors</s-link>
-        <s-link href="/app/blocklist">Blocklist</s-link>
-        <s-link href="/app/trusted-visitors">Trusted Visitors</s-link>
-        <s-link href="/app/alerts-reports">Alerts & Reports</s-link>
-        <s-link href="/app/billing">Billing</s-link>
         <s-link href="/app/settings">Settings</s-link>
-        <s-link href="/app/setup">Setup & Help</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

@@ -247,26 +247,32 @@ test("Setup experience uses verified checklist rows with contextual actions", as
   assert.match(designSystem, /Action needed/);
 });
 
-test("new app shell removes custom branding and uses task-based navigation", async () => {
+test("new app shell keeps a simplified Shopify-native app navigation", async () => {
   const source = await readFile(
     new URL("../app/routes/app.jsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, />Overview</);
-  assert.match(source, />Protection Rules</);
+  assert.match(source, />Analytics</);
+  assert.match(source, />Protection</);
   assert.match(source, />Visitors</);
-  assert.match(source, />Blocklist</);
-  assert.match(source, />Trusted Visitors</);
-  assert.match(source, />Alerts & Reports</);
-  assert.match(source, />Billing</);
   assert.match(source, />Settings</);
-  assert.match(source, />Setup & Help</);
   assert.match(source, /href="\/app"/);
   assert.match(source, /href="\/app\/protection-rules"/);
   assert.match(source, /href="\/app\/visitors"/);
-  assert.match(source, /href="\/app\/blocklist"/);
-  assert.match(source, /href="\/app\/trusted-visitors"/);
+  assert.match(source, /href="\/app\/settings"/);
+  assert.doesNotMatch(source, />Overview</);
+  assert.doesNotMatch(source, />Protection Rules</);
+  assert.doesNotMatch(source, />Blocklist</);
+  assert.doesNotMatch(source, />Trusted Visitors</);
+  assert.doesNotMatch(source, />Alerts & Reports</);
+  assert.doesNotMatch(source, />Billing</);
+  assert.doesNotMatch(source, />Setup & Help</);
+  assert.doesNotMatch(source, /href="\/app\/blocklist"/);
+  assert.doesNotMatch(source, /href="\/app\/trusted-visitors"/);
+  assert.doesNotMatch(source, /href="\/app\/alerts-reports"/);
+  assert.doesNotMatch(source, /href="\/app\/billing"/);
+  assert.doesNotMatch(source, /href="\/app\/setup"/);
   assert.doesNotMatch(source, /href="\/app\?view=/);
   assert.doesNotMatch(source, /botshield-logo|Fraud &amp; Bot Detector/);
 });
