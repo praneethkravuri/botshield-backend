@@ -8,7 +8,7 @@ export const loader = async ({ request }) => {
     throw redirect(`/app?${query}`);
   }
 
-  throw redirect("/auth/login");
+  throw redirect("/app");
 };
 
 export default function App() {

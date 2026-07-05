@@ -255,20 +255,22 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
 
   assert.match(source, />Analytics</);
   assert.match(source, />Protection</);
-  assert.match(source, />Visitors</);
+  assert.match(source, />Fraud Orders</);
   assert.match(source, />Settings</);
   assert.match(source, /href="\/app\/analytics"/);
   assert.match(source, /href="\/app\/protection-rules"/);
-  assert.match(source, /href="\/app\/visitors"/);
+  assert.match(source, /href="\/app\/fraud-orders"/);
   assert.match(source, /href="\/app\/settings"/);
   assert.doesNotMatch(source, />Overview</);
   assert.doesNotMatch(source, />Protection Rules</);
+  assert.doesNotMatch(source, />Visitors</);
   assert.doesNotMatch(source, />Blocklist</);
   assert.doesNotMatch(source, />Trusted Visitors</);
   assert.doesNotMatch(source, />Alerts & Reports</);
   assert.doesNotMatch(source, />Billing</);
   assert.doesNotMatch(source, />Setup & Help</);
   assert.doesNotMatch(source, /href="\/app\/blocklist"/);
+  assert.doesNotMatch(source, /href="\/app\/visitors"/);
   assert.doesNotMatch(source, /href="\/app\/trusted-visitors"/);
   assert.doesNotMatch(source, /href="\/app\/alerts-reports"/);
   assert.doesNotMatch(source, /href="\/app\/billing"/);
@@ -288,6 +290,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /rules: "security"/);
   assert.match(source, /"protection-rules": "security"/);
   assert.match(source, /visitors: "incidents"/);
+  assert.match(source, /"fraud-orders": "fraud-orders"/);
   assert.match(source, /blocklist: "blocklist"/);
   assert.match(source, /trusted: "trusted"/);
   assert.match(source, /"trusted-visitors": "trusted"/);
@@ -297,6 +300,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /"\/app\/protection-rules": "security"/);
   assert.match(source, /"\/app\/analytics": "analytics"/);
   assert.match(source, /"\/app\/visitors": "incidents"/);
+  assert.match(source, /"\/app\/fraud-orders": "fraud-orders"/);
   assert.match(source, /"\/app\/blocklist": "blocklist"/);
   assert.match(source, /"\/app\/trusted-visitors": "trusted"/);
   assert.match(source, /legacyViewPathMap/);
@@ -307,4 +311,14 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /navigate\(path, \{ replace: false \}\)/);
   assert.doesNotMatch(source, /navigate\(`\/app\?view=/);
   assert.doesNotMatch(source, /setPage\(parsed\.page/);
+});
+
+test("root app URL opens the embedded overview instead of standalone login", async () => {
+  const source = await readFile(
+    new URL("../app/routes/_index/route.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /redirect\("\/app"\)/);
+  assert.doesNotMatch(source, /redirect\("\/auth\/login"\)/);
 });

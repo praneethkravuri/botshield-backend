@@ -1718,6 +1718,22 @@ function AnalyticsPage({ model, actions }) {
   );
 }
 
+function FraudOrdersPage() {
+  return (
+    <Screen
+      title="Fraud Orders"
+      subtitle="Review risky order activity and fraud signals."
+    >
+      <BotShieldCard>
+        <BotShieldEmptyState
+          title="No fraud orders detected yet"
+          description="Fraud order signals will appear here after BotShield has verified order-risk data. No sample or simulated orders are shown."
+        />
+      </BotShieldCard>
+    </Screen>
+  );
+}
+
 function ActivityTable({ model, actions }) {
   if (!model.incidentLoading && !model.incidents.length) {
     const realOnly = model.incidentFilters.source === "real";
@@ -3560,6 +3576,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
+      {screen === "fraud-orders" ? <FraudOrdersPage /> : null}
       {screen === "incidents" ? (
         <ActivityPage model={model} actions={actions} />
       ) : null}

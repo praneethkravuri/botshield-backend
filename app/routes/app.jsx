@@ -18,7 +18,7 @@ export default function App() {
       <s-app-nav>
         <s-link href="/app/analytics">Analytics</s-link>
         <s-link href="/app/protection-rules">Protection</s-link>
-        <s-link href="/app/visitors">Visitors</s-link>
+        <s-link href="/app/fraud-orders">Fraud Orders</s-link>
         <s-link href="/app/settings">Settings</s-link>
       </s-app-nav>
       <Outlet />
