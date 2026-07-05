@@ -1002,9 +1002,6 @@ function OverviewPage({ model, actions }) {
     const overviewBillingActive = Boolean(model.billingStatus?.active);
     const overviewShopDomain =
       model.protectionStatus?.shop || "this store";
-    const overviewBlockRate = overviewVisitorSessions
-      ? Math.round((overviewBlockedVisitors / overviewVisitorSessions) * 100)
-      : 0;
     const overviewUsageProgress = Math.max(
       4,
       Math.min(100, overviewVisitorSessions),
@@ -1070,7 +1067,7 @@ function OverviewPage({ model, actions }) {
         title: "Protection",
         value: overviewBlockedVisitors,
         label: "Visitors blocked",
-        detail: `${overviewBlockRate}% blocked rate`,
+        detail: `${model.challengedCount} challenged visitors`,
       },
       {
         title: "Coverage",
@@ -1125,6 +1122,10 @@ function OverviewPage({ model, actions }) {
       <div className="botshield-page">
         <main className="botshield-page-content botshield-overview-content">
           <s-stack gap="large">
+            <div className="botshield-overview-app-title">
+              <s-text type="strong">BotShield</s-text>
+            </div>
+
             <div className="botshield-overview-header">
               <div>
                 <h1 className="botshield-overview-title">Overview</h1>

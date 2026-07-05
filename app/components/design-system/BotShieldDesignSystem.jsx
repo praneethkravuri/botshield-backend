@@ -181,8 +181,8 @@ export function BotShieldAppFrame({ children }) {
         .botshield-overview-app-title {
           display: flex;
           align-items: center;
-          min-height: 24px;
-          margin-bottom: 2px;
+          min-height: 22px;
+          margin-bottom: -2px;
           color: var(--botshield-text);
         }
         .botshield-overview-header {
@@ -193,84 +193,84 @@ export function BotShieldAppFrame({ children }) {
           padding: 4px 0 10px;
         }
         .botshield-overview-content {
-          width: min(1350px, calc(100vw - 72px));
-          padding-top: 34px;
+          width: min(1180px, calc(100vw - 56px));
+          padding-top: 30px;
         }
         .botshield-overview-content .botshield-surface {
-          padding: 28px 30px;
+          padding: 24px 28px;
           box-shadow: none;
-          border-color: #d0d0d0;
-          border-radius: 18px;
+          border-color: #d4d4d4;
+          border-radius: 16px;
         }
         .botshield-overview-title {
           margin: 0;
           color: #111111;
-          font-size: 34px;
+          font-size: 32px;
           line-height: 1.15;
           font-weight: 700;
         }
         .botshield-overview-subtitle {
-          margin: 10px 0 0;
+          margin: 8px 0 0;
           color: #616161;
-          font-size: 18px;
+          font-size: 17px;
           line-height: 1.42;
         }
         .botshield-overview-metric-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 20px;
+          gap: 18px;
         }
         .botshield-overview-metric-card {
-          min-height: 240px;
+          min-height: 216px;
           box-sizing: border-box;
           background: #ffffff;
-          border: 1px solid #d0d0d0;
-          border-radius: 18px;
+          border: 1px solid #d4d4d4;
+          border-radius: 16px;
           box-shadow: none;
-          padding: 32px 30px;
+          padding: 28px 26px;
         }
         .botshield-overview-metric-title {
           color: #667085;
-          font-size: 16px;
+          font-size: 15px;
           line-height: 1.25;
           font-weight: 650;
         }
         .botshield-overview-metric-value {
           color: #111111;
-          font-size: 44px;
+          font-size: 40px;
           line-height: 1;
           font-weight: 750;
           margin-top: 4px;
         }
         .botshield-overview-metric-label {
           color: #101828;
-          font-size: 20px;
+          font-size: 18px;
           line-height: 1.22;
           font-weight: 700;
           margin-top: 6px;
         }
         .botshield-overview-metric-helper {
           color: #667085;
-          font-size: 18px;
+          font-size: 16px;
           line-height: 1.4;
           margin-top: 2px;
         }
         .botshield-overview-middle-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.36fr) minmax(420px, 1fr);
-          gap: 20px;
+          grid-template-columns: minmax(0, 1.42fr) minmax(360px, 1fr);
+          gap: 18px;
           align-items: start;
         }
         .botshield-overview-action-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 20px;
+          gap: 18px;
         }
         .botshield-overview-action-grid .botshield-surface {
-          min-height: 202px;
+          min-height: 184px;
         }
         .botshield-overview-row {
-          padding: 18px 0;
+          padding: 15px 0;
           border-bottom: 1px solid #e3e3e3;
         }
         .botshield-overview-row:first-child {
@@ -282,8 +282,8 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-overview-progress {
           width: min(608px, 100%);
-          height: 12px;
-          margin-top: 8px;
+          height: 8px;
+          margin-top: 7px;
           background: #eeeeee;
         }
         .botshield-overview-progress .botshield-progress-fill {
@@ -294,13 +294,13 @@ export function BotShieldAppFrame({ children }) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 26px;
-          padding: 3px 11px;
+          min-height: 24px;
+          padding: 3px 10px;
           border-radius: 999px;
           border: 0;
-          background: #a7f3bd;
-          color: #075e3a;
-          font-size: 15px;
+          background: #d8f8df;
+          color: #14532d;
+          font-size: 14px;
           line-height: 1;
           font-weight: 650;
           white-space: nowrap;
