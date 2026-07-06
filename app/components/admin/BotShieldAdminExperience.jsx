@@ -2118,19 +2118,223 @@ function AnalyticsTrendChart({ values }) {
   );
 }
 
-function FraudOrdersPage() {
+function FraudOrdersPage({ model, actions }) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const fraudOrders = Array.isArray(model.fraudOrders) ? model.fraudOrders : [];
+  const orderMetrics = fraudOrders.reduce(
+    (summary, order) => {
+      const risk = String(order.risk || order.riskLevel || "").toLowerCase();
+      if (risk.includes("high")) summary.high += 1;
+      else if (risk.includes("medium")) summary.medium += 1;
+      else if (risk.includes("low")) summary.low += 1;
+      return summary;
+    },
+    { high: 0, low: 0, medium: 0 },
+  );
+
   return (
-    <Screen
-      title="Fraud Orders"
-      subtitle="Review risky order activity and fraud signals."
-    >
-      <BotShieldCard>
-        <BotShieldEmptyState
-          title="No fraud orders detected yet"
-          description="Fraud order signals will appear here after BotShield has verified order-risk data. No sample or simulated orders are shown."
-        />
-      </BotShieldCard>
-    </Screen>
+    <div className="botshield-page">
+      <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
+        <div className="botshield-overview-app-title">
+          <s-text type="strong">BotShield</s-text>
+        </div>
+
+        <div className="botshield-overview-header">
+          <div>
+            <h1 className="botshield-overview-title">Fraud Orders</h1>
+            <p className="botshield-overview-subtitle">
+              Review risky Shopify orders and automate follow-up actions when
+              fraud risk is high.
+            </p>
+          </div>
+          <BotShieldActionButton onClick={() => setHelpOpen(true)}>
+            Get help
+          </BotShieldActionButton>
+        </div>
+
+        <section className="botshield-fraud-automation-stack">
+          <BotShieldCard>
+            <div className="botshield-fraud-automation-row">
+              <div>
+                <div className="botshield-fraud-title-row">
+                  <h2 className="botshield-fraud-card-title">
+                    Auto-block visitors placing fraud orders
+                  </h2>
+                  <span className="botshield-overview-badge botshield-overview-badge--muted">
+                    Off
+                  </span>
+                </div>
+                <p className="botshield-fraud-card-copy">
+                  When Shopify recommends canceling a high-risk order,
+                  BotShield can automatically add that order&apos;s IP to managed IP
+                  blocking.
+                </p>
+                <p className="botshield-fraud-card-note">
+                  High-risk threshold uses Shopify fraud recommendation: Cancel.
+                </p>
+                <BotShieldInlineHelp>
+                  This automation is not connected yet.
+                </BotShieldInlineHelp>
+              </div>
+              <BotShieldActionButton disabled variant="primary">
+                Turn on
+              </BotShieldActionButton>
+            </div>
+          </BotShieldCard>
+
+          <BotShieldCard>
+            <div className="botshield-fraud-automation-row">
+              <div>
+                <div className="botshield-fraud-title-row">
+                  <h2 className="botshield-fraud-card-title">
+                    Auto-cancel high-risk orders
+                  </h2>
+                  <span className="botshield-overview-badge botshield-overview-badge--muted">
+                    Off
+                  </span>
+                </div>
+                <p className="botshield-fraud-card-copy">
+                  Automatically send Shopify&apos;s fraud cancel action when the
+                  recommendation is Cancel.
+                </p>
+                <div className="botshield-fraud-pill-row">
+                  <span className="botshield-overview-badge">Restock On</span>
+                  <span className="botshield-overview-badge botshield-overview-badge--muted">
+                    Notify customer Off
+                  </span>
+                </div>
+                <BotShieldInlineHelp>
+                  Order cancellation automation is not connected yet.
+                </BotShieldInlineHelp>
+              </div>
+              <div className="botshield-fraud-button-stack">
+                <BotShieldActionButton disabled>
+                  Disable restock
+                </BotShieldActionButton>
+                <BotShieldActionButton disabled>
+                  Enable notify
+                </BotShieldActionButton>
+                <BotShieldActionButton disabled variant="primary">
+                  Turn on
+                </BotShieldActionButton>
+              </div>
+            </div>
+          </BotShieldCard>
+
+          <BotShieldCard>
+            <div className="botshield-fraud-automation-row">
+              <div>
+                <div className="botshield-fraud-title-row">
+                  <h2 className="botshield-fraud-card-title">Fraud filter</h2>
+                  <span className="botshield-overview-badge">On</span>
+                </div>
+                <p className="botshield-fraud-card-copy">
+                  Turn on the fraud filter to sync Shopify fraud
+                  recommendations, review risky orders, and trigger follow-up
+                  actions from the analytics screen.
+                </p>
+                <BotShieldInlineHelp>
+                  Fraud order syncing is not connected to Shopify order risk
+                  data yet, so this filter is display-only for now.
+                </BotShieldInlineHelp>
+              </div>
+              <BotShieldActionButton disabled>Turn off</BotShieldActionButton>
+            </div>
+          </BotShieldCard>
+        </section>
+
+        <BotShieldCard title="Overview">
+          <div className="botshield-fraud-metric-grid">
+            {[
+              ["Total order", fraudOrders.length],
+              ["Total low risk order", orderMetrics.low],
+              ["Total medium risk order", orderMetrics.medium],
+              ["Total high risk order", orderMetrics.high],
+            ].map(([label, value]) => (
+              <div className="botshield-fraud-metric-card" key={label}>
+                <div className="botshield-overview-metric-title">{label}</div>
+                <div className="botshield-overview-metric-value">{value}</div>
+              </div>
+            ))}
+          </div>
+        </BotShieldCard>
+
+        <BotShieldCard title="Risky orders">
+          {fraudOrders.length ? (
+            <div className="botshield-fraud-table-wrap">
+              <table className="botshield-fraud-table">
+                <thead>
+                  <tr>
+                    {[
+                      "Order",
+                      "Customer",
+                      "Risk",
+                      "Recommendation",
+                      "Reason",
+                      "Date",
+                      "Action",
+                    ].map((heading) => (
+                      <th key={heading}>{heading}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {fraudOrders.map((order) => (
+                    <tr key={order.id || order.orderId || order.name}>
+                      <td>{order.name || order.orderName || "Order"}</td>
+                      <td>{order.customer || order.customerName || "—"}</td>
+                      <td>{order.risk || order.riskLevel || "Review"}</td>
+                      <td>{order.recommendation || "Review"}</td>
+                      <td>{order.reason || "Shopify fraud signal"}</td>
+                      <td>{order.date || order.createdAt || "—"}</td>
+                      <td>—</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <BotShieldEmptyState
+              title="No risky orders yet"
+              description="BotShield will show Shopify fraud recommendations here when risky orders are detected."
+              action={
+                <BotShieldAsyncButton
+                  action={actions.refresh}
+                  successMessage="Fraud orders refreshed"
+                >
+                  Refresh orders
+                </BotShieldAsyncButton>
+              }
+            />
+          )}
+        </BotShieldCard>
+
+        {helpOpen ? (
+          <div
+            aria-modal="true"
+            className="botshield-protection-modal-backdrop"
+            role="dialog"
+          >
+            <div className="botshield-protection-modal">
+              <h2 className="botshield-protection-modal-title">
+                Fraud Orders help
+              </h2>
+              <p className="botshield-protection-modal-copy">
+                Fraud Orders will show Shopify order-risk recommendations when
+                order-side fraud syncing is connected. Today, BotShield&apos;s active
+                protection is focused on storefront visitor decisions.
+              </p>
+              <BotShieldActionButton
+                onClick={() => setHelpOpen(false)}
+                variant="primary"
+              >
+                Close
+              </BotShieldActionButton>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    </div>
   );
 }
 
@@ -4480,7 +4684,9 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
-      {screen === "fraud-orders" ? <FraudOrdersPage /> : null}
+      {screen === "fraud-orders" ? (
+        <FraudOrdersPage actions={actions} model={model} />
+      ) : null}
       {screen === "incidents" ? (
         <ActivityPage model={model} actions={actions} />
       ) : null}

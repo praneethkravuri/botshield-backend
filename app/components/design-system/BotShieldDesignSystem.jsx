@@ -644,6 +644,98 @@ export function BotShieldAppFrame({ children }) {
           gap: 8px;
           flex-wrap: wrap;
         }
+        .botshield-fraud-orders-content .botshield-surface {
+          padding: 24px 27px;
+          box-shadow: none;
+          border-color: #d4d4d4;
+          border-radius: 16px;
+        }
+        .botshield-fraud-automation-stack {
+          display: grid;
+          gap: 16px;
+        }
+        .botshield-fraud-automation-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 24px;
+          align-items: start;
+        }
+        .botshield-fraud-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .botshield-fraud-card-title {
+          margin: 0;
+          color: #303030;
+          font-size: 18px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+        .botshield-fraud-card-copy {
+          max-width: 760px;
+          margin: 14px 0 0;
+          color: #616161;
+          font-size: 16px;
+          line-height: 1.45;
+        }
+        .botshield-fraud-card-note {
+          margin: 8px 0 14px;
+          color: #6b7280;
+          font-size: 14px;
+          line-height: 1.4;
+        }
+        .botshield-fraud-pill-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin: 14px 0;
+        }
+        .botshield-fraud-button-stack {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .botshield-fraud-metric-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 14px;
+        }
+        .botshield-fraud-metric-card {
+          min-height: 118px;
+          box-sizing: border-box;
+          background: #ffffff;
+          border: 1px solid #dcdcdc;
+          border-radius: 14px;
+          padding: 20px;
+        }
+        .botshield-fraud-table-wrap {
+          overflow-x: auto;
+        }
+        .botshield-fraud-table {
+          width: 100%;
+          border-collapse: collapse;
+          min-width: 760px;
+        }
+        .botshield-fraud-table th,
+        .botshield-fraud-table td {
+          padding: 12px 10px;
+          border-bottom: 1px solid #e3e3e3;
+          text-align: left;
+          color: #303030;
+          font-size: 14px;
+          line-height: 1.4;
+        }
+        .botshield-fraud-table th {
+          color: #616161;
+          font-weight: 650;
+        }
+        .botshield-fraud-table tr:last-child td {
+          border-bottom: 0;
+        }
         .botshield-surface {
           box-sizing: border-box;
           background: var(--botshield-surface);
@@ -1081,10 +1173,13 @@ export function BotShieldAppFrame({ children }) {
           .botshield-overview-metric-grid,
           .botshield-overview-middle-grid,
           .botshield-overview-action-grid,
-          .botshield-analytics-stat-grid { grid-template-columns: 1fr; }
+          .botshield-analytics-stat-grid,
+          .botshield-fraud-metric-grid { grid-template-columns: 1fr; }
           .botshield-protection-row,
           .botshield-protection-composer-grid { grid-template-columns: 1fr; }
           .botshield-protection-row-actions { justify-content: flex-start; }
+          .botshield-fraud-automation-row { grid-template-columns: 1fr; }
+          .botshield-fraud-button-stack { justify-content: flex-start; }
           .botshield-analytics-tabs { overflow-x: auto; }
           .botshield-analytics-chart-tabs { align-items: stretch; flex-direction: column; }
           .botshield-analytics-chart-tab { min-width: 0; width: 100%; }

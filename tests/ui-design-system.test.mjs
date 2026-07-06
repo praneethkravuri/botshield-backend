@@ -147,6 +147,11 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /await actions\.addTrustedIp\(trustedIpInput\)/);
   assert.match(source, /type: "profile"/);
   assert.match(source, /actions\.saveSettings\(draft\)/);
+  assert.match(source, /Auto-block visitors placing fraud orders/);
+  assert.match(source, /Auto-cancel high-risk orders/);
+  assert.match(source, /Fraud filter/);
+  assert.match(source, /This automation is not connected yet/);
+  assert.match(source, /No risky orders yet/);
   assert.match(source, /title="Alerts & Reports"/);
   assert.match(source, /Notification center/);
   assert.match(source, /Recent email activity/);
