@@ -2651,7 +2651,9 @@ function ProtectionPage({ model, actions }) {
                       <BotShieldActionButton onClick={row.action}>
                         Manage
                       </BotShieldActionButton>
-                    ) : null}
+                    ) : (
+                      <span aria-hidden="true" />
+                    )}
                   </div>
                 </div>
               ))}
