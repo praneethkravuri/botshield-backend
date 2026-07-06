@@ -259,7 +259,10 @@ export function BotShieldAppFrame({ children }) {
           display: grid;
           grid-template-columns: minmax(0, 1.42fr) minmax(360px, 1fr);
           gap: 18px;
-          align-items: start;
+          align-items: stretch;
+        }
+        .botshield-overview-middle-grid > .botshield-surface {
+          height: 100%;
         }
         .botshield-overview-action-grid {
           display: grid;
