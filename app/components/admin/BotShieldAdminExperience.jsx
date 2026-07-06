@@ -3734,6 +3734,9 @@ function IpList({
   );
 }
 
+// Retired legacy settings UI kept temporarily for safety while the new tabbed
+// Settings page is verified in production.
+// eslint-disable-next-line no-unused-vars
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [draft, setDraft] = useState({
@@ -4040,6 +4043,445 @@ function SettingsPage({ model, actions }) {
 
       </s-grid>
     </Screen>
+  );
+}
+
+function SettingsPageV2({ model, actions }) {
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === "undefined") return "general";
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    return [
+      "general",
+      "pricing",
+      "content-protection",
+      "blocking-design",
+    ].includes(tab)
+      ? tab
+      : "general";
+  });
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [blockingDraft, setBlockingDraft] = useState({
+    template: "denied",
+    headline: "Access denied",
+    message: "This store is not available in your region.",
+    borderRadius: "18",
+    backdropColor: "#EEF1F4",
+    cardColor: "#FFFFFF",
+    textColor: "#111827",
+    accentColor: "#D90606",
+  });
+  const tabOptions = [
+    ["general", "General"],
+    ["pricing", "Pricing"],
+    ["content-protection", "Content Protection"],
+    ["blocking-design", "Blocking Design"],
+  ];
+  const planName = model.billingStatus?.planName || "BotShield Basic";
+  const monthlyPrice = Number(model.billingStatus?.monthlyPrice || 14.99);
+  const trialDays = Number(model.billingStatus?.trialDays || 7);
+  const subscription = model.billingStatus?.subscription || {};
+  const billingActive = Boolean(model.billingStatus?.active);
+  const billingStatus = getBillingStatusModel(model.billingStatus || {});
+  const visitorCount = Number(
+    model.incidentCounts?.total || model.storefrontScans || 0,
+  );
+  const hexPattern = /^#[0-9a-f]{6}$/i;
+  const colorKeys = [
+    "backdropColor",
+    "cardColor",
+    "textColor",
+    "accentColor",
+  ];
+  const hasInvalidColor = colorKeys.some(
+    (key) => !hexPattern.test(blockingDraft[key]),
+  );
+  const setSettingsTab = (tab) => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.pushState({}, "", `${url.pathname}${url.search}`);
+    }
+  };
+  const updateBlockingDraft = (key, value) =>
+    setBlockingDraft((current) => ({ ...current, [key]: value }));
+  const resetBlockingDraft = () =>
+    setBlockingDraft({
+      template: "denied",
+      headline: "Access denied",
+      message: "This store is not available in your region.",
+      borderRadius: "18",
+      backdropColor: "#EEF1F4",
+      cardColor: "#FFFFFF",
+      textColor: "#111827",
+      accentColor: "#D90606",
+    });
+  const pageTitle =
+    activeTab === "pricing"
+      ? "Pricing"
+      : activeTab === "content-protection"
+        ? "Content protection settings"
+        : activeTab === "blocking-design"
+          ? "Blocking template settings"
+          : "General settings";
+  const pageSubtitle =
+    activeTab === "pricing"
+      ? "Review plans, traffic usage, and Shopify billing status."
+      : activeTab === "content-protection"
+        ? "Protect storefront content by limiting selection, right click, inspect, and copy shortcuts."
+        : activeTab === "blocking-design"
+          ? "Manage default storefront blocking overlay templates and styles."
+          : "Manage admin-safe storefront access links and general storefront controls.";
+
+  return (
+    <div className="botshield-page">
+      <main className="botshield-page-content botshield-overview-content botshield-settings-content">
+        <div className="botshield-app-title-row">BotShield</div>
+        <div className="botshield-protection-header">
+          <div>
+            <h1 className="botshield-overview-title botshield-protection-page-title">
+              {pageTitle}
+            </h1>
+            <p className="botshield-overview-subtitle">{pageSubtitle}</p>
+          </div>
+          {activeTab === "content-protection" ? (
+            <BotShieldActionButton onClick={() => setHelpOpen(true)}>
+              Get help
+            </BotShieldActionButton>
+          ) : null}
+        </div>
+
+        <div className="botshield-settings-tabs" role="tablist">
+          {tabOptions.map(([id, label]) => (
+            <button
+              aria-selected={activeTab === id}
+              className={`botshield-settings-tab${
+                activeTab === id ? " botshield-settings-tab--active" : ""
+              }`}
+              key={id}
+              onClick={() => setSettingsTab(id)}
+              role="tab"
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "general" ? (
+          <BotShieldCard title="Admin access URL">
+            <div className="botshield-settings-empty-card">
+              <h2>No admin access URL yet</h2>
+              <p>
+                Generate a private storefront access URL for admins and agencies.
+              </p>
+              <p className="botshield-settings-muted">
+                Admin access URL generation is not connected yet. Use Trusted
+                Visitors from Protection for reviewed admin or agency IPs until
+                this workflow is connected.
+              </p>
+            </div>
+          </BotShieldCard>
+        ) : null}
+
+        {activeTab === "pricing" ? (
+          <s-stack gap="large">
+            {!billingActive || subscription.isTest ? (
+              <BotShieldBanner
+                tone="info"
+                title="Development store testing access enabled"
+              >
+                This partner development store has paid features enabled for
+                testing. Billing approval is not required until the store moves
+                to a paid Shopify plan.
+              </BotShieldBanner>
+            ) : null}
+            <div className="botshield-settings-plan-grid">
+              <BotShieldCard title="Free" subtitle="$0/mo">
+                <ul className="botshield-settings-feature-list">
+                  <li>Basic storefront protection</li>
+                  <li>Limited visitor analytics</li>
+                  <li>Basic page blocking</li>
+                  <li>Fraud order insights</li>
+                  <li>Free plan limit not configured</li>
+                </ul>
+                <BotShieldActionButton disabled>
+                  Downgrade to Free
+                </BotShieldActionButton>
+                <p className="botshield-settings-muted">
+                  Downgrades are not connected yet.
+                </p>
+              </BotShieldCard>
+              <BotShieldCard
+                title={planName}
+                subtitle={`$${monthlyPrice.toFixed(2)}/mo · ${trialDays}-day trial`}
+                badge={
+                  <span className="botshield-settings-neutral-pill">
+                    Current plan
+                  </span>
+                }
+              >
+                <ul className="botshield-settings-feature-list">
+                  <li>Bot protection</li>
+                  <li>Network / Proxy protection</li>
+                  <li>Rate protection</li>
+                  <li>Page protection</li>
+                  <li>IP blocklist</li>
+                  <li>Trusted visitors</li>
+                  <li>Fraud order insights</li>
+                  <li>Full visitor analytics</li>
+                </ul>
+                <p className="botshield-settings-muted">Your current plan.</p>
+              </BotShieldCard>
+            </div>
+            <BotShieldCard
+              title="Usage this billing cycle"
+              badge={
+                <span className="botshield-settings-neutral-pill">
+                  {billingActive
+                    ? subscription.name || planName
+                    : subscription.isTest
+                      ? "Development plan"
+                      : "Setup required"}
+                </span>
+              }
+              actions={
+                <BotShieldAsyncButton
+                  action={actions.refreshBilling}
+                  successMessage="Billing refreshed"
+                >
+                  Refresh billing
+                </BotShieldAsyncButton>
+              }
+            >
+              <div className="botshield-settings-usage-grid">
+                <Metric
+                  label="Visitors this cycle"
+                  value={visitorCount}
+                  detail="Real storefront sessions tracked"
+                  status="active"
+                />
+                <Metric
+                  label="Included visitors"
+                  value="Not configured"
+                  detail="No hard visitor limit is configured in code"
+                  status="monitoring_only"
+                />
+                <Metric
+                  label="Subscription price"
+                  value={`$${monthlyPrice.toFixed(2)}/mo`}
+                  detail={planName}
+                  status={billingStatus.technicalStatus}
+                />
+                <Metric
+                  label="Billing cycle end"
+                  value={
+                    subscription.currentPeriodEnd
+                      ? formatDate(subscription.currentPeriodEnd)
+                      : "Not available"
+                  }
+                  detail={billingStatus.description}
+                  status={billingStatus.technicalStatus}
+                />
+              </div>
+            </BotShieldCard>
+          </s-stack>
+        ) : null}
+
+        {activeTab === "content-protection" ? (
+          <s-stack gap="large">
+            <BotShieldBanner tone="info" title="Browser-side protection">
+              These protections run in the visitor&apos;s browser. They reduce
+              casual copying, but no frontend-only solution can fully stop
+              determined users.
+            </BotShieldBanner>
+            <BotShieldCard>
+              {[
+                [
+                  "Protect content",
+                  "Prevent visitors from selecting storefront text and dragging product images.",
+                ],
+                [
+                  "Deactivate right click",
+                  "Disable the browser context menu across the storefront to reduce casual copying.",
+                ],
+                [
+                  "Deactivate shortcut",
+                  "Block common copy, save, print, and source-view keyboard shortcuts outside editable fields. Blocks shortcuts such as Ctrl/Cmd + C, X, S, A, P, U and common inspect combinations.",
+                ],
+                [
+                  "Deactivate inspect",
+                  "Apply best-effort browser-side protections against Inspect Element and source-view shortcuts. Determined users can still access page source with advanced tools.",
+                ],
+              ].map(([label, detail]) => (
+                <div className="botshield-settings-row" key={label}>
+                  <div>
+                    <h3>{label}</h3>
+                    <p>{detail}</p>
+                    <p className="botshield-settings-muted">
+                      This setting is not connected to the storefront script yet.
+                    </p>
+                  </div>
+                  <div className="botshield-settings-row-actions">
+                    <span className="botshield-settings-neutral-pill">Off</span>
+                    <BotShieldToggle label="" checked={false} disabled />
+                  </div>
+                </div>
+              ))}
+            </BotShieldCard>
+          </s-stack>
+        ) : null}
+
+        {activeTab === "blocking-design" ? (
+          <BotShieldCard>
+            <div className="botshield-blocking-design-grid">
+              <div className="botshield-blocking-design-form">
+                <h2>Customize template</h2>
+                <BotShieldSelect
+                  label="Template"
+                  value={blockingDraft.template}
+                  options={[{ label: "Denied", value: "denied" }]}
+                  onChange={(template) =>
+                    updateBlockingDraft("template", template)
+                  }
+                />
+                <BotShieldTextField
+                  label="Headline"
+                  value={blockingDraft.headline}
+                  onChange={(headline) =>
+                    updateBlockingDraft("headline", headline)
+                  }
+                />
+                <BotShieldTextField
+                  label="Message"
+                  value={blockingDraft.message}
+                  onChange={(message) =>
+                    updateBlockingDraft("message", message)
+                  }
+                />
+                <BotShieldActionButton disabled>
+                  Upload background image
+                </BotShieldActionButton>
+                <p className="botshield-settings-muted">
+                  Image uploads are not connected yet.
+                </p>
+                <BotShieldActionButton disabled>
+                  Upload logo
+                </BotShieldActionButton>
+                <p className="botshield-settings-muted">
+                  Logo uploads are not connected yet.
+                </p>
+                <BotShieldTextField
+                  label="Border radius"
+                  value={blockingDraft.borderRadius}
+                  onChange={(borderRadius) =>
+                    updateBlockingDraft("borderRadius", borderRadius)
+                  }
+                  details="px"
+                />
+                {[
+                  ["Backdrop color", "backdropColor"],
+                  ["Card color", "cardColor"],
+                  ["Text color", "textColor"],
+                  ["Accent color", "accentColor"],
+                ].map(([label, key]) => (
+                  <div className="botshield-settings-color-field" key={key}>
+                    <span
+                      className="botshield-settings-color-swatch"
+                      style={{
+                        background: hexPattern.test(blockingDraft[key])
+                          ? blockingDraft[key]
+                          : "#ffffff",
+                      }}
+                    />
+                    <BotShieldTextField
+                      label={label}
+                      value={blockingDraft[key]}
+                      error={
+                        hexPattern.test(blockingDraft[key])
+                          ? ""
+                          : "Enter a valid HEX color"
+                      }
+                      onChange={(value) => updateBlockingDraft(key, value)}
+                    />
+                  </div>
+                ))}
+                <div className="botshield-settings-action-row">
+                  <BotShieldActionButton
+                    disabled
+                    variant="primary"
+                  >
+                    Save changes
+                  </BotShieldActionButton>
+                  <BotShieldActionButton onClick={resetBlockingDraft}>
+                    Reset to default
+                  </BotShieldActionButton>
+                  <BotShieldActionButton onClick={resetBlockingDraft}>
+                    Cancel
+                  </BotShieldActionButton>
+                </div>
+                <p className="botshield-settings-muted">
+                  {hasInvalidColor
+                    ? "Fix invalid HEX colors before these settings can be saved."
+                    : "Blocking design settings are not connected yet, so Save is intentionally disabled for production use."}
+                </p>
+              </div>
+              <div className="botshield-blocking-preview-wrap">
+                <h2>Live preview</h2>
+                <p>Preview how the overlay will appear on your storefront.</p>
+                <div
+                  className="botshield-blocking-preview"
+                  style={{ background: blockingDraft.backdropColor }}
+                >
+                  <div
+                    className="botshield-blocking-preview-card"
+                    style={{
+                      background: blockingDraft.cardColor,
+                      borderRadius: `${Number(blockingDraft.borderRadius) || 18}px`,
+                      color: blockingDraft.textColor,
+                    }}
+                  >
+                    <div
+                      className="botshield-blocking-preview-icon"
+                      style={{ borderColor: blockingDraft.accentColor }}
+                    >
+                      !
+                    </div>
+                    <strong>{blockingDraft.headline.toUpperCase()}</strong>
+                    <span>{blockingDraft.message}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </BotShieldCard>
+        ) : null}
+
+        {helpOpen ? (
+          <div
+            aria-modal="true"
+            className="botshield-protection-modal-backdrop"
+            role="dialog"
+          >
+            <div className="botshield-protection-modal">
+              <h2 className="botshield-protection-modal-title">
+                Content protection help
+              </h2>
+              <p className="botshield-protection-modal-copy">
+                Content protection is browser-side protection. It can discourage
+                casual copying, but it should not be marketed as server-side
+                theft prevention or guaranteed anti-scraping protection.
+              </p>
+              <BotShieldActionButton
+                onClick={() => setHelpOpen(false)}
+                variant="primary"
+              >
+                Close
+              </BotShieldActionButton>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    </div>
   );
 }
 
@@ -4783,7 +5225,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
         <ProtectionPage model={model} actions={actions} />
       ) : null}
       {screen === "policy" ? (
-        <SettingsPage model={model} actions={actions} />
+        <SettingsPageV2 model={model} actions={actions} />
       ) : null}
       {screen === "blocklist" ? (
         <BlocklistPage model={model} actions={actions} />

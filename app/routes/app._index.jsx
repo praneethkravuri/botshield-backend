@@ -2899,10 +2899,10 @@ export default function Index() {
       trusted: "/app/settings",
       "trusted-visitors": "/app/settings",
       policy: "/app/settings",
-      "alerts-reports": "/app/settings",
+      "alerts-reports": "/app/settings?tab=general",
       settings: "/app/settings",
-      billing: "/app/settings",
-      setup: "/app/settings",
+      billing: "/app/settings?tab=pricing",
+      setup: "/app/settings?tab=general",
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
@@ -3681,9 +3681,9 @@ export default function Index() {
       settings: "/app/settings",
       policy: "/app/settings",
       "detection-settings": "/app/settings",
-      billing: "/app/settings",
-      setup: "/app/settings",
-      "alerts-reports": "/app/settings",
+      billing: "/app/settings?tab=pricing",
+      setup: "/app/settings?tab=general",
+      "alerts-reports": "/app/settings?tab=general",
     };
     const path = pageToView[resolvedPage] || "/app";
     setPage(resolvedPage);
