@@ -4077,14 +4077,20 @@ function SettingsPageV2({ model, actions }) {
     ["blocking-design", "Blocking Design"],
   ];
   const planName = model.billingStatus?.planName || "BotShield Basic";
-  const monthlyPrice = Number(model.billingStatus?.monthlyPrice || 14.99);
-  const trialDays = Number(model.billingStatus?.trialDays || 7);
+  const monthlyPrice = Number.isFinite(Number(model.billingStatus?.monthlyPrice))
+    ? Number(model.billingStatus.monthlyPrice)
+    : 14.99;
+  const trialDays = Number.isFinite(Number(model.billingStatus?.trialDays))
+    ? Number(model.billingStatus.trialDays)
+    : 7;
   const subscription = model.billingStatus?.subscription || {};
   const billingActive = Boolean(model.billingStatus?.active);
   const billingStatus = getBillingStatusModel(model.billingStatus || {});
-  const visitorCount = Number(
-    model.incidentCounts?.total || model.storefrontScans || 0,
-  );
+  const visitorCount = Number.isFinite(Number(model.incidentCounts?.total))
+    ? Number(model.incidentCounts.total)
+    : Array.isArray(model.storefrontScans)
+      ? model.storefrontScans.length
+      : 0;
   const hexPattern = /^#[0-9a-f]{6}$/i;
   const colorKeys = [
     "backdropColor",
@@ -4169,35 +4175,71 @@ function SettingsPageV2({ model, actions }) {
         </div>
 
         {activeTab === "general" ? (
-          <BotShieldCard title="Admin access URL">
-            <div className="botshield-settings-empty-card">
-              <h2>No admin access URL yet</h2>
-              <p>
-                Generate a private storefront access URL for admins and agencies.
-              </p>
-              <p className="botshield-settings-muted">
-                Admin access URL generation is not connected yet. Use Trusted
-                Visitors from Protection for reviewed admin or agency IPs until
-                this workflow is connected.
-              </p>
-            </div>
-          </BotShieldCard>
+          <s-stack gap="large">
+            <BotShieldCard title="Admin access">
+              <div className="botshield-settings-admin-grid">
+                <div className="botshield-settings-compact-empty">
+                  <h2>Admin access URL</h2>
+                  <p>
+                    Generate a private storefront access URL for admins,
+                    agencies, and trusted reviewers.
+                  </p>
+                  <div className="botshield-settings-inline-empty">
+                    <strong>No admin access URL yet</strong>
+                    <span>
+                      Admin access URL generation is not connected yet. Use
+                      Trusted Visitors from Protection for reviewed admin or
+                      agency IPs until this workflow is connected.
+                    </span>
+                  </div>
+                </div>
+                <div className="botshield-settings-status-card">
+                  <span>Access status</span>
+                  <strong>Not connected</strong>
+                  <span className="botshield-settings-neutral-pill">
+                    Setup required
+                  </span>
+                </div>
+              </div>
+            </BotShieldCard>
+            <BotShieldCard title="Trusted access fallback">
+              <div className="botshield-settings-inline-action">
+                <p>
+                  Use Trusted Visitors in Protection to allow reviewed admin,
+                  agency, or customer IPs.
+                </p>
+                <BotShieldActionButton
+                  onClick={() => actions.setPage("detection")}
+                  variant="primary"
+                >
+                  Open Protection
+                </BotShieldActionButton>
+              </div>
+            </BotShieldCard>
+          </s-stack>
         ) : null}
 
         {activeTab === "pricing" ? (
           <s-stack gap="large">
             {!billingActive || subscription.isTest ? (
-              <BotShieldBanner
-                tone="info"
-                title="Development store testing access enabled"
-              >
-                This partner development store has paid features enabled for
-                testing. Billing approval is not required until the store moves
-                to a paid Shopify plan.
-              </BotShieldBanner>
+              <div className="botshield-settings-info-card">
+                <div className="botshield-settings-info-icon">i</div>
+                <div>
+                  <h2>Development store testing access enabled</h2>
+                  <p>
+                    This partner development store has paid features enabled for
+                    testing. Billing approval is not required until the store
+                    moves to a paid Shopify plan.
+                  </p>
+                </div>
+              </div>
             ) : null}
             <div className="botshield-settings-plan-grid">
-              <BotShieldCard title="Free" subtitle="$0/mo">
+              <div className="botshield-settings-plan-card">
+                <div>
+                  <h2>Free</h2>
+                  <div className="botshield-settings-price">$0/mo</div>
+                </div>
                 <ul className="botshield-settings-feature-list">
                   <li>Basic storefront protection</li>
                   <li>Limited visitor analytics</li>
@@ -4211,16 +4253,20 @@ function SettingsPageV2({ model, actions }) {
                 <p className="botshield-settings-muted">
                   Downgrades are not connected yet.
                 </p>
-              </BotShieldCard>
-              <BotShieldCard
-                title={planName}
-                subtitle={`$${monthlyPrice.toFixed(2)}/mo · ${trialDays}-day trial`}
-                badge={
+              </div>
+              <div className="botshield-settings-plan-card botshield-settings-plan-card--current">
+                <div className="botshield-settings-plan-heading">
+                  <div>
+                    <h2>{planName}</h2>
+                    <div className="botshield-settings-price">
+                      ${monthlyPrice.toFixed(2)}/mo
+                    </div>
+                    <p>{trialDays}-day trial</p>
+                  </div>
                   <span className="botshield-settings-neutral-pill">
                     Current plan
                   </span>
-                }
-              >
+                </div>
                 <ul className="botshield-settings-feature-list">
                   <li>Bot protection</li>
                   <li>Network / Proxy protection</li>
@@ -4232,7 +4278,7 @@ function SettingsPageV2({ model, actions }) {
                   <li>Full visitor analytics</li>
                 </ul>
                 <p className="botshield-settings-muted">Your current plan.</p>
-              </BotShieldCard>
+              </div>
             </div>
             <BotShieldCard
               title="Usage this billing cycle"
@@ -4263,8 +4309,8 @@ function SettingsPageV2({ model, actions }) {
                 />
                 <Metric
                   label="Included visitors"
-                  value="Not configured"
-                  detail="No hard visitor limit is configured in code"
+                  value="Unlimited"
+                  detail="No hard visitor limit is configured"
                   status="monitoring_only"
                 />
                 <Metric
@@ -4280,7 +4326,11 @@ function SettingsPageV2({ model, actions }) {
                       ? formatDate(subscription.currentPeriodEnd)
                       : "Not available"
                   }
-                  detail={billingStatus.description}
+                  detail={
+                    subscription.currentPeriodEnd
+                      ? billingStatus.description
+                      : "Complete setup to activate this feature"
+                  }
                   status={billingStatus.technicalStatus}
                 />
               </div>
@@ -4290,12 +4340,31 @@ function SettingsPageV2({ model, actions }) {
 
         {activeTab === "content-protection" ? (
           <s-stack gap="large">
-            <BotShieldBanner tone="info" title="Browser-side protection">
-              These protections run in the visitor&apos;s browser. They reduce
-              casual copying, but no frontend-only solution can fully stop
-              determined users.
-            </BotShieldBanner>
-            <BotShieldCard>
+            <div className="botshield-settings-info-card">
+              <div className="botshield-settings-info-icon">i</div>
+              <div>
+                <h2>Browser-side protection</h2>
+                <p>
+                  These protections run in the visitor&apos;s browser. They
+                  reduce casual copying, but no frontend-only solution can fully
+                  stop determined users.
+                </p>
+              </div>
+            </div>
+            <BotShieldCard
+              title="Storefront script status"
+              badge={
+                <span className="botshield-settings-neutral-pill">
+                  Not connected
+                </span>
+              }
+            >
+              <p className="botshield-settings-card-copy">
+                Content protection controls are prepared in the dashboard but
+                are not connected to the storefront script yet.
+              </p>
+            </BotShieldCard>
+            <BotShieldCard title="Protection controls">
               {[
                 [
                   "Protect content",
@@ -4306,21 +4375,23 @@ function SettingsPageV2({ model, actions }) {
                   "Disable the browser context menu across the storefront to reduce casual copying.",
                 ],
                 [
-                  "Deactivate shortcut",
-                  "Block common copy, save, print, and source-view keyboard shortcuts outside editable fields. Blocks shortcuts such as Ctrl/Cmd + C, X, S, A, P, U and common inspect combinations.",
+                  "Deactivate shortcuts",
+                  "Block common copy, save, print, and source-view keyboard shortcuts outside editable fields.",
+                  "Includes Ctrl/Cmd + C, X, S, A, P, U and common inspect combinations.",
                 ],
                 [
                   "Deactivate inspect",
-                  "Apply best-effort browser-side protections against Inspect Element and source-view shortcuts. Determined users can still access page source with advanced tools.",
+                  "Apply best-effort browser-side protections against Inspect Element and source-view shortcuts.",
+                  "Determined users can still access page source with advanced tools.",
                 ],
-              ].map(([label, detail]) => (
+              ].map(([label, detail, helper]) => (
                 <div className="botshield-settings-row" key={label}>
                   <div>
                     <h3>{label}</h3>
                     <p>{detail}</p>
-                    <p className="botshield-settings-muted">
-                      This setting is not connected to the storefront script yet.
-                    </p>
+                    {helper ? (
+                      <p className="botshield-settings-muted">{helper}</p>
+                    ) : null}
                   </div>
                   <div className="botshield-settings-row-actions">
                     <span className="botshield-settings-neutral-pill">Off</span>
@@ -4336,7 +4407,7 @@ function SettingsPageV2({ model, actions }) {
           <BotShieldCard>
             <div className="botshield-blocking-design-grid">
               <div className="botshield-blocking-design-form">
-                <h2>Customize template</h2>
+                <h2>Template editor</h2>
                 <BotShieldSelect
                   label="Template"
                   value={blockingDraft.template}
@@ -4344,6 +4415,7 @@ function SettingsPageV2({ model, actions }) {
                   onChange={(template) =>
                     updateBlockingDraft("template", template)
                   }
+                  details="Choose the default blocking overlay template."
                 />
                 <BotShieldTextField
                   label="Headline"
@@ -4359,17 +4431,20 @@ function SettingsPageV2({ model, actions }) {
                     updateBlockingDraft("message", message)
                   }
                 />
-                <BotShieldActionButton disabled>
-                  Upload background image
-                </BotShieldActionButton>
+                <div className="botshield-settings-disabled-row">
+                  <span>Background image</span>
+                  <span className="botshield-settings-neutral-pill">
+                    Not connected
+                  </span>
+                </div>
+                <div className="botshield-settings-disabled-row">
+                  <span>Logo</span>
+                  <span className="botshield-settings-neutral-pill">
+                    Not connected
+                  </span>
+                </div>
                 <p className="botshield-settings-muted">
                   Image uploads are not connected yet.
-                </p>
-                <BotShieldActionButton disabled>
-                  Upload logo
-                </BotShieldActionButton>
-                <p className="botshield-settings-muted">
-                  Logo uploads are not connected yet.
                 </p>
                 <BotShieldTextField
                   label="Border radius"
