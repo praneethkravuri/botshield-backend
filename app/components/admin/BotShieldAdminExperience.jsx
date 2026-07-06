@@ -2121,6 +2121,11 @@ function AnalyticsTrendChart({ values }) {
 function FraudOrdersPage({ model, actions }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const fraudOrders = Array.isArray(model.fraudOrders) ? model.fraudOrders : [];
+  const fraudOrderAutoBlock = Boolean(model.fraudOrderAutoBlock);
+  const fraudOrderAutoCancel = Boolean(model.fraudOrderAutoCancel);
+  const fraudOrderRestock = model.fraudOrderRestock !== false;
+  const fraudOrderNotifyCustomer = Boolean(model.fraudOrderNotifyCustomer);
+  const fraudOrderFilterEnabled = model.fraudOrderFilterEnabled !== false;
   const orderMetrics = fraudOrders.reduce(
     (summary, order) => {
       const risk = String(order.risk || order.riskLevel || "").toLowerCase();
@@ -2135,20 +2140,19 @@ function FraudOrdersPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
-        <div className="botshield-overview-app-title">
-          <s-text type="strong">BotShield</s-text>
-        </div>
-
         <div className="botshield-overview-header">
           <div>
-            <h1 className="botshield-overview-title">Fraud Orders</h1>
+            <h1 className="botshield-overview-title">Fraud orders</h1>
             <p className="botshield-overview-subtitle">
               Review risky Shopify orders and automate follow-up actions when
               fraud risk is high.
             </p>
           </div>
-          <BotShieldActionButton onClick={() => setHelpOpen(true)}>
-            Get help
+          <BotShieldActionButton
+            onClick={() => setHelpOpen(true)}
+            variant="primary"
+          >
+            ⓘ Get help
           </BotShieldActionButton>
         </div>
 
@@ -2160,8 +2164,14 @@ function FraudOrdersPage({ model, actions }) {
                   <h2 className="botshield-fraud-card-title">
                     Auto-block visitors placing fraud orders
                   </h2>
-                  <span className="botshield-overview-badge botshield-overview-badge--muted">
-                    Off
+                  <span
+                    className={`botshield-overview-badge${
+                      fraudOrderAutoBlock
+                        ? ""
+                        : " botshield-overview-badge--muted"
+                    }`}
+                  >
+                    {fraudOrderAutoBlock ? "On" : "Off"}
                   </span>
                 </div>
                 <p className="botshield-fraud-card-copy">
@@ -2172,13 +2182,22 @@ function FraudOrdersPage({ model, actions }) {
                 <p className="botshield-fraud-card-note">
                   High-risk threshold uses Shopify fraud recommendation: Cancel.
                 </p>
-                <BotShieldInlineHelp>
-                  This automation is not connected yet.
-                </BotShieldInlineHelp>
               </div>
-              <BotShieldActionButton disabled variant="primary">
-                Turn on
-              </BotShieldActionButton>
+              <BotShieldAsyncButton
+                action={() =>
+                  actions.saveFraudOrderSettings({
+                    fraudOrderAutoBlock: !fraudOrderAutoBlock,
+                  })
+                }
+                successMessage={
+                  fraudOrderAutoBlock
+                    ? "Auto-block turned off"
+                    : "Auto-block turned on"
+                }
+                variant="primary"
+              >
+                {fraudOrderAutoBlock ? "Turn off" : "Turn on"}
+              </BotShieldAsyncButton>
             </div>
           </BotShieldCard>
 
@@ -2189,8 +2208,14 @@ function FraudOrdersPage({ model, actions }) {
                   <h2 className="botshield-fraud-card-title">
                     Auto-cancel high-risk orders
                   </h2>
-                  <span className="botshield-overview-badge botshield-overview-badge--muted">
-                    Off
+                  <span
+                    className={`botshield-overview-badge${
+                      fraudOrderAutoCancel
+                        ? ""
+                        : " botshield-overview-badge--muted"
+                    }`}
+                  >
+                    {fraudOrderAutoCancel ? "On" : "Off"}
                   </span>
                 </div>
                 <p className="botshield-fraud-card-copy">
@@ -2198,25 +2223,68 @@ function FraudOrdersPage({ model, actions }) {
                   recommendation is Cancel.
                 </p>
                 <div className="botshield-fraud-pill-row">
-                  <span className="botshield-overview-badge">Restock On</span>
-                  <span className="botshield-overview-badge botshield-overview-badge--muted">
-                    Notify customer Off
+                  <span
+                    className={`botshield-overview-badge${
+                      fraudOrderRestock
+                        ? ""
+                        : " botshield-overview-badge--muted"
+                    }`}
+                  >
+                    Restock {fraudOrderRestock ? "On" : "Off"}
+                  </span>
+                  <span
+                    className={`botshield-overview-badge${
+                      fraudOrderNotifyCustomer
+                        ? ""
+                        : " botshield-overview-badge--muted"
+                    }`}
+                  >
+                    Notify customer {fraudOrderNotifyCustomer ? "On" : "Off"}
                   </span>
                 </div>
-                <BotShieldInlineHelp>
-                  Order cancellation automation is not connected yet.
-                </BotShieldInlineHelp>
               </div>
               <div className="botshield-fraud-button-stack">
-                <BotShieldActionButton disabled>
-                  Disable restock
-                </BotShieldActionButton>
-                <BotShieldActionButton disabled>
-                  Enable notify
-                </BotShieldActionButton>
-                <BotShieldActionButton disabled variant="primary">
-                  Turn on
-                </BotShieldActionButton>
+                <BotShieldAsyncButton
+                  action={() =>
+                    actions.saveFraudOrderSettings({
+                      fraudOrderRestock: !fraudOrderRestock,
+                    })
+                  }
+                  successMessage={
+                    fraudOrderRestock ? "Restock disabled" : "Restock enabled"
+                  }
+                >
+                  {fraudOrderRestock ? "Disable restock" : "Enable restock"}
+                </BotShieldAsyncButton>
+                <BotShieldAsyncButton
+                  action={() =>
+                    actions.saveFraudOrderSettings({
+                      fraudOrderNotifyCustomer: !fraudOrderNotifyCustomer,
+                    })
+                  }
+                  successMessage={
+                    fraudOrderNotifyCustomer
+                      ? "Customer notification disabled"
+                      : "Customer notification enabled"
+                  }
+                >
+                  {fraudOrderNotifyCustomer ? "Disable notify" : "Enable notify"}
+                </BotShieldAsyncButton>
+                <BotShieldAsyncButton
+                  action={() =>
+                    actions.saveFraudOrderSettings({
+                      fraudOrderAutoCancel: !fraudOrderAutoCancel,
+                    })
+                  }
+                  successMessage={
+                    fraudOrderAutoCancel
+                      ? "Auto-cancel turned off"
+                      : "Auto-cancel turned on"
+                  }
+                  variant="primary"
+                >
+                  {fraudOrderAutoCancel ? "Turn off" : "Turn on"}
+                </BotShieldAsyncButton>
               </div>
             </div>
           </BotShieldCard>
@@ -2226,19 +2294,36 @@ function FraudOrdersPage({ model, actions }) {
               <div>
                 <div className="botshield-fraud-title-row">
                   <h2 className="botshield-fraud-card-title">Fraud filter</h2>
-                  <span className="botshield-overview-badge">On</span>
+                  <span
+                    className={`botshield-overview-badge${
+                      fraudOrderFilterEnabled
+                        ? ""
+                        : " botshield-overview-badge--muted"
+                    }`}
+                  >
+                    {fraudOrderFilterEnabled ? "On" : "Off"}
+                  </span>
                 </div>
                 <p className="botshield-fraud-card-copy">
                   Turn on the fraud filter to sync Shopify fraud
                   recommendations, review risky orders, and trigger follow-up
                   actions from the analytics screen.
                 </p>
-                <BotShieldInlineHelp>
-                  Fraud order syncing is not connected to Shopify order risk
-                  data yet, so this filter is display-only for now.
-                </BotShieldInlineHelp>
               </div>
-              <BotShieldActionButton disabled>Turn off</BotShieldActionButton>
+              <BotShieldAsyncButton
+                action={() =>
+                  actions.saveFraudOrderSettings({
+                    fraudOrderFilterEnabled: !fraudOrderFilterEnabled,
+                  })
+                }
+                successMessage={
+                  fraudOrderFilterEnabled
+                    ? "Fraud filter turned off"
+                    : "Fraud filter turned on"
+                }
+              >
+                {fraudOrderFilterEnabled ? "Turn off" : "Turn on"}
+              </BotShieldAsyncButton>
             </div>
           </BotShieldCard>
         </section>

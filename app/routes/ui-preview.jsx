@@ -154,6 +154,11 @@ export default function UiPreview() {
     emailAlerts: true,
     highRiskAlertsOnly: false,
     weeklyReportsEnabled: true,
+    fraudOrderAutoBlock: false,
+    fraudOrderAutoCancel: false,
+    fraudOrderRestock: true,
+    fraudOrderNotifyCustomer: false,
+    fraudOrderFilterEnabled: true,
   });
   const [incidentFilters, setIncidentFilters] = useState({
     source: "real",
@@ -204,6 +209,11 @@ export default function UiPreview() {
       emailAlerts: settings.emailAlerts,
       highRiskAlertsOnly: settings.highRiskAlertsOnly,
       weeklyReportsEnabled: settings.weeklyReportsEnabled,
+      fraudOrderAutoBlock: settings.fraudOrderAutoBlock,
+      fraudOrderAutoCancel: settings.fraudOrderAutoCancel,
+      fraudOrderRestock: settings.fraudOrderRestock,
+      fraudOrderNotifyCustomer: settings.fraudOrderNotifyCustomer,
+      fraudOrderFilterEnabled: settings.fraudOrderFilterEnabled,
       emailProviderConfigured: true,
       lastAlertStatus: "sent",
       lastAlertSentAt: minutesAgo(8),
@@ -307,6 +317,9 @@ export default function UiPreview() {
     clearSimulationData: async () => {},
     openThemeEditor: () => navigatePreview("setup"),
     saveSettings: async (nextSettings) => {
+      setSettings((current) => ({ ...current, ...nextSettings }));
+    },
+    saveFraudOrderSettings: async (nextSettings) => {
       setSettings((current) => ({ ...current, ...nextSettings }));
     },
     addBlockedIp: async (ip) => {

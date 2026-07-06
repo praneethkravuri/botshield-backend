@@ -62,6 +62,11 @@ export async function getAppSettings(shop) {
             "lastWeeklyReportAttemptAt",
             "lastWeeklyReportProviderMessageId",
             "lastWeeklyReportError",
+            "fraudOrderAutoBlock",
+            "fraudOrderAutoCancel",
+            "fraudOrderRestock",
+            "fraudOrderNotifyCustomer",
+            "fraudOrderFilterEnabled",
           ],
         },
       },
@@ -97,6 +102,26 @@ export async function getAppSettings(shop) {
         settingMap.get("lastWeeklyReportProviderMessageId") || null,
       lastWeeklyReportError:
         settingMap.get("lastWeeklyReportError") || null,
+      fraudOrderAutoBlock: parseDbBoolean(
+        settingMap.get("fraudOrderAutoBlock"),
+        false,
+      ),
+      fraudOrderAutoCancel: parseDbBoolean(
+        settingMap.get("fraudOrderAutoCancel"),
+        false,
+      ),
+      fraudOrderRestock: parseDbBoolean(
+        settingMap.get("fraudOrderRestock"),
+        true,
+      ),
+      fraudOrderNotifyCustomer: parseDbBoolean(
+        settingMap.get("fraudOrderNotifyCustomer"),
+        false,
+      ),
+      fraudOrderFilterEnabled: parseDbBoolean(
+        settingMap.get("fraudOrderFilterEnabled"),
+        true,
+      ),
       emailProvider: getEmailProviderStatus(),
     };
   } catch {
@@ -117,6 +142,11 @@ export async function getAppSettings(shop) {
       lastWeeklyReportAttemptAt: null,
       lastWeeklyReportProviderMessageId: null,
       lastWeeklyReportError: null,
+      fraudOrderAutoBlock: false,
+      fraudOrderAutoCancel: false,
+      fraudOrderRestock: true,
+      fraudOrderNotifyCustomer: false,
+      fraudOrderFilterEnabled: true,
       emailProvider: getEmailProviderStatus(),
     };
   }
@@ -146,6 +176,23 @@ export async function saveAppSettings(shop, input = {}) {
     input.weeklyReportsEnabled,
     false,
   );
+  const fraudOrderAutoBlock = toBooleanString(
+    input.fraudOrderAutoBlock,
+    false,
+  );
+  const fraudOrderAutoCancel = toBooleanString(
+    input.fraudOrderAutoCancel,
+    false,
+  );
+  const fraudOrderRestock = toBooleanString(input.fraudOrderRestock, true);
+  const fraudOrderNotifyCustomer = toBooleanString(
+    input.fraudOrderNotifyCustomer,
+    false,
+  );
+  const fraudOrderFilterEnabled = toBooleanString(
+    input.fraudOrderFilterEnabled,
+    true,
+  );
 
   if (
     emailAlerts === "true" &&
@@ -164,6 +211,11 @@ export async function saveAppSettings(shop, input = {}) {
       highRiskAlertsOnly,
       alertEmail,
       weeklyReportsEnabled,
+      fraudOrderAutoBlock,
+      fraudOrderAutoCancel,
+      fraudOrderRestock,
+      fraudOrderNotifyCustomer,
+      fraudOrderFilterEnabled,
     }).map(([key, value]) =>
       db.appSetting.upsert({
         where: { shop_key: { shop: normalizedShop, key } },

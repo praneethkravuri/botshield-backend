@@ -1314,6 +1314,13 @@ export default function Index() {
   const [lastWeeklyReportStatus, setLastWeeklyReportStatus] = useState(null);
   const [lastWeeklyReportAt, setLastWeeklyReportAt] = useState(null);
   const [lastWeeklyReportError, setLastWeeklyReportError] = useState(null);
+  const [fraudOrderAutoBlock, setFraudOrderAutoBlock] = useState(false);
+  const [fraudOrderAutoCancel, setFraudOrderAutoCancel] = useState(false);
+  const [fraudOrderRestock, setFraudOrderRestock] = useState(true);
+  const [fraudOrderNotifyCustomer, setFraudOrderNotifyCustomer] =
+    useState(false);
+  const [fraudOrderFilterEnabled, setFraudOrderFilterEnabled] =
+    useState(true);
   const [securityPosture, setSecurityPosture] = useState(null);
   const [billingStatus, setBillingStatus] = useState(null);
   const [incidents, setIncidents] = useState([]);
@@ -1815,6 +1822,11 @@ export default function Index() {
       setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
       setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
       setLastWeeklyReportError(settings.lastWeeklyReportError || null);
+      setFraudOrderAutoBlock(Boolean(settings.fraudOrderAutoBlock));
+      setFraudOrderAutoCancel(Boolean(settings.fraudOrderAutoCancel));
+      setFraudOrderRestock(settings.fraudOrderRestock !== false);
+      setFraudOrderNotifyCustomer(Boolean(settings.fraudOrderNotifyCustomer));
+      setFraudOrderFilterEnabled(settings.fraudOrderFilterEnabled !== false);
     } catch (err) {
       console.error("Failed to load settings", err);
     }
@@ -2020,6 +2032,11 @@ export default function Index() {
       highRiskAlertsOnly,
       alertEmail,
       weeklyReportsEnabled,
+      fraudOrderAutoBlock,
+      fraudOrderAutoCancel,
+      fraudOrderRestock,
+      fraudOrderNotifyCustomer,
+      fraudOrderFilterEnabled,
       ...overrides,
     };
 
@@ -2060,6 +2077,11 @@ export default function Index() {
     setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
     setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
     setLastWeeklyReportError(settings.lastWeeklyReportError || null);
+    setFraudOrderAutoBlock(Boolean(settings.fraudOrderAutoBlock));
+    setFraudOrderAutoCancel(Boolean(settings.fraudOrderAutoCancel));
+    setFraudOrderRestock(settings.fraudOrderRestock !== false);
+    setFraudOrderNotifyCustomer(Boolean(settings.fraudOrderNotifyCustomer));
+    setFraudOrderFilterEnabled(settings.fraudOrderFilterEnabled !== false);
 
     await refreshBackendState();
 
@@ -3621,6 +3643,11 @@ export default function Index() {
     lastWeeklyReportStatus,
     lastWeeklyReportAt,
     lastWeeklyReportError,
+    fraudOrderAutoBlock,
+    fraudOrderAutoCancel,
+    fraudOrderRestock,
+    fraudOrderNotifyCustomer,
+    fraudOrderFilterEnabled,
     blockedIPs,
     whitelist,
     trafficOrigins,
@@ -3673,6 +3700,10 @@ export default function Index() {
     setIncidentFilter: (key, value) =>
       setIncidentFilters((current) => ({ ...current, [key]: value })),
     saveSettings: (overrides) => persistProtectionSettings(overrides),
+    saveFraudOrderSettings: (overrides) =>
+      persistProtectionSettings(overrides, {
+        message: "Fraud order settings saved.",
+      }),
     pauseProtection: (minutes) =>
       persistProtectionSettings({
         protectionPausedUntil: new Date(
