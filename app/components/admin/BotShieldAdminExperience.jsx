@@ -2142,7 +2142,9 @@ function FraudOrdersPage({ model, actions }) {
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
         <div className="botshield-protection-header">
           <div>
-            <h1 className="botshield-overview-title">Fraud Orders</h1>
+            <h1 className="botshield-overview-title botshield-protection-page-title">
+              Fraud Orders
+            </h1>
             <p className="botshield-overview-subtitle">
               Review risky Shopify orders and automate follow-up actions when
               fraud risk is high.
@@ -2942,7 +2944,9 @@ function ProtectionPage({ model, actions }) {
 
         <div className="botshield-protection-header">
           <div>
-            <h1 className="botshield-overview-title">Protection</h1>
+            <h1 className="botshield-overview-title botshield-protection-page-title">
+              Protection
+            </h1>
             <p className="botshield-overview-subtitle">
               Manage active guard rules and add new storefront protections from
               one place.
