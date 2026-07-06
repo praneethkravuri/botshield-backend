@@ -1130,7 +1130,7 @@ function OverviewPage({ model, actions }) {
               <div>
                 <h1 className="botshield-overview-title">Overview</h1>
                 <p className="botshield-overview-subtitle">
-                  Track storefront protection, fraud workflows, and billing
+                  Track storefront protection, visitor activity, and billing
                   health from one clean control center.
                 </p>
               </div>

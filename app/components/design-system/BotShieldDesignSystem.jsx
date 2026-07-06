@@ -197,7 +197,7 @@ export function BotShieldAppFrame({ children }) {
           padding-top: 30px;
         }
         .botshield-overview-content .botshield-surface {
-          padding: 24px 28px;
+          padding: 24px 27px;
           box-shadow: none;
           border-color: #d4d4d4;
           border-radius: 16px;
@@ -270,7 +270,7 @@ export function BotShieldAppFrame({ children }) {
           min-height: 184px;
         }
         .botshield-overview-row {
-          padding: 15px 0;
+          padding: 14px 0;
           border-bottom: 1px solid #e3e3e3;
         }
         .botshield-overview-row:first-child {
@@ -295,12 +295,13 @@ export function BotShieldAppFrame({ children }) {
           align-items: center;
           justify-content: center;
           min-height: 24px;
-          padding: 3px 10px;
+          min-width: 42px;
+          padding: 3px 9px;
           border-radius: 999px;
-          border: 0;
-          background: #d8f8df;
-          color: #14532d;
-          font-size: 14px;
+          border: 1px solid #d8d8d8;
+          background: #f5f5f5;
+          color: #303030;
+          font-size: 13px;
           line-height: 1;
           font-weight: 650;
           white-space: nowrap;
@@ -308,6 +309,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-overview-badge--muted {
           background: #eeeeee;
           color: #5f6368;
+          border-color: #e2e2e2;
         }
         .botshield-surface {
           box-sizing: border-box;
