@@ -656,6 +656,14 @@ export function BotShieldAppFrame({ children }) {
         .botshield-fraud-orders-content .botshield-overview-header {
           padding-bottom: 6px;
         }
+        .botshield-fraud-orders-content .botshield-overview-title {
+          color: #111111;
+          font-family: inherit;
+          font-size: 32px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          line-height: 1.15;
+        }
         .botshield-fraud-automation-stack {
           display: grid;
           gap: 24px;
