@@ -2140,9 +2140,9 @@ function FraudOrdersPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
-        <div className="botshield-overview-header">
+        <div className="botshield-protection-header">
           <div>
-            <h1 className="botshield-overview-title">Fraud orders</h1>
+            <h1 className="botshield-overview-title">Fraud Orders</h1>
             <p className="botshield-overview-subtitle">
               Review risky Shopify orders and automate follow-up actions when
               fraud risk is high.
