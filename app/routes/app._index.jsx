@@ -2841,14 +2841,14 @@ export default function Index() {
       activity: "incidents",
       incidents: "incidents",
       detection: "security",
-      blocklist: "blocklist",
-      trusted: "trusted",
-      "trusted-visitors": "trusted",
+      blocklist: "settings",
+      trusted: "settings",
+      "trusted-visitors": "settings",
       policy: "settings",
       "alerts-reports": "settings",
-      settings: "detection-settings",
-      billing: "billing",
-      setup: "setup",
+      settings: "settings",
+      billing: "settings",
+      setup: "settings",
     };
     const pathPageMap = {
       "/app": "dashboard",
@@ -2856,12 +2856,12 @@ export default function Index() {
       "/app/protection-rules": "security",
       "/app/visitors": "incidents",
       "/app/fraud-orders": "fraud-orders",
-      "/app/blocklist": "blocklist",
-      "/app/trusted-visitors": "trusted",
+      "/app/blocklist": "settings",
+      "/app/trusted-visitors": "settings",
       "/app/alerts-reports": "settings",
-      "/app/billing": "billing",
-      "/app/settings": "detection-settings",
-      "/app/setup": "setup",
+      "/app/billing": "settings",
+      "/app/settings": "settings",
+      "/app/setup": "settings",
     };
     const legacyViewPathMap = {
       dashboard: "/app",
@@ -2873,14 +2873,14 @@ export default function Index() {
       activity: "/app/visitors",
       incidents: "/app/visitors",
       detection: "/app/protection-rules",
-      blocklist: "/app/blocklist",
-      trusted: "/app/trusted-visitors",
-      "trusted-visitors": "/app/trusted-visitors",
-      policy: "/app/alerts-reports",
-      "alerts-reports": "/app/alerts-reports",
+      blocklist: "/app/settings",
+      trusted: "/app/settings",
+      "trusted-visitors": "/app/settings",
+      policy: "/app/settings",
+      "alerts-reports": "/app/settings",
       settings: "/app/settings",
-      billing: "/app/billing",
-      setup: "/app/setup",
+      billing: "/app/settings",
+      setup: "/app/settings",
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
@@ -3631,6 +3631,16 @@ export default function Index() {
   };
 
   const openPolarisPage = (nextPage) => {
+    const retiredPageMap = {
+      blocklist: "settings",
+      trusted: "settings",
+      "trusted-visitors": "settings",
+      billing: "settings",
+      setup: "settings",
+      "alerts-reports": "settings",
+      policy: "settings",
+    };
+    const resolvedPage = retiredPageMap[nextPage] || nextPage;
     const pageToView = {
       dashboard: "/app",
       analytics: "/app/analytics",
@@ -3638,16 +3648,18 @@ export default function Index() {
       detection: "/app/protection-rules",
       incidents: "/app/visitors",
       "fraud-orders": "/app/fraud-orders",
-      blocklist: "/app/blocklist",
-      trusted: "/app/trusted-visitors",
-      settings: "/app/alerts-reports",
-      policy: "/app/alerts-reports",
+      blocklist: "/app/settings",
+      trusted: "/app/settings",
+      "trusted-visitors": "/app/settings",
+      settings: "/app/settings",
+      policy: "/app/settings",
       "detection-settings": "/app/settings",
-      billing: "/app/billing",
-      setup: "/app/setup",
+      billing: "/app/settings",
+      setup: "/app/settings",
+      "alerts-reports": "/app/settings",
     };
-    const path = pageToView[nextPage] || "/app";
-    setPage(nextPage);
+    const path = pageToView[resolvedPage] || "/app";
+    setPage(resolvedPage);
     navigate(path, { replace: false });
   };
 

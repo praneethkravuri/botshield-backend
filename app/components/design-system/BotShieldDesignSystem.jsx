@@ -599,6 +599,38 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-response {
           padding-top: 4px;
         }
+        .botshield-protection-modal-backdrop {
+          position: fixed;
+          inset: 0;
+          z-index: 50;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          background: rgba(48, 48, 48, 0.28);
+        }
+        .botshield-protection-modal {
+          width: min(420px, 100%);
+          box-sizing: border-box;
+          background: #ffffff;
+          border: 1px solid #d4d4d4;
+          border-radius: 14px;
+          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+          padding: 22px;
+        }
+        .botshield-protection-modal-title {
+          margin: 0;
+          color: #303030;
+          font-size: 20px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+        .botshield-protection-modal-copy {
+          margin: 12px 0 20px;
+          color: #616161;
+          font-size: 15px;
+          line-height: 1.45;
+        }
         .botshield-surface {
           box-sizing: border-box;
           background: var(--botshield-surface);

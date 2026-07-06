@@ -2496,7 +2496,7 @@ function ActivityPage({ model, actions }) {
 
 function ProtectionPage({ model, actions }) {
   const toast = useBotShieldToast();
-  const [showComposer, setShowComposer] = useState(false);
+  const [protectionModal, setProtectionModal] = useState(null);
   const [draft, setDraft] = useState({
     autoBlock: model.autoBlock,
     strictMode: model.strictMode,
@@ -2542,28 +2542,44 @@ function ProtectionPage({ model, actions }) {
       description: "Detects automated browsers and suspicious user-agent patterns.",
       status: "On",
       active: true,
-      action: () => setShowComposer(true),
+      action: () =>
+        setProtectionModal({
+          title: "Bot protection",
+          text: "Detects automated browsers and suspicious user-agent patterns.",
+        }),
     },
     {
       name: "Network / Proxy protection",
       description: "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
       status: "On",
       active: true,
-      action: () => setShowComposer(true),
+      action: () =>
+        setProtectionModal({
+          title: "Network / Proxy protection",
+          text: "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
+        }),
     },
     {
       name: "Rate protection",
       description: "Flags unusually frequent visits from the same visitor pattern.",
       status: "On",
       active: true,
-      action: () => setShowComposer(true),
+      action: () =>
+        setProtectionModal({
+          title: "Rate protection",
+          text: "Flags unusually frequent visits from the same visitor pattern.",
+        }),
     },
     {
       name: "Page protection",
       description: "Redirects stopped visitors to BotShield's blocked page.",
       status: "On",
       active: true,
-      action: () => setShowComposer(true),
+      action: () =>
+        setProtectionModal({
+          title: "Page protection",
+          text: "Redirects stopped visitors to BotShield’s blocked page.",
+        }),
     },
     {
       name: "IP blocklist",
@@ -2572,7 +2588,11 @@ function ProtectionPage({ model, actions }) {
       } configured.`,
       status: model.blockedIPs.length ? "On" : "Ready",
       active: true,
-      action: () => actions.setPage("blocklist"),
+      action: () =>
+        setProtectionModal({
+          title: "IP blocklist",
+          text: "IP blocklist controls will be handled from the new Settings experience.",
+        }),
     },
     {
       name: "Trusted visitors",
@@ -2581,7 +2601,11 @@ function ProtectionPage({ model, actions }) {
       } can bypass automated blocks.`,
       status: model.whitelist.length ? "On" : "Ready",
       active: true,
-      action: () => actions.setPage("trusted"),
+      action: () =>
+        setProtectionModal({
+          title: "Trusted visitors",
+          text: "Trusted visitor controls will be handled from the new Settings experience.",
+        }),
     },
     {
       name: "Checkout blocking",
@@ -2610,7 +2634,12 @@ function ProtectionPage({ model, actions }) {
             </p>
           </div>
           <BotShieldActionButton
-            onClick={() => setShowComposer(true)}
+            onClick={() =>
+              setProtectionModal({
+                title: "Create protection",
+                text: "BotShield protection modules are already configured from your current protection settings. Advanced creation controls will be available from Settings.",
+              })
+            }
             variant="primary"
           >
             Create protection
@@ -2666,7 +2695,12 @@ function ProtectionPage({ model, actions }) {
                 traffic.
               </p>
               <BotShieldActionButton
-                onClick={() => setShowComposer(true)}
+                onClick={() =>
+                  setProtectionModal({
+                    title: "Create protection",
+                    text: "BotShield protection modules are already configured from your current protection settings. Advanced creation controls will be available from Settings.",
+                  })
+                }
                 variant="primary"
               >
                 Create protection
@@ -2674,7 +2708,7 @@ function ProtectionPage({ model, actions }) {
             </div>
           )}
 
-          {showComposer ? (
+          {protectionModal?.showAdvancedComposer ? (
             <div className="botshield-protection-composer">
               <BotShieldSaveState
                 dirty={dirty}
@@ -2687,7 +2721,7 @@ function ProtectionPage({ model, actions }) {
                     strictMode: model.strictMode,
                     blockLevel: model.blockLevel,
                   });
-                  setShowComposer(false);
+                  setProtectionModal(null);
                 }}
               />
               <div className="botshield-protection-composer-grid">
@@ -2757,6 +2791,28 @@ function ProtectionPage({ model, actions }) {
             </div>
           ) : null}
         </section>
+        {protectionModal ? (
+          <div
+            aria-modal="true"
+            className="botshield-protection-modal-backdrop"
+            role="dialog"
+          >
+            <div className="botshield-protection-modal">
+              <h2 className="botshield-protection-modal-title">
+                {protectionModal.title}
+              </h2>
+              <p className="botshield-protection-modal-copy">
+                {protectionModal.text}
+              </p>
+              <BotShieldActionButton
+                onClick={() => setProtectionModal(null)}
+                variant="primary"
+              >
+                Close
+              </BotShieldActionButton>
+            </div>
+          </div>
+        ) : null}
       </main>
       </div>
     );
