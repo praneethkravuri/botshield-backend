@@ -2497,6 +2497,8 @@ function ActivityPage({ model, actions }) {
 function ProtectionPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [protectionModal, setProtectionModal] = useState(null);
+  const [blockedIpInput, setBlockedIpInput] = useState("");
+  const [trustedIpInput, setTrustedIpInput] = useState("");
   const [draft, setDraft] = useState({
     autoBlock: model.autoBlock,
     strictMode: model.strictMode,
@@ -2523,6 +2525,7 @@ function ProtectionPage({ model, actions }) {
     setSaveError("");
     try {
       await actions.saveSettings(draft);
+      setProtectionModal(null);
       toast.success("Protection settings saved");
     } catch (error) {
       const message =
@@ -2536,6 +2539,24 @@ function ProtectionPage({ model, actions }) {
     }
   };
 
+  const openProfileManager = (title, text, note) =>
+    setProtectionModal({
+      type: "profile",
+      title,
+      text,
+      note:
+        note ||
+        "This module uses BotShield's active protection profile. Changes below apply to future storefront decisions.",
+    });
+
+  const openStatusManager = (title, text, note) =>
+    setProtectionModal({
+      type: "status",
+      title,
+      text,
+      note,
+    });
+
   const protectionRows = [
     {
       name: "Bot protection",
@@ -2543,10 +2564,10 @@ function ProtectionPage({ model, actions }) {
       status: "On",
       active: true,
       action: () =>
-        setProtectionModal({
-          title: "Bot protection",
-          text: "Detects automated browsers and suspicious user-agent patterns.",
-        }),
+        openProfileManager(
+          "Bot protection",
+          "Detects automated browsers and suspicious user-agent patterns.",
+        ),
     },
     {
       name: "Network / Proxy protection",
@@ -2554,10 +2575,11 @@ function ProtectionPage({ model, actions }) {
       status: "On",
       active: true,
       action: () =>
-        setProtectionModal({
-          title: "Network / Proxy protection",
-          text: "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
-        }),
+        openStatusManager(
+          "Network / Proxy protection",
+          "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
+          "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
+        ),
     },
     {
       name: "Rate protection",
@@ -2565,10 +2587,11 @@ function ProtectionPage({ model, actions }) {
       status: "On",
       active: true,
       action: () =>
-        setProtectionModal({
-          title: "Rate protection",
-          text: "Flags unusually frequent visits from the same visitor pattern.",
-        }),
+        openProfileManager(
+          "Rate protection",
+          "Flags unusually frequent visits from the same visitor pattern.",
+          "Rate protection uses the active protection profile. Adjust sensitivity and automated response below.",
+        ),
     },
     {
       name: "Page protection",
@@ -2576,10 +2599,11 @@ function ProtectionPage({ model, actions }) {
       status: "On",
       active: true,
       action: () =>
-        setProtectionModal({
-          title: "Page protection",
-          text: "Redirects stopped visitors to BotShield’s blocked page.",
-        }),
+        openStatusManager(
+          "Page protection",
+          "Redirects stopped visitors to BotShield's blocked page.",
+          "Page protection is active through the storefront theme embed and app proxy. Block page editing is not exposed in this MVP.",
+        ),
     },
     {
       name: "IP blocklist",
@@ -2590,8 +2614,9 @@ function ProtectionPage({ model, actions }) {
       active: true,
       action: () =>
         setProtectionModal({
+          type: "blocklist",
           title: "IP blocklist",
-          text: "IP blocklist controls will be handled from the new Settings experience.",
+          text: "Manually block known abusive IP addresses.",
         }),
     },
     {
@@ -2603,8 +2628,9 @@ function ProtectionPage({ model, actions }) {
       active: true,
       action: () =>
         setProtectionModal({
+          type: "trusted",
           title: "Trusted visitors",
-          text: "Trusted visitor controls will be handled from the new Settings experience.",
+          text: "Allow known safe visitors, admins, agencies, and reviewed customers to bypass automated blocking.",
         }),
     },
     {
@@ -2636,8 +2662,9 @@ function ProtectionPage({ model, actions }) {
           <BotShieldActionButton
             onClick={() =>
               setProtectionModal({
+                type: "create",
                 title: "Create protection",
-                text: "BotShield protection modules are already configured from your current protection settings. Advanced creation controls will be available from Settings.",
+                text: "BotShield includes the active protection modules below. New custom module creation is not exposed in this MVP.",
               })
             }
             variant="primary"
@@ -2697,8 +2724,9 @@ function ProtectionPage({ model, actions }) {
               <BotShieldActionButton
                 onClick={() =>
                   setProtectionModal({
+                    type: "create",
                     title: "Create protection",
-                    text: "BotShield protection modules are already configured from your current protection settings. Advanced creation controls will be available from Settings.",
+                    text: "BotShield includes the active protection modules below. New custom module creation is not exposed in this MVP.",
                   })
                 }
                 variant="primary"
@@ -2797,19 +2825,212 @@ function ProtectionPage({ model, actions }) {
             className="botshield-protection-modal-backdrop"
             role="dialog"
           >
-            <div className="botshield-protection-modal">
+            <div
+              className={`botshield-protection-modal${
+                ["profile", "blocklist", "trusted", "create"].includes(
+                  protectionModal.type,
+                )
+                  ? " botshield-protection-modal--wide"
+                  : ""
+              }`}
+            >
               <h2 className="botshield-protection-modal-title">
                 {protectionModal.title}
               </h2>
               <p className="botshield-protection-modal-copy">
                 {protectionModal.text}
               </p>
-              <BotShieldActionButton
-                onClick={() => setProtectionModal(null)}
-                variant="primary"
-              >
-                Close
-              </BotShieldActionButton>
+              {protectionModal.type === "profile" ? (
+                <div className="botshield-protection-modal-body">
+                  <BotShieldSaveState
+                    dirty={dirty}
+                    saving={saving}
+                    error={saveError}
+                    onSave={save}
+                    onDiscard={() => {
+                      setDraft({
+                        autoBlock: model.autoBlock,
+                        strictMode: model.strictMode,
+                        blockLevel: model.blockLevel,
+                      });
+                      setProtectionModal(null);
+                    }}
+                  />
+                  <BotShieldSelect
+                    label="Sensitivity"
+                    value={draft.blockLevel}
+                    onChange={(blockLevel) =>
+                      setDraft((current) => ({ ...current, blockLevel }))
+                    }
+                    options={[
+                      { label: "Low — obvious abuse only", value: "Low" },
+                      { label: "Medium — balanced protection", value: "Medium" },
+                      { label: "High — aggressive protection", value: "High" },
+                    ]}
+                  />
+                  <BotShieldToggle
+                    label="Auto Block"
+                    details="Automatically block requests that cross the active risk threshold."
+                    checked={draft.autoBlock}
+                    onChange={(autoBlock) =>
+                      setDraft((current) => ({ ...current, autoBlock }))
+                    }
+                  />
+                  <BotShieldToggle
+                    label="Strict Mode"
+                    details="Use High sensitivity and the strongest available rule profile."
+                    checked={draft.strictMode}
+                    onChange={(strictMode) =>
+                      setDraft((current) => ({
+                        ...current,
+                        strictMode,
+                        autoBlock: strictMode ? true : current.autoBlock,
+                        blockLevel: strictMode ? "High" : current.blockLevel,
+                      }))
+                    }
+                  />
+                  <BotShieldInlineHelp>
+                    {protectionModal.note}
+                  </BotShieldInlineHelp>
+                  {!dirty ? (
+                    <div className="botshield-protection-modal-actions">
+                      <BotShieldActionButton
+                        onClick={() => setProtectionModal(null)}
+                      >
+                        Close
+                      </BotShieldActionButton>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {protectionModal.type === "blocklist" ? (
+                <div className="botshield-protection-modal-body">
+                  <IpList
+                    title="IP blocklist"
+                    subtitle="Manually block known abusive IP addresses."
+                    rows={model.blockedIPs}
+                    value={blockedIpInput}
+                    onChange={setBlockedIpInput}
+                    onAdd={async () => {
+                      await actions.addBlockedIp(blockedIpInput);
+                      setBlockedIpInput("");
+                    }}
+                    onRemove={actions.removeBlockedIp}
+                    addLabel="Add IP"
+                    emptyTitle="No blocked visitors yet."
+                  />
+                  <div className="botshield-protection-modal-actions">
+                    <BotShieldActionButton
+                      onClick={() => setProtectionModal(null)}
+                    >
+                      Close
+                    </BotShieldActionButton>
+                  </div>
+                </div>
+              ) : null}
+              {protectionModal.type === "trusted" ? (
+                <div className="botshield-protection-modal-body">
+                  <IpList
+                    title="Trusted visitors"
+                    subtitle="Allow known safe visitors, admins, agencies, and reviewed customers to bypass automated blocking."
+                    rows={model.whitelist}
+                    value={trustedIpInput}
+                    onChange={setTrustedIpInput}
+                    onAdd={async () => {
+                      await actions.addTrustedIp(trustedIpInput);
+                      setTrustedIpInput("");
+                    }}
+                    onRemove={actions.removeTrustedIp}
+                    addLabel="Trust visitor"
+                    emptyTitle="No trusted visitors yet."
+                  />
+                  <div className="botshield-protection-modal-actions">
+                    <BotShieldActionButton
+                      onClick={() => setProtectionModal(null)}
+                    >
+                      Close
+                    </BotShieldActionButton>
+                  </div>
+                </div>
+              ) : null}
+              {protectionModal.type === "status" ? (
+                <div className="botshield-protection-modal-body">
+                  <StatusRow
+                    label="Current status"
+                    detail={protectionModal.note}
+                    status="active"
+                  />
+                  <BotShieldInlineHelp>
+                    This protection is active but does not have a separate
+                    merchant-editable setting yet.
+                  </BotShieldInlineHelp>
+                  <div className="botshield-protection-modal-actions">
+                    <BotShieldActionButton disabled>
+                      Save changes
+                    </BotShieldActionButton>
+                    <BotShieldActionButton
+                      onClick={() => setProtectionModal(null)}
+                      variant="primary"
+                    >
+                      Close
+                    </BotShieldActionButton>
+                  </div>
+                </div>
+              ) : null}
+              {protectionModal.type === "create" ? (
+                <div className="botshield-protection-modal-body">
+                  <div className="botshield-protection-list">
+                    {protectionRows.map((row) => (
+                      <div className="botshield-protection-row" key={row.name}>
+                        <div>
+                          <div className="botshield-protection-row-title">
+                            {row.name}
+                          </div>
+                          <div className="botshield-protection-row-copy">
+                            {row.description}
+                          </div>
+                        </div>
+                        <div className="botshield-protection-row-actions">
+                          <span
+                            className={`botshield-overview-badge${
+                              row.active
+                                ? ""
+                                : " botshield-overview-badge--muted"
+                            }`}
+                          >
+                            {row.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <BotShieldInlineHelp>
+                    Protection modules are managed from this page. Only real
+                    supported controls are shown.
+                  </BotShieldInlineHelp>
+                  <div className="botshield-protection-modal-actions">
+                    <BotShieldActionButton
+                      onClick={() => setProtectionModal(null)}
+                      variant="primary"
+                    >
+                      Review active protections
+                    </BotShieldActionButton>
+                    <BotShieldActionButton
+                      onClick={() => setProtectionModal(null)}
+                    >
+                      Close
+                    </BotShieldActionButton>
+                  </div>
+                </div>
+              ) : null}
+              {!protectionModal.type ? (
+                <BotShieldActionButton
+                  onClick={() => setProtectionModal(null)}
+                  variant="primary"
+                >
+                  Close
+                </BotShieldActionButton>
+              ) : null}
             </div>
           </div>
         ) : null}

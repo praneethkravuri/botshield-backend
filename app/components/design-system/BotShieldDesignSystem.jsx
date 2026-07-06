@@ -618,6 +618,9 @@ export function BotShieldAppFrame({ children }) {
           box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
           padding: 22px;
         }
+        .botshield-protection-modal--wide {
+          width: min(760px, 100%);
+        }
         .botshield-protection-modal-title {
           margin: 0;
           color: #303030;
@@ -630,6 +633,16 @@ export function BotShieldAppFrame({ children }) {
           color: #616161;
           font-size: 15px;
           line-height: 1.45;
+        }
+        .botshield-protection-modal-body {
+          display: grid;
+          gap: 16px;
+        }
+        .botshield-protection-modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
         }
         .botshield-surface {
           box-sizing: border-box;
