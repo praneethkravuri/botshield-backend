@@ -1895,126 +1895,236 @@ function OverviewPage({ model, actions }) {
 }
 
 function AnalyticsPage({ model, actions }) {
-  const recentEvents = model.storefrontScans.filter((event) =>
-    inRecentDays(event.createdAt, 7),
-  );
-  const previousEvents = model.storefrontScans.filter((event) =>
-    inRecentDays(event.createdAt, 7, 7),
-  );
-  const recentBlocked = recentEvents.filter(
+  const [trendMetric, setTrendMetric] = useState("total");
+  const storefrontEvents = model.storefrontScans || [];
+  const totalVisitors = storefrontEvents.length;
+  const allowedVisitors = storefrontEvents.filter((event) =>
+    ["allowed", "whitelisted"].includes(event.actionTaken),
+  ).length;
+  const blockedVisitors = storefrontEvents.filter(
     (event) => event.actionTaken === "blocked",
   ).length;
-  const recentChallenged = recentEvents.filter(
-    (event) => event.actionTaken === "challenged",
-  ).length;
-  const highRiskEvents = model.storefrontScans.filter(
-    (event) => event.threatLevel === "high",
-  ).length;
-  const threatSignals = (model.securityPosture?.report?.topReasonCodes || [])
-    .slice(0, 6)
-    .map((item) => ({
-      label: formatMerchantReasons([item.label]),
-      count: item.count,
-    }));
-  const topOrigins = model.trafficOrigins.slice(0, 6).map((origin) => ({
-    label:
-      [origin.city, origin.country].filter(Boolean).join(", ") ||
-      "Location unavailable",
-    count: origin.count,
+  const blockedRate = totalVisitors
+    ? Math.round((blockedVisitors / totalVisitors) * 100)
+    : 0;
+  const today = new Date();
+  const todayEvents = storefrontEvents.filter((event) => {
+    if (!event.createdAt) return false;
+    const date = new Date(event.createdAt);
+    return (
+      !Number.isNaN(date.getTime()) &&
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    );
+  });
+  const trendBuckets = Array.from({ length: 24 }, (_, hour) => {
+    const eventsForHour = todayEvents.filter(
+      (event) => new Date(event.createdAt).getHours() === hour,
+    );
+    return {
+      hour,
+      total: eventsForHour.length,
+      allowed: eventsForHour.filter((event) =>
+        ["allowed", "whitelisted"].includes(event.actionTaken),
+      ).length,
+      blocked: eventsForHour.filter((event) => event.actionTaken === "blocked")
+        .length,
+    };
+  });
+  const chartValues = trendBuckets.map((bucket) => bucket[trendMetric]);
+  const statCards = [
+    {
+      title: "Total visitors",
+      value: totalVisitors,
+      icon: "♙",
+    },
+    {
+      title: "Allowed visitors",
+      value: allowedVisitors,
+      icon: "✓",
+    },
+    {
+      title: "Blocked visitors",
+      value: blockedVisitors,
+      icon: "!",
+    },
+    {
+      title: "Blocked rate",
+      value: `${blockedRate}%`,
+      icon: "◉",
+    },
+  ];
+  const tabs = [
+    { label: "Overview", active: true, action: null },
+    { label: "Visitors", active: false, action: () => actions.setPage("incidents") },
+    {
+      label: "Fraud Orders",
+      active: false,
+      action: () => actions.setPage("fraud-orders"),
+    },
+  ];
+  const trendTabs = [
+    { label: "Total visits", value: "total" },
+    { label: "Allowed visits", value: "allowed" },
+    { label: "Blocked visits", value: "blocked" },
+  ];
+
+  return (
+    <div className="botshield-page">
+      <main className="botshield-page-content botshield-analytics-content">
+        <div className="botshield-overview-app-title">
+          <s-text type="strong">BotShield</s-text>
+        </div>
+
+        <div className="botshield-analytics-header">
+          <div>
+            <h1 className="botshield-overview-title">Analytics</h1>
+            <p className="botshield-overview-subtitle">
+              Monitor storefront traffic, protection activity, and trend lines
+              in one place.
+            </p>
+          </div>
+        </div>
+
+        <nav className="botshield-analytics-tabs" aria-label="Analytics views">
+          {tabs.map((tab) => (
+            <button
+              className={`botshield-analytics-tab${
+                tab.active ? " botshield-analytics-tab--active" : ""
+              }`}
+              key={tab.label}
+              onClick={tab.action || undefined}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="botshield-analytics-stat-grid">
+          {statCards.map((card) => (
+            <div className="botshield-analytics-stat-card" key={card.title}>
+              <div className="botshield-analytics-stat-label">
+                <span aria-hidden="true" className="botshield-analytics-icon">
+                  {card.icon}
+                </span>
+                {card.title}
+              </div>
+              <div className="botshield-analytics-stat-value">
+                {card.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <section className="botshield-analytics-chart-card">
+          <h2 className="botshield-analytics-card-title">Visitor trends</h2>
+          <div className="botshield-analytics-chart-panel">
+            <div className="botshield-analytics-chart-tabs">
+              {trendTabs.map((tab) => (
+                <button
+                  className={`botshield-analytics-chart-tab${
+                    trendMetric === tab.value
+                      ? " botshield-analytics-chart-tab--active"
+                      : ""
+                  }`}
+                  key={tab.value}
+                  onClick={() => setTrendMetric(tab.value)}
+                  type="button"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <AnalyticsTrendChart values={chartValues} />
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function AnalyticsTrendChart({ values }) {
+  const safeValues = values.length ? values : Array.from({ length: 24 }, () => 0);
+  const maxValue = Math.max(1, ...safeValues);
+  const width = 600;
+  const height = 210;
+  const left = 34;
+  const right = 14;
+  const top = 18;
+  const bottom = 36;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const points = safeValues.map((value, index) => {
+    const x = left + (chartWidth / (safeValues.length - 1 || 1)) * index;
+    const y = top + chartHeight - (value / maxValue) * chartHeight;
+    return { x, y };
+  });
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const hasActivity = safeValues.some((value) => value > 0);
+  const yLabels = [
+    { value: maxValue, y: top },
+    { value: Math.ceil(maxValue / 2), y: top + chartHeight / 2 },
+    { value: 0, y: top + chartHeight },
+  ];
+  const xLabels = [0, 3, 6, 9, 12, 15, 18].map((hour) => ({
+    label: `${String(hour).padStart(2, "0")}:00`,
+    x: left + (chartWidth / 23) * hour,
   }));
 
   return (
-    <Screen
-      title="Analytics"
-      subtitle="Understand real storefront traffic, suspicious activity, and protection outcomes."
-      actions={
-        <BotShieldAsyncButton
-          action={actions.refresh}
-          successMessage="Analytics refreshed"
-          icon="refresh"
-        >
-          Refresh
-        </BotShieldAsyncButton>
-      }
-    >
-      <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
-        gap="large"
+    <div className="botshield-analytics-chart-wrap">
+      <svg
+        aria-label="Visitor trend chart"
+        className="botshield-analytics-chart"
+        role="img"
+        viewBox={`0 0 ${width} ${height}`}
       >
-        <OutcomeCard
-          label="Visitors evaluated"
-          value={model.storefrontScans.length}
-          description={`Real storefront traffic. ${formatDelta(
-            recentEvents.length,
-            previousEvents.length,
-          )}.`}
-          status="real_storefront"
-        />
-        <OutcomeCard
-          label="Threats stopped"
-          value={model.blockedCount}
-          description={`${recentBlocked} blocked in the last 7 days.`}
-          status={model.blockedCount ? "blocked" : "active"}
-        />
-        <OutcomeCard
-          label="Verification requested"
-          value={model.challengedCount}
-          description={`${recentChallenged} challenges in the last 7 days.`}
-          status={model.challengedCount ? "challenged" : "active"}
-        />
-        <OutcomeCard
-          label="High-risk activity"
-          value={highRiskEvents}
-          description="Events merchants may want to review."
-          status={highRiskEvents ? "high" : "active"}
-        />
-      </s-grid>
-
-      <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))"
-        gap="large"
-      >
-        <BotShieldCard
-          title="Top threat signals"
-          subtitle="Most frequent suspicious signals from real storefront activity."
-          actions={
-            <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
-              View visitors
-            </BotShieldActionButton>
-          }
-        >
-          <InsightList
-            items={threatSignals}
-            emptyMessage="No elevated threat signals have been recorded yet."
+        {yLabels.map((label) => (
+          <g key={`${label.value}-${label.y}`}>
+            <text className="botshield-analytics-axis-label" x="0" y={label.y + 4}>
+              {label.value}
+            </text>
+            <line
+              className="botshield-analytics-gridline"
+              x1={left}
+              x2={width - right}
+              y1={label.y}
+              y2={label.y}
+            />
+          </g>
+        ))}
+        {hasActivity ? (
+          <path className="botshield-analytics-line" d={path} fill="none" />
+        ) : null}
+        {points.map((point, index) => (
+          <circle
+            className="botshield-analytics-dot"
+            cx={point.x}
+            cy={point.y}
+            key={`${point.x}-${index}`}
+            r="2"
           />
-        </BotShieldCard>
-        <BotShieldCard
-          title="Traffic origins"
-          subtitle="Approximate locations from enriched storefront requests."
-        >
-          <InsightList
-            items={topOrigins}
-            emptyMessage="Traffic origins appear after storefront events are enriched."
-          />
-        </BotShieldCard>
-      </s-grid>
-
-      <BotShieldCard
-        title="Analytics source"
-        subtitle="BotShield separates real production analytics from diagnostics."
-      >
-        <s-stack gap="base">
-          <BotShieldInlineHelp>
-            Analytics uses real storefront decisions recorded through the
-            BotShield theme app embed and Shopify app proxy.
-          </BotShieldInlineHelp>
-          <BotShieldInlineHelp>
-            Diagnostic scans and simulations are excluded from these analytics
-            so merchant-facing numbers stay honest.
-          </BotShieldInlineHelp>
-        </s-stack>
-      </BotShieldCard>
-    </Screen>
+        ))}
+        {xLabels.map((label) => (
+          <text
+            className="botshield-analytics-axis-label botshield-analytics-axis-label--x"
+            key={label.label}
+            textAnchor="middle"
+            x={label.x}
+            y={height - 9}
+          >
+            {label.label}
+          </text>
+        ))}
+      </svg>
+      <div className="botshield-analytics-scrollbar" aria-hidden="true">
+        <span />
+      </div>
+    </div>
   );
 }
 
