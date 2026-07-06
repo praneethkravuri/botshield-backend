@@ -1937,22 +1937,18 @@ function AnalyticsPage({ model, actions }) {
     {
       title: "Total visitors",
       value: totalVisitors,
-      icon: "♙",
     },
     {
       title: "Allowed visitors",
       value: allowedVisitors,
-      icon: "✓",
     },
     {
       title: "Blocked visitors",
       value: blockedVisitors,
-      icon: "!",
     },
     {
       title: "Blocked rate",
       value: `${blockedRate}%`,
-      icon: "◉",
     },
   ];
   const tabs = [
@@ -2006,9 +2002,6 @@ function AnalyticsPage({ model, actions }) {
           {statCards.map((card) => (
             <div className="botshield-analytics-stat-card" key={card.title}>
               <div className="botshield-analytics-stat-label">
-                <span aria-hidden="true" className="botshield-analytics-icon">
-                  {card.icon}
-                </span>
                 {card.title}
               </div>
               <div className="botshield-analytics-stat-value">
@@ -2121,9 +2114,6 @@ function AnalyticsTrendChart({ values }) {
           </text>
         ))}
       </svg>
-      <div className="botshield-analytics-scrollbar" aria-hidden="true">
-        <span />
-      </div>
     </div>
   );
 }
