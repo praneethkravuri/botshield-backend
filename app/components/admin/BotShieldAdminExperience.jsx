@@ -2496,6 +2496,7 @@ function ActivityPage({ model, actions }) {
 
 function ProtectionPage({ model, actions }) {
   const toast = useBotShieldToast();
+  const [showComposer, setShowComposer] = useState(false);
   const [draft, setDraft] = useState({
     autoBlock: model.autoBlock,
     strictMode: model.strictMode,
@@ -2534,6 +2535,230 @@ function ProtectionPage({ model, actions }) {
       setSaving(false);
     }
   };
+
+  const protectionRows = [
+    {
+      name: "Bot protection",
+      description: "Detects automated browsers and suspicious user-agent patterns.",
+      status: "On",
+      active: true,
+      action: () => setShowComposer(true),
+    },
+    {
+      name: "Network / Proxy protection",
+      description: "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
+      status: "On",
+      active: true,
+      action: () => setShowComposer(true),
+    },
+    {
+      name: "Rate protection",
+      description: "Flags unusually frequent visits from the same visitor pattern.",
+      status: "On",
+      active: true,
+      action: () => setShowComposer(true),
+    },
+    {
+      name: "Page protection",
+      description: "Redirects stopped visitors to BotShield's blocked page.",
+      status: "On",
+      active: true,
+      action: () => setShowComposer(true),
+    },
+    {
+      name: "IP blocklist",
+      description: `${model.blockedIPs.length} blocked visitor${
+        model.blockedIPs.length === 1 ? "" : "s"
+      } configured.`,
+      status: model.blockedIPs.length ? "On" : "Ready",
+      active: true,
+      action: () => actions.setPage("blocklist"),
+    },
+    {
+      name: "Trusted visitors",
+      description: `${model.whitelist.length} trusted visitor${
+        model.whitelist.length === 1 ? "" : "s"
+      } can bypass automated blocks.`,
+      status: model.whitelist.length ? "On" : "Ready",
+      active: true,
+      action: () => actions.setPage("trusted"),
+    },
+    {
+      name: "Checkout blocking",
+      description: "Order-side checkout blocking is not enabled in this MVP.",
+      status: "Off",
+      active: false,
+      action: null,
+    },
+  ];
+  const activeProtections = protectionRows.filter((row) => row.active);
+
+  if (model) {
+    return (
+      <div className="botshield-page">
+      <main className="botshield-page-content botshield-protection-content">
+        <div className="botshield-overview-app-title">
+          <s-text type="strong">BotShield</s-text>
+        </div>
+
+        <div className="botshield-protection-header">
+          <div>
+            <h1 className="botshield-overview-title">Protection</h1>
+            <p className="botshield-overview-subtitle">
+              Manage active guard rules and add new storefront protections from
+              one place.
+            </p>
+          </div>
+          <BotShieldActionButton
+            onClick={() => setShowComposer(true)}
+            variant="primary"
+          >
+            Create protection
+          </BotShieldActionButton>
+        </div>
+
+        <section className="botshield-protection-card">
+          <div className="botshield-protection-card-header">
+            <h2 className="botshield-protection-card-title">
+              Active protections
+            </h2>
+            <p className="botshield-protection-card-copy">
+              Review live blocking rules and module protections from one place.
+            </p>
+          </div>
+
+          {activeProtections.length ? (
+            <div className="botshield-protection-list">
+              {protectionRows.map((row) => (
+                <div className="botshield-protection-row" key={row.name}>
+                  <div>
+                    <div className="botshield-protection-row-title">
+                      {row.name}
+                    </div>
+                    <div className="botshield-protection-row-copy">
+                      {row.description}
+                    </div>
+                  </div>
+                  <div className="botshield-protection-row-actions">
+                    <span
+                      className={`botshield-overview-badge${
+                        row.active ? "" : " botshield-overview-badge--muted"
+                      }`}
+                    >
+                      {row.status}
+                    </span>
+                    {row.action ? (
+                      <BotShieldActionButton onClick={row.action}>
+                        Manage
+                      </BotShieldActionButton>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="botshield-protection-empty">
+              <h3>No active protections yet</h3>
+              <p>
+                Create your first protection to start blocking risky storefront
+                traffic.
+              </p>
+              <BotShieldActionButton
+                onClick={() => setShowComposer(true)}
+                variant="primary"
+              >
+                Create protection
+              </BotShieldActionButton>
+            </div>
+          )}
+
+          {showComposer ? (
+            <div className="botshield-protection-composer">
+              <BotShieldSaveState
+                dirty={dirty}
+                saving={saving}
+                error={saveError}
+                onSave={save}
+                onDiscard={() => {
+                  setDraft({
+                    autoBlock: model.autoBlock,
+                    strictMode: model.strictMode,
+                    blockLevel: model.blockLevel,
+                  });
+                  setShowComposer(false);
+                }}
+              />
+              <div className="botshield-protection-composer-grid">
+                <div>
+                  <h3 className="botshield-protection-row-title">
+                    Configure protection
+                  </h3>
+                  <p className="botshield-protection-row-copy">
+                    Adjust the active response profile without changing
+                    storefront event collection.
+                  </p>
+                </div>
+                <div className="botshield-protection-controls">
+                  <BotShieldSelect
+                    label="Sensitivity"
+                    value={draft.blockLevel}
+                    onChange={(blockLevel) =>
+                      setDraft((current) => ({ ...current, blockLevel }))
+                    }
+                    options={[
+                      { label: "Low — obvious abuse only", value: "Low" },
+                      { label: "Medium — balanced protection", value: "Medium" },
+                      { label: "High — aggressive protection", value: "High" },
+                    ]}
+                  />
+                  <BotShieldToggle
+                    label="Auto Block"
+                    details="Automatically block requests that cross the active risk threshold."
+                    checked={draft.autoBlock}
+                    onChange={(autoBlock) =>
+                      setDraft((current) => ({ ...current, autoBlock }))
+                    }
+                  />
+                  <BotShieldToggle
+                    label="Strict Mode"
+                    details="Use High sensitivity and the strongest available rule profile."
+                    checked={draft.strictMode}
+                    onChange={(strictMode) =>
+                      setDraft((current) => ({
+                        ...current,
+                        strictMode,
+                        autoBlock: strictMode ? true : current.autoBlock,
+                        blockLevel: strictMode ? "High" : current.blockLevel,
+                      }))
+                    }
+                  />
+                  <div className="botshield-protection-response">
+                    {model.protectionPaused ? (
+                      <BotShieldAsyncButton
+                        action={actions.resumeProtection}
+                        successMessage="Protection resumed"
+                        variant="primary"
+                      >
+                        Resume protection
+                      </BotShieldAsyncButton>
+                    ) : (
+                      <BotShieldAsyncButton
+                        action={() => actions.pauseProtection(10)}
+                        successMessage="Protection paused for 10 minutes"
+                      >
+                        Pause for 10 minutes
+                      </BotShieldAsyncButton>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      </main>
+      </div>
+    );
+  }
 
   return (
     <Screen
