@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 
-const now = Date.now();
+const now = Date.UTC(2026, 6, 7, 9, 0, 0);
 const minutesAgo = (minutes) => new Date(now - minutes * 60 * 1000).toISOString();
 
 const previewEvents = [
