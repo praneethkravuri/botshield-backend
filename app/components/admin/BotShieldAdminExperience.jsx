@@ -2140,6 +2140,10 @@ function FraudOrdersPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
+        <div className="botshield-overview-app-title">
+          <s-text type="strong">BotShield</s-text>
+        </div>
+
         <div className="botshield-protection-header">
           <div>
             <h1 className="botshield-overview-title botshield-protection-page-title">
@@ -2154,7 +2158,7 @@ function FraudOrdersPage({ model, actions }) {
             onClick={() => setHelpOpen(true)}
             variant="primary"
           >
-            ⓘ Get help
+            Get help
           </BotShieldActionButton>
         </div>
 
@@ -5251,6 +5255,14 @@ export default function BotShieldAdminExperience({ model, actions }) {
       ? "detection"
       : model.page === "settings"
         ? "policy"
+        : [
+              "blocklist",
+              "trusted",
+              "billing",
+              "setup",
+              "alerts-reports",
+            ].includes(model.page)
+          ? "policy"
         : model.page === "detection-settings"
           ? "detection-settings"
           : model.page;
