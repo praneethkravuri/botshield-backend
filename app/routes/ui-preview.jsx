@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 
@@ -142,7 +142,7 @@ export const headers = () => ({
 });
 
 export default function UiPreview() {
-  const [page, setPage] = useState(getInitialPage);
+  const [page, setPage] = useState("dashboard");
   const [blockedIPs, setBlockedIPs] = useState(["203.0.113.90"]);
   const [whitelist, setWhitelist] = useState(["198.51.100.25"]);
   const [settings, setSettings] = useState({
@@ -166,6 +166,10 @@ export default function UiPreview() {
     risk: "all",
     search: "",
   });
+
+  useEffect(() => {
+    setPage(getInitialPage());
+  }, []);
 
   const model = useMemo(() => {
     const filteredIncidents = previewEvents.filter((event) => {

@@ -4051,7 +4051,7 @@ function SettingsPage({ model, actions }) {
 }
 
 function SettingsPageV2({ model, actions }) {
-  const [activeTab, setActiveTab] = useState(() => {
+  const readSettingsTab = () => {
     if (typeof window === "undefined") return "general";
     const tab = new URLSearchParams(window.location.search).get("tab");
     return [
@@ -4062,7 +4062,8 @@ function SettingsPageV2({ model, actions }) {
     ].includes(tab)
       ? tab
       : "general";
-  });
+  };
+  const [activeTab, setActiveTab] = useState("general");
   const [helpOpen, setHelpOpen] = useState(false);
   const [blockingDraft, setBlockingDraft] = useState({
     template: "denied",
@@ -4128,6 +4129,11 @@ function SettingsPageV2({ model, actions }) {
     });
   const contentProtectionControlsReady = false;
   const blockingDesignSaveReady = false;
+
+  useEffect(() => {
+    setActiveTab(readSettingsTab());
+  }, []);
+
   const pageTitle =
     activeTab === "pricing"
       ? "Pricing"
