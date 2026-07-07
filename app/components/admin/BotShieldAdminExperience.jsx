@@ -4122,6 +4122,8 @@ function SettingsPageV2({ model, actions }) {
       textColor: "#111827",
       accentColor: "#D90606",
     });
+  const contentProtectionControlsReady = false;
+  const blockingDesignSaveReady = false;
   const pageTitle =
     activeTab === "pricing"
       ? "Pricing"
@@ -4176,7 +4178,7 @@ function SettingsPageV2({ model, actions }) {
 
         {activeTab === "general" ? (
           <s-stack gap="large">
-            <BotShieldCard title="Admin access">
+            <BotShieldCard title="Admin access URL">
               <div className="botshield-settings-admin-grid">
                 <div className="botshield-settings-compact-empty">
                   <h2>Admin access URL</h2>
@@ -4245,13 +4247,10 @@ function SettingsPageV2({ model, actions }) {
                   <li>Limited visitor analytics</li>
                   <li>Basic page blocking</li>
                   <li>Fraud order insights</li>
-                  <li>Free plan limit not configured</li>
                 </ul>
-                <BotShieldActionButton disabled>
-                  Downgrade to Free
-                </BotShieldActionButton>
                 <p className="botshield-settings-muted">
-                  Downgrades are not connected yet.
+                  Downgrades are managed through Shopify billing and are not
+                  connected in BotShield yet.
                 </p>
               </div>
               <div className="botshield-settings-plan-card botshield-settings-plan-card--current">
@@ -4351,19 +4350,6 @@ function SettingsPageV2({ model, actions }) {
                 </p>
               </div>
             </div>
-            <BotShieldCard
-              title="Storefront script status"
-              badge={
-                <span className="botshield-settings-neutral-pill">
-                  Not connected
-                </span>
-              }
-            >
-              <p className="botshield-settings-card-copy">
-                Content protection controls are prepared in the dashboard but
-                are not connected to the storefront script yet.
-              </p>
-            </BotShieldCard>
             <BotShieldCard title="Protection controls">
               {[
                 [
@@ -4395,10 +4381,18 @@ function SettingsPageV2({ model, actions }) {
                   </div>
                   <div className="botshield-settings-row-actions">
                     <span className="botshield-settings-neutral-pill">Off</span>
-                    <BotShieldToggle label="" checked={false} disabled />
+                    <BotShieldToggle
+                      label=""
+                      checked={false}
+                      disabled={!contentProtectionControlsReady}
+                    />
                   </div>
                 </div>
               ))}
+              <p className="botshield-settings-card-copy botshield-settings-card-copy--footer">
+                Content protection controls are prepared for the storefront
+                script integration and are currently display-only.
+              </p>
             </BotShieldCard>
           </s-stack>
         ) : null}
@@ -4411,7 +4405,11 @@ function SettingsPageV2({ model, actions }) {
                 <BotShieldSelect
                   label="Template"
                   value={blockingDraft.template}
-                  options={[{ label: "Denied", value: "denied" }]}
+                  options={[
+                    { label: "Denied", value: "denied" },
+                    { label: "Blocked", value: "blocked" },
+                    { label: "Restricted", value: "restricted" },
+                  ]}
                   onChange={(template) =>
                     updateBlockingDraft("template", template)
                   }
@@ -4431,21 +4429,6 @@ function SettingsPageV2({ model, actions }) {
                     updateBlockingDraft("message", message)
                   }
                 />
-                <div className="botshield-settings-disabled-row">
-                  <span>Background image</span>
-                  <span className="botshield-settings-neutral-pill">
-                    Not connected
-                  </span>
-                </div>
-                <div className="botshield-settings-disabled-row">
-                  <span>Logo</span>
-                  <span className="botshield-settings-neutral-pill">
-                    Not connected
-                  </span>
-                </div>
-                <p className="botshield-settings-muted">
-                  Image uploads are not connected yet.
-                </p>
                 <BotShieldTextField
                   label="Border radius"
                   value={blockingDraft.borderRadius}
@@ -4483,7 +4466,7 @@ function SettingsPageV2({ model, actions }) {
                 ))}
                 <div className="botshield-settings-action-row">
                   <BotShieldActionButton
-                    disabled
+                    disabled={!blockingDesignSaveReady || hasInvalidColor}
                     variant="primary"
                   >
                     Save changes
@@ -4498,7 +4481,7 @@ function SettingsPageV2({ model, actions }) {
                 <p className="botshield-settings-muted">
                   {hasInvalidColor
                     ? "Fix invalid HEX colors before these settings can be saved."
-                    : "Blocking design settings are not connected yet, so Save is intentionally disabled for production use."}
+                    : "Blocking design settings are prepared for the storefront blocking overlay and are currently display-only."}
                 </p>
               </div>
               <div className="botshield-blocking-preview-wrap">

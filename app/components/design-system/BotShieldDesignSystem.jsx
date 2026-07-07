@@ -909,8 +909,14 @@ export function BotShieldAppFrame({ children }) {
           font-size: 15px;
           line-height: 1.45;
         }
+        .botshield-settings-card-copy--footer {
+          margin-top: 16px;
+          border-top: 1px solid #e3e3e3;
+          padding-top: 14px;
+          font-size: 14px;
+        }
         .botshield-settings-plan-card {
-          min-height: 360px;
+          min-height: 330px;
           box-sizing: border-box;
           background: #ffffff;
           border: 1px solid #d4d4d4;
