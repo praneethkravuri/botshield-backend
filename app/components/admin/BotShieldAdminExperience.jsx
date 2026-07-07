@@ -1122,10 +1122,6 @@ function OverviewPage({ model, actions }) {
       <div className="botshield-page">
         <main className="botshield-page-content botshield-overview-content">
           <s-stack gap="large">
-            <div className="botshield-overview-app-title">
-              <s-text type="strong">BotShield</s-text>
-            </div>
-
             <div className="botshield-overview-header">
               <div>
                 <h1 className="botshield-overview-title">Overview</h1>
@@ -1969,10 +1965,6 @@ function AnalyticsPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-analytics-content">
-        <div className="botshield-overview-app-title">
-          <s-text type="strong">BotShield</s-text>
-        </div>
-
         <div className="botshield-analytics-header">
           <div>
             <h1 className="botshield-overview-title">Analytics</h1>
@@ -2140,10 +2132,6 @@ function FraudOrdersPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
-        <div className="botshield-overview-app-title">
-          <s-text type="strong">BotShield</s-text>
-        </div>
-
         <div className="botshield-protection-header">
           <div>
             <h1 className="botshield-overview-title botshield-protection-page-title">
@@ -2942,10 +2930,6 @@ function ProtectionPage({ model, actions }) {
     return (
       <div className="botshield-page">
       <main className="botshield-page-content botshield-protection-content">
-        <div className="botshield-overview-app-title">
-          <s-text type="strong">BotShield</s-text>
-        </div>
-
         <div className="botshield-protection-header">
           <div>
             <h1 className="botshield-overview-title botshield-protection-page-title">
@@ -4154,7 +4138,6 @@ function SettingsPageV2({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-settings-content">
-        <div className="botshield-app-title-row">BotShield</div>
         <div className="botshield-protection-header">
           <div>
             <h1 className="botshield-overview-title botshield-protection-page-title">
