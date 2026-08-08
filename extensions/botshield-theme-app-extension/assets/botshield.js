@@ -16,12 +16,6 @@
 
   var params = new URLSearchParams();
   params.set("path", currentPath);
-  params.set("timestamp", String(Date.now()));
-  params.set("client_user_agent", navigator.userAgent || "");
-  params.set("shop_domain", window.Shopify && window.Shopify.shop ? window.Shopify.shop : window.location.hostname);
-  if (document.referrer) {
-    params.set("referrer", document.referrer);
-  }
   if (challengeToken) {
     params.set("challenge_token", challengeToken);
   }
@@ -42,13 +36,6 @@
     })
     .then(function (payload) {
       if (!payload || !payload.decision) return;
-
-      console.info(
-        "[botshield] storefront decision",
-        payload.decision,
-        payload.eventId || "",
-        payload.reasonCodes || []
-      );
 
       if (
         (payload.decision === "block" || payload.action === "blocked") &&
@@ -72,20 +59,11 @@
     var overlay = document.createElement("div");
     overlay.id = "botshield-challenge-overlay";
 
-    var reasons = Array.isArray(payload.reasons) ? payload.reasons : [];
-    var reasonsMarkup = reasons
-      .slice(0, 3)
-      .map(function (reason) {
-        return "<li>" + escapeHtml(reason) + "</li>";
-      })
-      .join("");
-
     overlay.innerHTML =
       '<div class="botshield-challenge-card">' +
       '<div class="botshield-challenge-badge">BotShield Verification</div>' +
       "<h2>We need a quick verification</h2>" +
       "<p>This session showed signals that look unusual for a normal shopper. Confirm you want to continue to the storefront.</p>" +
-      (reasonsMarkup ? '<ul class="botshield-challenge-reasons">' + reasonsMarkup + "</ul>" : "") +
       '<div class="botshield-challenge-actions">' +
       '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue to Store</button>' +
       '<button type="button" class="botshield-challenge-button botshield-challenge-button--secondary" id="botshield-leave-button">Leave Page</button>' +
@@ -113,12 +91,4 @@
     });
   }
 
-  function escapeHtml(value) {
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
 })();

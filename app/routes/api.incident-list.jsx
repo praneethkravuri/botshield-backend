@@ -18,35 +18,87 @@ export async function loader({ request }) {
     search: url.searchParams.get("search") || "",
   };
 
-  const eventRows = await db.botEvent.findMany({
-    where: { shop: session.shop },
-    orderBy: { createdAt: "desc" },
-    take: MAX_INCIDENTS,
-  });
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const realEventWhere = {
+    shop: session.shop,
+    source: "storefront-proxy",
+    createdAt: { gte: thirtyDaysAgo },
+  };
+  const incidentWhere = { shop: session.shop };
+  if (filters.source === "real") {
+    incidentWhere.source = "storefront-proxy";
+  } else if (filters.source === "simulation") {
+    incidentWhere.source = { not: "storefront-proxy" };
+  }
+  if (filters.decision === "allowed") {
+    incidentWhere.action = { in: ["allowed", "whitelisted"] };
+  } else if (filters.decision !== "all") {
+    incidentWhere.action = filters.decision;
+  }
+  if (filters.risk !== "all") incidentWhere.threatLevel = filters.risk;
+
+  const search = filters.search.trim();
+  if (search) {
+    incidentWhere.OR = [
+      "ipAddress",
+      "path",
+      "reasonSummary",
+      "networkOrg",
+      "networkType",
+      "networkProvider",
+      "networkCountry",
+      "networkCountryCode",
+      "networkCity",
+    ].map((field) => ({ [field]: { contains: search, mode: "insensitive" } }));
+  }
+  const [
+    eventRows,
+    real,
+    simulation,
+    blocked,
+    challenged,
+    allowed,
+    highRisk,
+  ] = await Promise.all([
+    db.botEvent.findMany({
+      where: incidentWhere,
+      orderBy: { createdAt: "desc" },
+      take: MAX_INCIDENTS,
+    }),
+    db.botEvent.count({ where: realEventWhere }),
+    db.botEvent.count({
+      where: {
+        shop: session.shop,
+        source: { not: "storefront-proxy" },
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    }),
+    db.botEvent.count({ where: { ...realEventWhere, action: "blocked" } }),
+    db.botEvent.count({ where: { ...realEventWhere, action: "challenged" } }),
+    db.botEvent.count({
+      where: {
+        ...realEventWhere,
+        action: { in: ["allowed", "whitelisted"] },
+      },
+    }),
+    db.botEvent.count({ where: { ...realEventWhere, threatLevel: "high" } }),
+  ]);
   const rows = await hydrateEventGeography(eventRows, session.shop);
 
   const allEvents = rows.map(serializeSecurityEvent);
-  const events = allEvents.filter((event) =>
-    matchesIncidentFilters(event, filters),
-  );
+  const events = allEvents.filter((event) => matchesIncidentFilters(event, filters));
 
   return Response.json({
     events,
     counts: {
-      real: allEvents.filter((event) => event.source === "storefront-proxy")
-        .length,
-      simulation: allEvents.filter(
-        (event) => event.source !== "storefront-proxy",
-      ).length,
-      blocked: allEvents.filter(
-        (event) =>
-          event.source === "storefront-proxy" && event.decision === "blocked",
-      ).length,
-      challenged: allEvents.filter(
-        (event) =>
-          event.source === "storefront-proxy" &&
-          event.decision === "challenged",
-      ).length,
+      total: real,
+      real,
+      simulation,
+      blocked,
+      challenged,
+      allowed,
+      highRisk,
+      periodDays: 30,
     },
     filters,
   });

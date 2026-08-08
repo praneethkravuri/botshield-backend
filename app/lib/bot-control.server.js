@@ -1,6 +1,7 @@
 import db from "../db.server";
 import {
   buildDetectionSettings,
+  isValidIpAddress,
   normalizeIpAddress,
 } from "./bot-detection.server";
 import { getEmailProviderStatus } from "./email.server.js";
@@ -62,11 +63,6 @@ export async function getAppSettings(shop) {
             "lastWeeklyReportAttemptAt",
             "lastWeeklyReportProviderMessageId",
             "lastWeeklyReportError",
-            "fraudOrderAutoBlock",
-            "fraudOrderAutoCancel",
-            "fraudOrderRestock",
-            "fraudOrderNotifyCustomer",
-            "fraudOrderFilterEnabled",
           ],
         },
       },
@@ -102,53 +98,11 @@ export async function getAppSettings(shop) {
         settingMap.get("lastWeeklyReportProviderMessageId") || null,
       lastWeeklyReportError:
         settingMap.get("lastWeeklyReportError") || null,
-      fraudOrderAutoBlock: parseDbBoolean(
-        settingMap.get("fraudOrderAutoBlock"),
-        false,
-      ),
-      fraudOrderAutoCancel: parseDbBoolean(
-        settingMap.get("fraudOrderAutoCancel"),
-        false,
-      ),
-      fraudOrderRestock: parseDbBoolean(
-        settingMap.get("fraudOrderRestock"),
-        true,
-      ),
-      fraudOrderNotifyCustomer: parseDbBoolean(
-        settingMap.get("fraudOrderNotifyCustomer"),
-        false,
-      ),
-      fraudOrderFilterEnabled: parseDbBoolean(
-        settingMap.get("fraudOrderFilterEnabled"),
-        true,
-      ),
       emailProvider: getEmailProviderStatus(),
     };
-  } catch {
-    return {
-      ...buildDetectionSettings([]),
-      emailAlerts: false,
-      highRiskAlertsOnly: true,
-      alertEmail: "",
-      lastAlertStatus: null,
-      lastAlertSentAt: null,
-      lastAlertEventId: null,
-      lastAlertAttemptAt: null,
-      lastAlertProviderMessageId: null,
-      lastAlertError: null,
-      weeklyReportsEnabled: false,
-      lastWeeklyReportAt: null,
-      lastWeeklyReportStatus: null,
-      lastWeeklyReportAttemptAt: null,
-      lastWeeklyReportProviderMessageId: null,
-      lastWeeklyReportError: null,
-      fraudOrderAutoBlock: false,
-      fraudOrderAutoCancel: false,
-      fraudOrderRestock: true,
-      fraudOrderNotifyCustomer: false,
-      fraudOrderFilterEnabled: true,
-      emailProvider: getEmailProviderStatus(),
-    };
+  } catch (error) {
+    console.error(`[botshield-settings] failed to load shop=${normalizedShop}`, error);
+    throw error;
   }
 }
 
@@ -176,29 +130,13 @@ export async function saveAppSettings(shop, input = {}) {
     input.weeklyReportsEnabled,
     false,
   );
-  const fraudOrderAutoBlock = toBooleanString(
-    input.fraudOrderAutoBlock,
-    false,
-  );
-  const fraudOrderAutoCancel = toBooleanString(
-    input.fraudOrderAutoCancel,
-    false,
-  );
-  const fraudOrderRestock = toBooleanString(input.fraudOrderRestock, true);
-  const fraudOrderNotifyCustomer = toBooleanString(
-    input.fraudOrderNotifyCustomer,
-    false,
-  );
-  const fraudOrderFilterEnabled = toBooleanString(
-    input.fraudOrderFilterEnabled,
-    true,
-  );
-
   if (
-    emailAlerts === "true" &&
+    (emailAlerts === "true" || weeklyReportsEnabled === "true") &&
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alertEmail)
   ) {
-    throw new Error("A valid alert email is required when email alerts are enabled");
+    throw new Error(
+      "A valid alert email is required when email delivery is enabled",
+    );
   }
 
   await db.$transaction(
@@ -211,11 +149,6 @@ export async function saveAppSettings(shop, input = {}) {
       highRiskAlertsOnly,
       alertEmail,
       weeklyReportsEnabled,
-      fraudOrderAutoBlock,
-      fraudOrderAutoCancel,
-      fraudOrderRestock,
-      fraudOrderNotifyCustomer,
-      fraudOrderFilterEnabled,
     }).map(([key, value]) =>
       db.appSetting.upsert({
         where: { shop_key: { shop: normalizedShop, key } },
@@ -337,15 +270,16 @@ export async function getBlockedIps(shop) {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    console.error(`[botshield-blocklist] failed to load shop=${normalizedShop}`, error);
+    throw error;
   }
 }
 
 export async function upsertBlockedIp(shop, input = {}) {
   const normalizedShop = normalizeShop(shop);
   const ipAddress = normalizeIpAddress(input.ipAddress);
-  if (!ipAddress || ipAddress === "0.0.0.0") {
+  if (!isValidIpAddress(ipAddress)) {
     throw new Error("A valid IP address is required");
   }
 
@@ -393,7 +327,7 @@ export async function upsertBlockedIp(shop, input = {}) {
 export async function removeBlockedIp(shop, ipAddress) {
   const normalizedShop = normalizeShop(shop);
   const normalized = normalizeIpAddress(ipAddress);
-  if (!normalized || normalized === "0.0.0.0") {
+  if (!isValidIpAddress(normalized)) {
     throw new Error("A valid IP address is required");
   }
 
@@ -422,15 +356,16 @@ export async function getWhitelistIps(shop) {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));
-  } catch {
-    return [];
+  } catch (error) {
+    console.error(`[botshield-whitelist] failed to load shop=${normalizedShop}`, error);
+    throw error;
   }
 }
 
 export async function upsertWhitelistIp(shop, input = {}) {
   const normalizedShop = normalizeShop(shop);
   const ipAddress = normalizeIpAddress(input.ipAddress);
-  if (!ipAddress || ipAddress === "0.0.0.0") {
+  if (!isValidIpAddress(ipAddress)) {
     throw new Error("A valid IP address is required");
   }
 
@@ -468,7 +403,7 @@ export async function upsertWhitelistIp(shop, input = {}) {
 export async function removeWhitelistIp(shop, ipAddress) {
   const normalizedShop = normalizeShop(shop);
   const normalized = normalizeIpAddress(ipAddress);
-  if (!normalized || normalized === "0.0.0.0") {
+  if (!isValidIpAddress(normalized)) {
     throw new Error("A valid IP address is required");
   }
 

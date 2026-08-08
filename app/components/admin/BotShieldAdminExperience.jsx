@@ -16,6 +16,7 @@ import {
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
 import { safeFetchJson } from "../../lib/safe-fetch";
+import { isValidIpAddressInput } from "../../lib/ip-address";
 import {
   getBillingStatusModel,
   getEmailStatus,
@@ -23,9 +24,6 @@ import {
 } from "../../lib/ui-status";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const IP_PATTERN =
-  /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.|$)){4}$|^[a-f0-9:]{3,}$/i;
-
 const REASON_COPY = {
   RATE_PATTERN: "Repeated visitor activity detected",
   SUSPICIOUS_USER_AGENT: "Automated browser behavior detected",
@@ -600,7 +598,11 @@ function StoreHealthCard({ model, actions }) {
 }
 
 function getSetupChecklistItems(model, actions = {}) {
-  const emailReady = model.emailProviderConfigured && model.emailAlerts;
+  const emailReady = Boolean(
+    model.emailProviderConfigured &&
+      model.emailAlerts &&
+      EMAIL_PATTERN.test(model.alertEmail || ""),
+  );
   const billingReady = Boolean(model.billingStatus?.active);
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontEventsReceived = Boolean(
@@ -610,8 +612,10 @@ function getSetupChecklistItems(model, actions = {}) {
   return [
     {
       label: "App installed",
-      detail: "BotShield is installed and loading inside Shopify Admin.",
-      complete: true,
+      detail: model.protectionStatus.appInstalled
+        ? "BotShield is installed and loading inside Shopify Admin."
+        : "Shopify has not confirmed an active BotShield installation.",
+      complete: Boolean(model.protectionStatus.appInstalled),
       action: null,
     },
     {
@@ -752,9 +756,10 @@ function GettingStartedCard({ model, actions }) {
       title="Get started in 3 steps"
       subtitle={`You've completed ${complete} of ${steps.length} steps`}
       actions={
-        <BotShieldActionButton disabled={complete !== steps.length}>
-          Finish
-        </BotShieldActionButton>
+        <BotShieldStatusBadge
+          status={complete === steps.length ? "active" : "setup_required"}
+          label={complete === steps.length ? "Complete" : "In progress"}
+        />
       }
     >
       <s-stack gap="large">
@@ -997,14 +1002,22 @@ function OverviewBadge({ children, muted = false }) {
 function OverviewPage({ model, actions }) {
   {
     const overviewStorefrontConnected = hasStorefrontConnection(model);
-    const overviewVisitorSessions = model.storefrontScans.length;
-    const overviewBlockedVisitors = model.blockedCount;
+    const overviewVisitorEvents = Number.isFinite(
+      Number(model.incidentCounts?.total),
+    )
+      ? Number(model.incidentCounts.total)
+      : model.storefrontScans.length;
+    const overviewBlockedVisitors = Number.isFinite(
+      Number(model.incidentCounts?.blocked),
+    )
+      ? Number(model.incidentCounts.blocked)
+      : model.blockedCount;
     const overviewBillingActive = Boolean(model.billingStatus?.active);
     const overviewShopDomain =
       model.protectionStatus?.shop || "this store";
     const overviewUsageProgress = Math.max(
       4,
-      Math.min(100, overviewVisitorSessions),
+      Math.min(100, overviewVisitorEvents),
     );
     const overviewSetupItems = getSetupChecklistItems(model, actions);
     const overviewIncompleteSetupItems = overviewSetupItems.filter(
@@ -1015,11 +1028,10 @@ function OverviewPage({ model, actions }) {
           overviewIncompleteSetupItems.length === 1 ? "" : "s"
         }`
       : "Complete";
-    const ipProtectionOn = model.blockedIPs.length > 0;
-    const locationProtectionOn = model.trafficOrigins.length > 0;
+    const ipProtectionOn = Boolean(
+      overviewStorefrontConnected && model.autoBlock && !model.protectionPaused,
+    );
     const pageProtectionOn = overviewStorefrontConnected;
-    const productProtectionOn = false;
-    const referrerProtectionOn = false;
     const vpnProtectionOn = Boolean(
       model.securityPosture?.report?.topReasonCodes?.some((item) =>
         /VPN|DATACENTER|HOSTING_PROVIDER|ASN|HIGH_RISK_NETWORK/i.test(
@@ -1027,41 +1039,32 @@ function OverviewPage({ model, actions }) {
         ),
       ),
     );
-    const checkoutBlockingOn = false;
     const overviewCoverageRows = [
       ["IP protection", ipProtectionOn],
-      ["Location protection", locationProtectionOn],
       ["Page protection", pageProtectionOn],
-      ["Product protection", productProtectionOn],
-      ["Referrer protection", referrerProtectionOn],
       ["VPN / Proxy", vpnProtectionOn],
-      ["Checkout blocking", checkoutBlockingOn],
     ];
     const overviewCoreProtections = overviewCoverageRows.filter(
       ([label, enabled]) =>
         enabled &&
         [
           "IP protection",
-          "Location protection",
           "Page protection",
-          "Product protection",
         ].includes(label),
     ).length;
     const overviewExtendedModules = overviewCoverageRows.filter(
       ([label, enabled]) =>
         enabled &&
-        ["Referrer protection", "VPN / Proxy", "Checkout blocking"].includes(
-          label,
-        ),
+        ["VPN / Proxy"].includes(label),
     ).length;
     const overviewActiveProtections =
       overviewCoreProtections + overviewExtendedModules;
     const overviewMetricCards = [
       {
         title: "Traffic",
-        value: overviewVisitorSessions,
-        label: "Visitor sessions in this cycle",
-        detail: "Full visitor analytics included",
+        value: overviewVisitorEvents,
+        label: "Storefront events in the last 30 days",
+        detail: "Real storefront decisions only",
       },
       {
         title: "Protection",
@@ -1074,12 +1077,6 @@ function OverviewPage({ model, actions }) {
         value: overviewActiveProtections,
         label: "Active protections",
         detail: `${overviewCoreProtections} core protections · ${overviewExtendedModules} extended modules`,
-      },
-      {
-        title: "Orders",
-        value: 0,
-        label: "Fraud orders detected",
-        detail: "0 high-risk recommendations",
       },
     ];
     const overviewWorkspaceRows = [
@@ -1103,7 +1100,7 @@ function OverviewPage({ model, actions }) {
       },
       {
         label: "Usage progress",
-        detail: `${overviewVisitorSessions} visitor sessions tracked`,
+        detail: `${overviewVisitorEvents} storefront events tracked in 30 days`,
         badge: "Healthy",
         status: "active",
         progress: overviewUsageProgress,
@@ -1140,7 +1137,7 @@ function OverviewPage({ model, actions }) {
                   variant="primary"
                   onClick={() => actions.setPage("detection")}
                 >
-                  Create protection
+                  Manage protection
                 </BotShieldActionButton>
               </s-stack>
             </div>
@@ -1240,22 +1237,6 @@ function OverviewPage({ model, actions }) {
                 </s-stack>
               </BotShieldCard>
 
-              <BotShieldCard title="Review fraud orders">
-                <s-stack gap="base">
-                  <s-text color="subdued">
-                    Jump into risky order review when you need order-side
-                    controls and automation.
-                  </s-text>
-                  <div>
-                    <BotShieldActionButton
-                      onClick={() => actions.setPage("fraud-orders")}
-                    >
-                      Open fraud orders
-                    </BotShieldActionButton>
-                  </div>
-                </s-stack>
-              </BotShieldCard>
-
               <BotShieldCard title="Billing and settings">
                 <s-stack gap="base">
                   <s-text color="subdued">
@@ -1266,7 +1247,7 @@ function OverviewPage({ model, actions }) {
                     <BotShieldActionButton
                       onClick={() => actions.setPage("detection-settings")}
                     >
-                      Open settings
+                      Open protection
                     </BotShieldActionButton>
                   </div>
                 </s-stack>
@@ -1893,15 +1874,11 @@ function OverviewPage({ model, actions }) {
 function AnalyticsPage({ model, actions }) {
   const [trendMetric, setTrendMetric] = useState("total");
   const storefrontEvents = model.storefrontScans || [];
-  const totalVisitors = storefrontEvents.length;
-  const allowedVisitors = storefrontEvents.filter((event) =>
-    ["allowed", "whitelisted"].includes(event.actionTaken),
-  ).length;
-  const blockedVisitors = storefrontEvents.filter(
-    (event) => event.actionTaken === "blocked",
-  ).length;
-  const blockedRate = totalVisitors
-    ? Math.round((blockedVisitors / totalVisitors) * 100)
+  const totalEvents = Number(model.incidentCounts?.total || 0);
+  const allowedEvents = Number(model.incidentCounts?.allowed || 0);
+  const blockedEvents = Number(model.incidentCounts?.blocked || 0);
+  const blockedRate = totalEvents
+    ? Math.round((blockedEvents / totalEvents) * 100)
     : 0;
   const today = new Date();
   const todayEvents = storefrontEvents.filter((event) => {
@@ -1931,16 +1908,16 @@ function AnalyticsPage({ model, actions }) {
   const chartValues = trendBuckets.map((bucket) => bucket[trendMetric]);
   const statCards = [
     {
-      title: "Total visitors",
-      value: totalVisitors,
+      title: "Storefront events (30 days)",
+      value: totalEvents,
     },
     {
-      title: "Allowed visitors",
-      value: allowedVisitors,
+      title: "Allowed events",
+      value: allowedEvents,
     },
     {
-      title: "Blocked visitors",
-      value: blockedVisitors,
+      title: "Blocked events",
+      value: blockedEvents,
     },
     {
       title: "Blocked rate",
@@ -1950,11 +1927,6 @@ function AnalyticsPage({ model, actions }) {
   const tabs = [
     { label: "Overview", active: true, action: null },
     { label: "Visitors", active: false, action: () => actions.setPage("incidents") },
-    {
-      label: "Fraud Orders",
-      active: false,
-      action: () => actions.setPage("fraud-orders"),
-    },
   ];
   const trendTabs = [
     { label: "Total visits", value: "total" },
@@ -2110,6 +2082,9 @@ function AnalyticsTrendChart({ values }) {
   );
 }
 
+// Retained only to keep older preview snapshots readable. No active route or
+// navigation exposes this screen until Shopify order-risk syncing exists.
+// eslint-disable-next-line no-unused-vars
 function FraudOrdersPage({ model, actions }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const fraudOrders = Array.isArray(model.fraudOrders) ? model.fraudOrders : [];
@@ -2513,12 +2488,15 @@ function ActivityTable({ model, actions }) {
 
 function ActivityInvestigationSummary({
   blocked,
-  challenged,
-  highRisk,
   model,
   actions,
 }) {
-  const reviewCount = blocked + challenged + highRisk;
+  const reviewCount = model.incidents.filter(
+    (incident) =>
+      incident.threatLevel === "high" ||
+      incident.decision === "blocked" ||
+      incident.decision === "challenged",
+  ).length;
   const latestReviewEvent =
     model.incidents.find(
       (incident) =>
@@ -2552,7 +2530,7 @@ function ActivityInvestigationSummary({
         <s-stack gap="large">
           <div className="botshield-status-value">
             {reviewCount
-              ? `${reviewCount} visitor decisions available for review`
+              ? `${reviewCount} decisions in this view may need review`
               : "No urgent issues"}
           </div>
           <s-paragraph color="subdued">
@@ -2632,15 +2610,9 @@ function ActivityInvestigationSummary({
 }
 
 function ActivityPage({ model, actions }) {
-  const blocked = model.incidents.filter(
-    (incident) => incident.decision === "blocked",
-  ).length;
-  const challenged = model.incidents.filter(
-    (incident) => incident.decision === "challenged",
-  ).length;
-  const highRisk = model.incidents.filter(
-    (incident) => incident.threatLevel === "high",
-  ).length;
+  const blocked = Number(model.incidentCounts?.blocked || 0);
+  const challenged = Number(model.incidentCounts?.challenged || 0);
+  const highRisk = Number(model.incidentCounts?.highRisk || 0);
   const setActivityTab = (decision, risk = "all") => {
     actions.setIncidentFilter("source", "real");
     actions.setIncidentFilter("decision", decision);
@@ -2664,8 +2636,6 @@ function ActivityPage({ model, actions }) {
     >
       <ActivityInvestigationSummary
         blocked={blocked}
-        challenged={challenged}
-        highRisk={highRisk}
         model={model}
         actions={actions}
       />
@@ -2674,19 +2644,19 @@ function ActivityPage({ model, actions }) {
         gap="base"
       >
         <Metric
-          label="Total visitors"
-          value={model.incidentCounts.real}
-          detail="Storefront visits analyzed"
+          label="Storefront events"
+          value={model.incidentCounts.total}
+          detail="Last 30 days"
           status="real_storefront"
         />
         <Metric
-          label="Blocked visitors"
+          label="Blocked events"
           value={blocked}
-          detail="Visitors stopped"
+          detail="Last 30 days"
           status={blocked ? "blocked" : "active"}
         />
         <Metric
-          label="Challenged visitors"
+          label="Challenged events"
           value={challenged}
           detail="Verification requested"
           status={challenged ? "challenged" : "active"}
@@ -2769,7 +2739,7 @@ function ActivityPage({ model, actions }) {
       </BotShieldCard>
       <BotShieldCard
         title="Visitor decisions"
-        subtitle={`${model.incidentCounts.real} real storefront decisions · ${model.incidentCounts.simulation} diagnostic or simulated events excluded from storefront totals`}
+        subtitle={`${model.incidentCounts.total} real storefront decisions in the last 30 days · ${model.incidentCounts.simulation} diagnostic or simulated events excluded`}
       >
         <ActivityTable model={model} actions={actions} />
       </BotShieldCard>
@@ -2863,6 +2833,7 @@ function ProtectionPage({ model, actions }) {
           "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
           "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
         ),
+      actionLabel: "Details",
     },
     {
       name: "Rate protection",
@@ -2885,8 +2856,9 @@ function ProtectionPage({ model, actions }) {
         openStatusManager(
           "Page protection",
           "Redirects stopped visitors to BotShield's blocked page.",
-          "Page protection is active through the storefront theme embed and app proxy. Block page editing is not exposed in this MVP.",
+          "Page protection is active through the storefront theme embed and app proxy.",
         ),
+      actionLabel: "Details",
     },
     {
       name: "IP blocklist",
@@ -2916,13 +2888,6 @@ function ProtectionPage({ model, actions }) {
           text: "Allow known safe visitors, admins, agencies, and reviewed customers to bypass automated blocking.",
         }),
     },
-    {
-      name: "Checkout blocking",
-      description: "Order-side checkout blocking is not enabled in this MVP.",
-      status: "Off",
-      active: false,
-      action: null,
-    },
   ];
   const activeProtections = protectionRows.filter((row) => row.active);
 
@@ -2936,22 +2901,10 @@ function ProtectionPage({ model, actions }) {
               Protection
             </h1>
             <p className="botshield-overview-subtitle">
-              Manage active guard rules and add new storefront protections from
-              one place.
+              Manage the storefront protection modules BotShield actively
+              enforces.
             </p>
           </div>
-          <BotShieldActionButton
-            onClick={() =>
-              setProtectionModal({
-                type: "create",
-                title: "Create protection",
-                text: "BotShield includes the active protection modules below. New custom module creation is not exposed in this MVP.",
-              })
-            }
-            variant="primary"
-          >
-            Create protection
-          </BotShieldActionButton>
         </div>
 
         <section className="botshield-protection-card">
@@ -2986,7 +2939,7 @@ function ProtectionPage({ model, actions }) {
                     </span>
                     {row.action ? (
                       <BotShieldActionButton onClick={row.action}>
-                        Manage
+                        {row.actionLabel || "Manage"}
                       </BotShieldActionButton>
                     ) : (
                       <span aria-hidden="true" />
@@ -2998,21 +2951,12 @@ function ProtectionPage({ model, actions }) {
           ) : (
             <div className="botshield-protection-empty">
               <h3>No active protections yet</h3>
-              <p>
-                Create your first protection to start blocking risky storefront
-                traffic.
-              </p>
+              <p>Connect the storefront theme embed to activate protection.</p>
               <BotShieldActionButton
-                onClick={() =>
-                  setProtectionModal({
-                    type: "create",
-                    title: "Create protection",
-                    text: "BotShield includes the active protection modules below. New custom module creation is not exposed in this MVP.",
-                  })
-                }
+                onClick={actions.openThemeEditor}
                 variant="primary"
               >
-                Create protection
+                Connect storefront
               </BotShieldActionButton>
             </div>
           )}
@@ -3242,62 +3186,13 @@ function ProtectionPage({ model, actions }) {
                     status="active"
                   />
                   <BotShieldInlineHelp>
-                    This protection is active but does not have a separate
-                    merchant-editable setting yet.
-                  </BotShieldInlineHelp>
-                  <div className="botshield-protection-modal-actions">
-                    <BotShieldActionButton disabled>
-                      Save changes
-                    </BotShieldActionButton>
-                    <BotShieldActionButton
-                      onClick={() => setProtectionModal(null)}
-                      variant="primary"
-                    >
-                      Close
-                    </BotShieldActionButton>
-                  </div>
-                </div>
-              ) : null}
-              {protectionModal.type === "create" ? (
-                <div className="botshield-protection-modal-body">
-                  <div className="botshield-protection-list">
-                    {protectionRows.map((row) => (
-                      <div className="botshield-protection-row" key={row.name}>
-                        <div>
-                          <div className="botshield-protection-row-title">
-                            {row.name}
-                          </div>
-                          <div className="botshield-protection-row-copy">
-                            {row.description}
-                          </div>
-                        </div>
-                        <div className="botshield-protection-row-actions">
-                          <span
-                            className={`botshield-overview-badge${
-                              row.active
-                                ? ""
-                                : " botshield-overview-badge--muted"
-                            }`}
-                          >
-                            {row.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <BotShieldInlineHelp>
-                    Protection modules are managed from this page. Only real
-                    supported controls are shown.
+                    This module is enforced automatically using the active
+                    protection profile.
                   </BotShieldInlineHelp>
                   <div className="botshield-protection-modal-actions">
                     <BotShieldActionButton
                       onClick={() => setProtectionModal(null)}
                       variant="primary"
-                    >
-                      Review active protections
-                    </BotShieldActionButton>
-                    <BotShieldActionButton
-                      onClick={() => setProtectionModal(null)}
                     >
                       Close
                     </BotShieldActionButton>
@@ -3481,10 +3376,16 @@ function ProtectionPage({ model, actions }) {
               title="IP address blocklist"
               status="active"
               count={model.blockedIPs.length}
-              description={`${model.blockedIPs.length} manually blocked visitor${model.blockedIPs.length === 1 ? "" : "s"}.`}
+              description={`${model.blockedIPs.length} blocked visitor${model.blockedIPs.length === 1 ? "" : "s"} from automatic or merchant decisions.`}
               action={
                 <BotShieldActionButton
-                  onClick={() => actions.setPage("blocklist")}
+                  onClick={() =>
+                    setProtectionModal({
+                      type: "blocklist",
+                      title: "IP blocklist",
+                      text: "Manually block known abusive IP addresses.",
+                    })
+                  }
                 >
                   Manage blocklist
                 </BotShieldActionButton>
@@ -3497,7 +3398,13 @@ function ProtectionPage({ model, actions }) {
               description={`${model.whitelist.length} trusted visitor${model.whitelist.length === 1 ? "" : "s"} can bypass automated blocks.`}
               action={
                 <BotShieldActionButton
-                  onClick={() => actions.setPage("trusted")}
+                  onClick={() =>
+                    setProtectionModal({
+                      type: "trusted",
+                      title: "Trusted visitors",
+                      text: "Allow known safe visitors, admins, agencies, and reviewed customers to bypass automated blocking.",
+                    })
+                  }
                 >
                   Manage trusted list
                 </BotShieldActionButton>
@@ -3648,7 +3555,7 @@ function IpList({
 }) {
   const trusted = title.toLowerCase().includes("trusted");
   const trimmedValue = value.trim();
-  const validIp = !trimmedValue || IP_PATTERN.test(trimmedValue);
+  const validIp = !trimmedValue || isValidIpAddressInput(trimmedValue);
   const listLabel = trusted ? "trusted list" : "blocklist";
   const emptyDescription = trusted
     ? "Add admins, agency partners, or reviewed customers who should bypass automated blocking."
@@ -3722,9 +3629,6 @@ function IpList({
   );
 }
 
-// Retired legacy settings UI kept temporarily for safety while the new tabbed
-// Settings page is verified in production.
-// eslint-disable-next-line no-unused-vars
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [draft, setDraft] = useState({
@@ -4034,6 +3938,9 @@ function SettingsPage({ model, actions }) {
   );
 }
 
+// Retained only for old preview snapshots. Its display-only controls are not
+// exposed by the active application.
+// eslint-disable-next-line no-unused-vars
 function SettingsPageV2({ model, actions }) {
   const readSettingsTab = () => {
     if (typeof window === "undefined") return "general";
@@ -4889,6 +4796,11 @@ function SetupPage({ model, actions }) {
   const setupComplete = complete === total;
   const nextItem = setupChecklistItems.find((item) => !item.complete);
   const storefrontConnected = hasStorefrontConnection(model);
+  const emailReady = Boolean(
+    model.emailProviderConfigured &&
+      model.emailAlerts &&
+      EMAIL_PATTERN.test(model.alertEmail || ""),
+  );
   const executiveStatus = getExecutiveStatus(model);
   const emailStatus = getEmailStatus({
     configured: model.emailProviderConfigured,
@@ -4915,18 +4827,21 @@ function SetupPage({ model, actions }) {
           ? `Last storefront event: ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}`
           : "Open the storefront homepage once the embed is enabled so BotShield can receive a real visit.",
       complete: Boolean(model.protectionStatus.lastStorefrontDecisionAt),
-      action: (
-        <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
-          View visitors
+      action: model.protectionStatus.shop ? (
+        <BotShieldActionButton
+          href={`https://${model.protectionStatus.shop}`}
+          target="_blank"
+        >
+          Open storefront
         </BotShieldActionButton>
-      ),
+      ) : null,
     },
     {
       label: "Configure alerts",
-      detail: model.emailProviderConfigured
-        ? "Email provider is configured. Send a test alert to confirm delivery."
+      detail: emailReady
+        ? "Email alerts are configured with a valid recipient."
         : "Add an alert email and verify delivery.",
-      complete: model.emailProviderConfigured,
+      complete: emailReady,
       action: (
         <BotShieldActionButton onClick={() => actions.setPage("policy")}>
           Configure alerts
@@ -5242,13 +5157,13 @@ export default function BotShieldAdminExperience({ model, actions }) {
   const screen =
     model.page === "security"
       ? "detection"
+      : model.page === "fraud-orders"
+        ? "analytics"
       : model.page === "settings"
         ? "policy"
         : [
               "blocklist",
               "trusted",
-              "billing",
-              "setup",
               "alerts-reports",
             ].includes(model.page)
           ? "policy"
@@ -5274,9 +5189,6 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
-      {screen === "fraud-orders" ? (
-        <FraudOrdersPage actions={actions} model={model} />
-      ) : null}
       {screen === "incidents" ? (
         <ActivityPage model={model} actions={actions} />
       ) : null}
@@ -5284,7 +5196,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
         <ProtectionPage model={model} actions={actions} />
       ) : null}
       {screen === "policy" ? (
-        <SettingsPageV2 model={model} actions={actions} />
+        <SettingsPage model={model} actions={actions} />
       ) : null}
       {screen === "blocklist" ? (
         <BlocklistPage model={model} actions={actions} />
@@ -5306,7 +5218,19 @@ export default function BotShieldAdminExperience({ model, actions }) {
 
   return (
     <BotShieldAppFrame>
-      <div className="botshield-route-shell">{routeContent}</div>
+      <div className="botshield-route-shell">
+        {model.backendErrors?.length ? (
+          <div className="botshield-page-content">
+            <BotShieldBanner
+              tone="critical"
+              title="Some BotShield data could not be loaded"
+            >
+              {model.backendErrors.join(" ")}
+            </BotShieldBanner>
+          </div>
+        ) : null}
+        {routeContent}
+      </div>
     </BotShieldAppFrame>
   );
 }

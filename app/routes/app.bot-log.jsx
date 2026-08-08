@@ -1,19 +1,9 @@
-import prisma from "../db.server";
-import { authenticate } from "../shopify.server";
+import { redirect } from "react-router";
 
-export async function loader({ request }) {
-  const { session } = await authenticate.admin(request);
+export function loader() {
+  return redirect("/app/visitors");
+}
 
-  const events = await prisma.botEvent.findMany({
-    where: {
-      shop: session.shop,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-
-  return new Response(JSON.stringify(events, null, 2), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+export default function RetiredBotLogRoute() {
+  return null;
 }

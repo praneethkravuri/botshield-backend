@@ -59,12 +59,11 @@ export function matchesIncidentFilters(event, filters = {}) {
     if (filters.source === "simulation" && isReal) return false;
   }
 
-  if (
-    filters.decision &&
-    filters.decision !== "all" &&
-    event.decision !== filters.decision
-  ) {
-    return false;
+  if (filters.decision && filters.decision !== "all") {
+    const allowedMatch =
+      filters.decision === "allowed" &&
+      ["allowed", "whitelisted"].includes(event.decision);
+    if (!allowedMatch && event.decision !== filters.decision) return false;
   }
 
   if (

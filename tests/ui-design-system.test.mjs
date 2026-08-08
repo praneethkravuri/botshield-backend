@@ -267,12 +267,12 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
 
   assert.match(source, />Analytics</);
   assert.match(source, />Protection</);
-  assert.match(source, />Fraud Orders</);
   assert.match(source, />Settings</);
   assert.match(source, /href="\/app\/analytics"/);
   assert.match(source, /href="\/app\/protection-rules"/);
-  assert.match(source, /href="\/app\/fraud-orders"/);
   assert.match(source, /href="\/app\/settings"/);
+  assert.doesNotMatch(source, />Fraud Orders</);
+  assert.doesNotMatch(source, /href="\/app\/fraud-orders"/);
   assert.doesNotMatch(source, />Overview</);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Visitors</);
@@ -302,7 +302,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /rules: "security"/);
   assert.match(source, /"protection-rules": "security"/);
   assert.match(source, /visitors: "incidents"/);
-  assert.match(source, /"fraud-orders": "fraud-orders"/);
+  assert.match(source, /"fraud-orders": "analytics"/);
   assert.match(source, /blocklist: "settings"/);
   assert.match(source, /trusted: "settings"/);
   assert.match(source, /"trusted-visitors": "settings"/);
@@ -312,7 +312,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /"\/app\/protection-rules": "security"/);
   assert.match(source, /"\/app\/analytics": "analytics"/);
   assert.match(source, /"\/app\/visitors": "incidents"/);
-  assert.match(source, /"\/app\/fraud-orders": "fraud-orders"/);
+  assert.match(source, /"\/app\/fraud-orders": "analytics"/);
   assert.match(source, /"\/app\/blocklist": "settings"/);
   assert.match(source, /"\/app\/trusted-visitors": "settings"/);
   assert.match(source, /retiredPageMap/);
@@ -334,4 +334,34 @@ test("root app URL opens the embedded overview instead of standalone login", asy
 
   assert.match(source, /redirect\("\/app"\)/);
   assert.doesNotMatch(source, /redirect\("\/auth\/login"\)/);
+});
+
+test("dashboard totals use exact 30-day storefront counts", async () => {
+  const apiSource = await readFile(
+    new URL("../app/routes/api.incident-list.jsx", import.meta.url),
+    "utf8",
+  );
+  const uiSource = await readFile(
+    new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(apiSource, /thirtyDaysAgo/);
+  assert.match(apiSource, /source: "storefront-proxy"/);
+  assert.match(apiSource, /total: real/);
+  assert.match(apiSource, /periodDays: 30/);
+  assert.match(uiSource, /Storefront events in the last 30 days/);
+  assert.doesNotMatch(uiSource, /Visitor sessions in this cycle/);
+});
+
+test("clearing simulation data preserves real storefront and merchant data", async () => {
+  const source = await readFile(
+    new URL("../app/routes/api.clear-test-data.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /source: \{ not: "storefront-proxy" \}/);
+  assert.doesNotMatch(source, /blockedIP\.deleteMany/);
+  assert.doesNotMatch(source, /whitelistIP\.deleteMany/);
+  assert.doesNotMatch(source, /appSetting\.deleteMany/);
 });

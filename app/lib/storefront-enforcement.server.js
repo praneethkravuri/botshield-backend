@@ -15,6 +15,7 @@ import {
   getStorefrontActionForLog,
   resolveStorefrontDecision,
 } from "./storefront-decision.server";
+import { maskIpAddress } from "./security-events";
 import { lookupNetworkIntelligence } from "./network-intelligence.server";
 import { maybeSendDueWeeklyReport } from "./weekly-reports.server";
 
@@ -260,7 +261,7 @@ function buildBlockedProxyUrl(request, { reason, eventId, ipAddress }) {
     reason || "Suspicious traffic was detected from this session.",
   );
   url.searchParams.set("ref", `BS-${String(eventId).padStart(6, "0")}`);
-  url.searchParams.set("ip", ipAddress);
+  url.searchParams.set("ip", maskIpAddress(ipAddress));
   return `${url.pathname}?${url.searchParams.toString()}`;
 }
 
@@ -270,7 +271,6 @@ export async function evaluateStorefrontRequest(request, shop) {
   const url = new URL(request.url);
   const pathVisited = url.searchParams.get("path") || "/";
   const challengeToken = url.searchParams.get("challenge_token") || "";
-  const referer = getRequestHeader(request, "referer");
   const userAgent =
     getRequestHeader(request, "user-agent") ||
     url.searchParams.get("client_user_agent") ||
@@ -439,36 +439,6 @@ export async function evaluateStorefrontRequest(request, shop) {
   return {
     decision,
     action: actionForLog,
-    eventId: event.id,
-    ipAddress,
-    settings,
-    riskScore: detection.riskScore,
-    threatLevel: detection.threatLevel,
-    reasons: detection.reasons,
-    reasonCodes,
-    summary: detection.summary,
-    createdAt: event.createdAt,
-    protectionPaused: resolution.protectionPaused,
-    alertDelivery: {
-      sent: alertDelivery.sent,
-      status: alertDelivery.status,
-    },
-    referer,
-    networkIntelligence: networkIntel
-      ? {
-          asn: networkIntel.asn,
-          organization: networkIntel.organization,
-          type: networkIntel.networkType,
-          provider: networkIntel.provider,
-          country: networkIntel.country,
-          countryCode: networkIntel.countryCode,
-          city: networkIntel.city,
-          latitude: networkIntel.latitude,
-          longitude: networkIntel.longitude,
-          vpn: Boolean(networkIntel.isVpn || networkIntel.isProxy),
-          datacenter: networkIntel.isDatacenter,
-        }
-      : null,
     challengeToken:
       decision === "challenge"
         ? createChallengeToken({

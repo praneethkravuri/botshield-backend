@@ -64,10 +64,7 @@ app.get("/health", async (_req, res) => {
     res.status(200).json({
       ok: true,
       database: "connected",
-      emailProviderConfigured: Boolean(
-        process.env.RESEND_API_KEY?.trim() &&
-          process.env.ALERT_FROM_EMAIL?.trim(),
-      ),
+      emailProviderConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
     });
   } catch {
     res.status(503).json({ ok: false, database: "unavailable" });
@@ -97,7 +94,9 @@ app.get("/health/config", (_req, res) => {
     databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
     shopifyApiSecretConfigured: Boolean(process.env.SHOPIFY_API_SECRET),
     resendApiKeyConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
-    alertFromEmailConfigured: Boolean(process.env.ALERT_FROM_EMAIL?.trim()),
+    alertFromEmailConfigured: Boolean(
+      process.env.ALERT_FROM_EMAIL?.trim() || "support@botshieldapp.com",
+    ),
     networkIntelligenceKeyConfigured: Boolean(process.env.IPAPI_IS_KEY?.trim()),
     shopifyAppHandleConfigured: Boolean(
       process.env.SHOPIFY_APP_HANDLE?.trim(),

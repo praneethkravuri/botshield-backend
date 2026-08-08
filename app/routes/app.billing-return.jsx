@@ -11,7 +11,7 @@ export async function loader({ request }) {
     shop: session.shop,
     planHandle,
   });
-  return redirect("/app?billing=updated");
+  return redirect("/app/billing?updated=true");
 }
 
 export default function BillingReturn() {

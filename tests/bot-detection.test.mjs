@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { detectBotThreat } from "../app/lib/bot-detection.server.js";
+import {
+  detectBotThreat,
+  isValidIpAddress,
+} from "../app/lib/bot-detection.server.js";
+import { isValidIpAddressInput } from "../app/lib/ip-address.js";
 import {
   getStorefrontActionForLog,
   resolveStorefrontDecision,
@@ -27,6 +31,24 @@ import {
   matchesIncidentFilters,
   serializeSecurityEvent,
 } from "../app/lib/security-events.js";
+
+test("manual protection lists accept only real IPv4 or IPv6 addresses", () => {
+  assert.equal(isValidIpAddress("203.0.113.10"), true);
+  assert.equal(isValidIpAddress("2001:db8::1"), true);
+  assert.equal(isValidIpAddress("::ffff:203.0.113.10"), true);
+  assert.equal(isValidIpAddress("999.1.1.1"), false);
+  assert.equal(isValidIpAddress("not-an-ip"), false);
+  assert.equal(isValidIpAddress("0.0.0.0"), false);
+});
+
+test("admin IP controls reject malformed addresses before submission", () => {
+  assert.equal(isValidIpAddressInput("203.0.113.10"), true);
+  assert.equal(isValidIpAddressInput("2001:db8::1"), true);
+  assert.equal(isValidIpAddressInput("2001:db8:0:0:0:0:0:1"), true);
+  assert.equal(isValidIpAddressInput("999.0.0.1"), false);
+  assert.equal(isValidIpAddressInput("::::"), false);
+  assert.equal(isValidIpAddressInput("not-an-ip"), false);
+});
 
 const baseRequest = {
   ipAddress: "203.0.113.10",
@@ -423,6 +445,13 @@ test("security events expose structured reason codes and masked IPs", () => {
   assert.equal(matchesIncidentFilters(event, { search: "Dallas" }), true);
   assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:…:1");
   assert.equal(matchesIncidentFilters(event, { source: "real" }), true);
+  assert.equal(
+    matchesIncidentFilters(
+      { ...event, decision: "whitelisted" },
+      { decision: "allowed" },
+    ),
+    true,
+  );
   assert.equal(
     matchesIncidentFilters(event, { source: "simulation" }),
     false,

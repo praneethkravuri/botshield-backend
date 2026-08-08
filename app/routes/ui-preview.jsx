@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import process from "node:process";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { redirect } from "react-router";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
+
+export function loader() {
+  return process.env.NODE_ENV === "production" ? redirect("/app") : null;
+}
 
 const now = Date.UTC(2026, 6, 7, 9, 0, 0);
 const minutesAgo = (minutes) => new Date(now - minutes * 60 * 1000).toISOString();
@@ -154,11 +160,6 @@ export default function UiPreview() {
     emailAlerts: true,
     highRiskAlertsOnly: false,
     weeklyReportsEnabled: true,
-    fraudOrderAutoBlock: false,
-    fraudOrderAutoCancel: false,
-    fraudOrderRestock: true,
-    fraudOrderNotifyCustomer: false,
-    fraudOrderFilterEnabled: true,
   });
   const [incidentFilters, setIncidentFilters] = useState({
     source: "real",
@@ -213,11 +214,6 @@ export default function UiPreview() {
       emailAlerts: settings.emailAlerts,
       highRiskAlertsOnly: settings.highRiskAlertsOnly,
       weeklyReportsEnabled: settings.weeklyReportsEnabled,
-      fraudOrderAutoBlock: settings.fraudOrderAutoBlock,
-      fraudOrderAutoCancel: settings.fraudOrderAutoCancel,
-      fraudOrderRestock: settings.fraudOrderRestock,
-      fraudOrderNotifyCustomer: settings.fraudOrderNotifyCustomer,
-      fraudOrderFilterEnabled: settings.fraudOrderFilterEnabled,
       emailProviderConfigured: true,
       lastAlertStatus: "sent",
       lastAlertSentAt: minutesAgo(8),
@@ -233,8 +229,16 @@ export default function UiPreview() {
       incidentLoading: false,
       incidentFilters,
       incidentCounts: {
+        total: previewEvents.length,
         real: previewEvents.length,
         simulation: 0,
+        blocked: previewEvents.filter((event) => event.decision === "blocked").length,
+        challenged: previewEvents.filter(
+          (event) => event.decision === "challenged",
+        ).length,
+        allowed: previewEvents.filter((event) => event.decision === "allowed").length,
+        highRisk: previewEvents.filter((event) => event.threatLevel === "high").length,
+        periodDays: 30,
       },
       allowedCount: previewEvents.filter((event) => event.decision === "allowed")
         .length,
@@ -321,9 +325,6 @@ export default function UiPreview() {
     clearSimulationData: async () => {},
     openThemeEditor: () => navigatePreview("setup"),
     saveSettings: async (nextSettings) => {
-      setSettings((current) => ({ ...current, ...nextSettings }));
-    },
-    saveFraudOrderSettings: async (nextSettings) => {
       setSettings((current) => ({ ...current, ...nextSettings }));
     },
     addBlockedIp: async (ip) => {

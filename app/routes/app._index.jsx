@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
@@ -1314,23 +1314,22 @@ export default function Index() {
   const [lastWeeklyReportStatus, setLastWeeklyReportStatus] = useState(null);
   const [lastWeeklyReportAt, setLastWeeklyReportAt] = useState(null);
   const [lastWeeklyReportError, setLastWeeklyReportError] = useState(null);
-  const [fraudOrderAutoBlock, setFraudOrderAutoBlock] = useState(false);
-  const [fraudOrderAutoCancel, setFraudOrderAutoCancel] = useState(false);
-  const [fraudOrderRestock, setFraudOrderRestock] = useState(true);
-  const [fraudOrderNotifyCustomer, setFraudOrderNotifyCustomer] =
-    useState(false);
-  const [fraudOrderFilterEnabled, setFraudOrderFilterEnabled] =
-    useState(true);
   const [securityPosture, setSecurityPosture] = useState(null);
   const [billingStatus, setBillingStatus] = useState(null);
+  const [backendErrors, setBackendErrors] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
+    total: 0,
     real: 0,
     simulation: 0,
     blocked: 0,
     challenged: 0,
+    allowed: 0,
+    highRisk: 0,
+    periodDays: 30,
   });
   const [incidentLoading, setIncidentLoading] = useState(false);
+  const incidentRequestId = useRef(0);
   const [incidentFilters, setIncidentFilters] = useState({
     source: "real",
     decision: "all",
@@ -1757,6 +1756,7 @@ export default function Index() {
   const loadScans = async () => {
     try {
       const res = await fetch("/api/scans");
+      if (!res.ok) throw new Error("Security activity could not be loaded.");
       const data = await res.json();
       const nextScans = (data.scans || []).map((scan, index) => ({
           id: scan.id ?? index,
@@ -1788,13 +1788,14 @@ export default function Index() {
       );
     } catch (err) {
       console.error("Failed to load scans", err);
+      recordBackendError("Activity", err);
     }
   };
 
   const loadSettings = async () => {
     try {
       const res = await fetch("/api/settings");
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Settings could not be loaded.");
       const data = await res.json();
       const settings = data.settings || {};
       setAutoBlock(Boolean(settings.autoBlock));
@@ -1822,20 +1823,16 @@ export default function Index() {
       setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
       setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
       setLastWeeklyReportError(settings.lastWeeklyReportError || null);
-      setFraudOrderAutoBlock(Boolean(settings.fraudOrderAutoBlock));
-      setFraudOrderAutoCancel(Boolean(settings.fraudOrderAutoCancel));
-      setFraudOrderRestock(settings.fraudOrderRestock !== false);
-      setFraudOrderNotifyCustomer(Boolean(settings.fraudOrderNotifyCustomer));
-      setFraudOrderFilterEnabled(settings.fraudOrderFilterEnabled !== false);
     } catch (err) {
       console.error("Failed to load settings", err);
+      recordBackendError("Settings", err);
     }
   };
 
   const loadProtectionStatus = async () => {
     try {
       const res = await fetch("/api/status");
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Protection status could not be loaded.");
       const data = await res.json();
       const status = data.status || {};
       setProtectionStatus((previous) => ({ ...previous, ...status }));
@@ -1843,35 +1840,38 @@ export default function Index() {
       setProtectionOn(Boolean(status.protectionActive));
     } catch (err) {
       console.error("Failed to load protection status", err);
+      recordBackendError("Protection status", err);
     }
   };
 
   const loadSecurityPosture = async () => {
     try {
       const response = await fetch("/api/security-posture");
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("Security posture could not be loaded.");
       const data = await response.json();
       setSecurityPosture(data.posture || null);
     } catch (error) {
       console.error("Failed to load security posture", error);
+      recordBackendError("Security posture", error);
     }
   };
 
   const loadBillingStatus = async () => {
     try {
       const response = await fetch("/api/billing-status");
-      if (!response.ok) return;
+      if (!response.ok) throw new Error("Billing status could not be loaded.");
       const data = await response.json();
       setBillingStatus(data.billing || null);
     } catch (error) {
       console.error("Failed to load billing status", error);
+      recordBackendError("Billing", error);
     }
   };
 
   const loadBlocklist = async () => {
     try {
       const res = await fetch("/api/blocklist");
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Blocklist could not be loaded.");
       const data = await res.json();
       const rows = data.blockedIps || [];
       setBlockedIPs(
@@ -1884,21 +1884,24 @@ export default function Index() {
       );
     } catch (err) {
       console.error("Failed to load blocklist", err);
+      recordBackendError("Blocklist", err);
     }
   };
 
   const loadWhitelist = async () => {
     try {
       const res = await fetch("/api/whitelist");
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Trusted visitors could not be loaded.");
       const data = await res.json();
       setWhitelist((data.whitelistIps || []).map((row) => row.ipAddress));
     } catch (err) {
       console.error("Failed to load whitelist", err);
+      recordBackendError("Trusted visitors", err);
     }
   };
 
   const loadIncidents = async (filters = incidentFilters) => {
+    const requestId = ++incidentRequestId.current;
     setIncidentLoading(true);
     try {
       const params = new URLSearchParams({
@@ -1912,26 +1915,26 @@ export default function Index() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to load incidents.");
       }
+      if (requestId !== incidentRequestId.current) return;
       setIncidents(data.events || []);
       setIncidentCounts(
-        data.counts || { real: 0, simulation: 0, blocked: 0, challenged: 0 },
+        data.counts || {
+          total: 0,
+          real: 0,
+          simulation: 0,
+          blocked: 0,
+          challenged: 0,
+          allowed: 0,
+          highRisk: 0,
+          periodDays: 30,
+        },
       );
     } catch (error) {
+      if (requestId !== incidentRequestId.current) return;
       console.error("Failed to load incidents", error);
+      recordBackendError("Incident timeline", error);
     } finally {
-      setIncidentLoading(false);
-    }
-  };
-
-  const loadMerchantMetadata = async () => {
-    try {
-      const response = await fetch("/api/merchant-metadata");
-      if (!response.ok) return;
-      const data = await response.json();
-      setTeamNotes(data.analystNotes || {});
-      setTrustedTags(data.trustedTags || {});
-    } catch (error) {
-      console.error("Failed to load merchant metadata", error);
+      if (requestId === incidentRequestId.current) setIncidentLoading(false);
     }
   };
 
@@ -1973,6 +1976,14 @@ export default function Index() {
     setTimeout(() => setNotification(""), 3500);
   };
 
+  const recordBackendError = (area, error) => {
+    const detail = error instanceof Error ? error.message : "Request failed.";
+    const message = `${area}: ${detail}`;
+    setBackendErrors((current) =>
+      current.includes(message) ? current : [...current, message],
+    );
+  };
+
   const loadBackendState = async () => {
     await Promise.all([
       loadScans(),
@@ -1983,12 +1994,12 @@ export default function Index() {
       loadIncidents(),
       loadSecurityPosture(),
       loadBillingStatus(),
-      loadMerchantMetadata(),
     ]);
   };
 
   const refreshBackendState = async () => {
     setSyncing(true);
+    setBackendErrors([]);
     try {
       await loadBackendState();
       setLastSyncedAt(new Date().toLocaleTimeString());
@@ -2032,11 +2043,6 @@ export default function Index() {
       highRiskAlertsOnly,
       alertEmail,
       weeklyReportsEnabled,
-      fraudOrderAutoBlock,
-      fraudOrderAutoCancel,
-      fraudOrderRestock,
-      fraudOrderNotifyCustomer,
-      fraudOrderFilterEnabled,
       ...overrides,
     };
 
@@ -2077,11 +2083,6 @@ export default function Index() {
     setLastWeeklyReportStatus(settings.lastWeeklyReportStatus || null);
     setLastWeeklyReportAt(settings.lastWeeklyReportAt || null);
     setLastWeeklyReportError(settings.lastWeeklyReportError || null);
-    setFraudOrderAutoBlock(Boolean(settings.fraudOrderAutoBlock));
-    setFraudOrderAutoCancel(Boolean(settings.fraudOrderAutoCancel));
-    setFraudOrderRestock(settings.fraudOrderRestock !== false);
-    setFraudOrderNotifyCustomer(Boolean(settings.fraudOrderNotifyCustomer));
-    setFraudOrderFilterEnabled(settings.fraudOrderFilterEnabled !== false);
 
     await refreshBackendState();
 
@@ -2859,7 +2860,7 @@ export default function Index() {
       rules: "security",
       "protection-rules": "security",
       visitors: "incidents",
-      "fraud-orders": "fraud-orders",
+      "fraud-orders": "analytics",
       activity: "incidents",
       incidents: "incidents",
       detection: "security",
@@ -2869,21 +2870,21 @@ export default function Index() {
       policy: "settings",
       "alerts-reports": "settings",
       settings: "settings",
-      billing: "settings",
-      setup: "settings",
+      billing: "billing",
+      setup: "setup",
     };
     const pathPageMap = {
       "/app": "dashboard",
       "/app/analytics": "analytics",
       "/app/protection-rules": "security",
       "/app/visitors": "incidents",
-      "/app/fraud-orders": "fraud-orders",
+      "/app/fraud-orders": "analytics",
       "/app/blocklist": "settings",
       "/app/trusted-visitors": "settings",
       "/app/alerts-reports": "settings",
-      "/app/billing": "settings",
+      "/app/billing": "billing",
       "/app/settings": "settings",
-      "/app/setup": "settings",
+      "/app/setup": "setup",
     };
     const legacyViewPathMap = {
       dashboard: "/app",
@@ -2891,7 +2892,7 @@ export default function Index() {
       rules: "/app/protection-rules",
       "protection-rules": "/app/protection-rules",
       visitors: "/app/visitors",
-      "fraud-orders": "/app/fraud-orders",
+      "fraud-orders": "/app/analytics",
       activity: "/app/visitors",
       incidents: "/app/visitors",
       detection: "/app/protection-rules",
@@ -2901,8 +2902,8 @@ export default function Index() {
       policy: "/app/settings",
       "alerts-reports": "/app/settings?tab=general",
       settings: "/app/settings",
-      billing: "/app/settings?tab=pricing",
-      setup: "/app/settings?tab=general",
+      billing: "/app/billing",
+      setup: "/app/setup",
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
@@ -3602,7 +3603,10 @@ export default function Index() {
 
   const openThemeEditor = () => {
     if (!protectionStatus.shop) {
-      throw new Error("The Shopify store domain is not available yet.");
+      triggerAlert(
+        "The Shopify store domain is not available yet. Refresh BotShield and try again.",
+      );
+      return;
     }
     window.open(
       `https://${protectionStatus.shop}/admin/themes/current/editor?context=apps&activateAppId=d4fd10812566b17d9d99ed95e0978ada/botshield-theme-embed`,
@@ -3627,6 +3631,7 @@ export default function Index() {
     highRiskCount,
     securityPosture,
     billingStatus,
+    backendErrors,
     incidents,
     incidentCounts,
     incidentLoading,
@@ -3643,11 +3648,6 @@ export default function Index() {
     lastWeeklyReportStatus,
     lastWeeklyReportAt,
     lastWeeklyReportError,
-    fraudOrderAutoBlock,
-    fraudOrderAutoCancel,
-    fraudOrderRestock,
-    fraudOrderNotifyCustomer,
-    fraudOrderFilterEnabled,
     blockedIPs,
     whitelist,
     trafficOrigins,
@@ -3662,8 +3662,6 @@ export default function Index() {
       blocklist: "settings",
       trusted: "settings",
       "trusted-visitors": "settings",
-      billing: "settings",
-      setup: "settings",
       "alerts-reports": "settings",
       policy: "settings",
     };
@@ -3674,15 +3672,15 @@ export default function Index() {
       security: "/app/protection-rules",
       detection: "/app/protection-rules",
       incidents: "/app/visitors",
-      "fraud-orders": "/app/fraud-orders",
+      "fraud-orders": "/app/analytics",
       blocklist: "/app/settings",
       trusted: "/app/settings",
       "trusted-visitors": "/app/settings",
       settings: "/app/settings",
       policy: "/app/settings",
-      "detection-settings": "/app/settings",
-      billing: "/app/settings?tab=pricing",
-      setup: "/app/settings?tab=general",
+      "detection-settings": "/app/protection-rules",
+      billing: "/app/billing",
+      setup: "/app/setup",
       "alerts-reports": "/app/settings?tab=general",
     };
     const path = pageToView[resolvedPage] || "/app";
@@ -3700,10 +3698,6 @@ export default function Index() {
     setIncidentFilter: (key, value) =>
       setIncidentFilters((current) => ({ ...current, [key]: value })),
     saveSettings: (overrides) => persistProtectionSettings(overrides),
-    saveFraudOrderSettings: (overrides) =>
-      persistProtectionSettings(overrides, {
-        message: "Fraud order settings saved.",
-      }),
     pauseProtection: (minutes) =>
       persistProtectionSettings({
         protectionPausedUntil: new Date(

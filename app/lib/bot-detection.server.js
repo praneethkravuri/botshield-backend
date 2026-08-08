@@ -1,4 +1,5 @@
 import { isbot } from "isbot";
+import { isIP } from "node:net";
 import { getNetworkIntelSignals } from "./network-intelligence.js";
 
 const DEFAULT_SETTINGS = {
@@ -39,6 +40,11 @@ export function normalizeIpAddress(ipAddress) {
   const raw = safeString(ipAddress).trim();
   if (!raw) return "0.0.0.0";
   return raw.replace(/^::ffff:/, "");
+}
+
+export function isValidIpAddress(ipAddress) {
+  const normalized = normalizeIpAddress(ipAddress);
+  return normalized !== "0.0.0.0" && isIP(normalized) !== 0;
 }
 
 function parseBooleanSetting(value, fallback) {

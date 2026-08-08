@@ -8,20 +8,12 @@ export async function action({ request }) {
     return new Response(null, { status: 405 });
   }
 
-  if (process.env.NODE_ENV === "production") {
-    return Response.json(
-      { error: "Test data clearing is disabled in production." },
-      { status: 403 },
-    );
-  }
-
-  await db.botEvent.deleteMany({
-    where: { shop: session.shop },
+  const result = await db.botEvent.deleteMany({
+    where: {
+      shop: session.shop,
+      source: { not: "storefront-proxy" },
+    },
   });
-  await db.$transaction([
-    db.blockedIP.deleteMany({ where: { shop: session.shop } }),
-    db.whitelistIP.deleteMany({ where: { shop: session.shop } }),
-    db.appSetting.deleteMany({ where: { shop: session.shop } }),
-  ]);
-  return Response.json({ ok: true });
+
+  return Response.json({ ok: true, deleted: result.count });
 }
