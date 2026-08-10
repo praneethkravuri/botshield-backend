@@ -1326,6 +1326,10 @@ export default function Index() {
     methodology: "",
     unavailableReason: "No verified financial impact data yet.",
   });
+  const [overviewThreatActivity, setOverviewThreatActivity] = useState({
+    periodDays: 90,
+    days: [],
+  });
   const [backendErrors, setBackendErrors] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
@@ -1853,7 +1857,6 @@ export default function Index() {
       recordBackendError("Protection status", err);
     }
   };
-
   const loadSecurityPosture = async () => {
     try {
       const response = await fetch("/api/security-posture");
@@ -1969,6 +1972,21 @@ export default function Index() {
     }
   };
 
+  const loadOverviewThreatActivity = async () => {
+    try {
+      const response = await fetch("/api/overview-threat-activity");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Threat activity could not be loaded.");
+      setOverviewThreatActivity({
+        periodDays: Number(data.periodDays || 90),
+        days: Array.isArray(data.days) ? data.days : [],
+      });
+    } catch (error) {
+      console.error("Failed to load Overview threat activity", error);
+      recordBackendError("Threat activity", error);
+    }
+  };
+
   const saveMerchantMetadata = async (nextNotes, nextTags) => {
     const response = await fetch("/api/merchant-metadata", {
       method: "POST",
@@ -2026,6 +2044,7 @@ export default function Index() {
       loadSecurityPosture(),
       loadBillingStatus(),
       loadFinancialImpact(),
+      loadOverviewThreatActivity(),
     ]);
   };
 
@@ -2077,7 +2096,6 @@ export default function Index() {
       weeklyReportsEnabled,
       ...overrides,
     };
-
     const response = await fetch("/api/settings", {
       method: "POST",
       headers: {
@@ -2257,7 +2275,6 @@ export default function Index() {
       return nextValue;
     });
   };
-
   const handleDarkModeToggle = () => {
     setDarkMode((prev) => {
       const nextValue = !prev;
@@ -2377,7 +2394,6 @@ export default function Index() {
         break;
     }
   };
-
   const handleDashboardSurfaceAction = async (actionKey) => {
     switch (actionKey) {
       case "livePosture":
@@ -3037,7 +3053,6 @@ export default function Index() {
       scan.createdAt &&
       new Date(scan.createdAt).toDateString() === new Date().toDateString(),
   ).length;
-
   const scansToday = storefrontScans.filter(
     (scan) =>
       scan.createdAt &&
@@ -3097,7 +3112,6 @@ export default function Index() {
     100,
     highRiskCount * 22 + mediumRiskCount * 10 + blockedToday * 12 + recentBlocks * 8,
   );
-
   const botPressureLabel =
     botPressureScore >= 70
       ? "Critical"
@@ -3664,6 +3678,7 @@ export default function Index() {
     securityPosture,
     billingStatus,
     financialImpact,
+    overviewThreatActivity,
     backendErrors,
     incidents,
     incidentCounts,
@@ -6957,6 +6972,7 @@ export default function Index() {
                   </div>
                 ))}
               </div>
+
               <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
                 <input
                   value={chatInput}
@@ -7196,6 +7212,7 @@ export default function Index() {
               border-right: 0 !important;
               border-bottom: 1px solid ${theme.border} !important;
             }
+
             .botshield-main {
               padding: 18px !important;
             }
@@ -7227,3 +7244,4 @@ export default function Index() {
     </div>
   );
 }
+
