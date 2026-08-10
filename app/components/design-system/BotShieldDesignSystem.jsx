@@ -1032,6 +1032,118 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-activity-row { min-height: 58px; }
         .botshield-v2-quick-action-row { padding: 13px 0; }
         .botshield-v2-quick-action-row--primary { margin: 3px -8px -6px; padding: 12px 8px 6px; }
+        /* Final Overview V2 polish */
+        .botshield-overview-v2 > s-stack { gap: 18px; }
+        .botshield-overview-v2 .botshield-overview-title { font-size: 26px; letter-spacing: -.025em; }
+        .botshield-overview-v2 .botshield-overview-subtitle { max-width: 680px; font-size: 13px; line-height: 1.5; }
+        .botshield-v2-eyebrow { margin-bottom: 5px; font-size: 10px; letter-spacing: .075em; }
+        .botshield-v2-icon {
+          width: 28px;
+          height: 28px;
+          border: 1px solid #e4e5e7;
+          background: #f7f7f8;
+          color: #3f4449;
+        }
+        .botshield-v2-icon s-icon { color: #4a4f55; }
+        .botshield-v2-status { padding: 20px 22px; border-color: #d8dcdf; background: #fff; }
+        .botshield-v2-status-heading-row h2 { font-size: 19px; letter-spacing: -.015em; }
+        .botshield-v2-status-copy > p { margin-top: 5px; }
+        .botshield-v2-kpi-card { min-height: 104px; padding: 15px 17px; }
+        .botshield-v2-kpi-topline .botshield-v2-icon { width: 26px; height: 26px; border: 1px solid #e5e7e9; background: #f7f7f8; }
+        .botshield-v2-kpi-label { font-size: 12px; }
+        .botshield-v2-kpi-value { font-size: 29px; font-variant-numeric: tabular-nums; }
+        .botshield-v2-health {
+          padding: 14px 16px;
+          border: 1px solid #dfe3e8;
+          border-radius: 8px;
+          background: #fafbfb;
+        }
+        .botshield-v2-health-heading { margin-bottom: 12px; }
+        .botshield-v2-health-grid { padding-top: 11px; border-top: 1px solid #e1e3e5; }
+        .botshield-v2-health-item { padding-inline: 15px; }
+        .botshield-v2-health-item strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .botshield-v2-health-dot { display: inline-block; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 999px; background: #b7bbc0; }
+        .botshield-v2-health-dot.is-healthy { background: var(--overview-green); }
+        .botshield-v2-health-dot.is-attention { background: var(--overview-amber); }
+        .botshield-v2-health-dot.is-info { background: var(--overview-blue); }
+        .botshield-v2-impact { gap: 22px; padding: 17px 0; }
+        .botshield-v2-impact-metric { gap: 10px; padding-inline: 18px; }
+        .botshield-v2-impact-metric strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+        .botshield-v2-value {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(320px, .8fr);
+          gap: 22px;
+          align-items: center;
+          padding: 15px 0;
+        }
+        .botshield-v2-value-header { display: block; }
+        .botshield-v2-value-header > div > p { max-width: 520px; }
+        .botshield-v2-methodology { margin-top: 8px; }
+        .botshield-v2-value-empty { margin: 0; padding: 12px 14px; }
+        .botshield-v2-value-empty > strong { color: #8c9196; font-size: 24px; font-weight: 500; }
+        .botshield-v2-value-empty h3 { font-size: 12px; }
+        .botshield-v2-value-empty p { max-width: 500px; }
+        .botshield-v2-value-content { margin-top: 0; }
+        .botshield-v2-section { padding: 19px; }
+        .botshield-v2-panel-header h2 { font-size: 17px; }
+        .botshield-v2-threat-panel { min-height: 510px; }
+        .botshield-v2-chart-controls { display: grid; justify-items: end; gap: 10px; }
+        .botshield-v2-period-selector {
+          display: inline-flex;
+          padding: 2px;
+          border: 1px solid #dfe3e8;
+          border-radius: 7px;
+          background: #f7f7f8;
+        }
+        .botshield-v2-period-selector button {
+          min-width: 38px;
+          padding: 5px 8px;
+          border: 0;
+          border-radius: 5px;
+          background: transparent;
+          color: #6d7175;
+          cursor: pointer;
+          font: inherit;
+          font-size: 10px;
+          font-weight: 700;
+        }
+        .botshield-v2-period-selector button:hover { color: #202223; background: #eceeef; }
+        .botshield-v2-period-selector button.is-active { background: #fff; color: #202223; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+        .botshield-v2-period-selector button:focus-visible { outline: 2px solid var(--overview-blue); outline-offset: 2px; }
+        .botshield-v2-legend { gap: 10px; }
+        .botshield-v2-chart { padding-top: 2px; }
+        .botshield-v2-chart-bars { height: 250px; gap: 3px; padding-top: 15px; background-image: repeating-linear-gradient(to bottom, #eef0f1 0, #eef0f1 1px, transparent 1px, transparent 62px); }
+        .botshield-v2-chart-bar { min-width: 2px; }
+        .botshield-v2-chart-column:hover .botshield-v2-chart-bar,
+        .botshield-v2-chart-column:focus-visible .botshield-v2-chart-bar { opacity: .8; filter: saturate(1.08); }
+        .botshield-v2-chart-tooltip { width: 184px; padding: 11px 12px; }
+        .botshield-v2-chart-tooltip .botshield-v2-tooltip-total { grid-template-columns: 1fr auto; margin-top: 3px; padding-top: 6px; border-top: 1px solid #4a4f55; color: #fff; }
+        .botshield-v2-monitoring-empty { min-height: 220px; }
+        .botshield-v2-composition { margin-top: 18px; padding-top: 16px; }
+        .botshield-v2-protection-row { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 12px 0; }
+        .botshield-v2-protection-row .botshield-v2-icon { width: 27px; height: 27px; }
+        .botshield-v2-protection-copy strong { font-size: 12px; }
+        .botshield-v2-protection-copy span { max-width: 240px; }
+        .botshield-v2-activity-header,
+        .botshield-v2-activity-row { grid-template-columns: 118px 82px minmax(160px, 1fr) 118px 86px; }
+        .botshield-v2-activity-row { min-height: 54px; }
+        .botshield-v2-activity-event { min-width: 0; }
+        .botshield-v2-activity-event span {
+          overflow: hidden;
+          margin-top: 0;
+          color: #4a4f55;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .botshield-v2-activity-row time { font-variant-numeric: tabular-nums; }
+        .botshield-v2-quick-action-row { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 11px 0; }
+        .botshield-v2-quick-action-row .botshield-v2-icon { width: 27px; height: 27px; }
+        .botshield-v2-quick-action-row--primary { margin: 2px -7px -5px; padding: 11px 7px 5px; background: #f7f7f8; }
+        @media (max-width: 1024px) {
+          .botshield-v2-value { grid-template-columns: 1fr; }
+          .botshield-v2-value-empty { margin-top: 2px; }
+          .botshield-v2-chart-bars { height: 230px; }
+        }
         .botshield-overview-v2 s-button:focus-visible,
         .botshield-overview-v2 button:focus-visible {
           outline: 2px solid var(--overview-blue);
@@ -2465,7 +2577,6 @@ export function BotShieldPageHeader({ subtitle, badge }) {
     </s-stack>
   );
 }
-
 export function BotShieldCard({
   title,
   subtitle,
@@ -3039,6 +3150,3 @@ export function BotShieldConfirmationModal({
     </s-modal>
   );
 }
-
-
-
