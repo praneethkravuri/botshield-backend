@@ -998,11 +998,11 @@ function OverviewBadge({ children, muted = false }) {
   );
 }
 
-function buildOverviewThreatSeries(events) {
-  const days = Array.from({ length: 30 }, (_, index) => {
+function buildOverviewThreatSeries(events, periodDays = 30) {
+  const days = Array.from({ length: periodDays }, (_, index) => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (29 - index));
+    date.setDate(date.getDate() - (periodDays - 1 - index));
     return {
       key: date.toISOString().slice(0, 10),
       label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
@@ -1143,6 +1143,7 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
 }
 
 function OverviewPage({ model, actions }) {
+  const [threatPeriod, setThreatPeriod] = useState(30);
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontSensorActive = Boolean(model.protectionStatus?.themeEmbedDetected);
   const storefrontEvents = Number.isFinite(Number(model.incidentCounts?.total))
@@ -1187,7 +1188,22 @@ function OverviewPage({ model, actions }) {
     },
   ];
   const activeProtections = protectionRows.filter((row) => row.active).length;
-  const threatSeries = buildOverviewThreatSeries(model.storefrontScans || []);
+  const storedThreatSeries = Array.isArray(model.overviewThreatActivity?.days)
+    ? model.overviewThreatActivity.days.map((day) => ({
+        key: day.date,
+        label: new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        }),
+        allowed: Number(day.allowed || 0),
+        challenged: Number(day.challenged || 0),
+        blocked: Number(day.blocked || 0),
+      }))
+    : [];
+  const threatSeriesSource = storedThreatSeries.length
+    ? storedThreatSeries
+    : buildOverviewThreatSeries(model.storefrontScans || [], 90);
+  const threatSeries = threatSeriesSource.slice(-threatPeriod);
   const recentStorefrontEvents = (model.storefrontScans || []).filter((event) =>
     inRecentDays(event.createdAt, 30),
   );
@@ -1361,22 +1377,22 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="reporting" />
                 <span>Storefront reporting</span>
-                <strong>{storefrontSensorActive ? "Connected" : lastStorefrontDecisionAt ? "Previously reporting" : "Needs verification"}</strong>
+                <strong><i className={`botshield-v2-health-dot ${storefrontSensorActive ? "is-healthy" : "is-attention"}`} />{storefrontSensorActive ? "Connected" : lastStorefrontDecisionAt ? "Previously reporting" : "Needs verification"}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="page" />
                 <span>Theme app embed</span>
-                <strong>{storefrontSensorActive ? "Active" : "Needs setup"}</strong>
+                <strong><i className={`botshield-v2-health-dot ${storefrontSensorActive ? "is-healthy" : "is-attention"}`} />{storefrontSensorActive ? "Active" : "Needs setup"}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="clock" />
                 <span>Last decision</span>
-                <strong>{formatRelativeTime(lastStorefrontDecisionAt)}</strong>
+                <strong><i className={`botshield-v2-health-dot ${lastStorefrontDecisionAt ? "is-info" : "is-muted"}`} />{formatRelativeTime(lastStorefrontDecisionAt)}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="shield" />
                 <span>Protection coverage</span>
-                <strong>{activeProtections} / {protectionRows.length} active</strong>
+                <strong><i className={`botshield-v2-health-dot ${activeProtections === protectionRows.length ? "is-healthy" : "is-attention"}`} />{activeProtections} / {protectionRows.length} active</strong>
               </div>
             </div>
           </section>
@@ -1432,6 +1448,7 @@ function OverviewPage({ model, actions }) {
             ) : (
               <div className="botshield-v2-value-empty">
                 <OverviewIcon name="shield" />
+                <strong aria-label="Value unavailable">â€”</strong>
                 <div>
                   <h3>No verified financial impact data yet</h3>
                   <p>{financialImpact.unavailableReason || "This section will populate when BotShield can verify an order value and a qualifying prevented financial-loss outcome."}</p>
@@ -1445,12 +1462,27 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-panel-header">
                 <div>
                   <h2>Threat activity</h2>
-                  <p>Storefront decisions recorded during the last 30 days.</p>
+                  <p>Real storefront decisions recorded during the selected period.</p>
                 </div>
-                <div className="botshield-v2-legend" aria-label="Chart legend">
-                  <span><i className="is-allowed" />Allowed</span>
-                  <span><i className="is-challenged" />Challenged</span>
-                  <span><i className="is-blocked" />Blocked</span>
+                <div className="botshield-v2-chart-controls">
+                  <div className="botshield-v2-period-selector" aria-label="Threat activity period">
+                    {[7, 30, 90].map((period) => (
+                      <button
+                        type="button"
+                        key={period}
+                        className={threatPeriod === period ? "is-active" : ""}
+                        aria-pressed={threatPeriod === period}
+                        onClick={() => setThreatPeriod(period)}
+                      >
+                        {period}D
+                      </button>
+                    ))}
+                  </div>
+                  <div className="botshield-v2-legend" aria-label="Chart legend">
+                    <span><i className="is-allowed" />Allowed</span>
+                    <span><i className="is-challenged" />Challenged</span>
+                    <span><i className="is-blocked" />Blocked</span>
+                  </div>
                 </div>
               </div>
               {loading ? (
@@ -1471,7 +1503,7 @@ function OverviewPage({ model, actions }) {
                 <div
                   className="botshield-v2-chart"
                   role="img"
-                  aria-label="Thirty-day threat activity stacked bar chart"
+                  aria-label={`${threatPeriod}-day threat activity stacked bar chart`}
                 >
                   <div className="botshield-v2-chart-scale" aria-hidden="true">
                     <span>{chartMaximum.toLocaleString()}</span>
@@ -1486,7 +1518,7 @@ function OverviewPage({ model, actions }) {
                           type="button"
                           className="botshield-v2-chart-column"
                           key={day.key}
-                          aria-label={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked`}
+                          aria-label={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked, ${total} total decisions`}
                         >
                           <div
                             className="botshield-v2-chart-bar"
@@ -1503,15 +1535,16 @@ function OverviewPage({ model, actions }) {
                             <span><i className="is-allowed" />Allowed <b>{day.allowed}</b></span>
                             <span><i className="is-challenged" />Challenged <b>{day.challenged}</b></span>
                             <span><i className="is-blocked" />Blocked <b>{day.blocked}</b></span>
+                            <span className="botshield-v2-tooltip-total">Total decisions <b>{total}</b></span>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                   <div className="botshield-v2-chart-axis">
-                    <span>{threatSeries[0].label}</span>
-                    <span>{threatSeries[14].label}</span>
-                    <span>{threatSeries[29].label}</span>
+                    <span>{threatSeries[0]?.label}</span>
+                    <span>{threatSeries[Math.floor((threatSeries.length - 1) / 2)]?.label}</span>
+                    <span>{threatSeries[threatSeries.length - 1]?.label}</span>
                   </div>
                 </div>
               ) : (
@@ -1648,7 +1681,7 @@ function OverviewPage({ model, actions }) {
                         />
                       </div>
                       <div className="botshield-v2-activity-event">
-                        <span>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span>
+                        <span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span>
                       </div>
                       <BotShieldStatusBadge
                         status={event.actionTaken}
@@ -1856,6 +1889,7 @@ function LegacyOverviewPage({ model, actions }) {
                 </BotShieldActionButton>
               </s-stack>
             </div>
+
             <div className="botshield-overview-metric-grid">
               {overviewMetricCards.map((card) => (
                 <div className="botshield-overview-metric-card" key={card.title}>
@@ -3322,7 +3356,6 @@ function ActivityInvestigationSummary({
     </s-grid>
   );
 }
-
 function ActivityPage({ model, actions }) {
   const blocked = Number(model.incidentCounts?.blocked || 0);
   const challenged = Number(model.incidentCounts?.challenged || 0);
@@ -4015,6 +4048,7 @@ function ProtectionPage({ model, actions }) {
             />
           </s-grid>
         </BotShieldCard>
+
         <s-grid
           gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
           gap="large"
@@ -4254,6 +4288,7 @@ function ProtectionPage({ model, actions }) {
     </Screen>
   );
 }
+
 function IpList({
   title,
   subtitle,
@@ -4340,7 +4375,6 @@ function IpList({
     </s-stack>
   );
 }
-
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [draft, setDraft] = useState({
@@ -5213,6 +5247,7 @@ function BlocklistPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
       </s-grid>
+
       <BotShieldCard
         title="Manage blocked visitors"
         subtitle="Add or remove IP addresses from the manual blocklist."
@@ -5299,7 +5334,6 @@ function TrustedVisitorsPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
       </s-grid>
-
       <BotShieldCard
         title="Manage trusted visitors"
         subtitle="Add or remove IP addresses from the trusted visitor list."
@@ -5572,6 +5606,7 @@ function SetupPage({ model, actions }) {
       ),
     },
   ];
+
   return (
     <Screen
       title="Setup & Help"
@@ -5944,5 +5979,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
     </BotShieldAppFrame>
   );
 }
+
+
 
 
