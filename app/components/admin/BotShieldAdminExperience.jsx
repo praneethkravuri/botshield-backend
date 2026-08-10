@@ -1251,13 +1251,13 @@ function OverviewPage({ model, actions }) {
         };
   const metrics = [
     { label: "Storefront events", value: storefrontEvents, detail: "Last 30 days", icon: "activity" },
-    { label: "Bots blocked", value: botsBlocked, detail: "Stopped by active policy", icon: "block" },
+    { label: "Bots blocked", value: botsBlocked, detail: "Blocked by your protection policy", icon: "block" },
     {
       label: "Challenged visitors",
       value: Number.isFinite(Number(model.incidentCounts?.challenged))
         ? Number(model.incidentCounts.challenged)
         : model.challengedCount,
-      detail: "Verification requested",
+      detail: "Asked to complete verification",
       icon: "verify",
     },
     {
@@ -1276,8 +1276,8 @@ function OverviewPage({ model, actions }) {
             <div>
               <h1 className="botshield-overview-title">Overview</h1>
               <p className="botshield-overview-subtitle">
-                Monitor live storefront risk, protection coverage, and recent
-                enforcement from one command center.
+                Monitor storefront protection, security activity, and recent
+                enforcement decisions from one place.
               </p>
             </div>
           </div>
@@ -1357,9 +1357,9 @@ function OverviewPage({ model, actions }) {
 
           <section className="botshield-v2-impact" aria-labelledby="security-impact-title">
             <div className="botshield-v2-impact-heading">
-              <div className="botshield-v2-eyebrow">Verified Â· Last 30 days</div>
+              <div className="botshield-v2-eyebrow">Verified outcomes | Last 30 days</div>
               <h2 id="security-impact-title">Security impact</h2>
-              <p>Measured outcomes from recorded storefront decisions.</p>
+              <p>Verified protection outcomes from the last 30 days.</p>
             </div>
             <div className="botshield-v2-impact-metrics">
               {securityImpact.map((item, index) => (
@@ -1379,8 +1379,8 @@ function OverviewPage({ model, actions }) {
             <section className="botshield-v2-section botshield-v2-threat-panel">
               <div className="botshield-v2-panel-header">
                 <div>
-                  <h2>Threat Activity</h2>
-                  <p>Allowed, challenged, and blocked storefront events over the last 30 days.</p>
+                  <h2>Threat activity</h2>
+                  <p>Storefront decisions recorded during the last 30 days.</p>
                 </div>
                 <div className="botshield-v2-legend" aria-label="Chart legend">
                   <span><i className="is-allowed" />Allowed</span>
@@ -1467,7 +1467,7 @@ function OverviewPage({ model, actions }) {
                 <div className="botshield-v2-composition-heading">
                   <div>
                     <h3>Threat composition</h3>
-                    <p>Recorded detection signals on suspicious events in the last 30 days.</p>
+                    <p>Signals detected in suspicious storefront activity.</p>
                   </div>
                   <BotShieldActionButton
                     variant="tertiary"
@@ -1532,7 +1532,7 @@ function OverviewPage({ model, actions }) {
                         variant="tertiary"
                         onClick={() => actions.setPage("detection-settings")}
                       >
-                        Configure â†’
+                        Configure
                       </BotShieldActionButton>
                     </div>
                   </div>
@@ -1545,8 +1545,8 @@ function OverviewPage({ model, actions }) {
             <section className="botshield-v2-section">
               <div className="botshield-v2-panel-header">
                 <div>
-                  <h2>Recent Security Activity</h2>
-                  <p>Latest real decisions received from the storefront.</p>
+                  <h2>Recent security activity</h2>
+                  <p>The latest protection decisions recorded for your store.</p>
                 </div>
                 <BotShieldActionButton
                   variant="tertiary"
@@ -1593,7 +1593,7 @@ function OverviewPage({ model, actions }) {
                         variant="tertiary"
                         onClick={() => actions.setPage("incidents")}
                       >
-                        View details â†’
+                        View details
                       </BotShieldActionButton>
                     </div>
                   ))}
@@ -1609,8 +1609,8 @@ function OverviewPage({ model, actions }) {
             <section className="botshield-v2-section botshield-v2-quick-actions">
               <div className="botshield-v2-panel-header">
                 <div>
-                  <h2>Quick Response</h2>
-                  <p>Act on known visitors or review the active protection policy.</p>
+                  <h2>Quick response</h2>
+                  <p>Take immediate action or review your protection policy.</p>
                 </div>
               </div>
               <div className="botshield-v2-quick-action-list">
@@ -1618,14 +1618,14 @@ function OverviewPage({ model, actions }) {
                   <OverviewIcon name="block" />
                   <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
                   <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
-                    Block IP â†’
+                    Block IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="visitor" />
                   <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
                   <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
-                    Trust â†’
+                    Trust visitor
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
@@ -1635,7 +1635,7 @@ function OverviewPage({ model, actions }) {
                     variant="primary"
                     onClick={() => actions.setPage("detection")}
                   >
-                    Review â†’
+                    Review protection
                   </BotShieldActionButton>
                 </div>
               </div>
