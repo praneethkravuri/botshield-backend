@@ -153,7 +153,7 @@ function getAssistantReply(question, context) {
     return "I can summarize traffic, explain blocked activity, describe auto-block, recommend settings, and answer questions about scans, threats, and dashboard status.";
   }
 
-  return `Here’s the current picture: protection is ${
+  return `Hereâ€™s the current picture: protection is ${
     protectionOn ? "active" : "not active"
   }, auto-block is ${autoBlock ? "enabled" : "disabled"}, ${blockedToday} threats were blocked today, and ${percentHigh}% of traffic is high risk. ${recommendation}`;
 }
@@ -956,7 +956,7 @@ function SecurityPage({
         </div>
 
         {incidentLoading ? (
-          <p style={{ color: theme.muted, marginBottom: 0 }}>Loading incidents…</p>
+          <p style={{ color: theme.muted, marginBottom: 0 }}>Loading incidentsâ€¦</p>
         ) : incidents.length === 0 ? (
           <p style={{ color: theme.muted, marginBottom: 0 }}>
             No incidents match the selected filters.
@@ -1005,11 +1005,11 @@ function SecurityPage({
                 {incident.networkAsn || incident.networkOrg ? (
                   <div style={{ color: theme.muted, fontSize: "12px", marginTop: "6px" }}>
                     Network: {incident.networkAsn ? `AS${incident.networkAsn}` : "ASN unknown"}
-                    {incident.networkOrg ? ` · ${incident.networkOrg}` : ""}
-                    {incident.networkType ? ` · ${incident.networkType}` : ""}
+                    {incident.networkOrg ? ` Â· ${incident.networkOrg}` : ""}
+                    {incident.networkType ? ` Â· ${incident.networkType}` : ""}
                     {incident.networkProvider &&
                     incident.networkProvider !== incident.networkOrg
-                      ? ` · ${incident.networkProvider}`
+                      ? ` Â· ${incident.networkProvider}`
                       : ""}
                   </div>
                 ) : null}
@@ -1175,7 +1175,7 @@ function SettingsPage({
             <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
               Last delivery: {lastAlertStatus || "No delivery attempted"}
               {lastAlertSentAt
-                ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
+                ? ` Â· ${new Date(lastAlertSentAt).toLocaleString()}`
                 : ""}
             </div>
             {lastAlertError ? (
@@ -1206,7 +1206,7 @@ function SettingsPage({
             <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
               Last weekly report: {lastWeeklyReportStatus || "No report attempted"}
               {lastWeeklyReportAt
-                ? ` · ${new Date(lastWeeklyReportAt).toLocaleString()}`
+                ? ` Â· ${new Date(lastWeeklyReportAt).toLocaleString()}`
                 : ""}
             </div>
             {lastWeeklyReportError ? (
@@ -1316,6 +1316,16 @@ export default function Index() {
   const [lastWeeklyReportError, setLastWeeklyReportError] = useState(null);
   const [securityPosture, setSecurityPosture] = useState(null);
   const [billingStatus, setBillingStatus] = useState(null);
+  const [financialImpact, setFinancialImpact] = useState({
+    status: "unavailable",
+    periodDays: 30,
+    currencyCode: null,
+    totalAmountMinor: null,
+    qualifyingOrderCount: 0,
+    series: [],
+    methodology: "",
+    unavailableReason: "No verified financial impact data yet.",
+  });
   const [backendErrors, setBackendErrors] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [incidentCounts, setIncidentCounts] = useState({
@@ -1938,6 +1948,27 @@ export default function Index() {
     }
   };
 
+  const loadFinancialImpact = async () => {
+    try {
+      const response = await fetch("/api/financial-impact");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Financial impact could not be loaded.");
+      setFinancialImpact(data.impact || {
+        status: "unavailable",
+        periodDays: 30,
+        currencyCode: null,
+        totalAmountMinor: null,
+        qualifyingOrderCount: 0,
+        series: [],
+        methodology: "",
+        unavailableReason: "No verified financial impact data yet.",
+      });
+    } catch (error) {
+      console.error("Failed to load financial impact", error);
+      recordBackendError("Financial impact", error);
+    }
+  };
+
   const saveMerchantMetadata = async (nextNotes, nextTags) => {
     const response = await fetch("/api/merchant-metadata", {
       method: "POST",
@@ -1994,6 +2025,7 @@ export default function Index() {
       loadIncidents(),
       loadSecurityPosture(),
       loadBillingStatus(),
+      loadFinancialImpact(),
     ]);
   };
 
@@ -3256,10 +3288,10 @@ export default function Index() {
     storefrontScans.length > 0
       ? storefrontScans
           .slice(0, 3)
-          .map((scan) => `• ${scan.threatLevel} threat from ${scan.ipAddress}`)
+          .map((scan) => `â€¢ ${scan.threatLevel} threat from ${scan.ipAddress}`)
       : [
-          "• No real storefront events received",
-          `• ${simulatedScans.length} simulation event${simulatedScans.length === 1 ? "" : "s"} excluded`,
+          "â€¢ No real storefront events received",
+          `â€¢ ${simulatedScans.length} simulation event${simulatedScans.length === 1 ? "" : "s"} excluded`,
         ];
 
   const storeProtectionMode = strictMode
@@ -3437,7 +3469,7 @@ export default function Index() {
     },
     {
       label: "Security score",
-      value: securityPosture ? `${securityPosture.score.score}/100` : "—",
+      value: securityPosture ? `${securityPosture.score.score}/100` : "â€”",
       detail: securityPosture?.score?.grade || "Calculating posture",
       actionKey: "runtimeStatus",
     },
@@ -3631,6 +3663,7 @@ export default function Index() {
     highRiskCount,
     securityPosture,
     billingStatus,
+    financialImpact,
     backendErrors,
     incidents,
     incidentCounts,
@@ -3987,7 +4020,7 @@ export default function Index() {
                     </div>
                   </div>
                 </div>
-                <span style={{ color: page === item.key ? theme.text : theme.muted, fontSize: "18px" }}>›</span>
+                <span style={{ color: page === item.key ? theme.text : theme.muted, fontSize: "18px" }}>â€º</span>
               </button>
             ))}
           </div>
@@ -4193,7 +4226,7 @@ export default function Index() {
                           fontWeight: 700,
                         }}
                       >
-                        {item.complete ? "✓" : "○"} {item.label}
+                        {item.complete ? "âœ“" : "â—‹"} {item.label}
                       </span>
                     ))}
                   </div>
@@ -4536,8 +4569,8 @@ export default function Index() {
                                 </div>
                                 <div style={{ color: theme.muted, fontSize: "10px", marginTop: "3px" }}>
                                   {origin.threatCount > 0
-                                    ? `${origin.threatCount} suspicious · highest risk ${origin.highestRiskScore}/100`
-                                    : `${origin.allowed} allowed · no elevated signal`}
+                                    ? `${origin.threatCount} suspicious Â· highest risk ${origin.highestRiskScore}/100`
+                                    : `${origin.allowed} allowed Â· no elevated signal`}
                                 </div>
                               </div>
                             </div>
@@ -4595,14 +4628,14 @@ export default function Index() {
                               .join(", ")
                           : "No elevated location",
                         detail: leadingThreatOrigin
-                          ? `${leadingThreatOrigin.threatCount} suspicious · ${leadingThreatOrigin.blocked} blocked`
+                          ? `${leadingThreatOrigin.threatCount} suspicious Â· ${leadingThreatOrigin.blocked} blocked`
                           : "No location-based threat concentration detected",
                         tone: leadingThreatOrigin ? "danger" : "success",
                       },
                       {
                         label: "Verified response",
                         value: `${verifiedInterventions} intervention${verifiedInterventions === 1 ? "" : "s"}`,
-                        detail: `${blockedCount} blocked · ${challengedCount} challenged · ${geolocatedCountryCount} countr${geolocatedCountryCount === 1 ? "y" : "ies"}`,
+                        detail: `${blockedCount} blocked Â· ${challengedCount} challenged Â· ${geolocatedCountryCount} countr${geolocatedCountryCount === 1 ? "y" : "ies"}`,
                         tone: verifiedInterventions > 0 ? "accent" : "neutral",
                       },
                     ].map((item) => (
@@ -5712,7 +5745,7 @@ export default function Index() {
                           : "Provider Not Configured"}
                     </span>
                     <span style={getRiskBadgeStyle(highRiskAlertsOnly ? "balanced" : "normal")}>
-                      Blocked · Challenged · High Risk
+                      Blocked Â· Challenged Â· High Risk
                     </span>
                   </div>
                   <input
@@ -5729,7 +5762,7 @@ export default function Index() {
                     <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
                       Last delivery: {lastAlertStatus || "No delivery attempted"}
                       {lastAlertSentAt
-                        ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
+                        ? ` Â· ${new Date(lastAlertSentAt).toLocaleString()}`
                         : ""}
                     </div>
                     <button onClick={handleSaveSettings} style={getPrimaryButtonStyle()} {...pressHandlers}>
@@ -6742,7 +6775,7 @@ export default function Index() {
                   flexShrink: 0,
                 }}
               >
-                ×
+                Ã—
               </button>
             </div>
 
@@ -6876,7 +6909,7 @@ export default function Index() {
                                   color: "#e2e8f0",
                                 }}
                               >
-                                <span style={{ color: "#38bdf8" }}>•</span>
+                                <span style={{ color: "#38bdf8" }}>â€¢</span>
                                 <span>{bullet}</span>
                               </div>
                             ))}
@@ -6924,7 +6957,6 @@ export default function Index() {
                   </div>
                 ))}
               </div>
-
               <div style={{ marginTop: "12px", display: "flex", gap: "10px" }}>
                 <input
                   value={chatInput}
@@ -7164,7 +7196,6 @@ export default function Index() {
               border-right: 0 !important;
               border-bottom: 1px solid ${theme.border} !important;
             }
-
             .botshield-main {
               padding: 18px !important;
             }
