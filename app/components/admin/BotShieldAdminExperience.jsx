@@ -1086,6 +1086,19 @@ function formatRelativeTime(value) {
   return `${Math.floor(elapsedHours / 24)}d ago`;
 }
 
+function formatCurrencyMinor(amountMinor, currencyCode) {
+  if (!Number.isSafeInteger(Number(amountMinor)) || !currencyCode) return null;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currencyCode,
+      maximumFractionDigits: 2,
+    }).format(Number(amountMinor) / 100);
+  } catch {
+    return null;
+  }
+}
+
 function OverviewIcon({ name }) {
   const icons = {
     activity: "chart-line",
@@ -1216,6 +1229,19 @@ function OverviewPage({ model, actions }) {
     /activity|incident timeline/i.test(error),
   );
   const loading = Boolean(model.syncing && !model.storefrontScans?.length);
+  const financialImpact = model.financialImpact || {};
+  const protectedValue = formatCurrencyMinor(
+    financialImpact.totalAmountMinor,
+    financialImpact.currencyCode,
+  );
+  const hasFinancialImpact =
+    financialImpact.status === "available" &&
+    protectedValue &&
+    Array.isArray(financialImpact.series) &&
+    financialImpact.series.length > 0;
+  const financialChartMaximum = hasFinancialImpact
+    ? Math.max(...financialImpact.series.map((point) => Number(point.amountMinor) || 0), 1)
+    : 1;
   const lastStorefrontDecisionAt = model.protectionStatus?.lastStorefrontDecisionAt;
   const protectionsNeedingAttention = protectionRows.filter((row) => !row.active).length;
   const protectionState = model.backendErrors?.length
@@ -1373,6 +1399,45 @@ function OverviewPage({ model, actions }) {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="botshield-v2-value" aria-labelledby="estimated-value-title">
+            <div className="botshield-v2-value-header">
+              <div>
+                <div className="botshield-v2-eyebrow">Financial impact | Last {financialImpact.periodDays || 30} days</div>
+                <h2 id="estimated-value-title">Estimated value protected</h2>
+                <p>Verified order value linked to documented, qualifying protection outcomes.</p>
+              </div>
+              <details className="botshield-v2-methodology">
+                <summary>How this is calculated</summary>
+                <p>{financialImpact.methodology || "Only verified Shopify order values linked to documented prevented-loss outcomes are included. Traffic counts and risk scores are never converted into money."}</p>
+              </details>
+            </div>
+            {hasFinancialImpact ? (
+              <div className="botshield-v2-value-content">
+                <div className="botshield-v2-value-total">
+                  <strong>{protectedValue}</strong>
+                  <span>{Number(financialImpact.qualifyingOrderCount || 0).toLocaleString()} verified order outcome{Number(financialImpact.qualifyingOrderCount) === 1 ? "" : "s"}</span>
+                </div>
+                <div className="botshield-v2-value-chart" role="img" aria-label={`Estimated value protected over the last ${financialImpact.periodDays || 30} days`}>
+                  {financialImpact.series.map((point) => (
+                    <span
+                      key={point.date}
+                      style={{ height: `${Math.max(4, (Number(point.amountMinor) / financialChartMaximum) * 100)}%` }}
+                      title={`${point.date}: ${formatCurrencyMinor(point.amountMinor, financialImpact.currencyCode)}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="botshield-v2-value-empty">
+                <OverviewIcon name="shield" />
+                <div>
+                  <h3>No verified financial impact data yet</h3>
+                  <p>{financialImpact.unavailableReason || "This section will populate when BotShield can verify an order value and a qualifying prevented financial-loss outcome."}</p>
+                </div>
+              </div>
+            )}
           </section>
 
           <div className="botshield-v2-workspace botshield-v2-primary-grid">
@@ -1791,7 +1856,6 @@ function LegacyOverviewPage({ model, actions }) {
                 </BotShieldActionButton>
               </s-stack>
             </div>
-
             <div className="botshield-overview-metric-grid">
               {overviewMetricCards.map((card) => (
                 <div className="botshield-overview-metric-card" key={card.title}>
@@ -3951,7 +4015,6 @@ function ProtectionPage({ model, actions }) {
             />
           </s-grid>
         </BotShieldCard>
-
         <s-grid
           gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
           gap="large"
@@ -4136,6 +4199,7 @@ function ProtectionPage({ model, actions }) {
             </BotShieldInlineHelp>
           </s-stack>
         </BotShieldCard>
+
         <s-stack gap="small">
           <s-heading>Network intelligence</s-heading>
           <s-paragraph color="subdued">
@@ -4190,7 +4254,6 @@ function ProtectionPage({ model, actions }) {
     </Screen>
   );
 }
-
 function IpList({
   title,
   subtitle,
@@ -5150,7 +5213,6 @@ function BlocklistPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
       </s-grid>
-
       <BotShieldCard
         title="Manage blocked visitors"
         subtitle="Add or remove IP addresses from the manual blocklist."
@@ -5510,7 +5572,6 @@ function SetupPage({ model, actions }) {
       ),
     },
   ];
-
   return (
     <Screen
       title="Setup & Help"
@@ -5883,4 +5944,5 @@ export default function BotShieldAdminExperience({ model, actions }) {
     </BotShieldAppFrame>
   );
 }
+
 
