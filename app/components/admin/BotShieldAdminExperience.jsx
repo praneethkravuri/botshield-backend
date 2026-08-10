@@ -1000,6 +1000,7 @@ function OverviewBadge({ children, muted = false }) {
 }
 
 
+
 function buildOverviewThreatSeries(events) {
   const days = Array.from({ length: 30 }, (_, index) => {
     const date = new Date();
@@ -1028,7 +1029,59 @@ function buildOverviewThreatSeries(events) {
   return days;
 }
 
+const OVERVIEW_SIGNAL_GROUPS = [
+  {
+    label: "Automation / bot",
+    codes: ["KNOWN_BOT_USER_AGENT", "SUSPICIOUS_USER_AGENT", "MISSING_USER_AGENT"],
+  },
+  {
+    label: "Network / proxy",
+    codes: [
+      "VPN_DETECTED",
+      "DATACENTER_IP",
+      "HOSTING_PROVIDER",
+      "HIGH_RISK_NETWORK",
+      "ASN_MATCH",
+    ],
+  },
+  {
+    label: "Rate abuse",
+    codes: ["RATE_PATTERN", "REPEAT_OFFENDER"],
+  },
+  {
+    label: "Suspicious paths",
+    codes: ["SENSITIVE_PATH", "PATH_SCANNING"],
+  },
+];
+
+function getOverviewReasonCodes(event) {
+  const structured = Array.isArray(event?.reasonCodes) ? event.reasonCodes : [];
+  const serialized = Array.isArray(event?.reasons)
+    ? event.reasons.join(" ")
+    : String(event?.reasons || "");
+  const extracted = [...serialized.matchAll(/\[([A-Z0-9_]+)\]/g)].map(
+    (match) => match[1],
+  );
+  return [...new Set([...structured, ...extracted].map((code) => String(code).toUpperCase()))];
+}
+
+function buildOverviewThreatComposition(events) {
+  return OVERVIEW_SIGNAL_GROUPS.map((group) => ({
+    label: group.label,
+    count: events.filter((event) => {
+      const codes = getOverviewReasonCodes(event);
+      return group.codes.some((code) => codes.includes(code));
+    }).length,
+  }))
+    .filter((group) => group.count > 0)
+    .sort((left, right) => right.count - left.count);
+}
+
 function OverviewMetricCard({ label, value, detail, loading }) {
+  const numericValue = Number(value);
+  const displayValue = Number.isFinite(numericValue)
+    ? numericValue.toLocaleString()
+    : "â€”";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
       {loading ? (
@@ -1036,7 +1089,7 @@ function OverviewMetricCard({ label, value, detail, loading }) {
       ) : (
         <>
           <div className="botshield-v2-kpi-label">{label}</div>
-          <div className="botshield-v2-kpi-value">{value}</div>
+          <div className="botshield-v2-kpi-value">{displayValue}</div>
           <div className="botshield-v2-kpi-detail">{detail}</div>
         </>
       )}
@@ -1094,6 +1147,9 @@ function OverviewPage({ model, actions }) {
   ];
   const activeProtections = protectionRows.filter((row) => row.active).length;
   const threatSeries = buildOverviewThreatSeries(model.storefrontScans || []);
+  const recentStorefrontEvents = (model.storefrontScans || []).filter((event) =>
+    inRecentDays(event.createdAt, 30),
+  );
   const chartMaximum = Math.max(
     1,
     ...threatSeries.map((day) => day.allowed + day.challenged + day.blocked),
@@ -1102,18 +1158,48 @@ function OverviewPage({ model, actions }) {
     (day) => day.allowed || day.challenged || day.blocked,
   );
   const recentEvents = (model.storefrontScans || []).slice(0, 5);
+  const suspiciousEvents = recentStorefrontEvents.filter(
+    (event) =>
+      ["medium", "high"].includes(String(event.threatLevel).toLowerCase()) ||
+      ["blocked", "challenged"].includes(event.actionTaken),
+  );
+  const automatedInterventions =
+    Number(model.incidentCounts?.blocked || 0) +
+    Number(model.incidentCounts?.challenged || 0);
+  const threatComposition = buildOverviewThreatComposition(suspiciousEvents);
+  const largestCompositionCount = Math.max(
+    1,
+    ...threatComposition.map((item) => item.count),
+  );
+  const securityImpact = [
+    {
+      label: "Automated interventions",
+      value: automatedInterventions,
+      detail: "Blocked or challenged storefront visits",
+    },
+    {
+      label: "High-risk events identified",
+      value: Number(model.incidentCounts?.highRisk || 0),
+      detail: "Recorded storefront events classified as high risk",
+    },
+  ];
+  const activityError = model.backendErrors?.find((error) =>
+    /activity|incident timeline/i.test(error),
+  );
   const loading = Boolean(model.syncing && !model.storefrontScans?.length);
   const protectionState = model.backendErrors?.length
-    ? {
-        label: "Degraded",
+      ? {
+          label: "Degraded",
+          title: "Protection data is degraded",
         tone: "critical",
         className: "botshield-v2-status--degraded",
         detail:
           "Some live security data could not be loaded. Protection may still be running, but this view needs attention.",
       }
     : model.protectionPaused || !storefrontConnected || !model.protectionReady
-      ? {
-          label: "Attention needed",
+        ? {
+            label: "Attention needed",
+            title: "Protection needs attention",
           tone: "warning",
           className: "botshield-v2-status--attention",
           detail: model.protectionPaused
@@ -1122,8 +1208,9 @@ function OverviewPage({ model, actions }) {
               ? "Connect the storefront theme app embed to begin receiving and enforcing live protection decisions."
               : "Complete the remaining protection setup to fully secure storefront traffic.",
         }
-      : {
-          label: "Active",
+        : {
+            label: "Active",
+            title: "Your store is protected",
           tone: "success",
           className: "botshield-v2-status--active",
           detail:
@@ -1134,7 +1221,9 @@ function OverviewPage({ model, actions }) {
     { label: "Bots blocked", value: botsBlocked, detail: "Stopped by active policy" },
     {
       label: "Challenged visitors",
-      value: model.challengedCount,
+      value: Number.isFinite(Number(model.incidentCounts?.challenged))
+        ? Number(model.incidentCounts.challenged)
+        : model.challengedCount,
       detail: "Verification requested",
     },
     {
@@ -1166,7 +1255,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-eyebrow">Protection status</div>
               <div className="botshield-v2-status-heading-row">
                 <span className="botshield-v2-status-indicator" aria-hidden="true" />
-                <h2 id="botshield-protection-status-title">{protectionState.label}</h2>
+                <h2 id="botshield-protection-status-title">{protectionState.title}</h2>
                 <BotShieldStatusBadge
                   status={protectionState.tone}
                   label={protectionState.label}
@@ -1194,6 +1283,23 @@ function OverviewPage({ model, actions }) {
             ))}
           </section>
 
+          <section className="botshield-v2-impact" aria-labelledby="security-impact-title">
+            <div className="botshield-v2-impact-heading">
+              <div className="botshield-v2-eyebrow">Verified outcomes Â· Last 30 days</div>
+              <h2 id="security-impact-title">Security Impact</h2>
+              <p>What BotShield actually did using recorded storefront decisions.</p>
+            </div>
+            <div className="botshield-v2-impact-metrics">
+              {securityImpact.map((item) => (
+                <div className="botshield-v2-impact-metric" key={item.label}>
+                  <strong>{item.value.toLocaleString()}</strong>
+                  <div>{item.label}</div>
+                  <span>{item.detail}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <div className="botshield-v2-primary-grid">
             <section className="botshield-v2-panel botshield-v2-threat-panel">
               <div className="botshield-v2-panel-header">
@@ -1209,12 +1315,29 @@ function OverviewPage({ model, actions }) {
               </div>
               {loading ? (
                 <div className="botshield-v2-chart-skeleton botshield-v2-skeleton" />
+              ) : activityError ? (
+                <div className="botshield-v2-chart-error">
+                  <BotShieldBanner
+                    tone="critical"
+                    title="Threat activity could not be loaded"
+                  >
+                    Refresh BotShield to try loading recorded storefront decisions again.
+                  </BotShieldBanner>
+                  <BotShieldActionButton onClick={actions.refresh}>
+                    Refresh data
+                  </BotShieldActionButton>
+                </div>
               ) : hasThreatActivity ? (
                 <div
                   className="botshield-v2-chart"
                   role="img"
                   aria-label="Thirty-day threat activity stacked bar chart"
                 >
+                  <div className="botshield-v2-chart-scale" aria-hidden="true">
+                    <span>{chartMaximum.toLocaleString()}</span>
+                    <span>{Math.round(chartMaximum / 2).toLocaleString()}</span>
+                    <span>0</span>
+                  </div>
                   <div className="botshield-v2-chart-bars">
                     {threatSeries.map((day) => {
                       const total = day.allowed + day.challenged + day.blocked;
@@ -1222,7 +1345,7 @@ function OverviewPage({ model, actions }) {
                         <div
                           className="botshield-v2-chart-column"
                           key={day.key}
-                          title={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked`}
+                          aria-label={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked`}
                         >
                           <div
                             className="botshield-v2-chart-bar"
@@ -1233,6 +1356,12 @@ function OverviewPage({ model, actions }) {
                             <span className="is-blocked" style={{ flex: day.blocked }} />
                             <span className="is-challenged" style={{ flex: day.challenged }} />
                             <span className="is-allowed" style={{ flex: day.allowed }} />
+                          </div>
+                          <div className="botshield-v2-chart-tooltip" role="tooltip">
+                            <strong>{day.label}</strong>
+                            <span><i className="is-allowed" />Allowed <b>{day.allowed}</b></span>
+                            <span><i className="is-challenged" />Challenged <b>{day.challenged}</b></span>
+                            <span><i className="is-blocked" />Blocked <b>{day.blocked}</b></span>
                           </div>
                         </div>
                       );
@@ -1255,6 +1384,40 @@ function OverviewPage({ model, actions }) {
                   }
                 />
               )}
+
+              <div className="botshield-v2-composition">
+                <div className="botshield-v2-composition-heading">
+                  <div>
+                    <h3>Threat composition</h3>
+                    <p>Recorded detection signals on suspicious events in the last 30 days.</p>
+                  </div>
+                  <BotShieldActionButton
+                    variant="tertiary"
+                    onClick={() => actions.setPage("incidents")}
+                  >
+                    Investigate
+                  </BotShieldActionButton>
+                </div>
+                {threatComposition.length ? (
+                  <div className="botshield-v2-composition-list">
+                    {threatComposition.map((item) => (
+                      <div className="botshield-v2-composition-row" key={item.label}>
+                        <span>{item.label}</span>
+                        <div className="botshield-v2-composition-track">
+                          <i
+                            style={{ width: `${(item.count / largestCompositionCount) * 100}%` }}
+                          />
+                        </div>
+                        <strong>{item.count.toLocaleString()}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="botshield-v2-composition-empty">
+                    No categorized suspicious signals have been recorded for this period.
+                  </p>
+                )}
+              </div>
             </section>
 
             <section className="botshield-v2-panel">
@@ -1274,9 +1437,10 @@ function OverviewPage({ model, actions }) {
                     <div className="botshield-v2-protection-action">
                       <BotShieldStatusBadge
                         status={row.active ? "active" : "setup_required"}
-                        label={row.active ? "Active" : "Configure"}
+                        label={row.active ? "Active" : "Inactive"}
                       />
                       <BotShieldActionButton
+                        variant="tertiary"
                         onClick={() => actions.setPage("detection-settings")}
                       >
                         Configure
@@ -1295,7 +1459,10 @@ function OverviewPage({ model, actions }) {
                   <h2>Recent Security Activity</h2>
                   <p>Latest real decisions received from the storefront.</p>
                 </div>
-                <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                <BotShieldActionButton
+                  variant="tertiary"
+                  onClick={() => actions.setPage("incidents")}
+                >
                   View all
                 </BotShieldActionButton>
               </div>
@@ -1307,21 +1474,36 @@ function OverviewPage({ model, actions }) {
                 </div>
               ) : recentEvents.length ? (
                 <div className="botshield-v2-activity-list">
+                  <div className="botshield-v2-activity-header" aria-hidden="true">
+                    <span>Time</span>
+                    <span>Risk</span>
+                    <span>Detection reason</span>
+                    <span>Decision</span>
+                    <span />
+                  </div>
                   {recentEvents.map((event) => (
                     <div
                       className="botshield-v2-activity-row"
                       key={event.id || `${event.createdAt}-${event.ipAddress}`}
                     >
                       <time dateTime={event.createdAt}>{formatDate(event.createdAt)}</time>
+                      <div className="botshield-v2-activity-risk">
+                        <BotShieldStatusBadge
+                          status={event.threatLevel}
+                          label={getRiskLabel(event.threatLevel)}
+                        />
+                      </div>
                       <div className="botshield-v2-activity-event">
-                        <strong>{getRiskLabel(event.threatLevel)}</strong>
                         <span>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span>
                       </div>
                       <BotShieldStatusBadge
                         status={event.actionTaken}
                         label={getOutcomeLabel(event.actionTaken)}
                       />
-                      <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
+                      <BotShieldActionButton
+                        variant="tertiary"
+                        onClick={() => actions.setPage("incidents")}
+                      >
                         View details
                       </BotShieldActionButton>
                     </div>
@@ -1339,21 +1521,32 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-panel-header">
                 <div>
                   <h2>Quick Actions</h2>
-                  <p>Open the existing protected workflows.</p>
+                  <p>Take immediate action using existing protection workflows.</p>
                 </div>
               </div>
-              <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
-                Block IP
-              </BotShieldActionButton>
-              <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
-                Trust visitor
-              </BotShieldActionButton>
-              <BotShieldActionButton
-                variant="primary"
-                onClick={() => actions.setPage("detection")}
-              >
-                Review protection
-              </BotShieldActionButton>
+              <div className="botshield-v2-quick-action-list">
+                <div className="botshield-v2-quick-action-row">
+                  <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
+                  <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
+                    Block IP
+                  </BotShieldActionButton>
+                </div>
+                <div className="botshield-v2-quick-action-row">
+                  <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
+                  <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
+                    Trust visitor
+                  </BotShieldActionButton>
+                </div>
+                <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
+                  <div><strong>Review protection</strong><span>Check active modules and enforcement settings.</span></div>
+                  <BotShieldActionButton
+                    variant="primary"
+                    onClick={() => actions.setPage("detection")}
+                  >
+                    Review
+                  </BotShieldActionButton>
+                </div>
+              </div>
             </section>
           </div>
         </s-stack>
@@ -1361,7 +1554,6 @@ function OverviewPage({ model, actions }) {
     </div>
   );
 }
-
 
 // Kept temporarily while Overview V2 is validated in the embedded app.
 // eslint-disable-next-line no-unused-vars
