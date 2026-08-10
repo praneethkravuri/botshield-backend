@@ -248,7 +248,6 @@ function getExecutiveStatus(model) {
   if (!storefrontConnected) {
     return {
       label: "Setup Required",
-
       status: "setup_required",
       detail:
         "Enable the theme app embed to start monitoring storefront visitors.",
@@ -358,7 +357,6 @@ function QuickActionsCard({ model, actions }) {
     </BotShieldCard>
   );
 }
-
 function OutcomeCard({ label, value, description, status }) {
   return (
     <div
@@ -499,7 +497,6 @@ function StoreHealthCard({ model, actions }) {
   const billingReady = Boolean(model.billingStatus?.active);
   const storefrontConnected = hasStorefrontConnection(model);
   const responseMode = getResponseMode(model);
-
   const trafficConnected = Boolean(
     model.protectionStatus.lastStorefrontDecisionAt,
   );
@@ -750,7 +747,6 @@ function GettingStartedCard({ model, actions }) {
       actionLabel: "Configure alerts",
       action: () => actions.setPage("policy"),
     },
-
   ];
   const complete = steps.filter((step) => step.complete).length;
 
@@ -1002,7 +998,6 @@ function OverviewBadge({ children, muted = false }) {
   );
 }
 
-
 function buildOverviewThreatSeries(events) {
   const days = Array.from({ length: 30 }, (_, index) => {
     const date = new Date();
@@ -1252,7 +1247,6 @@ function OverviewPage({ model, actions }) {
           tone: "success",
           className: "botshield-v2-status--active",
           detail:
-
             "BotShield is connected and actively evaluating storefront traffic using your current protection policy.",
         };
   const metrics = [
@@ -1503,7 +1497,6 @@ function OverviewPage({ model, actions }) {
                         <small>{suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}%</small>
                       </div>
                     ))}
-
                   </div>
                 ) : (
                   <div className="botshield-v2-composition-empty">
@@ -1754,7 +1747,6 @@ function LegacyOverviewPage({ model, actions }) {
           ? model.billingStatus?.subscription?.name || "Basic"
           : "Setup required",
         status: overviewBillingActive ? "active" : "setup_required",
-
       },
       {
         label: "Usage progress",
@@ -2006,7 +1998,6 @@ function LegacyOverviewPage({ model, actions }) {
         </BotShieldBanner>
       ) : null}
 
-
       <div className="botshield-command-center">
         <div className="botshield-command-grid">
           <div>
@@ -2256,7 +2247,6 @@ function LegacyOverviewPage({ model, actions }) {
           gap="large"
         >
           <OutcomeCard
-
             label="Visitors Evaluated"
             value={model.storefrontScans.length}
             description="Real storefront visits analyzed by BotShield."
@@ -2507,7 +2497,6 @@ function LegacyOverviewPage({ model, actions }) {
                       label={getRiskLabel(event.threatLevel)}
                     />
                   </s-stack>
-
                 </s-stack>
               </div>
             ))}
@@ -2758,7 +2747,6 @@ function FraudOrdersPage({ model, actions }) {
     (summary, order) => {
       const risk = String(order.risk || order.riskLevel || "").toLowerCase();
       if (risk.includes("high")) summary.high += 1;
-
       else if (risk.includes("medium")) summary.medium += 1;
       else if (risk.includes("low")) summary.low += 1;
       return summary;
@@ -3009,7 +2997,6 @@ function FraudOrdersPage({ model, actions }) {
                 </tbody>
               </table>
             </div>
-
           ) : (
             <BotShieldEmptyState
               title="No risky orders yet"
@@ -3260,7 +3247,6 @@ function ActivityInvestigationSummary({
                   actions.setIncidentFilter("source", "real");
                   actions.setIncidentFilter("decision", "blocked");
                   actions.setIncidentFilter("risk", "all");
-
                 }}
               >
                 Show blocked
@@ -3511,7 +3497,6 @@ function ProtectionPage({ model, actions }) {
           "Rate protection uses the active protection profile. Adjust sensitivity and automated response below.",
         ),
     },
-
     {
       name: "Page protection",
       description: "Redirects stopped visitors to BotShield's blocked page.",
@@ -3762,7 +3747,6 @@ function ProtectionPage({ model, actions }) {
                     label="Auto Block"
                     details="Automatically block requests that cross the active risk threshold."
                     checked={draft.autoBlock}
-
                     onChange={(autoBlock) =>
                       setDraft((current) => ({ ...current, autoBlock }))
                     }
@@ -4013,7 +3997,6 @@ function ProtectionPage({ model, actions }) {
                 <BotShieldAsyncButton
                   action={() => actions.pauseProtection(10)}
                   successMessage="Protection paused for 10 minutes"
-
                 >
                   Pause for 10 minutes
                 </BotShieldAsyncButton>
@@ -4153,7 +4136,6 @@ function ProtectionPage({ model, actions }) {
             </BotShieldInlineHelp>
           </s-stack>
         </BotShieldCard>
-
         <s-stack gap="small">
           <s-heading>Network intelligence</s-heading>
           <s-paragraph color="subdued">
@@ -4264,7 +4246,6 @@ function IpList({
                 key={ip}
                 label={ip}
                 detail={
-
                   trusted
                     ? "Allowed through automated protection after review."
                     : "Stopped before continuing through the storefront."
@@ -4515,7 +4496,6 @@ function SettingsPage({ model, actions }) {
               label="Security alerts"
               details="Send blocked, challenged, and high-risk incident notifications."
               checked={draft.emailAlerts}
-
               disabled={!model.emailProviderConfigured}
               onChange={(emailAlerts) =>
                 setDraft((current) => ({ ...current, emailAlerts }))
@@ -4766,7 +4746,6 @@ function SettingsPageV2({ model, actions }) {
                 </div>
                 <div className="botshield-settings-status-card">
                   <span>Access status</span>
-
                   <strong>Not connected</strong>
                   <span className="botshield-settings-neutral-pill">
                     Setup required
@@ -5017,7 +4996,6 @@ function SettingsPageV2({ model, actions }) {
                     <span
                       className="botshield-settings-color-swatch"
                       style={{
-
                         background: hexPattern.test(blockingDraft[key])
                           ? blockingDraft[key]
                           : "#ffffff",
@@ -5268,7 +5246,6 @@ function TrustedVisitorsPage({ model, actions }) {
         <IpList
           title="Trusted visitors"
           subtitle="Trusted IPs bypass automated blocking."
-
           rows={model.whitelist}
           value={trustedIp}
           onChange={setTrustedIp}
@@ -5519,7 +5496,6 @@ function SetupPage({ model, actions }) {
           Configure alerts
         </BotShieldActionButton>
       ),
-
     },
     {
       label: "Confirm subscription flow",
@@ -5770,7 +5746,6 @@ function SetupPage({ model, actions }) {
           <BotShieldInlineHelp>
             BotShield protects JavaScript-enabled storefront visits through the
             theme app embed and Shopify app proxy.
-
           </BotShieldInlineHelp>
           <BotShieldInlineHelp>
             Diagnostic scans and simulations stay separate from real storefront
