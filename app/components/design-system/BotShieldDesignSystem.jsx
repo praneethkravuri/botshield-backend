@@ -2997,3 +2997,9 @@ export function BotShieldConfirmationModal({
       >
         {confirmLabel}
       </s-button>
+      <s-button slot="secondary-actions" commandFor={id} command="--hide">
+        Cancel
+      </s-button>
+    </s-modal>
+  );
+}
