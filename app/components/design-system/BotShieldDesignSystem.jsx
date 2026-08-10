@@ -248,7 +248,6 @@ export function BotShieldAppFrame({ children }) {
           border-radius: 16px;
           box-shadow: none;
           padding: 24px;
-
         }
         .botshield-overview-metric-title {
           color: #667085;
@@ -499,7 +498,6 @@ export function BotShieldAppFrame({ children }) {
           line-height: 1.45;
         }
         .botshield-v2-impact-metrics {
-
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -750,7 +748,6 @@ export function BotShieldAppFrame({ children }) {
           background: #fbfaf7;
           color: var(--overview-muted);
           font-size: 11px;
-
         }
         .botshield-v2-top-signal strong { color: var(--overview-ink); font-size: 12px; }
         .botshield-v2-top-signal small { white-space: nowrap; }
@@ -1001,7 +998,6 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-protection-action { gap: 6px; }
         .botshield-v2-activity-row { min-height: 58px; }
         .botshield-v2-quick-action-row { padding: 13px 0; }
-
         .botshield-v2-quick-action-row--primary { margin: 3px -8px -6px; padding: 12px 8px 6px; }
         .botshield-overview-v2 s-button:focus-visible,
         .botshield-overview-v2 button:focus-visible {
@@ -1252,7 +1248,6 @@ export function BotShieldAppFrame({ children }) {
           padding: 2px 8px;
           background: #f3f3f3;
           border-color: #e0e0e0;
-
           color: #3f3f3f;
           font-size: 12px;
           font-weight: 650;
@@ -1503,7 +1498,6 @@ export function BotShieldAppFrame({ children }) {
           border: 1px solid #dcdcdc;
           border-radius: 14px;
           padding: 16px 18px;
-
         }
         .botshield-settings-info-card h2 {
           margin: 0;
@@ -1754,7 +1748,6 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-settings-color-field {
           display: grid;
-
           grid-template-columns: 34px minmax(0, 1fr);
           gap: 12px;
           align-items: end;
@@ -2005,7 +1998,6 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-status-value {
           color: var(--botshield-text);
-
           font-size: clamp(30px, 4vw, 44px);
           line-height: 1.05;
           font-weight: 760;
@@ -2256,7 +2248,6 @@ export function BotShieldAppFrame({ children }) {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
           .botshield-overview-middle-grid,
-
           .botshield-v2-primary-grid,
           .botshield-v2-secondary-grid,
           .botshield-blocking-design-grid {
@@ -2507,7 +2498,6 @@ export function BotShieldSection({ title, description, action, children }) {
   );
 }
 
-
 export function BotShieldMetricCard({ label, value, detail, status, loading }) {
   return (
     <s-box
@@ -2587,7 +2577,6 @@ export function BotShieldCommandCard({
     </s-box>
   );
 }
-
 export function BotShieldSignalCard({ label, value, detail, status, action }) {
   return (
     <s-box
@@ -2758,7 +2747,6 @@ export function BotShieldActionButton({
       slot={slot}
       onClick={onClick}
     >
-
       {children}
     </s-button>
   );
@@ -3009,4 +2997,3 @@ export function BotShieldConfirmationModal({
       >
         {confirmLabel}
       </s-button>
-
