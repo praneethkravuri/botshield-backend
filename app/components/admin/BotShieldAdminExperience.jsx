@@ -999,8 +999,6 @@ function OverviewBadge({ children, muted = false }) {
   );
 }
 
-
-
 function buildOverviewThreatSeries(events) {
   const days = Array.from({ length: 30 }, (_, index) => {
     const date = new Date();
@@ -1077,18 +1075,51 @@ function buildOverviewThreatComposition(events) {
     .sort((left, right) => right.count - left.count);
 }
 
-function OverviewMetricCard({ label, value, detail, loading }) {
+function formatRelativeTime(value) {
+  if (!value) return "No decisions recorded";
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) return "Time unavailable";
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (elapsedMinutes < 1) return "Just now";
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h ago`;
+  return `${Math.floor(elapsedHours / 24)}d ago`;
+}
+
+function OverviewIcon({ name }) {
+  const paths = {
+    activity: <path d="M3 12h4l2-6 4 12 2-6h6" />,
+    shield: <path d="M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Zm-3 9 2 2 4-4" />,
+    block: <><circle cx="12" cy="12" r="8" /><path d="m6.5 6.5 11 11" /></>,
+    verify: <><path d="M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></>,
+    network: <><circle cx="12" cy="12" r="8" /><path d="M4 12h16M12 4c2.3 2.2 3.5 4.9 3.5 8S14.3 17.8 12 20c-2.3-2.2-3.5-4.9-3.5-8S9.7 6.2 12 4Z" /></>,
+    clock: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
+  };
+  return (
+    <span className="botshield-v2-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {paths[name] || paths.shield}
+      </svg>
+    </span>
+  );
+}
+
+function OverviewMetricCard({ label, value, detail, loading, icon }) {
   const numericValue = Number(value);
   const displayValue = Number.isFinite(numericValue)
     ? numericValue.toLocaleString()
-    : "â€”";
+    : "—";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
       {loading ? (
         <div className="botshield-v2-skeleton" aria-label={`Loading ${label}`} />
       ) : (
         <>
-          <div className="botshield-v2-kpi-label">{label}</div>
+          <div className="botshield-v2-kpi-topline">
+            <div className="botshield-v2-kpi-label">{label}</div>
+            <OverviewIcon name={icon} />
+          </div>
           <div className="botshield-v2-kpi-value">{displayValue}</div>
           <div className="botshield-v2-kpi-detail">{detail}</div>
         </>
@@ -1099,50 +1130,54 @@ function OverviewMetricCard({ label, value, detail, loading }) {
 
 function OverviewPage({ model, actions }) {
   const storefrontConnected = hasStorefrontConnection(model);
+  const storefrontSensorActive = Boolean(model.protectionStatus?.themeEmbedDetected);
   const storefrontEvents = Number.isFinite(Number(model.incidentCounts?.total))
     ? Number(model.incidentCounts.total)
     : model.storefrontScans.length;
   const botsBlocked = Number.isFinite(Number(model.incidentCounts?.blocked))
     ? Number(model.incidentCounts.blocked)
     : model.blockedCount;
-  const botProtectionOn = Boolean(
-    storefrontConnected && model.autoBlock && !model.protectionPaused,
-  );
-  const networkProtectionOn = Boolean(
-    model.securityPosture?.report?.topReasonCodes?.some((item) =>
-      /VPN|DATACENTER|HOSTING_PROVIDER|ASN|HIGH_RISK_NETWORK/i.test(item.label),
-    ),
-  );
-  const rateProtectionOn = Boolean(model.autoBlock && !model.protectionPaused);
-  const pageProtectionOn = storefrontConnected;
+  const enforcementOn = Boolean(model.autoBlock && !model.protectionPaused);
   const protectionRows = [
     {
       label: "Bot protection",
-      detail: botProtectionOn
-        ? "Automated high-risk visitors are actively stopped."
-        : "Turn on automatic enforcement to stop high-risk bots.",
-      active: botProtectionOn,
+      detail: storefrontSensorActive
+        ? "Automated visitor signals are evaluated on storefront decisions."
+        : "Connect the storefront sensor to evaluate automated traffic.",
+      active: storefrontSensorActive,
+      status: storefrontSensorActive ? (enforcementOn ? "Enforcing" : "Monitoring") : "Needs setup",
+      tone: storefrontSensorActive ? (enforcementOn ? "success" : "info") : "warning",
+      icon: "shield",
     },
     {
       label: "Network / Proxy protection",
-      detail: networkProtectionOn
-        ? "Network-risk signals are present in live protection decisions."
-        : "Review network-risk detection and enforcement settings.",
-      active: networkProtectionOn,
+      detail: storefrontSensorActive
+        ? "Network-risk signals are evaluated with storefront traffic."
+        : "Connect the storefront sensor to evaluate network risk.",
+      active: storefrontSensorActive,
+      status: storefrontSensorActive ? "Monitoring" : "Needs setup",
+      tone: storefrontSensorActive ? "info" : "warning",
+      icon: "network",
     },
     {
       label: "Rate protection",
-      detail: rateProtectionOn
-        ? "Repeated visitor activity can trigger automatic enforcement."
-        : "Automatic enforcement is paused or not enabled.",
-      active: rateProtectionOn,
+      detail: storefrontSensorActive
+        ? "Repeated visitor activity is evaluated by the active policy."
+        : "Connect the storefront sensor to evaluate repeated activity.",
+      active: storefrontSensorActive,
+      status: storefrontSensorActive ? (enforcementOn ? "Enforcing" : "Monitoring") : "Needs setup",
+      tone: storefrontSensorActive ? (enforcementOn ? "success" : "info") : "warning",
+      icon: "activity",
     },
     {
       label: "Page protection",
-      detail: pageProtectionOn
+      detail: storefrontSensorActive
         ? "The theme app embed is reporting storefront decisions."
         : "Connect the theme app embed to protect storefront pages.",
-      active: pageProtectionOn,
+      active: storefrontSensorActive,
+      status: storefrontSensorActive ? "Connected" : "Needs setup",
+      tone: storefrontSensorActive ? "success" : "warning",
+      icon: "verify",
     },
   ];
   const activeProtections = protectionRows.filter((row) => row.active).length;
@@ -1167,6 +1202,7 @@ function OverviewPage({ model, actions }) {
     Number(model.incidentCounts?.blocked || 0) +
     Number(model.incidentCounts?.challenged || 0);
   const threatComposition = buildOverviewThreatComposition(suspiciousEvents);
+  const topThreatSignal = threatComposition[0] || null;
   const largestCompositionCount = Math.max(
     1,
     ...threatComposition.map((item) => item.count),
@@ -1187,6 +1223,8 @@ function OverviewPage({ model, actions }) {
     /activity|incident timeline/i.test(error),
   );
   const loading = Boolean(model.syncing && !model.storefrontScans?.length);
+  const lastStorefrontDecisionAt = model.protectionStatus?.lastStorefrontDecisionAt;
+  const protectionsNeedingAttention = protectionRows.filter((row) => !row.active).length;
   const protectionState = model.backendErrors?.length
       ? {
           label: "Degraded",
@@ -1206,7 +1244,9 @@ function OverviewPage({ model, actions }) {
             ? "Protection is paused. Resume enforcement to restore the store's full security posture."
             : !storefrontConnected
               ? "Connect the storefront theme app embed to begin receiving and enforcing live protection decisions."
-              : "Complete the remaining protection setup to fully secure storefront traffic.",
+              : protectionsNeedingAttention
+                ? `${protectionsNeedingAttention} protection module${protectionsNeedingAttention === 1 ? "" : "s"} require setup before full storefront coverage is available.`
+                : "Complete the remaining protection setup to fully secure storefront traffic.",
         }
         : {
             label: "Active",
@@ -1217,19 +1257,21 @@ function OverviewPage({ model, actions }) {
             "BotShield is connected and actively evaluating storefront traffic using your current protection policy.",
         };
   const metrics = [
-    { label: "Storefront events", value: storefrontEvents, detail: "Last 30 days" },
-    { label: "Bots blocked", value: botsBlocked, detail: "Stopped by active policy" },
+    { label: "Storefront events", value: storefrontEvents, detail: "Last 30 days", icon: "activity" },
+    { label: "Bots blocked", value: botsBlocked, detail: "Stopped by active policy", icon: "block" },
     {
       label: "Challenged visitors",
       value: Number.isFinite(Number(model.incidentCounts?.challenged))
         ? Number(model.incidentCounts.challenged)
         : model.challengedCount,
       detail: "Verification requested",
+      icon: "verify",
     },
     {
       label: "Active protections",
       value: activeProtections,
       detail: `Of ${protectionRows.length} available`,
+      icon: "shield",
     },
   ];
 
@@ -1285,7 +1327,7 @@ function OverviewPage({ model, actions }) {
 
           <section className="botshield-v2-impact" aria-labelledby="security-impact-title">
             <div className="botshield-v2-impact-heading">
-              <div className="botshield-v2-eyebrow">Verified outcomes Â· Last 30 days</div>
+              <div className="botshield-v2-eyebrow">Verified outcomes · Last 30 days</div>
               <h2 id="security-impact-title">Security Impact</h2>
               <p>What BotShield actually did using recorded storefront decisions.</p>
             </div>
@@ -1298,6 +1340,34 @@ function OverviewPage({ model, actions }) {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="botshield-v2-operations" aria-label="Storefront reporting health">
+            <div className="botshield-v2-operation">
+              <OverviewIcon name="network" />
+              <div>
+                <span>Storefront reporting</span>
+                <strong>{storefrontSensorActive ? "Connected" : lastStorefrontDecisionAt ? "Previously reporting" : "Needs connection"}</strong>
+              </div>
+              <BotShieldStatusBadge
+                status={storefrontSensorActive ? "active" : "setup_required"}
+                label={storefrontSensorActive ? "Reporting" : "Verify connection"}
+              />
+            </div>
+            <div className="botshield-v2-operation">
+              <OverviewIcon name="clock" />
+              <div>
+                <span>Last storefront decision</span>
+                <strong>{formatRelativeTime(lastStorefrontDecisionAt)}</strong>
+              </div>
+              {lastStorefrontDecisionAt ? <time dateTime={lastStorefrontDecisionAt}>{formatDate(lastStorefrontDecisionAt)}</time> : null}
+            </div>
+            <BotShieldActionButton
+              variant="tertiary"
+              onClick={storefrontSensorActive ? actions.refresh : actions.openThemeEditor}
+            >
+              {storefrontSensorActive ? "Refresh status" : "Check connection"}
+            </BotShieldActionButton>
           </section>
 
           <div className="botshield-v2-primary-grid">
@@ -1342,7 +1412,8 @@ function OverviewPage({ model, actions }) {
                     {threatSeries.map((day) => {
                       const total = day.allowed + day.challenged + day.blocked;
                       return (
-                        <div
+                        <button
+                          type="button"
                           className="botshield-v2-chart-column"
                           key={day.key}
                           aria-label={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked`}
@@ -1363,7 +1434,7 @@ function OverviewPage({ model, actions }) {
                             <span><i className="is-challenged" />Challenged <b>{day.challenged}</b></span>
                             <span><i className="is-blocked" />Blocked <b>{day.blocked}</b></span>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -1400,6 +1471,13 @@ function OverviewPage({ model, actions }) {
                 </div>
                 {threatComposition.length ? (
                   <div className="botshield-v2-composition-list">
+                    {topThreatSignal ? (
+                      <div className="botshield-v2-top-signal">
+                        <span>Top threat signal</span>
+                        <strong>{topThreatSignal.label}</strong>
+                        <small>{topThreatSignal.count.toLocaleString()} event{topThreatSignal.count === 1 ? "" : "s"} this period</small>
+                      </div>
+                    ) : null}
                     {threatComposition.map((item) => (
                       <div className="botshield-v2-composition-row" key={item.label}>
                         <span>{item.label}</span>
@@ -1409,6 +1487,7 @@ function OverviewPage({ model, actions }) {
                           />
                         </div>
                         <strong>{item.count.toLocaleString()}</strong>
+                        <small>{suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}%</small>
                       </div>
                     ))}
                   </div>
@@ -1430,14 +1509,16 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-protection-list">
                 {protectionRows.map((row) => (
                   <div className="botshield-v2-protection-row" key={row.label}>
-                    <div>
+                    <OverviewIcon name={row.icon} />
+                    <div className="botshield-v2-protection-copy">
                       <strong>{row.label}</strong>
                       <span>{row.detail}</span>
                     </div>
                     <div className="botshield-v2-protection-action">
                       <BotShieldStatusBadge
                         status={row.active ? "active" : "setup_required"}
-                        label={row.active ? "Active" : "Inactive"}
+                        label={row.status}
+                        tone={row.tone}
                       />
                       <BotShieldActionButton
                         variant="tertiary"
@@ -1520,24 +1601,27 @@ function OverviewPage({ model, actions }) {
             <section className="botshield-v2-panel botshield-v2-quick-actions">
               <div className="botshield-v2-panel-header">
                 <div>
-                  <h2>Quick Actions</h2>
-                  <p>Take immediate action using existing protection workflows.</p>
+                  <h2>Quick Response</h2>
+                  <p>Act on known visitors or review the active protection policy.</p>
                 </div>
               </div>
               <div className="botshield-v2-quick-action-list">
                 <div className="botshield-v2-quick-action-row">
+                  <OverviewIcon name="block" />
                   <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
                   <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
                     Block IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
+                  <OverviewIcon name="verify" />
                   <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
                   <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
                     Trust visitor
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
+                  <OverviewIcon name="shield" />
                   <div><strong>Review protection</strong><span>Check active modules and enforcement settings.</span></div>
                   <BotShieldActionButton
                     variant="primary"
