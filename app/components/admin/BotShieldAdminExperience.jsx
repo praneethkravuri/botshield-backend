@@ -5933,11 +5933,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
         ? "analytics"
       : model.page === "settings"
         ? "policy"
-        : [
-              "blocklist",
-              "trusted",
-              "alerts-reports",
-            ].includes(model.page)
+        : ["alerts-reports"].includes(model.page)
           ? "policy"
         : model.page === "detection-settings"
           ? "detection-settings"
