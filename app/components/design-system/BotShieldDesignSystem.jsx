@@ -1139,6 +1139,76 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-quick-action-row { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 11px 0; }
         .botshield-v2-quick-action-row .botshield-v2-icon { width: 27px; height: 27px; }
         .botshield-v2-quick-action-row--primary { margin: 2px -7px -5px; padding: 11px 7px 5px; background: #f7f7f8; }
+        /* Overview precision pass: density, sparse charts, and interaction clarity. */
+        .botshield-overview-v2 > s-stack { gap: 16px; }
+        .botshield-v2-status-actions s-button,
+        .botshield-v2-protection-action s-button,
+        .botshield-v2-quick-action-row s-button { flex: 0 0 auto; }
+        .botshield-v2-kpi-card {
+          position: relative;
+          min-width: 0;
+          transition: background-color 120ms ease, box-shadow 120ms ease;
+        }
+        .botshield-v2-kpi-card:hover { background: #fafbfb; box-shadow: inset 0 2px 0 #b7bbc0; }
+        .botshield-v2-kpi-value { line-height: .95; letter-spacing: -.035em; }
+        .botshield-v2-kpi-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .botshield-v2-health { padding: 13px 15px; }
+        .botshield-v2-health-item { align-items: center; gap: 3px 9px; }
+        .botshield-v2-health-item .botshield-v2-icon { width: 26px; height: 26px; }
+        .botshield-v2-impact-heading p { max-width: 300px; }
+        .botshield-v2-impact-metric { align-items: start; }
+        .botshield-v2-impact-metric .botshield-v2-icon { margin-top: 1px; }
+        .botshield-v2-value { gap: 18px; padding: 14px 0; }
+        .botshield-v2-methodology summary {
+          width: max-content;
+          max-width: 100%;
+          border-bottom: 1px dotted #8c9196;
+          list-style-position: inside;
+          transition: color 120ms ease, border-color 120ms ease;
+        }
+        .botshield-v2-methodology summary:hover { color: var(--overview-ink); border-color: var(--overview-ink); }
+        .botshield-v2-methodology[open] summary { color: var(--overview-ink); }
+        .botshield-v2-value-empty {
+          min-width: 0;
+          gap: 10px;
+          border: 1px solid #ebecee;
+          background: #fafbfb;
+        }
+        .botshield-v2-value-empty > strong { width: 20px; text-align: center; }
+        .botshield-v2-value-empty > div { min-width: 0; }
+        .botshield-v2-panel-header { align-items: flex-start; margin-bottom: 16px; }
+        .botshield-v2-chart-controls { align-content: start; }
+        .botshield-v2-period-selector button { transition: color 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
+        .botshield-v2-chart { padding-left: 35px; }
+        .botshield-v2-chart-bars {
+          gap: 2px;
+          height: 232px;
+          padding-inline: 10px;
+          background-image: repeating-linear-gradient(to bottom, #eceeef 0, #eceeef 1px, transparent 1px, transparent 58px);
+        }
+        .botshield-v2-chart-column { justify-content: center; }
+        .botshield-v2-chart-bar { max-width: 22px; }
+        .botshield-v2-chart[data-density="sparse"] .botshield-v2-chart-bar { max-width: 16px; }
+        .botshield-v2-chart[data-density="medium"] .botshield-v2-chart-bar { max-width: 19px; }
+        .botshield-v2-chart-column.is-empty-day { pointer-events: none; }
+        .botshield-v2-chart-column.is-active-day { cursor: help; }
+        .botshield-v2-chart-column.is-active-day:hover .botshield-v2-chart-bar,
+        .botshield-v2-chart-column.is-active-day:focus-visible .botshield-v2-chart-bar { opacity: .78; transform: translateY(-1px); }
+        .botshield-v2-chart-bar { transition: opacity 120ms ease, transform 120ms ease; }
+        .botshield-v2-chart-tooltip { line-height: 1.35; }
+        .botshield-v2-chart-tooltip .is-allowed { background: var(--overview-blue); }
+        .botshield-v2-chart-tooltip .is-challenged { background: var(--overview-amber); }
+        .botshield-v2-chart-tooltip .is-blocked { background: var(--overview-red); }
+        .botshield-v2-chart-axis { padding-inline: 2px; font-variant-numeric: tabular-nums; }
+        .botshield-v2-protection-row { min-width: 0; }
+        .botshield-v2-protection-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .botshield-v2-protection-action { min-width: 0; }
+        .botshield-v2-activity-row { padding-inline: 2px; }
+        .botshield-v2-activity-row:hover { margin-inline: -6px; padding-inline: 8px; }
+        .botshield-v2-activity-row:focus-within { border-radius: 6px; background: #f7f7f8; }
+        .botshield-v2-quick-action-row { min-width: 0; }
+        .botshield-v2-quick-action-row > div { min-width: 0; }
+        .botshield-v2-quick-action-row span { max-width: 290px; }
         @media (max-width: 1024px) {
           .botshield-v2-value { grid-template-columns: 1fr; }
           .botshield-v2-value-empty { margin-top: 2px; }
@@ -2525,7 +2595,7 @@ export function BotShieldAppFrame({ children }) {
         href="mailto:support@botshieldapp.com"
         aria-label="Contact BotShield support"
       >
-        â–°
+        ▰
       </a>
     </BotShieldToastProvider>
   );
@@ -2577,6 +2647,7 @@ export function BotShieldPageHeader({ subtitle, badge }) {
     </s-stack>
   );
 }
+
 export function BotShieldCard({
   title,
   subtitle,
@@ -2844,7 +2915,7 @@ export function BotShieldChecklistItem({
             padding="small"
             minInlineSize="36px"
           >
-            <s-text type="strong">{complete ? "âœ“" : index}</s-text>
+            <s-text type="strong">{complete ? "✓" : index}</s-text>
           </s-box>
           <s-stack gap="small-200">
             <s-text type="strong">{label}</s-text>

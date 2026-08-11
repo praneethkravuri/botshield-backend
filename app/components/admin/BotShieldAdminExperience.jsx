@@ -83,7 +83,19 @@ function formatDeliveryDetail(status, timestamp, fallback) {
   if (!status) return fallback;
   const statusLabel = getUiStatus(status).label;
   const deliveredAt = formatDate(timestamp);
-  return `${statusLabel} Â· ${deliveredAt}`;
+  return `${statusLabel} \u00b7 ${deliveredAt}`;
+}
+
+function normalizeOverviewText(value) {
+  return String(value || "")
+    .replaceAll("\u00e2\u20ac\u201d", "\u2014")
+    .replaceAll("\u00e2\u20ac\u201c", "\u2013")
+    .replaceAll("\u00e2\u20ac\u2122", "\u2019")
+    .replaceAll("\u00e2\u20ac\u0153", "\u201c")
+    .replaceAll("\u00e2\u20ac\u009d", "\u201d")
+    .replaceAll("\u00e2\u20ac\u00a2", "\u2022")
+    .replaceAll("\u00c2\u00b7", "\u00b7")
+    .replaceAll("\u00c2\u0020", " ");
 }
 
 // Legacy formatter kept temporarily for backwards compatibility while older
@@ -107,18 +119,18 @@ function formatReasons(value) {
           .replaceAll("_", " ")
           .replace(/\b\w/g, (character) => character.toUpperCase()),
     )
-    .join(" Â· ");
+    .join(" \u00b7 ");
 }
 
 function formatMerchantReasons(value) {
   const rawReasons = Array.isArray(value)
     ? value
-    : String(value || "")
+    : normalizeOverviewText(value)
         .split(",")
         .map((item) => item.trim());
   const reasons = rawReasons
     .flatMap((item) =>
-      String(item || "")
+      normalizeOverviewText(item)
         .split("|")
         .map((part) => part.trim()),
     )
@@ -149,7 +161,7 @@ function formatMerchantReasons(value) {
     })
     .filter((reason, index, all) => all.indexOf(reason) === index);
   if (!reasons.length) return "No elevated signals";
-  return reasons.slice(0, 2).join(" Â· ");
+  return reasons.slice(0, 2).join(" \u00b7 ");
 }
 
 function getOutcomeLabel(action) {
@@ -357,6 +369,7 @@ function QuickActionsCard({ model, actions }) {
     </BotShieldCard>
   );
 }
+
 function OutcomeCard({ label, value, description, status }) {
   return (
     <div
@@ -384,7 +397,7 @@ function HelpStrip({ actions }) {
         justifyContent="space-between"
       >
         <s-stack direction="inline" gap="base" alignItems="center">
-          <span className="botshield-rule-icon">â“˜</span>
+          <span className="botshield-rule-icon">ⓘ</span>
           <s-text>
             Not sure which setup fits your store? Start with Balanced mode and
             adjust rules after reviewing real storefront activity.
@@ -875,19 +888,19 @@ function SupportChannelsCard() {
     {
       title: "User guide",
       detail: "Setup steps, protection limits, and common troubleshooting.",
-      icon: "â–£",
+      icon: "▣",
       href: "/support",
     },
     {
       title: "Feature requests",
       detail: "Send ideas for rules, reporting, and merchant workflows.",
-      icon: "â†—",
+      icon: "↗",
       href: "mailto:support@botshieldapp.com?subject=BotShield%20feature%20request",
     },
     {
       title: "Privacy policy",
       detail: "Discover how visitor and storefront event data is handled.",
-      icon: "â–£",
+      icon: "▣",
       href: "/privacy",
     },
   ];
@@ -1123,7 +1136,7 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
   const numericValue = Number(value);
   const displayValue = Number.isFinite(numericValue)
     ? numericValue.toLocaleString()
-    : "â€”";
+    : "\u2014";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
       {loading ? (
@@ -1204,6 +1217,9 @@ function OverviewPage({ model, actions }) {
     ? storedThreatSeries
     : buildOverviewThreatSeries(model.storefrontScans || [], 90);
   const threatSeries = threatSeriesSource.slice(-threatPeriod);
+  const activeThreatDays = threatSeries.filter(
+    (day) => day.allowed || day.challenged || day.blocked,
+  ).length;
   const recentStorefrontEvents = (model.storefrontScans || []).filter((event) =>
     inRecentDays(event.createdAt, 30),
   );
@@ -1426,7 +1442,7 @@ function OverviewPage({ model, actions }) {
               </div>
               <details className="botshield-v2-methodology">
                 <summary>How this is calculated</summary>
-                <p>{financialImpact.methodology || "Only verified Shopify order values linked to documented prevented-loss outcomes are included. Traffic counts and risk scores are never converted into money."}</p>
+                <p>{financialImpact.methodology || "BotShield only includes verified Shopify order value linked to a documented, qualifying protection outcome. Bot traffic, blocks, challenges, IP addresses, and risk scores are never converted into money."}</p>
               </details>
             </div>
             {hasFinancialImpact ? (
@@ -1448,10 +1464,10 @@ function OverviewPage({ model, actions }) {
             ) : (
               <div className="botshield-v2-value-empty">
                 <OverviewIcon name="shield" />
-                <strong aria-label="Value unavailable">â€”</strong>
+                <strong aria-label="Value unavailable">{"\u2014"}</strong>
                 <div>
                   <h3>No verified financial impact data yet</h3>
-                  <p>{financialImpact.unavailableReason || "This section will populate when BotShield can verify an order value and a qualifying prevented financial-loss outcome."}</p>
+                  <p>{financialImpact.unavailableReason || "BotShield only reports value when a qualifying protection outcome can be linked to verified order value."}</p>
                 </div>
               </div>
             )}
@@ -1502,8 +1518,9 @@ function OverviewPage({ model, actions }) {
               ) : hasThreatActivity ? (
                 <div
                   className="botshield-v2-chart"
-                  role="img"
-                  aria-label={`${threatPeriod}-day threat activity stacked bar chart`}
+                  role="region"
+                  aria-label={`${threatPeriod}-day threat activity chart. ${activeThreatDays} days contain recorded decisions.`}
+                  data-density={activeThreatDays <= 3 ? "sparse" : activeThreatDays <= 12 ? "medium" : "dense"}
                 >
                   <div className="botshield-v2-chart-scale" aria-hidden="true">
                     <span>{chartMaximum.toLocaleString()}</span>
@@ -1516,7 +1533,7 @@ function OverviewPage({ model, actions }) {
                       return (
                         <button
                           type="button"
-                          className="botshield-v2-chart-column"
+                          className={`botshield-v2-chart-column${total ? " is-active-day" : " is-empty-day"}`}
                           key={day.key}
                           aria-label={`${day.label}: ${day.allowed} allowed, ${day.challenged} challenged, ${day.blocked} blocked, ${total} total decisions`}
                         >
@@ -1565,7 +1582,9 @@ function OverviewPage({ model, actions }) {
                 <div className="botshield-v2-composition-heading">
                   <div>
                     <h3>Threat composition</h3>
-                    <p>Signals detected in suspicious storefront activity.</p>
+                    <p>
+                      Share of suspicious events containing each signal. One event may contain multiple signals.
+                    </p>
                   </div>
                   <BotShieldActionButton
                     variant="tertiary"
@@ -1592,7 +1611,12 @@ function OverviewPage({ model, actions }) {
                           />
                         </div>
                         <strong>{item.count.toLocaleString()}</strong>
-                        <small>{suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}%</small>
+                        <small
+                          title="Percentage of suspicious events containing this signal. Categories can overlap."
+                          aria-label={`${suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}% of suspicious events contained this signal; categories can overlap`}
+                        >
+                          {suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}%
+                        </small>
                       </div>
                     ))}
                   </div>
@@ -1715,14 +1739,14 @@ function OverviewPage({ model, actions }) {
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="block" />
                   <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
-                  <BotShieldActionButton onClick={() => actions.setPage("blocklist")}>
+                  <BotShieldActionButton onClick={actions.openBlocklist}>
                     Block IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="visitor" />
                   <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
-                  <BotShieldActionButton onClick={() => actions.setPage("trusted")}>
+                  <BotShieldActionButton onClick={actions.openTrustedVisitors}>
                     Trust visitor
                   </BotShieldActionButton>
                 </div>
@@ -1824,7 +1848,7 @@ function LegacyOverviewPage({ model, actions }) {
         title: "Coverage",
         value: overviewActiveProtections,
         label: "Active protections",
-        detail: `${overviewCoreProtections} core protections Â· ${overviewExtendedModules} extended modules`,
+        detail: `${overviewCoreProtections} core protections · ${overviewExtendedModules} extended modules`,
       },
     ];
     const overviewWorkspaceRows = [
@@ -2413,7 +2437,7 @@ function LegacyOverviewPage({ model, actions }) {
                 />
                 <StatusRow
                   label="Automated response"
-                  detail={`${model.strictMode ? "Strict Mode" : `${model.blockLevel} sensitivity`} Â· ${getResponseMode(model).label}`}
+                  detail={`${model.strictMode ? "Strict Mode" : `${model.blockLevel} sensitivity`} · ${getResponseMode(model).label}`}
                   status={protectionStatus}
                   action={
                     <BotShieldActionButton
@@ -2581,7 +2605,7 @@ function LegacyOverviewPage({ model, actions }) {
                         : event.actionTaken === "challenged"
                           ? "Asked to verify"
                           : "Allowed"}{" "}
-                      on {event.pathVisited || "storefront"} Â·{" "}
+                      on {event.pathVisited || "storefront"} ·{" "}
                       {formatDate(event.createdAt)}
                     </s-text>
                   </s-stack>
@@ -3084,12 +3108,12 @@ function FraudOrdersPage({ model, actions }) {
                   {fraudOrders.map((order) => (
                     <tr key={order.id || order.orderId || order.name}>
                       <td>{order.name || order.orderName || "Order"}</td>
-                      <td>{order.customer || order.customerName || "â€”"}</td>
+                      <td>{order.customer || order.customerName || "—"}</td>
                       <td>{order.risk || order.riskLevel || "Review"}</td>
                       <td>{order.recommendation || "Review"}</td>
                       <td>{order.reason || "Shopify fraud signal"}</td>
-                      <td>{order.date || order.createdAt || "â€”"}</td>
-                      <td>â€”</td>
+                      <td>{order.date || order.createdAt || "—"}</td>
+                      <td>—</td>
                     </tr>
                   ))}
                 </tbody>
@@ -3315,7 +3339,7 @@ function ActivityInvestigationSummary({
             label="Review risky visitors"
             detail={
               latestReviewEvent
-                ? `${getOutcomeLabel(latestReviewEvent.decision)} Â· ${formatMerchantReasons(latestReviewEvent.reasonCodes || latestReviewEvent.reasons)}`
+                ? `${getOutcomeLabel(latestReviewEvent.decision)} · ${formatMerchantReasons(latestReviewEvent.reasonCodes || latestReviewEvent.reasons)}`
                 : "No visitor decisions match the current filters."
             }
             status={
@@ -3356,6 +3380,7 @@ function ActivityInvestigationSummary({
     </s-grid>
   );
 }
+
 function ActivityPage({ model, actions }) {
   const blocked = Number(model.incidentCounts?.blocked || 0);
   const challenged = Number(model.incidentCounts?.challenged || 0);
@@ -3486,7 +3511,7 @@ function ActivityPage({ model, actions }) {
       </BotShieldCard>
       <BotShieldCard
         title="Visitor decisions"
-        subtitle={`${model.incidentCounts.total} real storefront decisions in the last 30 days Â· ${model.incidentCounts.simulation} diagnostic or simulated events excluded`}
+        subtitle={`${model.incidentCounts.total} real storefront decisions in the last 30 days · ${model.incidentCounts.simulation} diagnostic or simulated events excluded`}
       >
         <ActivityTable model={model} actions={actions} />
       </BotShieldCard>
@@ -3531,7 +3556,7 @@ function ProtectionPage({ model, actions }) {
       const message =
         error instanceof Error
           ? error.message
-          : "Couldnâ€™t save protection settings";
+          : "Couldn’t save protection settings";
       setSaveError(message);
       toast.error(message);
     } finally {
@@ -3742,9 +3767,9 @@ function ProtectionPage({ model, actions }) {
                       setDraft((current) => ({ ...current, blockLevel }))
                     }
                     options={[
-                      { label: "Low â€” obvious abuse only", value: "Low" },
-                      { label: "Medium â€” balanced protection", value: "Medium" },
-                      { label: "High â€” aggressive protection", value: "High" },
+                      { label: "Low — obvious abuse only", value: "Low" },
+                      { label: "Medium — balanced protection", value: "Medium" },
+                      { label: "High — aggressive protection", value: "High" },
                     ]}
                   />
                   <BotShieldToggle
@@ -3835,9 +3860,9 @@ function ProtectionPage({ model, actions }) {
                       setDraft((current) => ({ ...current, blockLevel }))
                     }
                     options={[
-                      { label: "Low â€” obvious abuse only", value: "Low" },
-                      { label: "Medium â€” balanced protection", value: "Medium" },
-                      { label: "High â€” aggressive protection", value: "High" },
+                      { label: "Low — obvious abuse only", value: "Low" },
+                      { label: "Medium — balanced protection", value: "Medium" },
+                      { label: "High — aggressive protection", value: "High" },
                     ]}
                   />
                   <BotShieldToggle
@@ -4200,9 +4225,9 @@ function ProtectionPage({ model, actions }) {
                 setDraft((current) => ({ ...current, blockLevel }))
               }
               options={[
-                { label: "Low â€” obvious abuse only", value: "Low" },
-                { label: "Medium â€” balanced protection", value: "Medium" },
-                { label: "High â€” aggressive protection", value: "High" },
+                { label: "Low — obvious abuse only", value: "Low" },
+                { label: "Medium — balanced protection", value: "Medium" },
+                { label: "High — aggressive protection", value: "High" },
               ]}
             />
             <BotShieldToggle
@@ -4250,7 +4275,7 @@ function ProtectionPage({ model, actions }) {
             </s-text>
             <BotShieldInlineHelp>
               Network intelligence is approximate and does not identify a
-              visitorâ€™s exact physical location.
+              visitor’s exact physical location.
             </BotShieldInlineHelp>
           </s-stack>
         </BotShieldCard>
@@ -4280,7 +4305,7 @@ function ProtectionPage({ model, actions }) {
               </BotShieldAsyncButton>
             </s-stack>
             <s-text color="subdued">
-              Latest result: {model.result} Â· Last run: {model.lastScanTime}
+              Latest result: {model.result} · Last run: {model.lastScanTime}
             </s-text>
           </s-stack>
         </BotShieldCard>
@@ -4375,6 +4400,7 @@ function IpList({
     </s-stack>
   );
 }
+
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [draft, setDraft] = useState({
@@ -4445,7 +4471,7 @@ function SettingsPage({ model, actions }) {
       toast.success("Settings saved");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Couldnâ€™t save settings";
+        error instanceof Error ? error.message : "Couldn’t save settings";
       setSaveError(message);
       toast.error(message);
     } finally {
@@ -5334,6 +5360,7 @@ function TrustedVisitorsPage({ model, actions }) {
           </s-stack>
         </BotShieldCard>
       </s-grid>
+
       <BotShieldCard
         title="Manage trusted visitors"
         subtitle="Add or remove IP addresses from the trusted visitor list."
@@ -5372,7 +5399,7 @@ function BillingPage({ model, actions }) {
   const billingActive = Boolean(model.billingStatus?.active);
   const trialRemaining =
     model.billingStatus?.subscription?.trialDaysRemaining ?? null;
-  const planDetail = `${planName} Â· $${monthlyPrice.toFixed(2)}/month Â· ${trialDays}-day trial`;
+  const planDetail = `${planName} · $${monthlyPrice.toFixed(2)}/month · ${trialDays}-day trial`;
   return (
     <Screen
       title="Subscription"
@@ -5979,7 +6006,3 @@ export default function BotShieldAdminExperience({ model, actions }) {
     </BotShieldAppFrame>
   );
 }
-
-
-
-

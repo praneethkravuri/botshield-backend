@@ -153,7 +153,7 @@ function getAssistantReply(question, context) {
     return "I can summarize traffic, explain blocked activity, describe auto-block, recommend settings, and answer questions about scans, threats, and dashboard status.";
   }
 
-  return `Hereâ€™s the current picture: protection is ${
+  return `Here’s the current picture: protection is ${
     protectionOn ? "active" : "not active"
   }, auto-block is ${autoBlock ? "enabled" : "disabled"}, ${blockedToday} threats were blocked today, and ${percentHigh}% of traffic is high risk. ${recommendation}`;
 }
@@ -956,7 +956,7 @@ function SecurityPage({
         </div>
 
         {incidentLoading ? (
-          <p style={{ color: theme.muted, marginBottom: 0 }}>Loading incidentsâ€¦</p>
+          <p style={{ color: theme.muted, marginBottom: 0 }}>Loading incidents…</p>
         ) : incidents.length === 0 ? (
           <p style={{ color: theme.muted, marginBottom: 0 }}>
             No incidents match the selected filters.
@@ -1005,11 +1005,11 @@ function SecurityPage({
                 {incident.networkAsn || incident.networkOrg ? (
                   <div style={{ color: theme.muted, fontSize: "12px", marginTop: "6px" }}>
                     Network: {incident.networkAsn ? `AS${incident.networkAsn}` : "ASN unknown"}
-                    {incident.networkOrg ? ` Â· ${incident.networkOrg}` : ""}
-                    {incident.networkType ? ` Â· ${incident.networkType}` : ""}
+                    {incident.networkOrg ? ` · ${incident.networkOrg}` : ""}
+                    {incident.networkType ? ` · ${incident.networkType}` : ""}
                     {incident.networkProvider &&
                     incident.networkProvider !== incident.networkOrg
-                      ? ` Â· ${incident.networkProvider}`
+                      ? ` · ${incident.networkProvider}`
                       : ""}
                   </div>
                 ) : null}
@@ -1175,7 +1175,7 @@ function SettingsPage({
             <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
               Last delivery: {lastAlertStatus || "No delivery attempted"}
               {lastAlertSentAt
-                ? ` Â· ${new Date(lastAlertSentAt).toLocaleString()}`
+                ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
                 : ""}
             </div>
             {lastAlertError ? (
@@ -1206,7 +1206,7 @@ function SettingsPage({
             <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
               Last weekly report: {lastWeeklyReportStatus || "No report attempted"}
               {lastWeeklyReportAt
-                ? ` Â· ${new Date(lastWeeklyReportAt).toLocaleString()}`
+                ? ` · ${new Date(lastWeeklyReportAt).toLocaleString()}`
                 : ""}
             </div>
             {lastWeeklyReportError ? (
@@ -1857,6 +1857,7 @@ export default function Index() {
       recordBackendError("Protection status", err);
     }
   };
+
   const loadSecurityPosture = async () => {
     try {
       const response = await fetch("/api/security-posture");
@@ -2096,6 +2097,7 @@ export default function Index() {
       weeklyReportsEnabled,
       ...overrides,
     };
+
     const response = await fetch("/api/settings", {
       method: "POST",
       headers: {
@@ -2275,6 +2277,7 @@ export default function Index() {
       return nextValue;
     });
   };
+
   const handleDarkModeToggle = () => {
     setDarkMode((prev) => {
       const nextValue = !prev;
@@ -2394,6 +2397,7 @@ export default function Index() {
         break;
     }
   };
+
   const handleDashboardSurfaceAction = async (actionKey) => {
     switch (actionKey) {
       case "livePosture":
@@ -3053,6 +3057,7 @@ export default function Index() {
       scan.createdAt &&
       new Date(scan.createdAt).toDateString() === new Date().toDateString(),
   ).length;
+
   const scansToday = storefrontScans.filter(
     (scan) =>
       scan.createdAt &&
@@ -3112,6 +3117,7 @@ export default function Index() {
     100,
     highRiskCount * 22 + mediumRiskCount * 10 + blockedToday * 12 + recentBlocks * 8,
   );
+
   const botPressureLabel =
     botPressureScore >= 70
       ? "Critical"
@@ -3302,10 +3308,10 @@ export default function Index() {
     storefrontScans.length > 0
       ? storefrontScans
           .slice(0, 3)
-          .map((scan) => `â€¢ ${scan.threatLevel} threat from ${scan.ipAddress}`)
+          .map((scan) => `• ${scan.threatLevel} threat from ${scan.ipAddress}`)
       : [
-          "â€¢ No real storefront events received",
-          `â€¢ ${simulatedScans.length} simulation event${simulatedScans.length === 1 ? "" : "s"} excluded`,
+          "• No real storefront events received",
+          `• ${simulatedScans.length} simulation event${simulatedScans.length === 1 ? "" : "s"} excluded`,
         ];
 
   const storeProtectionMode = strictMode
@@ -3483,7 +3489,7 @@ export default function Index() {
     },
     {
       label: "Security score",
-      value: securityPosture ? `${securityPosture.score.score}/100` : "â€”",
+      value: securityPosture ? `${securityPosture.score.score}/100` : "—",
       detail: securityPosture?.score?.grade || "Calculating posture",
       actionKey: "runtimeStatus",
     },
@@ -3738,6 +3744,8 @@ export default function Index() {
 
   const polarisActions = {
     setPage: openPolarisPage,
+    openBlocklist: () => setPage("blocklist"),
+    openTrustedVisitors: () => setPage("trusted"),
     refresh: refreshBackendState,
     openThemeEditor,
     refreshSettings: loadSettings,
@@ -4035,7 +4043,7 @@ export default function Index() {
                     </div>
                   </div>
                 </div>
-                <span style={{ color: page === item.key ? theme.text : theme.muted, fontSize: "18px" }}>â€º</span>
+                <span style={{ color: page === item.key ? theme.text : theme.muted, fontSize: "18px" }}>›</span>
               </button>
             ))}
           </div>
@@ -4241,7 +4249,7 @@ export default function Index() {
                           fontWeight: 700,
                         }}
                       >
-                        {item.complete ? "âœ“" : "â—‹"} {item.label}
+                        {item.complete ? "✓" : "○"} {item.label}
                       </span>
                     ))}
                   </div>
@@ -4584,8 +4592,8 @@ export default function Index() {
                                 </div>
                                 <div style={{ color: theme.muted, fontSize: "10px", marginTop: "3px" }}>
                                   {origin.threatCount > 0
-                                    ? `${origin.threatCount} suspicious Â· highest risk ${origin.highestRiskScore}/100`
-                                    : `${origin.allowed} allowed Â· no elevated signal`}
+                                    ? `${origin.threatCount} suspicious · highest risk ${origin.highestRiskScore}/100`
+                                    : `${origin.allowed} allowed · no elevated signal`}
                                 </div>
                               </div>
                             </div>
@@ -4643,14 +4651,14 @@ export default function Index() {
                               .join(", ")
                           : "No elevated location",
                         detail: leadingThreatOrigin
-                          ? `${leadingThreatOrigin.threatCount} suspicious Â· ${leadingThreatOrigin.blocked} blocked`
+                          ? `${leadingThreatOrigin.threatCount} suspicious · ${leadingThreatOrigin.blocked} blocked`
                           : "No location-based threat concentration detected",
                         tone: leadingThreatOrigin ? "danger" : "success",
                       },
                       {
                         label: "Verified response",
                         value: `${verifiedInterventions} intervention${verifiedInterventions === 1 ? "" : "s"}`,
-                        detail: `${blockedCount} blocked Â· ${challengedCount} challenged Â· ${geolocatedCountryCount} countr${geolocatedCountryCount === 1 ? "y" : "ies"}`,
+                        detail: `${blockedCount} blocked · ${challengedCount} challenged · ${geolocatedCountryCount} countr${geolocatedCountryCount === 1 ? "y" : "ies"}`,
                         tone: verifiedInterventions > 0 ? "accent" : "neutral",
                       },
                     ].map((item) => (
@@ -5760,7 +5768,7 @@ export default function Index() {
                           : "Provider Not Configured"}
                     </span>
                     <span style={getRiskBadgeStyle(highRiskAlertsOnly ? "balanced" : "normal")}>
-                      Blocked Â· Challenged Â· High Risk
+                      Blocked · Challenged · High Risk
                     </span>
                   </div>
                   <input
@@ -5777,7 +5785,7 @@ export default function Index() {
                     <div style={{ color: theme.muted, fontSize: "12px", lineHeight: 1.6 }}>
                       Last delivery: {lastAlertStatus || "No delivery attempted"}
                       {lastAlertSentAt
-                        ? ` Â· ${new Date(lastAlertSentAt).toLocaleString()}`
+                        ? ` · ${new Date(lastAlertSentAt).toLocaleString()}`
                         : ""}
                     </div>
                     <button onClick={handleSaveSettings} style={getPrimaryButtonStyle()} {...pressHandlers}>
@@ -6790,7 +6798,7 @@ export default function Index() {
                   flexShrink: 0,
                 }}
               >
-                Ã—
+                ×
               </button>
             </div>
 
@@ -6924,7 +6932,7 @@ export default function Index() {
                                   color: "#e2e8f0",
                                 }}
                               >
-                                <span style={{ color: "#38bdf8" }}>â€¢</span>
+                                <span style={{ color: "#38bdf8" }}>•</span>
                                 <span>{bullet}</span>
                               </div>
                             ))}
@@ -7244,4 +7252,3 @@ export default function Index() {
     </div>
   );
 }
-
