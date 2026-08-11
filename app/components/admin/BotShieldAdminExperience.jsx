@@ -1455,8 +1455,15 @@ function OverviewPage({ model, actions }) {
             </div>
             <div className="botshield-v2-impact-metrics">
               {securityImpact.map((item, index) => (
-                <div className="botshield-v2-impact-metric" key={item.label}>
-                  <OverviewIcon name={index === 0 ? "shield" : "activity"} />
+                <div
+                  className="botshield-v2-impact-metric"
+                  key={item.label}
+                  style={{ alignItems: "center" }}
+                >
+                  <OverviewIcon
+                    name={index === 0 ? "shield" : "activity"}
+                    centered
+                  />
                   <div>
                     <strong>{item.value.toLocaleString()}</strong>
                     <span>{item.label}</span>
@@ -1845,22 +1852,21 @@ function OverviewPage({ model, actions }) {
               </div>
               <div className="botshield-v2-quick-action-list">
                 <div className="botshield-v2-quick-action-row">
-                  <OverviewIcon name="block" />
+                  <OverviewIcon name="block" centered />
                   <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
                   <BotShieldActionButton onClick={actions.openBlocklist}>
                     Block an IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
-                  <OverviewIcon name="visitor" />
+                  <OverviewIcon name="visitor" centered />
                   <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
                   <BotShieldActionButton onClick={actions.openTrustedVisitors}>
                     Trust a visitor
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
-                  <OverviewIcon name="shield" />
-                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
+                  <OverviewIcon name="shield" centered />\n                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
                   <BotShieldActionButton
                     variant="primary"
                     onClick={() => actions.setPage("detection")}
