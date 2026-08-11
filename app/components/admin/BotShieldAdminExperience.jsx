@@ -1045,7 +1045,7 @@ const OVERVIEW_SIGNAL_GROUPS = [
     codes: ["KNOWN_BOT_USER_AGENT", "SUSPICIOUS_USER_AGENT", "MISSING_USER_AGENT"],
   },
   {
-    label: "Network / proxy",
+    label: "Network / Proxy",
     codes: [
       "VPN_DETECTED",
       "DATACENTER_IP",
@@ -1317,7 +1317,7 @@ function OverviewPage({ model, actions }) {
         tone: "critical",
         className: "botshield-v2-status--degraded",
         detail:
-          "Some live security data could not be loaded. Protection may still be running, but this view needs attention.",
+          "Some security data could not be loaded. Protection may still be active, but this view requires attention.",
       }
     : model.protectionPaused || !storefrontConnected || !model.protectionReady
         ? {
@@ -1326,9 +1326,9 @@ function OverviewPage({ model, actions }) {
           tone: "warning",
           className: "botshield-v2-status--attention",
           detail: model.protectionPaused
-            ? "Protection is paused. Resume enforcement to restore the store's full security posture."
+            ? "Protection is paused. Resume enforcement to restore full storefront protection."
             : !storefrontConnected
-              ? "Connect the storefront theme app embed to begin receiving and enforcing live protection decisions."
+              ? "Enable the theme app embed to begin receiving and enforcing live storefront decisions."
               : protectionsNeedingAttention
                 ? `${protectionsNeedingAttention} protection module${protectionsNeedingAttention === 1 ? "" : "s"} require setup before full storefront coverage is available.`
                 : "Complete the remaining protection setup to fully secure storefront traffic.",
@@ -1355,7 +1355,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Active protections",
       value: activeProtections,
-      detail: `Of ${protectionRows.length} available`,
+      detail: `of ${protectionRows.length} available`,
       icon: "shield",
     },
   ];
@@ -1368,7 +1368,7 @@ function OverviewPage({ model, actions }) {
             <div>
               <h1 className="botshield-overview-title">Overview</h1>
               <p className="botshield-overview-subtitle">
-                Monitor storefront protection, security activity, and recent
+                Monitor storefront protection, security activity, and
                 enforcement decisions from one place.
               </p>
             </div>
@@ -1449,7 +1449,7 @@ function OverviewPage({ model, actions }) {
 
           <section className="botshield-v2-impact" aria-labelledby="security-impact-title">
             <div className="botshield-v2-impact-heading">
-              <div className="botshield-v2-eyebrow">Verified outcomes | Last 30 days</div>
+              <div className="botshield-v2-eyebrow">Verified outcomes {"\u00B7"} Last 30 days</div>
               <h2 id="security-impact-title">Security impact</h2>
               <p>Verified protection outcomes from the last 30 days.</p>
             </div>
@@ -1470,13 +1470,13 @@ function OverviewPage({ model, actions }) {
           <section className="botshield-v2-value" aria-labelledby="estimated-value-title">
             <div className="botshield-v2-value-header">
               <div>
-                <div className="botshield-v2-eyebrow">Financial impact | Last {financialImpact.periodDays || 30} days</div>
+                <div className="botshield-v2-eyebrow">Financial impact {"\u00B7"} Last {financialImpact.periodDays || 30} days</div>
                 <h2 id="estimated-value-title">Estimated value protected</h2>
-                <p>Verified order value linked to documented, qualifying protection outcomes.</p>
+                <p>Verified order value linked to documented qualifying protection outcomes.</p>
               </div>
               <details className="botshield-v2-methodology">
                 <summary>How this is calculated</summary>
-                <p>{financialImpact.methodology || "BotShield only includes verified Shopify order value linked to a documented, qualifying protection outcome. Bot traffic, blocks, challenges, IP addresses, and risk scores are never converted into money."}</p>
+                <p>{financialImpact.methodology || "BotShield includes only verified Shopify order value linked to a documented qualifying protection outcome. Traffic, blocks, challenges, IP addresses, and risk scores are never assigned a monetary value."}</p>
               </details>
             </div>
             {hasFinancialImpact ? (
@@ -1501,7 +1501,7 @@ function OverviewPage({ model, actions }) {
                 <strong aria-label="Value unavailable">{"\u2014"}</strong>
                 <div>
                   <h3>No verified financial impact data yet</h3>
-                  <p>{financialImpact.unavailableReason || "BotShield only reports value when a qualifying protection outcome can be linked to verified order value."}</p>
+                  <p>BotShield does not estimate value from traffic, blocked visitors, challenges, or risk scores.</p>
                 </div>
               </div>
             )}
@@ -1543,7 +1543,7 @@ function OverviewPage({ model, actions }) {
                     tone="critical"
                     title="Threat activity could not be loaded"
                   >
-                    Refresh BotShield to try loading recorded storefront decisions again.
+                    Refresh BotShield to load recorded storefront decisions again.
                   </BotShieldBanner>
                   <BotShieldActionButton onClick={actions.refresh}>
                     Refresh data
@@ -1716,7 +1716,7 @@ function OverviewPage({ model, actions }) {
                     variant="tertiary"
                     onClick={() => actions.setPage("incidents")}
                   >
-                    Investigate →
+                    Investigate {"\u2192"}
                   </BotShieldActionButton>
                 </div>
                 {selectedSuspiciousEvents.length ? (
@@ -1776,7 +1776,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-panel-header">
                 <div>
                   <h2>Recent security activity</h2>
-                  <p>The latest protection decisions recorded for your store.</p>
+                  <p>Latest storefront protection decisions.</p>
                 </div>
                 <BotShieldActionButton
                   variant="tertiary"
@@ -1848,19 +1848,19 @@ function OverviewPage({ model, actions }) {
                   <OverviewIcon name="block" />
                   <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
                   <BotShieldActionButton onClick={actions.openBlocklist}>
-                    Block IP
+                    Block an IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="visitor" />
                   <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
                   <BotShieldActionButton onClick={actions.openTrustedVisitors}>
-                    Trust visitor
+                    Trust a visitor
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
                   <OverviewIcon name="shield" />
-                  <div><strong>Review protection</strong><span>Check active modules and enforcement settings.</span></div>
+                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
                   <BotShieldActionButton
                     variant="primary"
                     onClick={() => actions.setPage("detection")}
