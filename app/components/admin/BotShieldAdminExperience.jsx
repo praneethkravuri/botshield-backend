@@ -1866,7 +1866,8 @@ function OverviewPage({ model, actions }) {
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
-                  <OverviewIcon name="shield" centered />\n                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
+                  <OverviewIcon name="shield" centered />
+                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
                   <BotShieldActionButton
                     variant="primary"
                     onClick={() => actions.setPage("detection")}
