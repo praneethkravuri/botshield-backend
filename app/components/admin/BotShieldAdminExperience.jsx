@@ -2911,6 +2911,11 @@ function AnalyticsPage({ model, actions }) {
         count: events.length,
         signal: primarySignals[0] || "Other signal",
         risk: events.some((event) => event.threatLevel === "high") ? "high" : "medium",
+        outcome: events.some((event) => event.actionTaken === "blocked")
+          ? "Blocked"
+          : events.some((event) => event.actionTaken === "challenged")
+            ? "Challenged"
+            : "Allowed",
         lastSeen: events[0]?.createdAt,
       };
     })
@@ -2939,6 +2944,25 @@ function AnalyticsPage({ model, actions }) {
     }).length,
   }));
   const activityMaximum = Math.max(1, ...activityBuckets.map((bucket) => bucket.count));
+  const activeActivityBuckets = activityBuckets.filter((bucket) => bucket.count > 0);
+  const peakActivityBucket = activeActivityBuckets.reduce(
+    (peak, bucket) => (!peak || bucket.count > peak.count ? bucket : peak),
+    null,
+  );
+  const peakBucketStart = peakActivityBucket
+    ? new Date(Date.now() - (bucketCount - peakActivityBucket.index) * bucketDuration)
+    : null;
+  const peakBucketEnd = peakActivityBucket
+    ? new Date(peakBucketStart.getTime() + bucketDuration)
+    : null;
+  const peakActivityLabel = peakBucketStart && peakBucketEnd
+    ? periodDays === 1
+      ? `${peakBucketStart.toLocaleTimeString([], { hour: "numeric" })}–${peakBucketEnd.toLocaleTimeString([], { hour: "numeric" })}`
+      : peakBucketStart.toLocaleDateString([], { month: "short", day: "numeric" })
+    : "—";
+  const lastSuspiciousEvent = suspiciousEvents
+    .slice()
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt))[0];
   const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
   const visiblePage = Math.min(page, totalPages);
   const paginatedEvents = filteredEvents.slice(
@@ -2970,7 +2994,6 @@ function AnalyticsPage({ model, actions }) {
               Investigate storefront threats, visitor behavior, detection signals, and protection performance.
             </p>
           </div>
-          <BotShieldActionButton onClick={actions.refresh}>Refresh</BotShieldActionButton>
         </header>
 
         <section className="botshield-analytics-controls" aria-label="Analytics controls">
@@ -2992,7 +3015,10 @@ function AnalyticsPage({ model, actions }) {
             <label>Risk<select value={riskFilter} onChange={(event) => { setRiskFilter(event.target.value); setPage(1); }}><option value="all">All risk levels</option><option value="high">High risk</option><option value="medium">Medium risk</option><option value="low">Low risk</option></select></label>
             {availableSignals.length ? <label>Threat signal<select value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
             <label className="botshield-analytics-search">Search<input onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
-            <button className="botshield-analytics-clear" disabled={!filtersActive} onClick={clearFilters} type="button">Clear filters</button>
+            <div className="botshield-analytics-toolbar-actions">
+              <BotShieldActionButton onClick={actions.refresh}>Refresh</BotShieldActionButton>
+              {filtersActive ? <button className="botshield-analytics-clear" onClick={clearFilters} type="button">Clear filters</button> : null}
+            </div>
           </div>
         </section>
 
@@ -3006,29 +3032,31 @@ function AnalyticsPage({ model, actions }) {
         <div className="botshield-analytics-section-label">Threat intelligence</div>
         <div className="botshield-analytics-split botshield-analytics-split--primary">
           <AnalyticsPanel title="Threat signal analysis" subtitle="Understand which detection signals are driving suspicious storefront activity.">
-            {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => <div className="botshield-analytics-ranked-row" key={row.label}><div><strong>{row.label}</strong><span>{analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><AnalyticsBar maximum={signalMaximum} value={row.count} /><b>{row.count.toLocaleString()}</b></div>)}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
+            {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => { const interventionRate = analyticsPercent(row.blocked + row.challenged, row.count); return <div className="botshield-analytics-ranked-row" key={row.label}><div className="botshield-analytics-ranked-copy"><strong>{row.label}</strong><span>{row.count.toLocaleString()} event{row.count === 1 ? "" : "s"} · {analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><div className="botshield-analytics-ranked-measure"><AnalyticsBar maximum={signalMaximum} value={row.count} /><span>{interventionRate}% intervention</span></div></div>; })}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
             {signalRows.length ? <p className="botshield-analytics-footnote">An event may contain multiple signals, so combined signal percentages may exceed 100%.</p> : null}
           </AnalyticsPanel>
           <AnalyticsPanel title="Risk distribution" subtitle="Distribution of storefront activity by assessed risk level.">
-            {filteredEvents.length ? <div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div> : <AnalyticsEmpty text="No risk activity is available for this period." />}
+            {filteredEvents.length ? <><div className="botshield-analytics-risk-total"><strong>{filteredEvents.length.toLocaleString()}</strong><span>analyzed event{filteredEvents.length === 1 ? "" : "s"}</span></div><div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div></> : <AnalyticsEmpty text="No risk activity is available for this period." />}
           </AnalyticsPanel>
         </div>
 
         <AnalyticsPanel title="Detection outcomes" subtitle="See how each threat signal translates into protection decisions.">
-          {signalRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Detection signal</th><th>Detected</th><th>Blocked</th><th>Challenged</th><th>Allowed</th><th>Intervention rate</th></tr></thead><tbody>{signalRows.map((row) => <tr key={row.label}><th>{row.label}</th><td>{row.count}</td><td>{row.blocked}</td><td>{row.challenged}</td><td>{row.allowed}</td><td>{analyticsPercent(row.blocked + row.challenged, row.count)}%</td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No detection outcomes are available for this period." />}
+          {signalRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-outcomes-table"><thead><tr><th>Detection signal</th><th>Detected</th><th>Blocked</th><th>Challenged</th><th>Allowed</th><th>Intervention rate</th></tr></thead><tbody>{signalRows.map((row) => { const rate = analyticsPercent(row.blocked + row.challenged, row.count); return <tr key={row.label}><th>{row.label}</th><td>{row.count}</td><td><span className="botshield-analytics-outcome-number is-blocked">{row.blocked}</span></td><td><span className="botshield-analytics-outcome-number is-challenged">{row.challenged}</span></td><td><span className="botshield-analytics-outcome-number is-allowed">{row.allowed}</span></td><td><div className="botshield-analytics-rate"><strong>{rate}%</strong><AnalyticsBar maximum={100} value={rate} /></div></td></tr>; })}</tbody></table></div> : <AnalyticsEmpty text="No detection outcomes are available for this period." />}
         </AnalyticsPanel>
 
         <AnalyticsPanel title="Activity patterns" subtitle="See when suspicious storefront activity is most concentrated.">
-          {suspiciousEvents.length ? <div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span key={bucket.index} title={`${bucket.count} suspicious event${bucket.count === 1 ? "" : "s"}`}><i style={{ height: `${Math.max(bucket.count ? 7 : 1, (bucket.count / activityMaximum) * 100)}%` }} /></span>)}</div> : <AnalyticsEmpty text="Not enough activity yet to identify a meaningful pattern." />}
+          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${suspiciousEvents.length <= 3 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong>{formatRelativeTime(lastSuspiciousEvent?.createdAt)}</strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span key={bucket.index} title={`${bucket.count} suspicious event${bucket.count === 1 ? "" : "s"}`}><i style={{ height: `${Math.max(bucket.count ? 7 : 1, (bucket.count / activityMaximum) * 100)}%` }} /></span>)}</div></div> : <AnalyticsEmpty text="Not enough activity yet to identify a meaningful pattern." />}
         </AnalyticsPanel>
 
         {(pathRows.length || originRows.length || networkRows.length) ? <><div className="botshield-analytics-section-label">Target and origin intelligence</div><div className="botshield-analytics-split">{pathRows.length ? <AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity."><AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}{originRows.length || networkRows.length ? <AnalyticsPanel title={originRows.length ? "Threat origins" : "Suspicious networks"} subtitle={originRows.length ? "Locations associated with suspicious storefront activity." : "Networks associated with suspicious storefront activity."}><AnalyticsCompactRanking rows={originRows.length ? originRows : networkRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}</div></> : null}
 
-        {visitorRows.length ? <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr key={row.ipAddress}><th>{row.masked}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div></AnalyticsPanel></> : null}
+        {visitorRows.length ? <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div></AnalyticsPanel></> : null}
 
-        {combinationRows.length ? <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that frequently appear together."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Combination</th><th>Events</th><th>Share</th><th>Intervention rate</th></tr></thead><tbody>{combinationRows.map((row) => <tr key={row.label}><th>{row.label}</th><td>{row.count}</td><td>{analyticsPercent(row.count, suspiciousEvents.length)}%</td><td>{analyticsPercent(row.interventions, row.count)}%</td></tr>)}</tbody></table></div></AnalyticsPanel> : null}
+        {combinationRows.length ? <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that frequently appear together."><div className="botshield-analytics-combinations">{combinationRows.map((row) => <div className="botshield-analytics-combination" key={row.label}><div className="botshield-analytics-combination-signals">{row.label.split(" + ").map((signal, index) => <span key={signal}>{index ? <b aria-hidden="true">+</b> : null}<strong>{signal}</strong></span>)}</div><dl><div><dt>Events</dt><dd>{row.count}</dd></div><div><dt>Share</dt><dd>{analyticsPercent(row.count, suspiciousEvents.length)}%</dd></div><div><dt>Intervention</dt><dd>{analyticsPercent(row.interventions, row.count)}%</dd></div></dl></div>)}</div></AnalyticsPanel> : null}
 
         <aside className="botshield-analytics-insight"><OverviewIcon name="activity" centered /><div><strong>Key insight</strong><p>{insight}</p></div></aside>
+
+        {suspiciousEvents.length ? <section className="botshield-analytics-summary" aria-labelledby="analytics-summary-title"><header><span>Investigation</span><h2 id="analytics-summary-title">Investigation summary</h2></header><dl>{topSignal ? <div><dt>Most common signal</dt><dd>{topSignal.label}</dd></div> : null}{peakActivityBucket ? <div><dt>Highest-risk period</dt><dd>{peakActivityLabel}</dd></div> : null}{pathRows[0] ? <div><dt>Most targeted path</dt><dd>{formatAnalyticsPath(pathRows[0].label)}</dd></div> : null}{visitorRows[0] ? <div><dt>Most active visitor</dt><dd>{visitorRows[0].masked}</dd></div> : null}</dl></section> : null}
 
         <AnalyticsPanel title="Event explorer" subtitle="Filter and inspect the storefront events behind your analytics.">
           {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Detection reason</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{new Date(event.createdAt).toLocaleString()}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text="No events match these filters." />}
@@ -3061,7 +3089,11 @@ function AnalyticsEmpty({ text }) {
 
 function AnalyticsCompactRanking({ rows, total }) {
   const maximum = Math.max(1, ...rows.map((row) => row.count));
-  return <div className="botshield-analytics-compact-ranking">{rows.map((row) => <div key={row.label}><span title={row.label}>{row.label}</span><AnalyticsBar maximum={maximum} value={row.count} /><b>{row.count}</b><small>{analyticsPercent(row.count, total)}%</small></div>)}</div>;
+  return <div className="botshield-analytics-compact-ranking">{rows.map((row) => <div key={row.label}><span title={row.label}>{formatAnalyticsPath(row.label)}</span><AnalyticsBar maximum={maximum} value={row.count} /><b>{row.count} event{row.count === 1 ? "" : "s"}</b><small>{row.blocked ?? 0} blocked · {analyticsPercent(row.count, total)}%</small></div>)}</div>;
+}
+
+function formatAnalyticsPath(value) {
+  return value === "/" ? "Homepage (/)" : value;
 }
 
 function AnalyticsEventDetails({ event, onClose }) {
