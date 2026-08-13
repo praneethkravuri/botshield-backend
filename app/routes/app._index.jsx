@@ -1780,6 +1780,8 @@ export default function Index() {
           pathVisited: scan.pathVisited || "/",
           riskScore: Number(scan.riskScore || 0),
           reasons: scan.reasons || "",
+          reasonCodes: Array.isArray(scan.reasonCodes) ? scan.reasonCodes : [],
+          userAgent: scan.userAgent || "",
           source: scan.source || "dashboard-diagnostic",
           networkCountry: scan.networkCountry || "",
           networkCountryCode: scan.networkCountryCode || "",
@@ -1790,6 +1792,8 @@ export default function Index() {
             scan.networkLongitude == null ? null : Number(scan.networkLongitude),
           networkOrg: scan.networkOrg || "",
           networkType: scan.networkType || "",
+          networkProvider: scan.networkProvider || "",
+          networkAsn: scan.networkAsn == null ? null : Number(scan.networkAsn),
           createdAt: scan.createdAt || null,
         }));
       setScans(nextScans);

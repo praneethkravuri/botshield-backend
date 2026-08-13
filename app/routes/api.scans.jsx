@@ -1,5 +1,6 @@
 import db from "../db.server";
 import { hydrateEventGeography } from "../lib/event-geography.server";
+import { extractReasonCodes } from "../lib/security-events";
 import { authenticate } from "../shopify.server";
 
 export async function loader({ request }) {
@@ -7,7 +8,7 @@ export async function loader({ request }) {
   const eventRows = await db.botEvent.findMany({
     where: { shop: session.shop },
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: 250,
   });
   const rows = await hydrateEventGeography(eventRows, session.shop);
   const scans = rows.map((r) => ({
@@ -18,6 +19,8 @@ export async function loader({ request }) {
     pathVisited: r.path ?? "",
     riskScore: r.riskScore ?? 0,
     reasons: r.reasonSummary ?? "",
+    reasonCodes: extractReasonCodes(r.reasonSummary),
+    userAgent: r.userAgent ?? "",
     source: r.source ?? "local-engine",
     networkCountry: r.networkCountry ?? "",
     networkCountryCode: r.networkCountryCode ?? "",
@@ -26,6 +29,8 @@ export async function loader({ request }) {
     networkLongitude: r.networkLongitude ?? null,
     networkOrg: r.networkOrg ?? "",
     networkType: r.networkType ?? "",
+    networkProvider: r.networkProvider ?? "",
+    networkAsn: r.networkAsn ?? null,
     createdAt: r.createdAt,
   }));
   return Response.json({ scans });

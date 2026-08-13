@@ -1783,7 +1783,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-panel-header">
                 <div>
                   <h2>Recent security activity</h2>
-                  <p>Latest storefront protection decisions.</p>
+                   <p>Latest storefront protection decisions.</p>
                 </div>
                 <BotShieldActionButton
                   variant="tertiary"
@@ -1867,7 +1867,7 @@ function OverviewPage({ model, actions }) {
                 </div>
                 <div className="botshield-v2-quick-action-row botshield-v2-quick-action-row--primary">
                   <OverviewIcon name="shield" centered />
-                  <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
+                   <div><strong>Review protection</strong><span>Review active modules and enforcement settings.</span></div>
                   <BotShieldActionButton
                     variant="primary"
                     onClick={() => actions.setPage("detection")}
@@ -2758,215 +2758,315 @@ function LegacyOverviewPage({ model, actions }) {
   );
 }
 
+const ANALYTICS_PERIODS = [
+  { label: "24H", days: 1 },
+  { label: "7D", days: 7 },
+  { label: "30D", days: 30 },
+  { label: "90D", days: 90 },
+];
+
+function getAnalyticsSignals(event) {
+  const codes = getOverviewReasonCodes(event);
+  return OVERVIEW_SIGNAL_GROUPS.filter((group) =>
+    group.codes.some((code) => codes.includes(code)),
+  ).map((group) => group.label);
+}
+
+function isSuspiciousAnalyticsEvent(event) {
+  return (
+    ["medium", "high"].includes(String(event.threatLevel).toLowerCase()) ||
+    ["blocked", "challenged"].includes(event.actionTaken) ||
+    getAnalyticsSignals(event).length > 0
+  );
+}
+
+function analyticsPercent(value, total) {
+  return total ? Math.round((value / total) * 100) : 0;
+}
+
+function AnalyticsBar({ value, maximum, tone = "neutral" }) {
+  return (
+    <span className="botshield-analytics-bar-track" aria-hidden="true">
+      <span
+        className={`botshield-analytics-bar-fill is-${tone}`}
+        style={{ width: `${maximum ? Math.max(3, (value / maximum) * 100) : 0}%` }}
+      />
+    </span>
+  );
+}
+
 function AnalyticsPage({ model, actions }) {
-  const [trendMetric, setTrendMetric] = useState("total");
-  const storefrontEvents = model.storefrontScans || [];
-  const totalEvents = Number(model.incidentCounts?.total || 0);
-  const allowedEvents = Number(model.incidentCounts?.allowed || 0);
-  const blockedEvents = Number(model.incidentCounts?.blocked || 0);
-  const blockedRate = totalEvents
-    ? Math.round((blockedEvents / totalEvents) * 100)
-    : 0;
-  const today = new Date();
-  const todayEvents = storefrontEvents.filter((event) => {
-    if (!event.createdAt) return false;
-    const date = new Date(event.createdAt);
-    return (
-      !Number.isNaN(date.getTime()) &&
-      date.getFullYear() === today.getFullYear() &&
-      date.getMonth() === today.getMonth() &&
-      date.getDate() === today.getDate()
-    );
+  const [periodDays, setPeriodDays] = useState(30);
+  const [decisionFilter, setDecisionFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
+  const [signalFilter, setSignalFilter] = useState("all");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const pageSize = 25;
+  const periodStart = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+  const periodEvents = (model.storefrontScans || []).filter((event) => {
+    const timestamp = new Date(event.createdAt).getTime();
+    return Number.isFinite(timestamp) && timestamp >= periodStart;
   });
-  const trendBuckets = Array.from({ length: 24 }, (_, hour) => {
-    const eventsForHour = todayEvents.filter(
-      (event) => new Date(event.createdAt).getHours() === hour,
-    );
-    return {
-      hour,
-      total: eventsForHour.length,
-      allowed: eventsForHour.filter((event) =>
-        ["allowed", "whitelisted"].includes(event.actionTaken),
-      ).length,
-      blocked: eventsForHour.filter((event) => event.actionTaken === "blocked")
-        .length,
-    };
+  const availableSignals = [...new Set(periodEvents.flatMap(getAnalyticsSignals))];
+  const filteredEvents = periodEvents.filter((event) => {
+    const action = ["whitelisted"].includes(event.actionTaken)
+      ? "allowed"
+      : event.actionTaken;
+    if (decisionFilter !== "all" && action !== decisionFilter) return false;
+    if (riskFilter !== "all" && event.threatLevel !== riskFilter) return false;
+    const signals = getAnalyticsSignals(event);
+    if (signalFilter !== "all" && !signals.includes(signalFilter)) return false;
+    const query = searchFilter.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      event.pathVisited,
+      event.networkCountry,
+      event.networkCity,
+      event.networkOrg,
+      event.networkProvider,
+      formatMerchantReasons(event.reasonCodes || event.reasons),
+      ...signals,
+    ].some((value) => String(value || "").toLowerCase().includes(query));
   });
-  const chartValues = trendBuckets.map((bucket) => bucket[trendMetric]);
-  const statCards = [
-    {
-      title: "Storefront events (30 days)",
-      value: totalEvents,
-    },
-    {
-      title: "Allowed events",
-      value: allowedEvents,
-    },
-    {
-      title: "Blocked events",
-      value: blockedEvents,
-    },
-    {
-      title: "Blocked rate",
-      value: `${blockedRate}%`,
-    },
-  ];
-  const tabs = [
-    { label: "Overview", active: true, action: null },
-    { label: "Visitors", active: false, action: () => actions.setPage("incidents") },
-  ];
-  const trendTabs = [
-    { label: "Total visits", value: "total" },
-    { label: "Allowed visits", value: "allowed" },
-    { label: "Blocked visits", value: "blocked" },
-  ];
+  const suspiciousEvents = filteredEvents.filter(isSuspiciousAnalyticsEvent);
+  const interventionCount = suspiciousEvents.filter((event) =>
+    ["blocked", "challenged"].includes(event.actionTaken),
+  ).length;
+  const highRiskCount = filteredEvents.filter(
+    (event) => event.threatLevel === "high",
+  ).length;
+  const signalRows = availableSignals
+    .map((label) => {
+      const events = suspiciousEvents.filter((event) =>
+        getAnalyticsSignals(event).includes(label),
+      );
+      return {
+        label,
+        events,
+        count: events.length,
+        blocked: events.filter((event) => event.actionTaken === "blocked").length,
+        challenged: events.filter((event) => event.actionTaken === "challenged").length,
+        allowed: events.filter((event) =>
+          ["allowed", "whitelisted"].includes(event.actionTaken),
+        ).length,
+      };
+    })
+    .filter((row) => row.count > 0)
+    .sort((left, right) => right.count - left.count);
+  const topSignal = signalRows[0] || null;
+  const signalMaximum = Math.max(1, ...signalRows.map((row) => row.count));
+  const riskRows = ["high", "medium", "low"].map((risk) => ({
+    risk,
+    count: filteredEvents.filter((event) => event.threatLevel === risk).length,
+  }));
+  const riskMaximum = Math.max(1, ...riskRows.map((row) => row.count));
+  const pathRows = [...new Set(suspiciousEvents.map((event) => event.pathVisited || "/"))]
+    .map((path) => {
+      const events = suspiciousEvents.filter(
+        (event) => (event.pathVisited || "/") === path,
+      );
+      return {
+        label: path,
+        count: events.length,
+        blocked: events.filter((event) => event.actionTaken === "blocked").length,
+      };
+    })
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6);
+  const originRows = [...new Set(suspiciousEvents.map((event) => event.networkCountry).filter(Boolean))]
+    .map((country) => {
+      const events = suspiciousEvents.filter((event) => event.networkCountry === country);
+      return {
+        label: country,
+        count: events.length,
+        blocked: events.filter((event) => event.actionTaken === "blocked").length,
+      };
+    })
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6);
+  const networkRows = [...new Set(suspiciousEvents.map((event) =>
+    event.networkOrg || event.networkProvider || event.networkType,
+  ).filter(Boolean))]
+    .map((network) => {
+      const events = suspiciousEvents.filter((event) =>
+        [event.networkOrg, event.networkProvider, event.networkType].includes(network),
+      );
+      return {
+        label: network,
+        count: events.length,
+        blocked: events.filter((event) => event.actionTaken === "blocked").length,
+      };
+    })
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6);
+  const visitorRows = [...new Set(suspiciousEvents.map((event) => event.ipAddress).filter(Boolean))]
+    .map((ipAddress) => {
+      const events = suspiciousEvents.filter((event) => event.ipAddress === ipAddress);
+      const primarySignals = getAnalyticsSignals(events[0] || {});
+      return {
+        ipAddress,
+        masked: maskAnalyticsVisitor(ipAddress),
+        count: events.length,
+        signal: primarySignals[0] || "Other signal",
+        risk: events.some((event) => event.threatLevel === "high") ? "high" : "medium",
+        lastSeen: events[0]?.createdAt,
+      };
+    })
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 6);
+  const combinations = new Map();
+  suspiciousEvents.forEach((event) => {
+    const signals = getAnalyticsSignals(event).sort();
+    if (signals.length < 2) return;
+    const key = signals.join(" + ");
+    const current = combinations.get(key) || { label: key, count: 0, interventions: 0 };
+    current.count += 1;
+    if (["blocked", "challenged"].includes(event.actionTaken)) current.interventions += 1;
+    combinations.set(key, current);
+  });
+  const combinationRows = [...combinations.values()]
+    .sort((left, right) => right.count - left.count)
+    .slice(0, 5);
+  const bucketCount = periodDays === 1 ? 24 : Math.min(periodDays, 30);
+  const bucketDuration = (periodDays * 24 * 60 * 60 * 1000) / bucketCount;
+  const activityBuckets = Array.from({ length: bucketCount }, (_, index) => ({
+    index,
+    count: suspiciousEvents.filter((event) => {
+      const age = Date.now() - new Date(event.createdAt).getTime();
+      return age >= (bucketCount - index - 1) * bucketDuration && age < (bucketCount - index) * bucketDuration;
+    }).length,
+  }));
+  const activityMaximum = Math.max(1, ...activityBuckets.map((bucket) => bucket.count));
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+  const visiblePage = Math.min(page, totalPages);
+  const paginatedEvents = filteredEvents.slice(
+    (visiblePage - 1) * pageSize,
+    visiblePage * pageSize,
+  );
+  const filtersActive = [decisionFilter, riskFilter, signalFilter].some(
+    (value) => value !== "all",
+  ) || searchFilter.trim();
+  const insight = topSignal && suspiciousEvents.length
+    ? `${topSignal.label} was the leading threat signal this period, appearing in ${analyticsPercent(topSignal.count, suspiciousEvents.length)}% of suspicious events.`
+    : "More storefront activity is needed before BotShield can identify a reliable pattern.";
+
+  function clearFilters() {
+    setDecisionFilter("all");
+    setRiskFilter("all");
+    setSignalFilter("all");
+    setSearchFilter("");
+    setPage(1);
+  }
 
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-analytics-content">
-        <div className="botshield-analytics-header">
+      <main className="botshield-page-content botshield-analytics-content botshield-analytics-v2">
+        <header className="botshield-analytics-header">
           <div>
             <h1 className="botshield-overview-title">Analytics</h1>
             <p className="botshield-overview-subtitle">
-              Monitor storefront traffic, protection activity, and trend lines
-              in one place.
+              Investigate storefront threats, visitor behavior, detection signals, and protection performance.
             </p>
           </div>
-        </div>
+          <BotShieldActionButton onClick={actions.refresh}>Refresh</BotShieldActionButton>
+        </header>
 
-        <nav className="botshield-analytics-tabs" aria-label="Analytics views">
-          {tabs.map((tab) => (
-            <button
-              className={`botshield-analytics-tab${
-                tab.active ? " botshield-analytics-tab--active" : ""
-              }`}
-              key={tab.label}
-              onClick={tab.action || undefined}
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="botshield-analytics-stat-grid">
-          {statCards.map((card) => (
-            <div className="botshield-analytics-stat-card" key={card.title}>
-              <div className="botshield-analytics-stat-label">
-                {card.title}
-              </div>
-              <div className="botshield-analytics-stat-value">
-                {card.value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <section className="botshield-analytics-chart-card">
-          <h2 className="botshield-analytics-card-title">Visitor trends</h2>
-          <div className="botshield-analytics-chart-panel">
-            <div className="botshield-analytics-chart-tabs">
-              {trendTabs.map((tab) => (
-                <button
-                  className={`botshield-analytics-chart-tab${
-                    trendMetric === tab.value
-                      ? " botshield-analytics-chart-tab--active"
-                      : ""
-                  }`}
-                  key={tab.value}
-                  onClick={() => setTrendMetric(tab.value)}
-                  type="button"
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <AnalyticsTrendChart values={chartValues} />
+        <section className="botshield-analytics-controls" aria-label="Analytics controls">
+          <div className="botshield-analytics-period" aria-label="Date range">
+            {ANALYTICS_PERIODS.map((period) => (
+              <button
+                aria-pressed={periodDays === period.days}
+                className={periodDays === period.days ? "is-active" : ""}
+                key={period.label}
+                onClick={() => { setPeriodDays(period.days); setPage(1); }}
+                type="button"
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+          <div className="botshield-analytics-filter-row">
+            <label>Decision<select value={decisionFilter} onChange={(event) => { setDecisionFilter(event.target.value); setPage(1); }}><option value="all">All decisions</option><option value="allowed">Allowed</option><option value="challenged">Challenged</option><option value="blocked">Blocked</option></select></label>
+            <label>Risk<select value={riskFilter} onChange={(event) => { setRiskFilter(event.target.value); setPage(1); }}><option value="all">All risk levels</option><option value="high">High risk</option><option value="medium">Medium risk</option><option value="low">Low risk</option></select></label>
+            {availableSignals.length ? <label>Threat signal<select value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
+            <label className="botshield-analytics-search">Search<input onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
+            <button className="botshield-analytics-clear" disabled={!filtersActive} onClick={clearFilters} type="button">Clear filters</button>
           </div>
         </section>
+
+        <section className="botshield-analytics-kpis" aria-label="Analytical metrics">
+          <AnalyticsKpi label="Suspicious events" value={suspiciousEvents.length} detail="Events containing elevated threat signals" />
+          <AnalyticsKpi label="Intervention rate" value={`${analyticsPercent(interventionCount, suspiciousEvents.length)}%`} detail="Suspicious traffic blocked or challenged" />
+          <AnalyticsKpi label="Top threat signal" value={topSignal?.label || "—"} detail={topSignal ? `${topSignal.count} event${topSignal.count === 1 ? "" : "s"} in this period` : "No suspicious signals detected"} compact />
+          <AnalyticsKpi label="High-risk activity" value={highRiskCount} detail="Events classified as high risk" />
+        </section>
+
+        <div className="botshield-analytics-section-label">Threat intelligence</div>
+        <div className="botshield-analytics-split botshield-analytics-split--primary">
+          <AnalyticsPanel title="Threat signal analysis" subtitle="Understand which detection signals are driving suspicious storefront activity.">
+            {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => <div className="botshield-analytics-ranked-row" key={row.label}><div><strong>{row.label}</strong><span>{analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><AnalyticsBar maximum={signalMaximum} value={row.count} /><b>{row.count.toLocaleString()}</b></div>)}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
+            {signalRows.length ? <p className="botshield-analytics-footnote">An event may contain multiple signals, so combined signal percentages may exceed 100%.</p> : null}
+          </AnalyticsPanel>
+          <AnalyticsPanel title="Risk distribution" subtitle="Distribution of storefront activity by assessed risk level.">
+            {filteredEvents.length ? <div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div> : <AnalyticsEmpty text="No risk activity is available for this period." />}
+          </AnalyticsPanel>
+        </div>
+
+        <AnalyticsPanel title="Detection outcomes" subtitle="See how each threat signal translates into protection decisions.">
+          {signalRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Detection signal</th><th>Detected</th><th>Blocked</th><th>Challenged</th><th>Allowed</th><th>Intervention rate</th></tr></thead><tbody>{signalRows.map((row) => <tr key={row.label}><th>{row.label}</th><td>{row.count}</td><td>{row.blocked}</td><td>{row.challenged}</td><td>{row.allowed}</td><td>{analyticsPercent(row.blocked + row.challenged, row.count)}%</td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No detection outcomes are available for this period." />}
+        </AnalyticsPanel>
+
+        <AnalyticsPanel title="Activity patterns" subtitle="See when suspicious storefront activity is most concentrated.">
+          {suspiciousEvents.length ? <div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span key={bucket.index} title={`${bucket.count} suspicious event${bucket.count === 1 ? "" : "s"}`}><i style={{ height: `${Math.max(bucket.count ? 7 : 1, (bucket.count / activityMaximum) * 100)}%` }} /></span>)}</div> : <AnalyticsEmpty text="Not enough activity yet to identify a meaningful pattern." />}
+        </AnalyticsPanel>
+
+        {(pathRows.length || originRows.length || networkRows.length) ? <><div className="botshield-analytics-section-label">Target and origin intelligence</div><div className="botshield-analytics-split">{pathRows.length ? <AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity."><AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}{originRows.length || networkRows.length ? <AnalyticsPanel title={originRows.length ? "Threat origins" : "Suspicious networks"} subtitle={originRows.length ? "Locations associated with suspicious storefront activity." : "Networks associated with suspicious storefront activity."}><AnalyticsCompactRanking rows={originRows.length ? originRows : networkRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}</div></> : null}
+
+        {visitorRows.length ? <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr key={row.ipAddress}><th>{row.masked}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div></AnalyticsPanel></> : null}
+
+        {combinationRows.length ? <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that frequently appear together."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table"><thead><tr><th>Combination</th><th>Events</th><th>Share</th><th>Intervention rate</th></tr></thead><tbody>{combinationRows.map((row) => <tr key={row.label}><th>{row.label}</th><td>{row.count}</td><td>{analyticsPercent(row.count, suspiciousEvents.length)}%</td><td>{analyticsPercent(row.interventions, row.count)}%</td></tr>)}</tbody></table></div></AnalyticsPanel> : null}
+
+        <aside className="botshield-analytics-insight"><OverviewIcon name="activity" centered /><div><strong>Key insight</strong><p>{insight}</p></div></aside>
+
+        <AnalyticsPanel title="Event explorer" subtitle="Filter and inspect the storefront events behind your analytics.">
+          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Detection reason</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{new Date(event.createdAt).toLocaleString()}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text="No events match these filters." />}
+        </AnalyticsPanel>
+
+        {selectedEvent ? <AnalyticsEventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} /> : null}
       </main>
     </div>
   );
 }
 
-function AnalyticsTrendChart({ values }) {
-  const safeValues = values.length ? values : Array.from({ length: 24 }, () => 0);
-  const maxValue = Math.max(1, ...safeValues);
-  const width = 600;
-  const height = 210;
-  const left = 34;
-  const right = 14;
-  const top = 18;
-  const bottom = 36;
-  const chartWidth = width - left - right;
-  const chartHeight = height - top - bottom;
-  const points = safeValues.map((value, index) => {
-    const x = left + (chartWidth / (safeValues.length - 1 || 1)) * index;
-    const y = top + chartHeight - (value / maxValue) * chartHeight;
-    return { x, y };
-  });
-  const path = points
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
-    .join(" ");
-  const hasActivity = safeValues.some((value) => value > 0);
-  const yLabels = [
-    { value: maxValue, y: top },
-    { value: Math.ceil(maxValue / 2), y: top + chartHeight / 2 },
-    { value: 0, y: top + chartHeight },
-  ];
-  const xLabels = [0, 3, 6, 9, 12, 15, 18].map((hour) => ({
-    label: `${String(hour).padStart(2, "0")}:00`,
-    x: left + (chartWidth / 23) * hour,
-  }));
+function maskAnalyticsVisitor(value) {
+  const address = String(value || "");
+  if (address.includes(":")) return `${address.split(":").slice(0, 2).join(":")}:…`;
+  const octets = address.split(".");
+  return octets.length === 4 ? `${octets[0]}.${octets[1]}.xxx.xxx` : "Masked visitor";
+}
 
-  return (
-    <div className="botshield-analytics-chart-wrap">
-      <svg
-        aria-label="Visitor trend chart"
-        className="botshield-analytics-chart"
-        role="img"
-        viewBox={`0 0 ${width} ${height}`}
-      >
-        {yLabels.map((label) => (
-          <g key={`${label.value}-${label.y}`}>
-            <text className="botshield-analytics-axis-label" x="0" y={label.y + 4}>
-              {label.value}
-            </text>
-            <line
-              className="botshield-analytics-gridline"
-              x1={left}
-              x2={width - right}
-              y1={label.y}
-              y2={label.y}
-            />
-          </g>
-        ))}
-        {hasActivity ? (
-          <path className="botshield-analytics-line" d={path} fill="none" />
-        ) : null}
-        {points.map((point, index) => (
-          <circle
-            className="botshield-analytics-dot"
-            cx={point.x}
-            cy={point.y}
-            key={`${point.x}-${index}`}
-            r="2"
-          />
-        ))}
-        {xLabels.map((label) => (
-          <text
-            className="botshield-analytics-axis-label botshield-analytics-axis-label--x"
-            key={label.label}
-            textAnchor="middle"
-            x={label.x}
-            y={height - 9}
-          >
-            {label.label}
-          </text>
-        ))}
-      </svg>
-    </div>
-  );
+function AnalyticsKpi({ label, value, detail, compact = false }) {
+  return <div className={`botshield-analytics-kpi${compact ? " is-compact" : ""}`}><span>{label}</span><strong>{typeof value === "number" ? value.toLocaleString() : value}</strong><small>{detail}</small></div>;
+}
+
+function AnalyticsPanel({ title, subtitle, children }) {
+  return <section className="botshield-analytics-panel"><header><h2>{title}</h2><p>{subtitle}</p></header>{children}</section>;
+}
+
+function AnalyticsEmpty({ text }) {
+  return <div className="botshield-analytics-empty"><strong>No data to display</strong><span>{text}</span></div>;
+}
+
+function AnalyticsCompactRanking({ rows, total }) {
+  const maximum = Math.max(1, ...rows.map((row) => row.count));
+  return <div className="botshield-analytics-compact-ranking">{rows.map((row) => <div key={row.label}><span title={row.label}>{row.label}</span><AnalyticsBar maximum={maximum} value={row.count} /><b>{row.count}</b><small>{analyticsPercent(row.count, total)}%</small></div>)}</div>;
+}
+
+function AnalyticsEventDetails({ event, onClose }) {
+  const signals = getAnalyticsSignals(event);
+  return <div className="botshield-analytics-detail-backdrop" role="presentation" onMouseDown={(mouseEvent) => { if (mouseEvent.target === mouseEvent.currentTarget) onClose(); }}><section aria-labelledby="analytics-event-detail-title" aria-modal="true" className="botshield-analytics-detail" role="dialog"><header><div><span>Security event</span><h2 id="analytics-event-detail-title">Event details</h2></div><button aria-label="Close event details" onClick={onClose} type="button">×</button></header><dl><div><dt>Timestamp</dt><dd>{new Date(event.createdAt).toLocaleString()}</dd></div><div><dt>Decision</dt><dd>{getOutcomeLabel(event.actionTaken)}</dd></div><div><dt>Risk</dt><dd>{getRiskLabel(event.threatLevel)}</dd></div><div><dt>Threat signals</dt><dd>{signals.join(", ") || "No elevated signal"}</dd></div><div><dt>Detection reason</dt><dd>{formatMerchantReasons(event.reasonCodes || event.reasons)}</dd></div><div><dt>Visitor</dt><dd>{maskAnalyticsVisitor(event.ipAddress)}</dd></div><div><dt>Target page</dt><dd>{event.pathVisited || "/"}</dd></div>{event.networkCountry ? <div><dt>Location</dt><dd>{[event.networkCity, event.networkCountry].filter(Boolean).join(", ")}</dd></div> : null}{event.networkOrg || event.networkProvider ? <div><dt>Network</dt><dd>{event.networkOrg || event.networkProvider}</dd></div> : null}</dl></section></div>;
 }
 
 // Retained only to keep older preview snapshots readable. No active route or
