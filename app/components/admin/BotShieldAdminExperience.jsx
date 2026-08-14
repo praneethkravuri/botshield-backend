@@ -2875,26 +2875,13 @@ function AnalyticsPage({ model, actions }) {
     })
     .sort((left, right) => right.count - left.count)
     .slice(0, 6);
-  const originRows = [...new Set(suspiciousEvents.map((event) => event.networkCountry).filter(Boolean))]
-    .map((country) => {
-      const events = suspiciousEvents.filter((event) => event.networkCountry === country);
-      return {
-        label: country,
-        count: events.length,
-        blocked: events.filter((event) => event.actionTaken === "blocked").length,
-      };
-    })
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 6);
-  const networkRows = [...new Set(suspiciousEvents.map((event) =>
-    event.networkOrg || event.networkProvider || event.networkType,
-  ).filter(Boolean))]
-    .map((network) => {
-      const events = suspiciousEvents.filter((event) =>
-        [event.networkOrg, event.networkProvider, event.networkType].includes(network),
+  const attackOriginRows = [...new Set(suspiciousEvents.map(getAnalyticsAttackOrigin).filter(Boolean))]
+    .map((origin) => {
+      const events = suspiciousEvents.filter(
+        (event) => getAnalyticsAttackOrigin(event) === origin,
       );
       return {
-        label: network,
+        label: origin,
         count: events.length,
         blocked: events.filter((event) => event.actionTaken === "blocked").length,
       };
@@ -3056,7 +3043,7 @@ function AnalyticsPage({ model, actions }) {
           {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong>{formatRelativeTime(lastSuspiciousEvent?.createdAt)}</strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span key={bucket.index} title={`${bucket.count} suspicious event${bucket.count === 1 ? "" : "s"}`}><i style={{ height: `${Math.max(bucket.count ? 7 : 1, (bucket.count / activityMaximum) * 100)}%` }} /></span>)}</div></div> : <AnalyticsEmpty text="Not enough activity yet to identify a meaningful pattern." />}
         </AnalyticsPanel>
 
-        {(pathRows.length || originRows.length || networkRows.length) ? <><div className="botshield-analytics-section-label">Target and origin intelligence</div><div className="botshield-analytics-split">{pathRows.length ? <AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity."><AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}{originRows.length || networkRows.length ? <AnalyticsPanel title={originRows.length ? "Threat origins" : "Suspicious networks"} subtitle={originRows.length ? "Locations associated with suspicious storefront activity." : "Networks associated with suspicious storefront activity."}><AnalyticsCompactRanking rows={originRows.length ? originRows : networkRows} total={suspiciousEvents.length} /></AnalyticsPanel> : null}</div></> : null}
+        {(pathRows.length || attackOriginRows.length) ? <><div className="botshield-analytics-section-label">Target and origin intelligence</div><div className="botshield-analytics-split"><AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity.">{pathRows.length ? <AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No targeted storefront paths were recorded during this period." />}</AnalyticsPanel><AnalyticsPanel title="Attack origins" subtitle="Recorded network classifications associated with suspicious storefront activity.">{attackOriginRows.length ? <AnalyticsCompactRanking rows={attackOriginRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No reliable network origin data was recorded during this period." />}</AnalyticsPanel></div></> : null}
 
         {visitorRows.length ? <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers."><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div></AnalyticsPanel></> : null}
 
@@ -3103,6 +3090,30 @@ function AnalyticsCompactRanking({ rows, total }) {
 
 function formatAnalyticsPath(value) {
   return value === "/" ? "Homepage (/)" : value;
+}
+
+function getAnalyticsAttackOrigin(event) {
+  const networkType = String(event.networkType || "").trim().toLowerCase();
+  const typeLabels = {
+    hosting: "Hosting / datacenter",
+    vpn: "VPN / proxy",
+    proxy: "VPN / proxy",
+    isp: "Residential / ISP",
+    business: "Business network",
+    education: "Education network",
+    government: "Government network",
+  };
+  if (networkType) {
+    return typeLabels[networkType] || networkType
+      .split(/[\s_-]+/)
+      .filter(Boolean)
+      .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+      .join(" ");
+  }
+  return (
+    String(event.networkOrg || event.networkProvider || "").trim() ||
+    (event.networkAsn ? `AS${event.networkAsn}` : "")
+  );
 }
 
 function AnalyticsEventDetails({ event, onClose }) {
