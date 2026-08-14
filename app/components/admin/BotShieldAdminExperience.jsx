@@ -2993,7 +2993,7 @@ function AnalyticsPage({ model, actions }) {
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-analytics-content botshield-analytics-v2">
-        <header className="botshield-analytics-header">
+        <header className="botshield-overview-header">
           <div>
             <h1 className="botshield-overview-title">Analytics</h1>
             <p className="botshield-overview-subtitle">

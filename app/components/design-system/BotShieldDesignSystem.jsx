@@ -1382,9 +1382,6 @@ export function BotShieldAppFrame({ children }) {
           fill: #303030;
         }
         .botshield-analytics-v2 { --analytics-ink: #24272a; --analytics-muted: #50565b; --analytics-tertiary: #62686d; --analytics-border: #e1e3e4; --analytics-type-body: .875rem; --analytics-type-small: .75rem; --analytics-type-heading: 1.0625rem; display: grid; gap: 20px; padding-bottom: 48px; color: var(--analytics-ink); font-family: var(--p-font-family-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif); font-size: var(--analytics-type-body); font-synthesis: none; -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }
-        .botshield-analytics-v2 .botshield-analytics-header { padding-bottom: 2px; }
-        .botshield-analytics-v2 .botshield-overview-title { font-size: 1.75rem; font-weight: 650; line-height: 2rem; letter-spacing: -.025em; }
-        .botshield-analytics-v2 .botshield-overview-subtitle { max-width: 45rem; color: var(--analytics-muted); font-size: .875rem; line-height: 1.375rem; }
         .botshield-analytics-controls { display: flex; gap: 14px; align-items: flex-end; padding: 12px 14px; border: 1px solid var(--analytics-border); border-radius: 10px; background: rgba(255,255,255,.96); box-shadow: 0 1px 2px rgba(24, 28, 31, .025), 0 6px 18px rgba(24, 28, 31, .025); }
         .botshield-analytics-period { display: inline-flex; justify-self: start; gap: 2px; padding: 3px; border: 1px solid #d7d8d9; border-radius: 9px; background: #f4f5f5; }
         .botshield-analytics-period button { min-width: 49px; padding: 7px 10px; border: 0; border-radius: 6px; background: transparent; color: #565b60; font: inherit; font-size: .8125rem; font-weight: 550; line-height: 1.125rem; cursor: pointer; }
