@@ -87,4 +87,3 @@ test("Event Explorer details render outside the transformed route shell", () => 
   assert.match(analyticsSource, /Network classification/);
   assert.match(analyticsSource, /keyEvent\.key === "Escape"/);
 });
-
