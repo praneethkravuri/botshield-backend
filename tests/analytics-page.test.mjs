@@ -48,7 +48,7 @@ test("scan telemetry exposes only recorded dimensions needed by Analytics", () =
 test("Analytics premium refinement remains data-derived and adapts to sparse activity", () => {
   assert.match(analyticsSource, /Investigation summary/);
   assert.match(analyticsSource, /Peak suspicious activity/);
-  assert.match(analyticsSource, /suspiciousEvents\.length <= 3/);
+  assert.match(analyticsSource, /activeActivityBuckets\.length <= 2/);
   assert.match(analyticsSource, /analyticsPercent\(row\.blocked \+ row\.challenged, row\.count\)/);
   assert.match(analyticsSource, /formatAnalyticsPath/);
   assert.match(analyticsSource, /row\.count > 1 \? <span className="botshield-analytics-repeat">Repeat/);
