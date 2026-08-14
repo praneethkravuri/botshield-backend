@@ -1,7 +1,3 @@
-Exit code: 0
-Wall time: 4.3 seconds
-Total output lines: 3383
-Output:
 /* eslint-disable react/prop-types */
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
