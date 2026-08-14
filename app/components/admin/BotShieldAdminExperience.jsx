@@ -4,7 +4,7 @@ Total output lines: 6342
 Output:
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import * as ReactDOM from "react-dom";
 import {
   BotShieldActionButton,
   BotShieldAppFrame,
@@ -598,7 +598,7 @@ function StoreHealthCard({ model, actions }) {
           detail={
             trafficConnected
               ? `Last storefront visit analyzed ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}.`
-              : "Visit the storefront after setup to confirm BotShield re…53415 tokens truncated…atus.pricingUrl}
+              : "Visit the storefront after setup to confirm BotShield recei…53417 tokens truncated…atus.pricingUrl}
               target="_top"
             >
               Choose plan
