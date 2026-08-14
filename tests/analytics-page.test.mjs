@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.7 seconds
+Output:
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
@@ -25,6 +28,9 @@ test("Analytics calculations use recorded event fields and safe denominators", (
   assert.match(analyticsSource, /event\.pathVisited/);
   assert.match(analyticsSource, /event\.networkCountry/);
   assert.match(analyticsSource, /maskAnalyticsVisitor/);
+  assert.match(analyticsSource, /getAnalyticsAttackOrigin/);
+  assert.match(analyticsSource, /event\.networkType/);
+  assert.match(analyticsSource, /event\.networkOrg \|\| event\.networkProvider/);
 });
 
 test("Analytics controls provide supported periods and connected filters", () => {
@@ -54,3 +60,34 @@ test("Analytics premium refinement remains data-derived and adapts to sparse act
   assert.match(analyticsSource, /row\.count > 1 \? <span className="botshield-analytics-repeat">Repeat/);
   assert.doesNotMatch(analyticsSource, /vs previous period/);
 });
+
+test("Analytics pairs target intelligence with recorded network origins", () => {
+  assert.match(analyticsSource, /title="Most targeted storefront areas"/);
+  assert.match(analyticsSource, /title="Attack origins"/);
+  assert.match(analyticsSource, /Recorded network classifications associated with suspicious storefront activity/);
+  assert.match(analyticsSource, /No reliable network origin data was recorded during this period/);
+  assert.doesNotMatch(analyticsSource, /title=\{originRows\.length \? "Threat origins"/);
+});
+
+test("Analytics preserves truthful zero values and explicit analytical context", () => {
+  assert.match(analyticsSource, /value > 0 && maximum/);
+  assert.match(analyticsSource, /botshield-analytics-filter-context/);
+  assert.match(analyticsSource, /% of suspicious events/);
+  assert.match(analyticsSource, /bucket\.blocked/);
+  assert.match(analyticsSource, /bucket\.challenged/);
+});
+
+test("Analytics supplies deliberate low-data and filtered empty states", () => {
+  assert.match(analyticsSource, /No recurring suspicious visitors matched this period and filter selection/);
+  assert.match(analyticsSource, /No multi-signal event combinations were recorded during this period/);
+  assert.match(analyticsSource, /No events match these filters\. Clear filters or choose a wider date range/);
+});
+
+test("Event Explorer details render outside the transformed route shell", () => {
+  assert.match(analyticsSource, /createPortal/);
+  assert.match(analyticsSource, /document\.body/);
+  assert.match(analyticsSource, /aria-labelledby="analytics-event-detail-title"/);
+  assert.match(analyticsSource, /Network classification/);
+  assert.match(analyticsSource, /keyEvent\.key === "Escape"/);
+});
+
