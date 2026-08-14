@@ -1,7 +1,3 @@
-Exit code: 0
-Wall time: 0.7 seconds
-Total output lines: 6342
-Output:
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useState } from "react";
 import * as ReactDOM from "react-dom";
