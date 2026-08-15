@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as ReactDOM from "react-dom";
 import {
   BotShieldActionButton,
@@ -3929,37 +3929,84 @@ function ProtectionPage({ model, actions }) {
     strictMode: model.strictMode,
     blockLevel: model.blockLevel,
   });
+  const [originalDraft, setOriginalDraft] = useState({
+    autoBlock: model.autoBlock,
+    strictMode: model.strictMode,
+    blockLevel: model.blockLevel,
+  });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const closeButtonRef = useRef(null);
+  const drawerOpenerRef = useRef(null);
 
   useEffect(() => {
-    setDraft({
+    if (protectionModal?.type === "profile") return;
+    const persisted = {
       autoBlock: model.autoBlock,
       strictMode: model.strictMode,
       blockLevel: model.blockLevel,
-    });
-  }, [model.autoBlock, model.blockLevel, model.strictMode]);
+    };
+    setDraft(persisted);
+    setOriginalDraft(persisted);
+  }, [model.autoBlock, model.blockLevel, model.strictMode, protectionModal?.type]);
 
   const dirty =
-    draft.autoBlock !== model.autoBlock ||
-    draft.strictMode !== model.strictMode ||
-    draft.blockLevel !== model.blockLevel;
+    draft.autoBlock !== originalDraft.autoBlock ||
+    draft.strictMode !== originalDraft.strictMode ||
+    draft.blockLevel !== originalDraft.blockLevel;
+
+  const closeDrawer = () => {
+    setProtectionModal(null);
+    setConfirmDiscard(false);
+    setSaveError("");
+    setSaveSuccess("");
+    window.setTimeout(() => drawerOpenerRef.current?.focus?.(), 0);
+  };
+
+  const requestClose = () => {
+    if (saving) return;
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
+    }
+    closeDrawer();
+  };
+
+  const discardAndClose = () => {
+    setDraft(originalDraft);
+    closeDrawer();
+  };
 
   useEffect(() => {
     if (!protectionModal) return undefined;
+    closeButtonRef.current?.focus();
     const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !dirty && !saving) setProtectionModal(null);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        requestClose();
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [dirty, protectionModal, saving]);
 
   const save = async () => {
+    if (!dirty || saving) return;
     setSaving(true);
     setSaveError("");
+    setSaveSuccess("");
     try {
-      await actions.saveSettings(draft);
-      setProtectionModal(null);
+      const persisted = await actions.saveSettings(draft);
+      const savedDraft = {
+        autoBlock: Boolean(persisted?.autoBlock ?? draft.autoBlock),
+        strictMode: Boolean(persisted?.strictMode ?? draft.strictMode),
+        blockLevel: persisted?.blockLevel || draft.blockLevel,
+      };
+      setDraft(savedDraft);
+      setOriginalDraft(savedDraft);
+      setSaveSuccess("Settings saved");
       toast.success("Protection settings saved");
     } catch (error) {
       const message =
@@ -3973,7 +4020,18 @@ function ProtectionPage({ model, actions }) {
     }
   };
 
-  const openProfileManager = (title, text, note) =>
+  const openProfileManager = (title, text, note) => {
+    drawerOpenerRef.current = document.activeElement;
+    const persisted = {
+      autoBlock: model.autoBlock,
+      strictMode: model.strictMode,
+      blockLevel: model.blockLevel,
+    };
+    setDraft(persisted);
+    setOriginalDraft(persisted);
+    setSaveError("");
+    setSaveSuccess("");
+    setConfirmDiscard(false);
     setProtectionModal({
       type: "profile",
       title,
@@ -3982,14 +4040,18 @@ function ProtectionPage({ model, actions }) {
         note ||
         "This module uses BotShield's active protection profile. Changes below apply to future storefront decisions.",
     });
+  };
 
-  const openStatusManager = (title, text, note) =>
+  const openStatusManager = (title, text, note, status) => {
+    drawerOpenerRef.current = document.activeElement;
     setProtectionModal({
       type: "status",
       title,
       text,
       note,
+      status,
     });
+  };
 
   const storefrontConnected = Boolean(model.protectionStatus?.themeEmbedDetected);
   const runtimeActive = Boolean(model.protectionReady && !model.protectionPaused);
@@ -4029,6 +4091,7 @@ function ProtectionPage({ model, actions }) {
           "Network / Proxy protection",
           "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
           "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
+          moduleStatus,
         ),
     },
     {
@@ -4059,6 +4122,7 @@ function ProtectionPage({ model, actions }) {
           "Page protection",
           "Redirects stopped visitors to BotShield's blocked page.",
           "Page protection is active through the storefront theme embed and app proxy.",
+          pageStatus,
         ),
     },
   ];
@@ -4146,7 +4210,8 @@ function ProtectionPage({ model, actions }) {
             aria-modal="true"
             className="botshield-protection-modal-backdrop"
             role="dialog"
-            onMouseDown={(event) => { if (event.target === event.currentTarget && !dirty && !saving) setProtectionModal(null); }}
+            aria-labelledby="botshield-protection-drawer-title"
+            onMouseDown={(event) => { if (event.target === event.currentTarget) requestClose(); }}
           >
             <div
               className={`botshield-protection-modal${
@@ -4157,68 +4222,60 @@ function ProtectionPage({ model, actions }) {
                   : ""
               }`}
             >
-              <header className="botshield-protection-drawer-header"><div><h2 className="botshield-protection-modal-title">{protectionModal.title}</h2><p className="botshield-protection-modal-copy">{protectionModal.text}</p></div><button aria-label="Close protection drawer" autoFocus disabled={dirty || saving} onClick={() => setProtectionModal(null)} type="button">×</button></header>
+              <header className="botshield-protection-drawer-header"><div><h2 className="botshield-protection-modal-title" id="botshield-protection-drawer-title">{protectionModal.title}</h2><p className="botshield-protection-modal-copy">{protectionModal.text}</p></div><button aria-label="Close" ref={closeButtonRef} disabled={saving} onClick={requestClose} type="button">×</button></header>
               {protectionModal.type === "profile" ? (
                 <div className="botshield-protection-modal-body">
-                  <BotShieldSaveState
-                    dirty={dirty}
-                    saving={saving}
-                    error={saveError}
-                    onSave={save}
-                    onDiscard={() => {
-                      setDraft({
-                        autoBlock: model.autoBlock,
-                        strictMode: model.strictMode,
-                        blockLevel: model.blockLevel,
-                      });
-                      setProtectionModal(null);
-                    }}
-                  />
+                  {saveError ? <BotShieldBanner tone="critical" title={`Couldn’t save ${protectionModal.title} settings`}>Your changes haven’t been applied. {saveError}</BotShieldBanner> : null}
+                  {saveSuccess ? <div className="botshield-protection-save-success" role="status">{saveSuccess}</div> : null}
+                  <section className="botshield-protection-drawer-section">
+                    <div className="botshield-protection-drawer-section-label">Protection level</div>
                   <BotShieldSelect
                     label="Sensitivity"
                     value={draft.blockLevel}
-                    onChange={(blockLevel) =>
-                      setDraft((current) => ({ ...current, blockLevel }))
-                    }
+                    details={draft.blockLevel === "Low" ? "Limits intervention to the clearest abuse signals." : draft.blockLevel === "High" ? "Applies the strongest supported detection profile." : "Balanced detection intended for most storefronts."}
+                    onChange={(blockLevel) => {
+                      setSaveError("");
+                      setSaveSuccess("");
+                      setDraft((current) => ({ ...current, blockLevel, strictMode: blockLevel !== "High" ? false : current.strictMode }));
+                    }}
                     options={[
-                      { label: "Low — obvious abuse only", value: "Low" },
+                      { label: "Low — fewer interventions", value: "Low" },
                       { label: "Medium — balanced protection", value: "Medium" },
-                      { label: "High — aggressive protection", value: "High" },
+                      { label: "High — strict protection", value: "High" },
                     ]}
                   />
+                  </section>
+                  <section className="botshield-protection-drawer-section">
+                    <div className="botshield-protection-drawer-section-label">Automation</div>
                   <BotShieldToggle
                     label="Auto Block"
                     details="Automatically block requests that cross the active risk threshold."
                     checked={draft.autoBlock}
-                    onChange={(autoBlock) =>
-                      setDraft((current) => ({ ...current, autoBlock }))
-                    }
+                    onChange={(autoBlock) => {
+                      setSaveError("");
+                      setSaveSuccess("");
+                      setDraft((current) => ({ ...current, autoBlock }));
+                    }}
                   />
                   <BotShieldToggle
                     label="Strict Mode"
                     details="Use High sensitivity and the strongest available rule profile."
                     checked={draft.strictMode}
-                    onChange={(strictMode) =>
+                    onChange={(strictMode) => {
+                      setSaveError("");
+                      setSaveSuccess("");
                       setDraft((current) => ({
                         ...current,
                         strictMode,
                         autoBlock: strictMode ? true : current.autoBlock,
                         blockLevel: strictMode ? "High" : current.blockLevel,
-                      }))
-                    }
+                      }));
+                    }}
                   />
+                  </section>
                   <BotShieldInlineHelp>
                     {protectionModal.note}
                   </BotShieldInlineHelp>
-                  {!dirty ? (
-                    <div className="botshield-protection-modal-actions">
-                      <BotShieldActionButton
-                        onClick={() => setProtectionModal(null)}
-                      >
-                        Close
-                      </BotShieldActionButton>
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
               {protectionModal.type === "blocklist" ? (
@@ -4276,7 +4333,7 @@ function ProtectionPage({ model, actions }) {
                   <StatusRow
                     label="Current status"
                     detail={protectionModal.note}
-                    status="active"
+                    status={protectionModal.status?.status || "monitoring_only"}
                   />
                   <BotShieldInlineHelp>
                     This module is enforced automatically using the active
@@ -4299,6 +4356,29 @@ function ProtectionPage({ model, actions }) {
                 >
                   Close
                 </BotShieldActionButton>
+              ) : null}
+              {protectionModal.type === "profile" ? (
+                <footer className="botshield-protection-drawer-footer">
+                  <span className="botshield-protection-drawer-state" aria-live="polite">
+                    {saving ? "Saving changes…" : dirty ? "Unsaved changes" : saveSuccess || "All changes saved"}
+                  </span>
+                  <div>
+                    <BotShieldActionButton onClick={requestClose} disabled={saving}>Cancel</BotShieldActionButton>
+                    <BotShieldActionButton onClick={save} variant="primary" loading={saving} disabled={!dirty}>Save changes</BotShieldActionButton>
+                  </div>
+                </footer>
+              ) : null}
+              {confirmDiscard ? (
+                <div className="botshield-protection-discard-layer" role="alertdialog" aria-modal="true" aria-labelledby="botshield-discard-title">
+                  <div className="botshield-protection-discard-dialog">
+                    <h3 id="botshield-discard-title">Discard unsaved changes?</h3>
+                    <p>Your updates haven’t been saved. You can keep editing or discard them.</p>
+                    <div>
+                      <BotShieldActionButton onClick={() => setConfirmDiscard(false)}>Keep editing</BotShieldActionButton>
+                      <BotShieldActionButton onClick={discardAndClose} variant="primary" tone="critical">Discard changes</BotShieldActionButton>
+                    </div>
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>
