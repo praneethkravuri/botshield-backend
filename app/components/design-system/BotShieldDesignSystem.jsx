@@ -1524,8 +1524,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-analytics-detail > header button { display: inline-grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; padding: 0; border: 0; border-radius: 8px; background: #f1f2f3; color: #4a4d50; font-family: inherit; font-size: 20px; line-height: 1; cursor: pointer; transition: background 120ms ease, color 120ms ease; }
         .botshield-analytics-detail > header button:hover { background: #e5e7e9; color: #202223; }
         .botshield-analytics-detail-summary { display: grid; gap: 10px; padding: 16px; border: 1px solid #e1e3e5; border-radius: 10px; background: #f8f9f9; }
-        .botshield-analytics-detail-summary > div { display: flex; align-items: center; gap: 10px; min-width: 0; }
-        .botshield-analytics-detail-summary > div > s-badge { flex: 0 0 auto; }
+        .botshield-analytics-detail-summary > div { display: grid; justify-items: start; gap: 8px; min-width: 0; }
         .botshield-analytics-detail-summary strong { min-width: 0; color: #303336; font-size: .8125rem; font-weight: 600; line-height: 1.25rem; }
         .botshield-analytics-detail-summary p { margin: 0; color: #5c6267; font-size: .8125rem; line-height: 1.35rem; }
         .botshield-analytics-detail-section { padding: 18px 0; border-top: 1px solid #e5e6e7; }
