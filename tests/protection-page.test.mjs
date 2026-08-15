@@ -49,9 +49,9 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /setConfirmDiscard\(true\)/);
   assert.match(adminSource, /Save changes/);
   assert.match(adminSource, /Cancel/);
-  assert.match(adminSource, /Saving changesâ€¦/);
+  assert.match(adminSource, /Saving changes…/);
   assert.match(adminSource, /Settings saved/);
-  assert.match(adminSource, /Couldnâ€™t save \$\{protectionModal\.title\} settings/);
+  assert.match(adminSource, /Couldn’t save \$\{protectionModal\.title\} settings/);
   assert.match(adminSource, /aria-label="Close"/);
   assert.match(adminSource, /event\.key === "Escape"/);
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
@@ -77,7 +77,7 @@ test("Protection V2.1 exposes only real detection and enforcement capabilities",
     "Network reputation",
     "Protected storefront areas",
     "Risk threshold",
-    "Verified activity Â· Last 30 days",
+    "Verified activity · Last 30 days",
   ]) assert.match(adminSource, new RegExp(copy.replace("/", "\\/")));
   assert.match(adminSource, /draft\.strictMode\s*\? 35/);
   assert.match(adminSource, /draft\.blockLevel === "Low"\s*\? 90/);
@@ -127,4 +127,3 @@ test("Protection drawers and responsive layouts are scoped locally", () => {
   assert.match(designSource, /\.botshield-protection-access-grid/);
   assert.match(designSource, /@media \(max-width: 640px\)/);
 });
-

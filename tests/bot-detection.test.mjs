@@ -482,7 +482,7 @@ test("security events expose structured reason codes and masked IPs", () => {
   assert.equal(event.networkCountryCode, "US");
   assert.equal(event.networkCity, "Dallas");
   assert.equal(matchesIncidentFilters(event, { search: "Dallas" }), true);
-  assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:â€¦:1");
+  assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:…:1");
   assert.equal(matchesIncidentFilters(event, { source: "real" }), true);
   assert.equal(
     matchesIncidentFilters(
@@ -576,4 +576,3 @@ test("weekly reports do not score as operational without email delivery", () => 
   assert.equal(reportFactor.earned, 0);
   assert.ok(result.score < 90);
 });
-
