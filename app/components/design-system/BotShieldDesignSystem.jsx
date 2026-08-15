@@ -1516,6 +1516,63 @@ export function BotShieldAppFrame({ children }) {
         .botshield-analytics-visitor-table tr.is-recurring { background: #fbfcfd; }
         .botshield-analytics-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 13px; border-top: 1px solid #e7e8e9; color: var(--analytics-tertiary); font-size: .75rem; line-height: 1rem; }
         .botshield-analytics-pagination > div { display: flex; gap: 12px; align-items: center; }
+        /* Final Analytics art direction: depth, hierarchy, and investigation rhythm. */
+        .botshield-analytics-v2 { gap: 22px; }
+        .botshield-analytics-controls {
+          border-color: #d8dbdd;
+          box-shadow: 0 1px 2px rgba(20, 24, 27, .035), 0 10px 28px rgba(20, 24, 27, .035);
+        }
+        .botshield-analytics-period button,
+        .botshield-analytics-filter-row select,
+        .botshield-analytics-filter-row input {
+          transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease, color 120ms ease;
+        }
+        .botshield-analytics-period button.is-active { box-shadow: 0 1px 3px rgba(20, 24, 27, .2); }
+        .botshield-analytics-filter-row select:hover,
+        .botshield-analytics-filter-row input:hover { border-color: #999ea2; }
+        .botshield-analytics-kpis {
+          border-color: #d8dbdd;
+          box-shadow: 0 1px 2px rgba(20, 24, 27, .035), 0 8px 22px rgba(20, 24, 27, .025);
+        }
+        .botshield-analytics-kpi { position: relative; transition: background-color 130ms ease, box-shadow 130ms ease; }
+        .botshield-analytics-kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: transparent; transition: background-color 130ms ease; }
+        .botshield-analytics-kpi:hover { background: #fafbfb; box-shadow: inset 0 2px 0 #c5c9cc; }
+        .botshield-analytics-kpi:hover::before { background: #7c8791; }
+        .botshield-analytics-kpi > strong { font-weight: 680; letter-spacing: -.04em; }
+        .botshield-analytics-section-label { display: flex; align-items: center; gap: 12px; margin-top: 15px; color: #555c62; letter-spacing: .09em; }
+        .botshield-analytics-section-label::after { content: ""; height: 1px; flex: 1; background: #e1e3e5; }
+        .botshield-analytics-panel {
+          border-color: #dde0e2;
+          box-shadow: 0 1px 2px rgba(20, 24, 27, .025), 0 10px 26px rgba(20, 24, 27, .025);
+          transition: border-color 140ms ease, box-shadow 140ms ease;
+        }
+        .botshield-analytics-panel:hover { border-color: #d2d6d8; box-shadow: 0 1px 2px rgba(20, 24, 27, .035), 0 12px 30px rgba(20, 24, 27, .035); }
+        .botshield-analytics-split--primary > .botshield-analytics-panel:first-child { border-top-color: #adb5bc; border-top-width: 2px; }
+        .botshield-analytics-panel > header h2 { font-weight: 670; letter-spacing: -.018em; }
+        .botshield-analytics-ranked-row { border-radius: 7px; transition: background-color 120ms ease; }
+        .botshield-analytics-ranked-row:hover { margin-inline: -8px; padding-inline: 8px; background: #f8f9f9; }
+        .botshield-analytics-bar-track { height: 7px; background: #e9ebec; box-shadow: inset 0 1px 1px rgba(20, 24, 27, .05); }
+        .botshield-analytics-bar-fill { background: #53606b; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); transition: filter 120ms ease, opacity 120ms ease; }
+        .botshield-analytics-ranked-row:hover .botshield-analytics-bar-fill { filter: contrast(1.08); }
+        .botshield-analytics-risk-row { min-height: 23px; }
+        .botshield-analytics-table-wrap { border: 1px solid #e1e3e5; border-radius: 8px; background: #fff; }
+        .botshield-analytics-table thead th { background: #f4f5f5; color: #41474c; }
+        .botshield-analytics-table tbody tr { transition: background-color 110ms ease; }
+        .botshield-analytics-table tbody tr:hover { background: #f5f7f7; }
+        .botshield-analytics-table tbody tr:hover > :first-child { box-shadow: inset 2px 0 0 #8b969f; }
+        .botshield-analytics-histogram { border-radius: 7px 7px 0 0; background-color: #fbfcfc; }
+        .botshield-analytics-histogram i { box-shadow: inset 0 1px 0 rgba(255,255,255,.2); }
+        .botshield-analytics-insight { border-left-width: 3px; box-shadow: 0 1px 2px rgba(20, 24, 27, .025); }
+        .botshield-analytics-summary { border-color: #d9dcde; background: #fbfcfc; }
+        .botshield-analytics-detail-button { padding: 5px 7px; border-radius: 6px; transition: color 120ms ease, background-color 120ms ease; }
+        .botshield-analytics-detail-button:hover { background: #edf3f8; color: #174b7a; }
+        .botshield-analytics-pagination button:not(:disabled) { padding: 4px 6px; border-radius: 5px; }
+        .botshield-analytics-pagination button:not(:disabled):hover { background: #edf3f8; }
+        @media (prefers-reduced-motion: reduce) {
+          .botshield-analytics-v2 *,
+          .botshield-analytics-v2 *::before,
+          .botshield-analytics-v2 *::after { transition-duration: .01ms !important; }
+        }
         .botshield-analytics-detail-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: flex-start; justify-content: flex-end; width: 100vw; height: 100dvh; background: rgba(25, 28, 30, .32); }
         .botshield-analytics-detail { width: min(448px, 94vw); max-height: 100dvh; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 24px; background: #fff; box-shadow: -12px 0 30px rgba(0,0,0,.12); color: #202223; font-family: var(--p-font-family-sans, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif); -webkit-font-smoothing: antialiased; }
         .botshield-analytics-detail > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; }
