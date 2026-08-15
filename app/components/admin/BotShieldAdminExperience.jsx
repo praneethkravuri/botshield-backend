@@ -3167,11 +3167,30 @@ function getAnalyticsAttackOrigin(event) {
   );
 }
 
+function getAnalyticsDecisionContext(event, signalLabel) {
+  const decision = String(event.actionTaken || "").toLowerCase();
+  const hasElevatedSignal = signalLabel !== "No elevated signal";
+  if (decision === "blocked" || decision === "stopped") {
+    return hasElevatedSignal
+      ? `BotShield stopped this request after recording ${signalLabel.toLowerCase()}.`
+      : "BotShield stopped this request based on the recorded protection decision.";
+  }
+  if (decision === "challenged" || decision === "challenge") {
+    return hasElevatedSignal
+      ? `BotShield requested verification after recording ${signalLabel.toLowerCase()}.`
+      : "BotShield requested verification based on the recorded protection decision.";
+  }
+  return hasElevatedSignal
+    ? `BotShield allowed this request while recording ${signalLabel.toLowerCase()} for review.`
+    : "BotShield allowed this request because no elevated signals were recorded.";
+}
+
 function AnalyticsEventDetails({ event, onClose }) {
   const signals = getAnalyticsSignals(event);
   const networkClassification = getAnalyticsAttackOrigin(event);
   const signalLabel = signals.join(", ") || "No elevated signal";
   const reason = formatMerchantReasons(event.reasonCodes || event.reasons);
+  const decisionContext = getAnalyticsDecisionContext(event, signalLabel);
   const hasVisitorDetails = Boolean(
     event.ipAddress || networkClassification || event.networkCountry || event.networkOrg || event.networkProvider,
   );
@@ -3197,8 +3216,11 @@ function AnalyticsEventDetails({ event, onClose }) {
           <button aria-label="Close event details" autoFocus onClick={onClose} type="button">×</button>
         </header>
         <div className="botshield-analytics-detail-summary">
-          <BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} />
-          <p>{getRiskLabel(event.threatLevel)} · {signalLabel}</p>
+          <div>
+            <BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} />
+            <strong>{getRiskLabel(event.threatLevel)} · {signalLabel}</strong>
+          </div>
+          <p>{decisionContext}</p>
         </div>
         <div className="botshield-analytics-detail-section">
           <h3>Detection</h3>
@@ -3214,6 +3236,7 @@ function AnalyticsEventDetails({ event, onClose }) {
           <dl className="botshield-analytics-detail-grid">
             <div><dt>Page / path</dt><dd>{event.pathVisited || "/"}</dd></div>
             <div><dt>Time</dt><dd>{formatAnalyticsDetailTimestamp(event.createdAt)}</dd></div>
+            {event.id ? <div className="is-full botshield-analytics-detail-reference"><dt>Event reference</dt><dd title={String(event.id)}>{String(event.id)}</dd><small>Use this reference when investigating or contacting support.</small></div> : null}
           </dl>
         </div>
         {hasVisitorDetails ? <div className="botshield-analytics-detail-section">
