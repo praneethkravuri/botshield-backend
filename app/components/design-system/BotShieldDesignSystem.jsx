@@ -1807,8 +1807,8 @@ export function BotShieldAppFrame({ children }) {
           flex-wrap: wrap;
         }
         /* Protection control center */
-        .botshield-protection-content { display: grid; gap: 30px; padding-bottom: 52px; color: #24272a; }
-        .botshield-protection-header { padding-bottom: 2px; }
+        .botshield-protection-content { display: grid; gap: 28px; padding-bottom: 48px; color: #24272a; }
+        .botshield-protection-header { padding-bottom: 0; }
         .botshield-protection-status { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 78px; padding: 14px 16px; border: 1px solid #d8dadc; border-left: 3px solid #b98926; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(20,24,27,.02); }
         .botshield-protection-status.is-healthy { border-left-color: #3e7954; }
         .botshield-protection-status-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #f3f1eb; }
@@ -1817,12 +1817,12 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-status h2 { margin: 2px 0 0; color: #232629; font-size: 1.0625rem; font-weight: 670; line-height: 1.375rem; letter-spacing: -.014em; }
         .botshield-protection-status p { margin: 2px 0 0; max-width: 720px; color: #596066; font-size: .78125rem; line-height: 1.125rem; }
         .botshield-protection-status-action { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-        .botshield-protection-section { display: grid; gap: 12px; }
+        .botshield-protection-section { display: grid; gap: 11px; }
         .botshield-protection-section-heading { display: grid; gap: 2px; padding-left: 1px; }
         .botshield-protection-section-heading h2 { margin: 0; color: #24272a; font-size: 1.0625rem; font-weight: 670; line-height: 1.5rem; letter-spacing: -.014em; }
         .botshield-protection-section-heading p { margin: 0; color: #60676c; font-size: .8125rem; line-height: 1.25rem; }
         .botshield-protection-list { overflow: hidden; border: 1px solid #d8dadc; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(20,24,27,.02); }
-        .botshield-protection-row { display: grid; grid-template-columns: 36px minmax(260px, 1fr) minmax(132px, .42fr) 104px 82px; gap: 16px; align-items: center; min-height: 72px; padding: 12px 14px; border: 0; border-bottom: 1px solid #eceeef; background: #fff; transition: background-color 120ms ease; }
+        .botshield-protection-row { display: grid; grid-template-columns: 36px minmax(260px, 1fr) minmax(132px, .42fr) 104px 82px; gap: 16px; align-items: center; min-height: 74px; padding: 12px 16px; border: 0; border-bottom: 1px solid #eceeef; background: #fff; transition: background-color 120ms ease; }
         .botshield-protection-row:last-child { border-bottom: 0; }
         .botshield-protection-row:hover { background: #fafafa; }
         .botshield-protection-module-icon, .botshield-protection-access-icon { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #e4e6e7; border-radius: 8px; background: #f6f7f7; color: #444a4e; }
@@ -1833,25 +1833,26 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-row-config { display: grid; gap: 2px; min-width: 0; padding-left: 16px; border-left: 1px solid #eceeef; }
         .botshield-protection-row-config span { color: #777d82; font-size: .65625rem; line-height: .875rem; text-transform: uppercase; letter-spacing: .055em; }
         .botshield-protection-row-config strong { overflow: hidden; color: #34393d; font-size: .78125rem; font-weight: 620; line-height: 1.125rem; text-overflow: ellipsis; white-space: nowrap; }
-        .botshield-protection-row-status { display: flex; justify-content: flex-start; }
+        .botshield-protection-row-status { display: flex; align-items: center; justify-content: flex-start; min-height: 28px; }
         .botshield-protection-row-status s-badge { opacity: .82; }
-        .botshield-protection-row-action { display: flex; justify-content: flex-end; }
-        .botshield-protection-row-action s-button { min-width: 74px; }
+        .botshield-protection-row-action { display: flex; align-items: center; justify-content: flex-end; min-height: 32px; }
+        .botshield-protection-row-action s-button { width: 74px; min-width: 74px; }
         .botshield-protection-policy { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .75fr); gap: 0; overflow: hidden; border: 1px solid #d8dadc; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(20,24,27,.02); }
-        .botshield-protection-policy-main { display: grid; gap: 13px; padding: 18px 20px; }
+        .botshield-protection-policy-main { display: grid; gap: 12px; padding: 18px 20px; }
         .botshield-protection-policy-main > p { margin: 0; color: #747a7f; font-size: .71875rem; line-height: 1.125rem; }
         .botshield-protection-policy-flow { display: grid; grid-template-columns: minmax(0, 1fr) 20px minmax(0, 1fr) 20px minmax(0, 1fr); gap: 8px; align-items: center; }
-        .botshield-protection-policy-flow > div { display: grid; gap: 2px; min-width: 0; padding: 11px 12px; border: 1px solid #e4e6e7; border-radius: 8px; background: #fafafa; }
+        .botshield-protection-policy-flow > div { display: grid; align-content: center; gap: 2px; min-width: 0; min-height: 64px; padding: 10px 12px; border: 1px solid #e4e6e7; border-radius: 8px; background: #fafafa; }
         .botshield-protection-policy-flow span { color: #73797e; font-size: .625rem; font-weight: 700; line-height: .875rem; letter-spacing: .075em; text-transform: uppercase; }
         .botshield-protection-policy-flow strong { color: #292e32; font-size: .8125rem; font-weight: 650; line-height: 1.125rem; }
         .botshield-protection-policy-flow small { overflow: hidden; color: #7a8085; font-size: .65625rem; line-height: .875rem; text-overflow: ellipsis; white-space: nowrap; }
-        .botshield-protection-policy-flow > b { color: #93999e; font-size: .875rem; font-weight: 500; text-align: center; }
+        .botshield-protection-policy-flow > b { display: grid; place-items: center; color: #93999e; font-size: .875rem; font-weight: 500; line-height: 1; text-align: center; }
         .botshield-protection-policy-side { display: grid; gap: 14px; align-content: center; padding: 18px 20px; border-left: 1px solid #e4e6e7; background: #fcfcfc; }
         .botshield-protection-policy-side > s-button { justify-self: start; }
         .botshield-protection-policy-map { display: grid; gap: 8px; }
         .botshield-protection-policy-map > div { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: center; color: #4e555a; font-size: .75rem; }
         .botshield-protection-access-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .botshield-protection-access-grid article { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: center; min-height: 118px; padding: 16px; border: 1px solid #d8dadc; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(20,24,27,.02); }
+        .botshield-protection-access-grid article { display: grid; grid-template-columns: 34px minmax(0, 1fr) 154px; gap: 14px; align-items: center; min-height: 120px; padding: 16px; border: 1px solid #d8dadc; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(20,24,27,.02); }
+        .botshield-protection-access-grid article > s-button { width: 154px; justify-self: end; }
         .botshield-protection-access-content { min-width: 0; }
         .botshield-protection-access-grid h3 { margin: 0; color: #292d30; font-size: .875rem; font-weight: 650; }
         .botshield-protection-access-grid p { margin: 3px 0 10px; color: #62696e; font-size: .75rem; line-height: 1.125rem; }
@@ -1860,18 +1861,20 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-access-count span { color: #666d72; font-size: .71875rem; font-weight: 600; line-height: 1rem; }
         .botshield-protection-modal-backdrop { z-index: 1000; align-items: flex-start; justify-content: flex-end; padding: 0; background: rgba(25,28,30,.32); }
         .botshield-protection-modal, .botshield-protection-modal--wide { position: relative; display: flex; flex-direction: column; width: min(460px, 94vw); height: 100dvh; max-height: 100dvh; min-height: 0; overflow: hidden; border: 0; border-radius: 0; box-shadow: -12px 0 30px rgba(0,0,0,.12); padding: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .botshield-protection-drawer-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex: 0 0 auto; margin: 0; padding: 20px 22px 17px; border-bottom: 1px solid #e1e3e5; }
+        .botshield-protection-drawer-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex: 0 0 auto; margin: 0; padding: 18px 22px 16px; border-bottom: 1px solid #e1e3e5; background: #fff; }
         .botshield-protection-drawer-header .botshield-protection-modal-copy { margin: 4px 0 0; font-size: .8125rem; }
         .botshield-protection-drawer-header button { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 8px; background: #f1f2f3; color: #444a4e; font: inherit; font-size: 20px; cursor: pointer; }
-        .botshield-protection-drawer-header button:hover { background: #e5e7e9; }
+        .botshield-protection-drawer-header button:hover { background: #e5e7e9; color: #202428; }
+        .botshield-protection-drawer-header button:focus-visible { outline: 2px solid #005bd3; outline-offset: 2px; }
         .botshield-protection-drawer-header button:disabled { opacity: .45; cursor: default; }
-        .botshield-protection-modal-body { flex: 1 1 auto; align-content: start; min-height: 0; overflow-y: auto; padding: 20px 22px 28px; }
+        .botshield-protection-modal-body { flex: 1 1 auto; align-content: start; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 18px 22px 24px; scrollbar-gutter: stable; }
         .botshield-protection-modal-body s-heading:first-child, .botshield-protection-modal-body s-paragraph:first-of-type { display: none; }
-        .botshield-protection-drawer-section { display: grid; gap: 13px; padding: 0 0 20px; border-bottom: 1px solid #eceeef; }
-        .botshield-protection-drawer-section + .botshield-protection-drawer-section { padding-top: 2px; }
+        .botshield-protection-drawer-section { display: grid; gap: 12px; padding: 0 0 18px; border-bottom: 1px solid #eceeef; }
+        .botshield-protection-drawer-section + .botshield-protection-drawer-section { padding-top: 1px; }
         .botshield-protection-drawer-section--compact { gap: 10px; }
         .botshield-protection-drawer-section-label { color: #6b7176; font-size: .65625rem; font-weight: 700; line-height: .875rem; letter-spacing: .075em; text-transform: uppercase; }
-        .botshield-protection-toggle-row { padding: 2px 0; }
+        .botshield-protection-toggle-row { display: flex; align-items: flex-start; min-height: 44px; padding: 2px 0; }
+        .botshield-protection-toggle-row > * { width: 100%; }
         .botshield-protection-decision-preview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border: 1px solid #e1e3e5; border-radius: 9px; background: #fafafa; }
         .botshield-protection-decision-preview > div { display: grid; gap: 3px; padding: 12px 13px; }
         .botshield-protection-decision-preview > div + div { border-left: 1px solid #e1e3e5; }
@@ -1880,10 +1883,10 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-drawer-explanation { margin: 0; color: #646b70; font-size: .75rem; line-height: 1.125rem; }
         .botshield-protection-signal-note { margin: -2px 0 0; color: #616a70; font-size: .75rem; line-height: 1.125rem; }
         .botshield-protection-rate-controls { display: grid; gap: 0; overflow: hidden; border: 1px solid #e3e5e6; border-radius: 9px; background: #fff; }
-        .botshield-protection-rate-controls > s-switch { display: block; padding: 11px 12px; }
+        .botshield-protection-rate-controls > s-switch { display: flex; align-items: flex-start; min-height: 52px; padding: 10px 12px; }
         .botshield-protection-rate-controls > s-switch + s-switch { border-top: 1px solid #eceeef; }
         .botshield-protection-signal-list { display: grid; gap: 0; overflow: hidden; border: 1px solid #e3e5e6; border-radius: 9px; }
-        .botshield-protection-signal-list > div { display: grid; gap: 2px; padding: 10px 12px; background: #fff; }
+        .botshield-protection-signal-list > div { display: grid; gap: 2px; min-height: 50px; align-content: center; padding: 9px 12px; background: #fff; }
         .botshield-protection-signal-list > div + div { border-top: 1px solid #eceeef; }
         .botshield-protection-signal-list strong { color: #303539; font-size: .78125rem; font-weight: 640; line-height: 1.125rem; }
         .botshield-protection-signal-list span { color: #6b7277; font-size: .71875rem; line-height: 1.0625rem; }
@@ -1905,7 +1908,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-filter-empty strong { color: #3b4145; font-size: .8125rem; }
         .botshield-protection-filter-empty span { color: #73797e; font-size: .75rem; }
         .botshield-protection-save-success { padding: 10px 12px; border: 1px solid #b7d7c2; border-radius: 8px; background: #f2f8f4; color: #285b3a; font-size: .78125rem; font-weight: 620; }
-        .botshield-protection-drawer-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: 0 0 auto; padding: 14px 22px; border-top: 1px solid #dfe2e4; background: #fff; box-shadow: 0 -5px 16px rgba(20,24,27,.045); }
+        .botshield-protection-drawer-footer { position: sticky; bottom: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: 0 0 auto; min-height: 64px; padding: 12px 22px; border-top: 1px solid #dfe2e4; background: #fff; box-shadow: 0 -5px 16px rgba(20,24,27,.045); }
         .botshield-protection-drawer-footer > div { display: flex; align-items: center; gap: 8px; }
         .botshield-protection-drawer-state { color: #6d7378; font-size: .75rem; line-height: 1rem; }
         .botshield-protection-discard-layer { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 22px; background: rgba(31,34,36,.38); }
@@ -1936,7 +1939,7 @@ export function BotShieldAppFrame({ children }) {
           .botshield-protection-policy-flow > div { padding: 9px; }
           .botshield-protection-policy-flow small { white-space: normal; }
           .botshield-protection-access-grid article { grid-template-columns: 32px minmax(0, 1fr); align-items: start; }
-          .botshield-protection-access-grid article > s-button { grid-column: 2; justify-self: start; }
+          .botshield-protection-access-grid article > s-button { grid-column: 2; width: auto; justify-self: start; }
           .botshield-protection-remove-confirm { align-items: flex-start; flex-direction: column; }
           .botshield-protection-modal, .botshield-protection-modal--wide { width: 100vw; }
           .botshield-protection-drawer-header, .botshield-protection-modal-body, .botshield-protection-drawer-footer { padding-right: 18px; padding-left: 18px; }
