@@ -58,6 +58,34 @@ test("Protection drawer uses a sticky action footer and local discard dialog", (
   assert.match(adminSource, /Discard changes/);
 });
 
+test("Protection V2.1 exposes only real detection and enforcement capabilities", () => {
+  for (const copy of [
+    "Known automation",
+    "Automation signatures",
+    "Burst traffic",
+    "Repeat offender",
+    "VPN / Proxy",
+    "Hosting / Datacenter",
+    "Network reputation",
+    "Protected storefront areas",
+    "Risk threshold",
+    "Verified activity · Last 30 days",
+  ]) assert.match(adminSource, new RegExp(copy.replace("/", "\\/")));
+  assert.match(adminSource, /draft\.strictMode\s*\? 35/);
+  assert.match(adminSource, /draft\.blockLevel === "Low"\s*\? 90/);
+  assert.match(adminSource, /draft\.blockLevel === "High"\s*\? 50/);
+  assert.match(adminSource, /: 70;/);
+  assert.doesNotMatch(adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")), /money saved|estimated savings|country blocker|verified bot/iu);
+});
+
+test("Visitor access supports real-data search and removal confirmation", () => {
+  assert.match(adminSource, /Search \$\{trusted \? "trusted visitors" : "blocked visitors"\}/);
+  assert.match(adminSource, /placeholder="IP address, source, or reason"/);
+  assert.match(adminSource, /record\.reason/);
+  assert.match(adminSource, /record\.source/);
+  assert.match(adminSource, /No matching visitors/);
+});
+
 test("Protection drawers and responsive layouts are scoped locally", () => {
   assert.match(designSource, /\/\* Protection control center \*\//);
   assert.match(designSource, /\.botshield-protection-modal-backdrop/);
