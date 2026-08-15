@@ -1880,11 +1880,11 @@ export function BotShieldAppFrame({ children }) {
           .botshield-protection-content { gap: 22px; }
           .botshield-protection-status { grid-template-columns: 34px minmax(0, 1fr); align-items: start; }
           .botshield-protection-status-action { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
-          .botshield-protection-row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px 12px; align-items: start; padding: 14px; }
-          .botshield-protection-row-content { grid-column: 2 / -1; }
-          .botshield-protection-row-config { grid-column: 2 / -1; padding: 8px 0 0; border-top: 1px solid #eceeef; border-left: 0; }
-          .botshield-protection-row-status { grid-column: 2; }
-          .botshield-protection-row-action { grid-column: 3; grid-row: 3; }
+          .botshield-protection-row { grid-template-columns: 34px minmax(0, 1fr) auto auto; gap: 8px 12px; align-items: center; padding: 14px; }
+          .botshield-protection-row-content { grid-column: 2; grid-row: 1; }
+          .botshield-protection-row-config { grid-column: 2; grid-row: 2; padding: 7px 0 0; border-top: 1px solid #eceeef; border-left: 0; }
+          .botshield-protection-row-status { grid-column: 3; grid-row: 1 / span 2; }
+          .botshield-protection-row-action { grid-column: 4; grid-row: 1 / span 2; }
           .botshield-protection-policy-flow { grid-template-columns: 1fr 16px 1fr 16px 1fr; gap: 4px; }
           .botshield-protection-policy-flow > div { padding: 9px; }
           .botshield-protection-policy-flow small { white-space: normal; }
@@ -1892,6 +1892,13 @@ export function BotShieldAppFrame({ children }) {
           .botshield-protection-access-grid article > s-button { grid-column: 2; justify-self: start; }
           .botshield-protection-remove-confirm { align-items: flex-start; flex-direction: column; }
           .botshield-protection-modal, .botshield-protection-modal--wide { width: 100vw; padding: 18px; }
+        }
+        @media (max-width: 520px) {
+          .botshield-protection-row { grid-template-columns: 34px minmax(0, 1fr) auto; align-items: start; }
+          .botshield-protection-row-content { grid-column: 2 / -1; }
+          .botshield-protection-row-config { grid-column: 2 / -1; }
+          .botshield-protection-row-status { grid-column: 2; grid-row: 3; }
+          .botshield-protection-row-action { grid-column: 3; grid-row: 3; }
         }
         .botshield-fraud-orders-content .botshield-surface {
           padding: 20px 22px;
