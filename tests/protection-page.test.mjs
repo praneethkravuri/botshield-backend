@@ -10,6 +10,14 @@ const designSource = fs.readFileSync(
   new URL("../app/components/design-system/BotShieldDesignSystem.jsx", import.meta.url),
   "utf8",
 );
+const detectionSource = fs.readFileSync(
+  new URL("../app/lib/bot-detection.server.js", import.meta.url),
+  "utf8",
+);
+const controlSource = fs.readFileSync(
+  new URL("../app/lib/bot-control.server.js", import.meta.url),
+  "utf8",
+);
 
 test("Protection remains a control plane with four real modules", () => {
   for (const label of [
@@ -41,9 +49,9 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /setConfirmDiscard\(true\)/);
   assert.match(adminSource, /Save changes/);
   assert.match(adminSource, /Cancel/);
-  assert.match(adminSource, /Saving changes…/);
+  assert.match(adminSource, /Saving changesâ€¦/);
   assert.match(adminSource, /Settings saved/);
-  assert.match(adminSource, /Couldn’t save \$\{protectionModal\.title\} settings/);
+  assert.match(adminSource, /Couldnâ€™t save \$\{protectionModal\.title\} settings/);
   assert.match(adminSource, /aria-label="Close"/);
   assert.match(adminSource, /event\.key === "Escape"/);
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
@@ -69,13 +77,40 @@ test("Protection V2.1 exposes only real detection and enforcement capabilities",
     "Network reputation",
     "Protected storefront areas",
     "Risk threshold",
-    "Verified activity · Last 30 days",
+    "Verified activity Â· Last 30 days",
   ]) assert.match(adminSource, new RegExp(copy.replace("/", "\\/")));
   assert.match(adminSource, /draft\.strictMode\s*\? 35/);
   assert.match(adminSource, /draft\.blockLevel === "Low"\s*\? 90/);
   assert.match(adminSource, /draft\.blockLevel === "High"\s*\? 50/);
   assert.match(adminSource, /: 70;/);
   assert.doesNotMatch(adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")), /money saved|estimated savings|country blocker|verified bot/iu);
+});
+
+test("Rate signals expose real persisted controls with clear explanations", () => {
+  assert.match(adminSource, /Choose which behavioral signals contribute/);
+  assert.match(adminSource, /3 recent requests from the same IP within one hour/);
+  assert.match(adminSource, /6 recent requests from the same IP within one hour/);
+  assert.match(adminSource, /12 recent requests from the same IP within one hour/);
+  for (const setting of [
+    "repeatedActivityEnabled",
+    "elevatedRateEnabled",
+    "burstTrafficEnabled",
+    "repeatOffenderEnabled",
+    "pathScanningEnabled",
+  ]) {
+    assert.match(adminSource, new RegExp(`checked=\\{draft\\.${setting}\\}`));
+  }
+  assert.match(adminSource, /Changes apply after you save/);
+  for (const setting of [
+    "repeatedActivityEnabled",
+    "elevatedRateEnabled",
+    "burstTrafficEnabled",
+    "repeatOffenderEnabled",
+    "pathScanningEnabled",
+  ]) {
+    assert.match(detectionSource, new RegExp(`settings\\.${setting}`));
+    assert.match(controlSource, new RegExp(setting));
+  }
 });
 
 test("Visitor access supports real-data search and removal confirmation", () => {
@@ -92,3 +127,4 @@ test("Protection drawers and responsive layouts are scoped locally", () => {
   assert.match(designSource, /\.botshield-protection-access-grid/);
   assert.match(designSource, /@media \(max-width: 640px\)/);
 });
+
