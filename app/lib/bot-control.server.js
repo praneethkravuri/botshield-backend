@@ -431,4 +431,3 @@ export async function removeWhitelistIp(shop, ipAddress) {
 
   return { ok: true, ipAddress: normalized };
 }
-

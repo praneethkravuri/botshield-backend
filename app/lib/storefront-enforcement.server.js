@@ -463,4 +463,3 @@ export async function evaluateStorefrontRequest(request, shop) {
         : null,
   };
 }
-

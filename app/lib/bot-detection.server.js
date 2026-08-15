@@ -284,4 +284,3 @@ export function detectBotThreat({
         : "Traffic allowed",
   };
 }
-
