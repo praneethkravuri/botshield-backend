@@ -70,6 +70,11 @@ async function readSettings(shop) {
             "blockLevel",
             "strictMode",
             "protectionPausedUntil",
+            "repeatedActivityEnabled",
+            "elevatedRateEnabled",
+            "burstTrafficEnabled",
+            "repeatOffenderEnabled",
+            "pathScanningEnabled",
             "emailAlerts",
             "highRiskAlertsOnly",
             "alertEmail",
@@ -458,3 +463,4 @@ export async function evaluateStorefrontRequest(request, shop) {
         : null,
   };
 }
+
