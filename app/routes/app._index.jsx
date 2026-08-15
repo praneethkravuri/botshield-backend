@@ -1896,8 +1896,12 @@ export default function Index() {
         rows.map((row) => ({
           ip: row.ipAddress,
           risk: "High",
-          time: row.updatedAt ? new Date(row.updatedAt).toLocaleTimeString() : "Unknown",
+          time: row.updatedAt ? new Date(row.updatedAt).toLocaleString() : "Unknown",
           action: row.active ? "Blocked" : "Allowed",
+          reason: row.reason || "Manually blocked visitor",
+          source: row.source || "BotShield",
+          hits: Number(row.hits || 0),
+          active: row.active !== false,
         })),
       );
     } catch (err) {
