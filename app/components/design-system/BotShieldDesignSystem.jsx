@@ -1876,7 +1876,7 @@ export function BotShieldAppFrame({ children }) {
           .botshield-protection-row { grid-template-columns: 34px minmax(220px, 1fr) minmax(120px, .45fr) 96px 82px; gap: 12px; }
           .botshield-protection-access-grid { grid-template-columns: 1fr; }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 760px) {
           .botshield-protection-content { gap: 22px; }
           .botshield-protection-status { grid-template-columns: 34px minmax(0, 1fr); align-items: start; }
           .botshield-protection-status-action { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
