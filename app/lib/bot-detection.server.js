@@ -7,6 +7,11 @@ const DEFAULT_SETTINGS = {
   blockLevel: "Medium",
   strictMode: false,
   protectionPausedUntil: null,
+  repeatedActivityEnabled: true,
+  elevatedRateEnabled: true,
+  burstTrafficEnabled: true,
+  repeatOffenderEnabled: true,
+  pathScanningEnabled: true,
 };
 
 const SENSITIVE_PATH_PATTERNS = [
@@ -68,6 +73,26 @@ export function buildDetectionSettings(settingRows = []) {
     strictMode: parseBooleanSetting(map.get("strictMode"), DEFAULT_SETTINGS.strictMode),
     blockLevel: map.get("blockLevel") || DEFAULT_SETTINGS.blockLevel,
     protectionPausedUntil: parseDateSetting(map.get("protectionPausedUntil")),
+    repeatedActivityEnabled: parseBooleanSetting(
+      map.get("repeatedActivityEnabled"),
+      DEFAULT_SETTINGS.repeatedActivityEnabled,
+    ),
+    elevatedRateEnabled: parseBooleanSetting(
+      map.get("elevatedRateEnabled"),
+      DEFAULT_SETTINGS.elevatedRateEnabled,
+    ),
+    burstTrafficEnabled: parseBooleanSetting(
+      map.get("burstTrafficEnabled"),
+      DEFAULT_SETTINGS.burstTrafficEnabled,
+    ),
+    repeatOffenderEnabled: parseBooleanSetting(
+      map.get("repeatOffenderEnabled"),
+      DEFAULT_SETTINGS.repeatOffenderEnabled,
+    ),
+    pathScanningEnabled: parseBooleanSetting(
+      map.get("pathScanningEnabled"),
+      DEFAULT_SETTINGS.pathScanningEnabled,
+    ),
   };
 }
 
@@ -77,6 +102,7 @@ function scoreRequestSignals({
   pathVisited,
   recentEvents,
   networkIntel,
+  settings,
 }) {
   let score = 0;
   const reasons = [];
@@ -110,26 +136,26 @@ function scoreRequestSignals({
   }
 
   const recentCount = recentEvents.length;
-  if (recentCount >= 12) {
+  if (settings.burstTrafficEnabled && recentCount >= 12) {
     score += 40;
     reasons.push("Burst traffic from same IP");
     reasonCodes.push("RATE_PATTERN");
-  } else if (recentCount >= 6) {
+  } else if (settings.elevatedRateEnabled && recentCount >= 6) {
     score += 20;
     reasons.push("Elevated request rate");
     reasonCodes.push("RATE_PATTERN");
-  } else if (recentCount >= 3) {
+  } else if (settings.repeatedActivityEnabled && recentCount >= 3) {
     score += 8;
     reasons.push("Repeated traffic pattern");
     reasonCodes.push("RATE_PATTERN");
   }
 
   const previousBlocks = recentEvents.filter((event) => event.action === "blocked").length;
-  if (previousBlocks >= 3) {
+  if (settings.repeatOffenderEnabled && previousBlocks >= 3) {
     score += 35;
     reasons.push("Previously blocked multiple times");
     reasonCodes.push("REPEAT_OFFENDER");
-  } else if (previousBlocks >= 1) {
+  } else if (settings.repeatOffenderEnabled && previousBlocks >= 1) {
     score += 15;
     reasons.push("Previously blocked");
     reasonCodes.push("REPEAT_OFFENDER");
@@ -138,7 +164,7 @@ function scoreRequestSignals({
   const uniquePaths = new Set(
     recentEvents.map((event) => safeString(event.path).toLowerCase()).filter(Boolean),
   ).size;
-  if (uniquePaths >= 5) {
+  if (settings.pathScanningEnabled && uniquePaths >= 5) {
     score += 10;
     reasons.push("Scanning multiple routes");
     reasonCodes.push("PATH_SCANNING");
@@ -172,6 +198,7 @@ export function detectBotThreat({
   blockedEntry = null,
   networkIntel = null,
 }) {
+  const effectiveSettings = { ...DEFAULT_SETTINGS, ...settings };
   const normalizedIp = normalizeIpAddress(ipAddress);
   const normalizedPath = safeString(pathVisited, "/");
   const normalizedUserAgent = safeString(userAgent);
@@ -210,6 +237,7 @@ export function detectBotThreat({
     pathVisited: normalizedPath,
     recentEvents,
     networkIntel,
+    settings: effectiveSettings,
   });
 
   let threatLevel = "low";
@@ -219,11 +247,13 @@ export function detectBotThreat({
     threatLevel = "medium";
   }
 
-  const effectiveLevel = settings.strictMode ? "High" : settings.blockLevel;
+  const effectiveLevel = effectiveSettings.strictMode
+    ? "High"
+    : effectiveSettings.blockLevel;
 
   let actionTaken = "allowed";
-  if (settings.autoBlock) {
-    if (settings.strictMode && score >= 35) {
+  if (effectiveSettings.autoBlock) {
+    if (effectiveSettings.strictMode && score >= 35) {
       actionTaken = "blocked";
       reasonCodes.push("STRICT_MODE");
     } else if (effectiveLevel === "Low" && score >= 90) {
@@ -254,3 +284,4 @@ export function detectBotThreat({
         : "Traffic allowed",
   };
 }
+
