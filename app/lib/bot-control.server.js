@@ -48,6 +48,11 @@ export async function getAppSettings(shop) {
             "blockLevel",
             "strictMode",
             "protectionPausedUntil",
+            "repeatedActivityEnabled",
+            "elevatedRateEnabled",
+            "burstTrafficEnabled",
+            "repeatOffenderEnabled",
+            "pathScanningEnabled",
             "emailAlerts",
             "highRiskAlertsOnly",
             "alertEmail",
@@ -130,6 +135,14 @@ export async function saveAppSettings(shop, input = {}) {
     input.weeklyReportsEnabled,
     false,
   );
+  const repeatedActivityEnabled = toBooleanString(
+    input.repeatedActivityEnabled,
+    true,
+  );
+  const elevatedRateEnabled = toBooleanString(input.elevatedRateEnabled, true);
+  const burstTrafficEnabled = toBooleanString(input.burstTrafficEnabled, true);
+  const repeatOffenderEnabled = toBooleanString(input.repeatOffenderEnabled, true);
+  const pathScanningEnabled = toBooleanString(input.pathScanningEnabled, true);
   if (
     (emailAlerts === "true" || weeklyReportsEnabled === "true") &&
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(alertEmail)
@@ -145,6 +158,11 @@ export async function saveAppSettings(shop, input = {}) {
       strictMode,
       blockLevel,
       protectionPausedUntil: normalizedPause,
+      repeatedActivityEnabled,
+      elevatedRateEnabled,
+      burstTrafficEnabled,
+      repeatOffenderEnabled,
+      pathScanningEnabled,
       emailAlerts,
       highRiskAlertsOnly,
       alertEmail,
@@ -413,3 +431,4 @@ export async function removeWhitelistIp(shop, ipAddress) {
 
   return { ok: true, ipAddress: normalized };
 }
+
