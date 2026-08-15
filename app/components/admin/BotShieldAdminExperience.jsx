@@ -3121,6 +3121,21 @@ function formatAnalyticsTimestamp(value) {
   });
 }
 
+function formatAnalyticsDetailTimestamp(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  const dateLabel = date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeLabel = date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${dateLabel} · ${timeLabel}`;
+}
+
 function formatAnalyticsBucketLabel(start, end, periodDays) {
   if (periodDays === 1) {
     return `${start.toLocaleTimeString([], { hour: "numeric" })}–${end.toLocaleTimeString([], { hour: "numeric" })}`;
@@ -3155,6 +3170,11 @@ function getAnalyticsAttackOrigin(event) {
 function AnalyticsEventDetails({ event, onClose }) {
   const signals = getAnalyticsSignals(event);
   const networkClassification = getAnalyticsAttackOrigin(event);
+  const signalLabel = signals.join(", ") || "No elevated signal";
+  const reason = formatMerchantReasons(event.reasonCodes || event.reasons);
+  const hasVisitorDetails = Boolean(
+    event.ipAddress || networkClassification || event.networkCountry || event.networkOrg || event.networkProvider,
+  );
 
   useEffect(() => {
     const handleKeyDown = (keyEvent) => {
@@ -3170,21 +3190,41 @@ function AnalyticsEventDetails({ event, onClose }) {
     <div className="botshield-analytics-detail-backdrop" role="presentation" onMouseDown={(mouseEvent) => { if (mouseEvent.target === mouseEvent.currentTarget) onClose(); }}>
       <section aria-labelledby="analytics-event-detail-title" aria-modal="true" className="botshield-analytics-detail" role="dialog">
         <header>
-          <div><span>Security event</span><h2 id="analytics-event-detail-title">Event details</h2></div>
+          <div>
+            <h2 id="analytics-event-detail-title">Event details</h2>
+            <p>{formatAnalyticsDetailTimestamp(event.createdAt)}</p>
+          </div>
           <button aria-label="Close event details" autoFocus onClick={onClose} type="button">×</button>
         </header>
-        <dl>
-          <div><dt>Time</dt><dd>{formatAnalyticsTimestamp(event.createdAt)}</dd></div>
-          <div><dt>Risk</dt><dd>{getRiskLabel(event.threatLevel)}</dd></div>
-          <div><dt>Decision</dt><dd>{getOutcomeLabel(event.actionTaken)}</dd></div>
-          <div><dt>Threat signal</dt><dd>{signals.join(", ") || "No elevated signal"}</dd></div>
-          <div><dt>Detection reason</dt><dd>{formatMerchantReasons(event.reasonCodes || event.reasons)}</dd></div>
-          <div><dt>Page / path</dt><dd>{event.pathVisited || "/"}</dd></div>
-          {event.ipAddress ? <div><dt>Visitor</dt><dd>{maskAnalyticsVisitor(event.ipAddress)}</dd></div> : null}
-          {networkClassification ? <div><dt>Network classification</dt><dd>{networkClassification}</dd></div> : null}
-          {event.networkCountry ? <div><dt>Recorded location</dt><dd>{[event.networkCity, event.networkCountry].filter(Boolean).join(", ")}</dd></div> : null}
-          {event.networkOrg || event.networkProvider ? <div><dt>Network</dt><dd>{event.networkOrg || event.networkProvider}</dd></div> : null}
-        </dl>
+        <div className="botshield-analytics-detail-summary">
+          <BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} />
+          <p>{getRiskLabel(event.threatLevel)} · {signalLabel}</p>
+        </div>
+        <div className="botshield-analytics-detail-section">
+          <h3>Detection</h3>
+          <dl className="botshield-analytics-detail-grid">
+            <div><dt>Risk</dt><dd><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></dd></div>
+            <div><dt>Decision</dt><dd><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></dd></div>
+            <div className="is-full"><dt>Threat signal</dt><dd>{signalLabel}</dd></div>
+            <div className="is-full botshield-analytics-detail-reason"><dt>Detection reason</dt><dd>{reason}</dd></div>
+          </dl>
+        </div>
+        <div className="botshield-analytics-detail-section">
+          <h3>Request</h3>
+          <dl className="botshield-analytics-detail-grid">
+            <div><dt>Page / path</dt><dd>{event.pathVisited || "/"}</dd></div>
+            <div><dt>Time</dt><dd>{formatAnalyticsDetailTimestamp(event.createdAt)}</dd></div>
+          </dl>
+        </div>
+        {hasVisitorDetails ? <div className="botshield-analytics-detail-section">
+          <h3>Visitor</h3>
+          <dl className="botshield-analytics-detail-grid">
+            {event.ipAddress ? <div><dt>Visitor</dt><dd>{maskAnalyticsVisitor(event.ipAddress)}</dd></div> : null}
+            {networkClassification ? <div><dt>Network classification</dt><dd>{networkClassification}</dd></div> : null}
+            {event.networkCountry ? <div><dt>Recorded location</dt><dd>{[event.networkCity, event.networkCountry].filter(Boolean).join(", ")}</dd></div> : null}
+            {event.networkOrg || event.networkProvider ? <div><dt>Network</dt><dd>{event.networkOrg || event.networkProvider}</dd></div> : null}
+          </dl>
+        </div> : null}
       </section>
     </div>,
     document.body,
