@@ -4006,7 +4006,8 @@ function ProtectionPage({ model, actions }) {
       icon: "shield",
       name: "Bot protection",
       description: "Detects automated browsers and suspicious automation behavior.",
-      context: `Uses the ${model.strictMode ? "Strict" : model.blockLevel} protection profile.`,
+      configLabel: "Protection profile",
+      configValue: model.strictMode ? "Strict" : model.blockLevel,
       ...moduleStatus,
       active: runtimeActive,
       action: () =>
@@ -4019,7 +4020,8 @@ function ProtectionPage({ model, actions }) {
       icon: "network",
       name: "Network / Proxy protection",
       description: "Identifies suspicious VPN, proxy, hosting, and datacenter traffic.",
-      context: "Managed automatically by BotShield.",
+      configLabel: "Detection",
+      configValue: "Automatic",
       ...moduleStatus,
       active: runtimeActive,
       action: () =>
@@ -4033,7 +4035,8 @@ function ProtectionPage({ model, actions }) {
       icon: "rate",
       name: "Rate protection",
       description: "Detects unusually frequent or repetitive visitor activity.",
-      context: `Uses the ${model.strictMode ? "Strict" : model.blockLevel} protection profile.`,
+      configLabel: "Protection profile",
+      configValue: model.strictMode ? "Strict" : model.blockLevel,
       ...moduleStatus,
       active: runtimeActive,
       action: () =>
@@ -4047,7 +4050,8 @@ function ProtectionPage({ model, actions }) {
       icon: "page",
       name: "Page protection",
       description: "Applies protection decisions across supported storefront requests.",
-      context: storefrontConnected ? "Storefront theme embed connected." : "Theme app embed requires setup.",
+      configLabel: "Storefront connection",
+      configValue: storefrontConnected ? "Theme embed" : "Not connected",
       ...pageStatus,
       active: storefrontConnected && !model.protectionPaused,
       action: () =>
@@ -4095,10 +4099,17 @@ function ProtectionPage({ model, actions }) {
           <div className="botshield-protection-section-heading"><span>Protection modules</span><h2>Protection modules</h2><p>Configure the detection layers BotShield uses to protect your storefront.</p></div>
           <div className="botshield-protection-list">
             {protectionRows.map((row) => <div className="botshield-protection-row" key={row.name}>
-              <OverviewIcon name={row.icon} centered />
-              <div className="botshield-protection-row-content"><div className="botshield-protection-row-title">{row.name}</div><div className="botshield-protection-row-copy">{row.description}</div><small>{row.context}</small></div>
-              <BotShieldStatusBadge status={row.status} label={row.label} />
-              <BotShieldActionButton onClick={row.action}>Manage</BotShieldActionButton>
+              <div className="botshield-protection-module-icon"><OverviewIcon name={row.icon} centered /></div>
+              <div className="botshield-protection-row-content">
+                <div className="botshield-protection-row-title">{row.name}</div>
+                <div className="botshield-protection-row-copy">{row.description}</div>
+              </div>
+              <div className="botshield-protection-row-config">
+                <span>{row.configLabel}</span>
+                <strong>{row.configValue}</strong>
+              </div>
+              <div className="botshield-protection-row-status"><BotShieldStatusBadge status={row.status} label={row.label} /></div>
+              <div className="botshield-protection-row-action"><BotShieldActionButton onClick={row.action}>Manage</BotShieldActionButton></div>
             </div>)}
           </div>
         </section>
@@ -4106,17 +4117,28 @@ function ProtectionPage({ model, actions }) {
         <section className="botshield-protection-section">
           <div className="botshield-protection-section-heading"><span>Enforcement</span><h2>Protection policy</h2><p>Control how BotShield responds when suspicious traffic is detected.</p></div>
           <div className="botshield-protection-policy">
-            <div className="botshield-protection-policy-flow"><div><span>Detection</span><strong>{model.strictMode ? "Strict" : model.blockLevel} profile</strong></div><b>→</b><div><span>Decision</span><strong>Risk classified</strong></div><b>→</b><div><span>Action</span><strong>{model.autoBlock ? "Enforce" : "Record only"}</strong></div></div>
-            <div className="botshield-protection-policy-map"><div><BotShieldStatusBadge status="high" label="High risk" /><span>{model.autoBlock ? "Stop or request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="medium" label="Medium risk" /><span>{model.autoBlock ? "Request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="low" label="Low risk" /><span>Allow</span></div></div>
-            <BotShieldActionButton onClick={() => openProfileManager("Protection policy", "Configure BotShield's shared storefront detection and response profile.")} variant="primary">Configure policy</BotShieldActionButton>
+            <div className="botshield-protection-policy-main">
+              <div className="botshield-protection-policy-flow">
+                <div><span>Detection</span><strong>{model.strictMode ? "Strict" : model.blockLevel} profile</strong><small>Storefront signals evaluated</small></div>
+                <b aria-hidden="true">→</b>
+                <div><span>Decision</span><strong>Risk classified</strong><small>Low, medium, or high</small></div>
+                <b aria-hidden="true">→</b>
+                <div><span>Action</span><strong>{model.autoBlock ? "Enforce" : "Record only"}</strong><small>{model.autoBlock ? "Apply configured response" : "Observe without intervention"}</small></div>
+              </div>
+              <p>BotShield evaluates recorded signals, classifies risk, and applies the configured storefront response.</p>
+            </div>
+            <div className="botshield-protection-policy-side">
+              <div className="botshield-protection-policy-map"><div><BotShieldStatusBadge status="high" label="High risk" /><span>{model.autoBlock ? "Stop or request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="medium" label="Medium risk" /><span>{model.autoBlock ? "Request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="low" label="Low risk" /><span>Allow</span></div></div>
+              <BotShieldActionButton onClick={() => openProfileManager("Protection policy", "Configure BotShield's shared storefront detection and response profile.")} variant="primary">Configure policy</BotShieldActionButton>
+            </div>
           </div>
         </section>
 
         <section className="botshield-protection-section">
           <div className="botshield-protection-section-heading"><span>Access controls</span><h2>Visitor access</h2><p>Manage visitors that BotShield should always block or trust.</p></div>
           <div className="botshield-protection-access-grid">
-            <article><OverviewIcon name="block" centered /><div><h3>Blocked visitors</h3><p>Visitors manually prevented from accessing the storefront.</p><strong>{model.blockedIPs.length} blocked visitor{model.blockedIPs.length === 1 ? "" : "s"}</strong></div><BotShieldActionButton onClick={openBlocklist}>Manage blocklist</BotShieldActionButton></article>
-            <article><OverviewIcon name="visitor" centered /><div><h3>Trusted visitors</h3><p>Visitors allowed to bypass supported BotShield protection checks.</p><strong>{model.whitelist.length} trusted visitor{model.whitelist.length === 1 ? "" : "s"}</strong></div><BotShieldActionButton onClick={openTrusted}>Manage trusted visitors</BotShieldActionButton></article>
+            <article><div className="botshield-protection-access-icon"><OverviewIcon name="block" centered /></div><div className="botshield-protection-access-content"><h3>Blocked visitors</h3><p>Visitors manually prevented from accessing the storefront.</p><div className="botshield-protection-access-count"><strong>{model.blockedIPs.length}</strong><span>Blocked visitor{model.blockedIPs.length === 1 ? "" : "s"}</span></div></div><BotShieldActionButton onClick={openBlocklist}>Manage blocklist</BotShieldActionButton></article>
+            <article><div className="botshield-protection-access-icon"><OverviewIcon name="visitor" centered /></div><div className="botshield-protection-access-content"><h3>Trusted visitors</h3><p>Visitors allowed to bypass supported BotShield protection checks.</p><div className="botshield-protection-access-count"><strong>{model.whitelist.length}</strong><span>Trusted visitor{model.whitelist.length === 1 ? "" : "s"}</span></div></div><BotShieldActionButton onClick={openTrusted}>Manage trusted visitors</BotShieldActionButton></article>
           </div>
         </section>
         {protectionModal && typeof document !== "undefined" ? ReactDOM.createPortal((
