@@ -63,6 +63,45 @@ const baseRequest = {
   },
 };
 
+test("rate protection toggles enable and disable their real scoring signals", () => {
+  const recentEvents = Array.from({ length: 12 }, (_, index) => ({
+    action: index < 3 ? "blocked" : "allowed",
+    path: `/products/${index}`,
+  }));
+  const enabled = detectBotThreat({
+    ...baseRequest,
+    recentEvents,
+    settings: {
+      ...baseRequest.settings,
+      repeatedActivityEnabled: true,
+      elevatedRateEnabled: true,
+      burstTrafficEnabled: true,
+      repeatOffenderEnabled: true,
+      pathScanningEnabled: true,
+    },
+  });
+  const disabled = detectBotThreat({
+    ...baseRequest,
+    recentEvents,
+    settings: {
+      ...baseRequest.settings,
+      repeatedActivityEnabled: false,
+      elevatedRateEnabled: false,
+      burstTrafficEnabled: false,
+      repeatOffenderEnabled: false,
+      pathScanningEnabled: false,
+    },
+  });
+
+  assert.ok(enabled.reasonCodes.includes("RATE_PATTERN"));
+  assert.ok(enabled.reasonCodes.includes("REPEAT_OFFENDER"));
+  assert.ok(enabled.reasonCodes.includes("PATH_SCANNING"));
+  assert.ok(!disabled.reasonCodes.includes("RATE_PATTERN"));
+  assert.ok(!disabled.reasonCodes.includes("REPEAT_OFFENDER"));
+  assert.ok(!disabled.reasonCodes.includes("PATH_SCANNING"));
+  assert.ok(enabled.riskScore > disabled.riskScore);
+});
+
 test("whitelisted IP is always allowed", () => {
   const detection = detectBotThreat({
     ...baseRequest,
@@ -443,7 +482,7 @@ test("security events expose structured reason codes and masked IPs", () => {
   assert.equal(event.networkCountryCode, "US");
   assert.equal(event.networkCity, "Dallas");
   assert.equal(matchesIncidentFilters(event, { search: "Dallas" }), true);
-  assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:…:1");
+  assert.equal(maskIpAddress("2603:8080:c901:43b0::1"), "2603:8080:c901:â€¦:1");
   assert.equal(matchesIncidentFilters(event, { source: "real" }), true);
   assert.equal(
     matchesIncidentFilters(
@@ -537,3 +576,4 @@ test("weekly reports do not score as operational without email delivery", () => 
   assert.equal(reportFactor.earned, 0);
   assert.ok(result.score < 90);
 });
+
