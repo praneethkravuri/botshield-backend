@@ -3295,6 +3295,46 @@ function FraudOrdersPage({ model, actions }) {
     if (typeof actions.refresh === "function") await actions.refresh();
   };
 
+  useEffect(() => {
+    if (!selectedOrder) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSelectedOrder(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [selectedOrder]);
+
+  if (!connected) {
+    return (
+      <div className="botshield-page">
+        <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content botshield-fraud-orders-content--setup">
+          <div className="botshield-protection-header botshield-fraud-header">
+            <div>
+              <h1 className="botshield-overview-title botshield-protection-page-title">Fraud Orders</h1>
+              <p className="botshield-overview-subtitle">Review risky Shopify orders, understand the signals behind them, and take action before fulfillment.</p>
+            </div>
+          </div>
+          <section className="botshield-fraud-setup-card" aria-labelledby="fraud-setup-title">
+            <div className="botshield-fraud-setup-heading">
+              <div className="botshield-fraud-setup-icon" aria-hidden="true">◇</div>
+              <div><span className="botshield-fraud-eyebrow">Order risk connection</span><h2 id="fraud-setup-title">Connect Shopify order risk</h2><p>BotShield needs approved Shopify order access before it can surface real fraud assessments and build your review queue.</p></div>
+            </div>
+            <ol className="botshield-fraud-setup-steps">
+              {[["Connect order access", "Allow BotShield to read supported Shopify order and fraud-risk information."], ["Monitor risky orders", "Orders with elevated fraud assessments will automatically enter the review workspace."], ["Review before fulfillment", "Inspect the assessment, supporting signals, order context, and recommendation before taking action."]].map(([title, copy], index) => <li key={title}><span aria-hidden="true">{index + 1}</span><div><h3>{title}</h3><p>{copy}</p></div></li>)}
+            </ol>
+            <div className="botshield-fraud-setup-foot"><span className="botshield-fraud-risk botshield-fraud-risk--pending">Order access required</span><p>No order data is stored or displayed until approved access is available.</p></div>
+          </section>
+          <section className="botshield-fraud-preview" aria-labelledby="fraud-preview-title">
+            <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Once connected</span><h2 id="fraud-preview-title">A focused fraud-review workflow</h2><p>Investigate genuine Shopify assessments without fabricated scores or demonstration orders.</p></div></div>
+            <div className="botshield-fraud-preview-grid">
+              {[["Prioritized review queue", "Elevated-risk orders are surfaced first so you can focus on orders that actually need attention."], ["Fraud evidence", "Review available risk assessments, recommendations, order context, and recorded signals in one place."], ["Guided decisions", "Use risk evidence and Shopify recommendations to decide whether an order needs further review before fulfillment."]].map(([title, copy], index) => <article key={title}><span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
@@ -3317,10 +3357,10 @@ function FraudOrdersPage({ model, actions }) {
         </section>
 
         <section className="botshield-fraud-review-surface">
-          <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Review queue</span><h2>Orders requiring attention</h2><p>Orders with elevated fraud risk or recommendations that may require review before fulfillment.</p></div></div>
+          <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Review queue</span><h2>Fraud review queue</h2><p>Prioritized orders that may require review before fulfillment.</p></div></div>
           <div className="botshield-fraud-toolbar">
             <div className="botshield-fraud-filter-group" role="group" aria-label="Order risk filter">
-              {[["needs-review", "Needs review"], ["high", "High risk"], ["medium", "Medium risk"], ["low", "Low risk"], ["all", "All orders"]].map(([value, label]) => <button className={activeFilter === value ? "is-active" : ""} key={value} onClick={() => setActiveFilter(value)} type="button">{label}</button>)}
+              {[["needs-review", "Needs review"], ["high", "High risk"], ["medium", "Medium risk"], ["pending", "Pending"], ["all", "All orders"]].map(([value, label]) => <button aria-selected={activeFilter === value} className={activeFilter === value ? "is-active" : ""} key={value} onClick={() => setActiveFilter(value)} role="tab" type="button">{label}</button>)}
             </div>
             <input aria-label="Search orders" disabled={!connected} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, customer, or email" type="search" value={search} />
           </div>
@@ -3341,10 +3381,7 @@ function FraudOrdersPage({ model, actions }) {
         </section>
 
         <section className="botshield-fraud-automation-panel">
-          <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Response controls</span><h2>Fraud automation</h2><p>Configure how BotShield responds after Shopify identifies an elevated-risk order.</p></div></div>
-          <div className="botshield-fraud-automation-list">
-            {[["Fraud assessment sync", "Imports Shopify risk levels, recommendations, and documented assessment facts.", connected && model.fraudOrderFilterEnabled], ["Visitor follow-up", "Links a qualifying order outcome to a visitor action only when a verified relationship exists.", false], ["Automatic order actions", "Cancel, refund, restock, and notification actions require explicit permissions and confirmed execution.", false]].map(([title, copy, enabled]) => <div className="botshield-fraud-automation-item" key={title}><div><h3>{title}</h3><p>{copy}</p></div><span className={`botshield-fraud-risk botshield-fraud-risk--${enabled ? "low" : "pending"}`}>{enabled ? "Enabled" : "Unavailable"}</span></div>)}
-          </div>
+          <div className="botshield-fraud-automation-compact"><div><span className="botshield-fraud-eyebrow">Automated responses</span><h2>{model.fraudOrderFilterEnabled ? "Fraud assessment monitoring is active" : "Automated responses aren’t enabled for this store"}</h2><p>{model.fraudOrderFilterEnabled ? "BotShield is monitoring supported Shopify fraud assessments. Destructive order actions are never performed without explicit permission and confirmed execution." : "You can still review supported Shopify risk assessments manually once order access is connected."}</p></div><span className={`botshield-fraud-risk botshield-fraud-risk--${model.fraudOrderFilterEnabled ? "low" : "pending"}`}>{model.fraudOrderFilterEnabled ? "Monitoring" : "Not enabled"}</span></div>
         </section>
 
         {selectedOrder ? <div className="botshield-fraud-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedOrder(null); }}><aside aria-label="Order review details" aria-modal="true" className="botshield-fraud-drawer" role="dialog">
