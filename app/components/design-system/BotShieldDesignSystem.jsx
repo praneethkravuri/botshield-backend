@@ -465,6 +465,8 @@ export function BotShieldAppFrame({ children }) {
           color: var(--overview-muted);
           font-size: 13px;
           font-weight: 600;
+          letter-spacing: -0.0111067em;
+          line-height: 2;
         }
         .botshield-v2-kpi-value {
           margin-top: 10px;
