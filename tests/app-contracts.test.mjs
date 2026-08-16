@@ -73,7 +73,7 @@ test("every enabled admin action button has a real handler or destination", asyn
   );
 });
 
-test("active navigation does not expose retired placeholder products", async () => {
+test("active navigation exposes the five supported BotShield pages", async () => {
   const shell = await readFile(
     new URL("../app/routes/app.jsx", import.meta.url),
     "utf8",
@@ -83,8 +83,11 @@ test("active navigation does not expose retired placeholder products", async () 
     "utf8",
   );
 
-  assert.doesNotMatch(shell, /Fraud Orders|\/app\/fraud-orders/);
-  assert.match(fraudRoute, /redirect\("\/app\/analytics"\)/);
+  assert.match(shell, />Overview</);
+  assert.match(shell, /href="\/app"/);
+  assert.match(shell, />Fraud Orders</);
+  assert.match(shell, /href="\/app\/fraud-orders"/);
+  assert.match(fraudRoute, /export \{ default \} from "\.\/app\._index"/);
 });
 
 test("production cannot expose the in-memory UI preview as a real app", async () => {
