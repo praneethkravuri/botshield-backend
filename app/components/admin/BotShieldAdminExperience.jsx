@@ -3260,10 +3260,10 @@ function AnalyticsEventDetails({ event, onClose }) {
 function FraudOrdersDisconnected({ actions }) {
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content botshield-fraud-polaris">
+      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-fraud-orders-content botshield-fraud-polaris">
         <div className="botshield-protection-header botshield-fraud-header">
           <div>
-            <h1 className="botshield-overview-title botshield-protection-page-title">Fraud Orders</h1>
+            <h1 className="botshield-overview-title">Fraud Orders</h1>
             <p className="botshield-overview-subtitle">Review elevated-risk Shopify orders, understand the signals behind them, and resolve cases before fulfillment.</p>
           </div>
           <BotShieldAsyncButton action={actions.refresh} successMessage="Order risk status refreshed">Refresh</BotShieldAsyncButton>
@@ -3271,8 +3271,8 @@ function FraudOrdersDisconnected({ actions }) {
 
         <section className="botshield-fraud-native-status" aria-labelledby="order-risk-status-title">
           <div className="botshield-fraud-native-status-icon" aria-hidden="true">◇</div>
-          <div className="botshield-fraud-native-status-copy">
-            <span className="botshield-fraud-eyebrow">Order risk status</span>
+          <div className="botshield-fraud-native-status-copy botshield-v2-panel-header">
+            <span className="botshield-v2-eyebrow">Order risk status</span>
             <h2 id="order-risk-status-title">Order risk needs setup</h2>
             <p>Connect supported Shopify order access before BotShield can review fraud assessments and elevated-risk orders.</p>
           </div>
@@ -3284,19 +3284,19 @@ function FraudOrdersDisconnected({ actions }) {
 
         <section className="botshield-fraud-summary" aria-label="Fraud order summary">
           {[["Needs review", "Orders currently requiring merchant review"], ["High risk", "Orders classified as high risk"], ["Pending fulfillment", "Elevated-risk orders not yet fulfilled"], ["Assessed orders", "Orders with supported assessments"]].map(([label, detail]) => (
-            <div className="botshield-fraud-summary-item" key={label}><span>{label}</span><strong aria-label={`${label} unavailable`}>—</strong><small>{detail}</small></div>
+            <div className="botshield-fraud-summary-item" key={label}><span className="botshield-v2-kpi-label">{label}</span><strong className="botshield-v2-kpi-value" aria-label={`${label} unavailable`}>—</strong><small className="botshield-v2-kpi-detail">{detail}</small></div>
           ))}
         </section>
 
         <section className="botshield-fraud-review-surface botshield-fraud-native-queue" aria-labelledby="fraud-review-queue-title">
-          <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Review queue</span><h2 id="fraud-review-queue-title">Orders requiring attention</h2><p>Prioritized orders with elevated fraud assessments or recommendations that may need review before fulfillment.</p></div></div>
+          <div className="botshield-fraud-section-header"><div className="botshield-v2-panel-header"><span className="botshield-v2-eyebrow">Review queue</span><h2 id="fraud-review-queue-title">Orders requiring attention</h2><p>Prioritized orders with elevated fraud assessments or recommendations that may need review before fulfillment.</p></div></div>
           <div className="botshield-fraud-toolbar" aria-disabled="true">
             <div className="botshield-fraud-filter-group" role="tablist" aria-label="Order review views">
               {["Needs review", "High risk", "Medium risk", "Pending fulfillment", "All orders"].map((label, index) => <button aria-selected={index === 0} className={index === 0 ? "is-active" : ""} disabled key={label} role="tab" type="button">{label}</button>)}
             </div>
             <input aria-label="Search orders, customers, or email" disabled placeholder="Search orders, customers, or email" type="search" />
           </div>
-          <div className="botshield-fraud-native-empty">
+          <div className="botshield-fraud-native-empty botshield-v2-monitoring-empty">
             <div className="botshield-fraud-empty-icon" aria-hidden="true">◇</div>
             <div><h3>Connect order risk to begin reviewing orders</h3><p>BotShield will surface supported Shopify fraud assessments here after order access is available.</p></div>
             <s-button onClick={() => actions.setPage("setup")}>Review setup</s-button>
@@ -3304,7 +3304,7 @@ function FraudOrdersDisconnected({ actions }) {
         </section>
 
         <section className="botshield-fraud-native-response">
-          <div><h2>Fraud response</h2><p>Additional fraud-response actions require supported Shopify permissions.</p></div>
+          <div className="botshield-v2-panel-header"><h2>Fraud response</h2><p>Additional fraud-response actions require supported Shopify permissions.</p></div>
           <s-badge tone="neutral">Not configured</s-badge>
         </section>
       </main>
@@ -3363,10 +3363,10 @@ function FraudOrdersPage({ model, actions }) {
 
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-fraud-orders-content">
+      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-fraud-orders-content">
         <div className="botshield-protection-header botshield-fraud-header">
           <div>
-            <h1 className="botshield-overview-title botshield-protection-page-title">Fraud Orders</h1>
+            <h1 className="botshield-overview-title">Fraud Orders</h1>
             <p className="botshield-overview-subtitle">Review risky orders, understand the signals behind them, and take action before fulfillment.</p>
           </div>
           <BotShieldAsyncButton action={refresh} successMessage="Order review refreshed">Refresh</BotShieldAsyncButton>
@@ -3379,11 +3379,11 @@ function FraudOrdersPage({ model, actions }) {
         </section> : null}
 
         <section className="botshield-fraud-summary" aria-label="Fraud order summary">
-          {[["Orders reviewed", orders.length, "Evaluated in this workspace"], ["Needs review", metrics.review, "Awaiting merchant attention"], ["High risk", metrics.high, "Current high-risk assessments"], ["Pending assessment", metrics.pending, "Awaiting a risk result"]].map(([label, value, detail]) => <div className="botshield-fraud-summary-item" key={label}><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>)}
+          {[["Orders reviewed", orders.length, "Evaluated in this workspace"], ["Needs review", metrics.review, "Awaiting merchant attention"], ["High risk", metrics.high, "Current high-risk assessments"], ["Pending assessment", metrics.pending, "Awaiting a risk result"]].map(([label, value, detail]) => <div className="botshield-fraud-summary-item" key={label}><span className="botshield-v2-kpi-label">{label}</span><strong className="botshield-v2-kpi-value">{value}</strong><small className="botshield-v2-kpi-detail">{detail}</small></div>)}
         </section>
 
         <section className="botshield-fraud-review-surface">
-          <div className="botshield-fraud-section-header"><div><span className="botshield-fraud-eyebrow">Review queue</span><h2>Fraud review queue</h2><p>Prioritized orders that may require review before fulfillment.</p></div></div>
+          <div className="botshield-fraud-section-header"><div className="botshield-v2-panel-header"><span className="botshield-v2-eyebrow">Review queue</span><h2>Fraud review queue</h2><p>Prioritized orders that may require review before fulfillment.</p></div></div>
           <div className="botshield-fraud-toolbar">
             <div className="botshield-fraud-filter-group" role="group" aria-label="Order risk filter">
               {[["needs-review", "Needs review"], ["high", "High risk"], ["medium", "Medium risk"], ["pending", "Pending"], ["all", "All orders"]].map(([value, label]) => <button aria-selected={activeFilter === value} className={activeFilter === value ? "is-active" : ""} key={value} onClick={() => setActiveFilter(value)} role="tab" type="button">{label}</button>)}
