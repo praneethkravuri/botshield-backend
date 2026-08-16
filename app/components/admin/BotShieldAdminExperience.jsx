@@ -6516,7 +6516,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
     model.page === "security"
       ? "detection"
       : model.page === "fraud-orders"
-        ? "analytics"
+        ? "fraud-orders"
       : model.page === "settings"
         ? "policy"
         : ["alerts-reports"].includes(model.page)
@@ -6542,6 +6542,9 @@ export default function BotShieldAdminExperience({ model, actions }) {
       ) : null}
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
+      ) : null}
+      {screen === "fraud-orders" ? (
+        <FraudOrdersPage model={model} actions={actions} />
       ) : null}
       {screen === "incidents" ? (
         <ActivityPage model={model} actions={actions} />
