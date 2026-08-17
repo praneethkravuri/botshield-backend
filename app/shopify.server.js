@@ -5,6 +5,7 @@ import {
   shopifyApp,
 } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
+import { DevMemorySessionStorage } from "./dev-session-storage.server.js";
 import prisma from "./db.server";
 
 const BOTSHIELD_API_KEY = "d4fd10812566b17d9d99ed95e0978ada";
@@ -47,6 +48,10 @@ if (process.env.NODE_ENV === "production") {
   }
 }
 
+const useDevMemoryStorage =
+  process.env.NODE_ENV !== "production" &&
+  process.env.BOTSHIELD_UI_PREVIEW === "1";
+
 const shopify = shopifyApp({
   apiKey,
   apiSecretKey,
@@ -54,7 +59,9 @@ const shopify = shopifyApp({
   scopes,
   appUrl,
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: useDevMemoryStorage
+    ? new DevMemorySessionStorage()
+    : new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
   future: {
     expiringOfflineAccessTokens: true,

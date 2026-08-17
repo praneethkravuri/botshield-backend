@@ -143,12 +143,64 @@ function getInitialPage() {
   return aliases[view] || view || "dashboard";
 }
 
+function getPreviewFraudConnected() {
+  if (typeof window === "undefined") return false;
+  return new URL(window.location.href).searchParams.get("connected") === "1";
+}
+
+const previewFraudOrders = [
+  {
+    id: "preview-order-1",
+    name: "#1048",
+    customer: "Jordan Lee",
+    email: "jordan@example.com",
+    amount: "$486.00",
+    risk: "high",
+    recommendation: "Investigate",
+    reason: "Billing / shipping mismatch",
+    secondarySignal: "Unusual order velocity",
+    fulfillmentStatus: "Unfulfilled",
+    financialStatus: "Paid",
+    createdAt: minutesAgo(8),
+    adminUrl: "#",
+  },
+  {
+    id: "preview-order-2",
+    name: "#1042",
+    customer: "Morgan Patel",
+    email: "morgan@example.com",
+    amount: "$284.00",
+    risk: "medium",
+    recommendation: "Review",
+    reason: "Elevated network signal",
+    secondarySignal: "First-time high-value order",
+    fulfillmentStatus: "Unfulfilled",
+    financialStatus: "Authorized",
+    createdAt: minutesAgo(42),
+    adminUrl: "#",
+  },
+  {
+    id: "preview-order-3",
+    name: "#1031",
+    customer: "Alex Rivera",
+    email: "alex@example.com",
+    amount: "$56.00",
+    risk: "low",
+    recommendation: "Accept",
+    reason: "No elevated signals",
+    fulfillmentStatus: "Fulfilled",
+    financialStatus: "Paid",
+    createdAt: minutesAgo(720),
+    adminUrl: "#",
+  },
+];
+
 export const headers = () => ({
   "X-Robots-Tag": "noindex, nofollow",
 });
 
 export default function UiPreview() {
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(() => getInitialPage());
   const [blockedIPs, setBlockedIPs] = useState(["203.0.113.90"]);
   const [whitelist, setWhitelist] = useState(["198.51.100.25"]);
   const [settings, setSettings] = useState({
@@ -253,6 +305,9 @@ export default function UiPreview() {
         { city: "Irving", country: "United States", count: 1 },
         { city: "Austin", country: "United States", count: 1 },
       ],
+      fraudOrderAccessConnected: getPreviewFraudConnected(),
+      fraudOrders: getPreviewFraudConnected() ? previewFraudOrders : [],
+      fraudOrderFilterEnabled: false,
       protectionStatus: {
         appInstalled: true,
         themeEmbedDetected: true,

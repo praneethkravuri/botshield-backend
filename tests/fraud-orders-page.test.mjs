@@ -17,18 +17,21 @@ const shopifyConfig = await readFile(
 
 test("Fraud Orders uses a dedicated disconnected experience", () => {
   assert.match(page, /if \(!connected\)/);
-  assert.match(page, /Connect Shopify order risk/);
-  assert.match(page, /Prioritized review queue/);
-  assert.match(page, /No order data is stored or displayed/);
-  assert.match(page, /Order access required/);
+  assert.match(page, /Order risk needs setup/);
+  assert.match(page, /Orders requiring attention/);
+  assert.match(page, /Connect order risk to begin reviewing orders/);
+  assert.match(page, /Setup required/);
+  assert.match(page, /No demo or simulated orders are shown/);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
-  assert.match(page, /Fraud review queue/);
-  assert.match(page, /Search order, customer, or email/);
-  assert.match(page, /Review order/);
+  assert.match(page, /Orders requiring attention/);
+  assert.match(page, /Search orders, customers, or email/);
+  assert.match(page, /Review →/);
+  assert.match(page, /Why flagged/);
   assert.match(page, /Risk assessment/);
-  assert.match(page, /Recommended next step/);
+  assert.match(page, /Why this order was flagged/);
+  assert.match(page, /Investigation/);
   assert.match(page, /event\.key === "Escape"/);
 });
 
@@ -41,6 +44,8 @@ test("Fraud Orders does not claim unsupported production access", () => {
 test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-setup-card/);
   assert.match(styles, /\.botshield-fraud-preview-grid/);
+  assert.match(styles, /\.botshield-fraud-snapshot/);
+  assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
   assert.match(styles, /justify-content: center/);
 });

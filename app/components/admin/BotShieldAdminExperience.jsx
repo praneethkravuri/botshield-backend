@@ -3254,58 +3254,363 @@ function AnalyticsEventDetails({ event, onClose }) {
   );
 }
 
+const FRAUD_REVIEW_FILTERS = [
+  ["needs-review", "Needs review"],
+  ["high", "High risk"],
+  ["medium", "Medium risk"],
+  ["pending-fulfillment", "Pending fulfillment"],
+  ["all", "All orders"],
+];
+
+function fraudOrderAge(value) {
+  if (!value) return "—";
+  const timestamp = new Date(value).getTime();
+  if (Number.isNaN(timestamp)) return "—";
+  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+  if (elapsedMinutes < 1) return "Just now";
+  if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours}h`;
+  return `${Math.floor(elapsedHours / 24)}d`;
+}
+
+function fraudOrderPrimarySignal(order) {
+  return normalizeOverviewText(order.reason || order.primarySignal || "No signal recorded");
+}
+
+function fraudOrderSecondarySignal(order) {
+  const secondary = order.secondarySignal || order.secondaryReason;
+  return secondary ? normalizeOverviewText(secondary) : null;
+}
+
+function fraudOrderSignalList(order) {
+  const signals = [];
+  const primary = order.reason || order.primarySignal;
+  const secondary = order.secondarySignal || order.secondaryReason;
+  if (primary) signals.push(normalizeOverviewText(primary));
+  if (secondary && !signals.includes(normalizeOverviewText(secondary))) {
+    signals.push(normalizeOverviewText(secondary));
+  }
+  if (Array.isArray(order.signals)) {
+    order.signals.forEach((signal) => {
+      const text = normalizeOverviewText(signal);
+      if (text && !signals.includes(text)) signals.push(text);
+    });
+  }
+  return signals;
+}
+
+function fraudOrderIsPendingFulfillment(order) {
+  const status = String(order.fulfillmentStatus || "").toLowerCase();
+  return !status || /unfulfilled|partial|pending|on hold|not fulfilled/.test(status);
+}
+
+function fraudOrderIsElevated(order) {
+  const risk = String(order.risk || order.riskLevel || "pending").toLowerCase();
+  const recommendation = String(order.recommendation || "").toLowerCase();
+  return /high|medium/.test(risk) || /review|cancel|investigate/.test(recommendation);
+}
+
+function FraudOrdersPageHeader({ onRefresh }) {
+  return (
+    <header className="botshield-overview-header botshield-fraud-header">
+      <div>
+        <h1 className="botshield-overview-title">Fraud Orders</h1>
+        <p className="botshield-overview-subtitle">
+          Review risky Shopify orders, understand why they were flagged, and investigate them before fulfillment.
+        </p>
+      </div>
+      {onRefresh ? (
+        <BotShieldAsyncButton action={onRefresh} successMessage="Order review refreshed">
+          Refresh
+        </BotShieldAsyncButton>
+      ) : null}
+    </header>
+  );
+}
+
+function FraudOrderStatusStrip({ onSetup }) {
+  return (
+    <section className="botshield-fraud-status-strip" aria-labelledby="order-risk-status-title">
+      <div className="botshield-fraud-status-strip-icon">
+        <OverviewIcon name="shield" centered />
+      </div>
+      <div className="botshield-fraud-status-strip-copy">
+        <span className="botshield-fraud-eyebrow">Order risk status</span>
+        <h2 id="order-risk-status-title">Order risk needs setup</h2>
+        <p>Connect Shopify order access to review risk assessments and elevated-risk orders.</p>
+      </div>
+      <div className="botshield-fraud-status-strip-action">
+        <BotShieldStatusBadge status="setup_required" label="Setup required" />
+        <BotShieldActionButton onClick={onSetup}>Review setup</BotShieldActionButton>
+      </div>
+    </section>
+  );
+}
+
+function FraudReviewSnapshot({ items }) {
+  return (
+    <section className="botshield-fraud-snapshot" aria-label="Review snapshot">
+      {items.map((item) => (
+        <div className="botshield-fraud-snapshot-item" key={item.label}>
+          <span className="botshield-fraud-snapshot-label">{item.label}</span>
+          <strong
+            className={`botshield-fraud-snapshot-value${item.unavailable ? " is-unavailable" : ""}`}
+            aria-label={item.unavailable ? `${item.label} unavailable` : undefined}
+          >
+            {item.unavailable ? "—" : item.value}
+          </strong>
+          <small className="botshield-fraud-snapshot-detail">{item.detail}</small>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function FraudReviewQueueToolbar({
+  activeFilter,
+  disabled = false,
+  onFilterChange,
+  onSearchChange,
+  search,
+}) {
+  return (
+    <div className="botshield-fraud-toolbar" aria-disabled={disabled || undefined}>
+      <div className="botshield-fraud-filter-group" role="tablist" aria-label="Order review views">
+        {FRAUD_REVIEW_FILTERS.map(([value, label]) => (
+          <button
+            aria-selected={activeFilter === value}
+            className={activeFilter === value ? "is-active" : ""}
+            disabled={disabled}
+            key={value}
+            onClick={() => onFilterChange?.(value)}
+            role="tab"
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <input
+        aria-label="Search orders, customers, or email"
+        disabled={disabled}
+        onChange={(event) => onSearchChange?.(event.target.value)}
+        placeholder="Search orders, customers, or email"
+        type="search"
+        value={search}
+      />
+    </div>
+  );
+}
+
+function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
+  return (
+    <div className="botshield-fraud-table-wrap">
+      <table className="botshield-fraud-table botshield-fraud-inbox-table">
+        <thead>
+          <tr>
+            {["Order", "Risk", "Why flagged", "Amount", "Fulfillment", "Age", "Action"].map((heading) => (
+              <th key={heading}>{heading}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => {
+            const secondarySignal = fraudOrderSecondarySignal(order);
+            return (
+              <tr key={order.id || order.orderId || order.name}>
+                <td className="botshield-fraud-inbox-order">
+                  <strong>{order.name || order.orderName || "Order"}</strong>
+                  <small>{formatDate(order.createdAt || order.date, "Time unavailable")}</small>
+                </td>
+                <td>
+                  <BotShieldStatusBadge label={riskLabel(order)} status={riskTone(order)} />
+                </td>
+                <td className="botshield-fraud-inbox-signal">
+                  <strong>{fraudOrderPrimarySignal(order)}</strong>
+                  {secondarySignal ? <small>{secondarySignal}</small> : null}
+                </td>
+                <td>{order.amount || order.total || "Unavailable"}</td>
+                <td>{order.fulfillmentStatus || "Unavailable"}</td>
+                <td>{fraudOrderAge(order.createdAt || order.date)}</td>
+                <td className="botshield-fraud-inbox-action">
+                  <button
+                    aria-label={`Review order ${order.name || order.orderName || ""}`.trim()}
+                    className="botshield-fraud-review-link"
+                    onClick={() => onReview(order)}
+                    type="button"
+                  >
+                    Review →
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTone }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  if (!order || typeof document === "undefined") return null;
+
+  const signals = fraudOrderSignalList(order);
+
+  return ReactDOM.createPortal(
+    <div
+      className="botshield-fraud-drawer-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside aria-label="Order review details" aria-modal="true" className="botshield-fraud-drawer" role="dialog">
+        <header>
+          <div>
+            <h2>{order.name || order.orderName || "Order details"}</h2>
+            <p>{formatDate(order.createdAt || order.date, "Time unavailable")}</p>
+          </div>
+          <button aria-label="Close order details" autoFocus onClick={onClose} type="button">
+            ×
+          </button>
+        </header>
+        <div className="botshield-fraud-drawer-body">
+          <div className="botshield-fraud-drawer-summary">
+            <BotShieldStatusBadge label={riskLabel(order)} status={riskTone(order)} />
+            <p>
+              {needsReview(order)
+                ? "This order may require review before fulfillment."
+                : "No elevated review requirement is indicated for this order."}
+            </p>
+          </div>
+          <section>
+            <h3>Risk assessment</h3>
+            <dl className="botshield-fraud-drawer-grid">
+              <div>
+                <dt>Shopify recommendation</dt>
+                <dd>{order.recommendation || "Pending"}</dd>
+              </div>
+              <div>
+                <dt>Risk level</dt>
+                <dd>{riskLabel(order)}</dd>
+              </div>
+              <div className="is-full">
+                <dt>Assessment source</dt>
+                <dd>{order.assessmentSource || "Shopify"}</dd>
+              </div>
+            </dl>
+          </section>
+          <section>
+            <h3>Why this order was flagged</h3>
+            {signals.length ? (
+              <ul className="botshield-fraud-signal-list">
+                {signals.map((signal) => (
+                  <li key={signal}>{signal}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>No additional risk signals are available for this order.</p>
+            )}
+          </section>
+          <section>
+            <h3>Order</h3>
+            <dl className="botshield-fraud-drawer-grid">
+              <div>
+                <dt>Amount</dt>
+                <dd>{order.amount || order.total || "Unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Payment status</dt>
+                <dd>{order.financialStatus || "Unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Fulfillment</dt>
+                <dd>{order.fulfillmentStatus || "Unavailable"}</dd>
+              </div>
+              <div>
+                <dt>Customer</dt>
+                <dd>{order.customer || order.customerName || "Unavailable"}</dd>
+              </div>
+            </dl>
+          </section>
+          <section>
+            <h3>Investigation</h3>
+            <p>
+              {order.recommendation
+                ? `Review Shopify's ${String(order.recommendation).toLowerCase()} recommendation and documented assessment facts before fulfilling this order.`
+                : "Wait for the risk assessment to complete before making a fulfillment decision."}
+            </p>
+          </section>
+        </div>
+        <footer>
+          <BotShieldActionButton onClick={onClose}>Close</BotShieldActionButton>
+          {order.adminUrl ? (
+            <a className="botshield-fraud-open-order" href={order.adminUrl} rel="noreferrer" target="_top">
+              Open in Shopify
+            </a>
+          ) : null}
+        </footer>
+      </aside>
+    </div>,
+    document.body,
+  );
+}
+
 // Retained only to keep older preview snapshots readable. No active route or
 // navigation exposes this screen until Shopify order-risk syncing exists.
 // eslint-disable-next-line no-unused-vars
 function FraudOrdersDisconnected({ actions }) {
+  const snapshotItems = [
+    { label: "Needs review", value: null, detail: "Orders awaiting merchant review", unavailable: true },
+    { label: "High risk", value: null, detail: "Highest-priority orders", unavailable: true },
+    { label: "Pending fulfillment", value: null, detail: "Risky orders not yet fulfilled", unavailable: true },
+    { label: "Assessed", value: null, detail: "Orders checked for fraud risk", unavailable: true },
+  ];
+
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-fraud-orders-content botshield-fraud-polaris">
-        <div className="botshield-protection-header botshield-fraud-header">
-          <div>
-            <h1 className="botshield-overview-title">Fraud Orders</h1>
-            <p className="botshield-overview-subtitle">Review elevated-risk Shopify orders, understand the signals behind them, and resolve cases before fulfillment.</p>
+      <main className="botshield-page-content botshield-fraud-orders-content">
+        <FraudOrdersPageHeader />
+
+        <FraudOrderStatusStrip onSetup={() => actions.setPage("setup")} />
+
+        <FraudReviewSnapshot items={snapshotItems} />
+
+        <section className="botshield-fraud-review-hero" aria-labelledby="fraud-review-queue-title">
+          <div className="botshield-fraud-section-intro">
+            <span className="botshield-fraud-eyebrow">Review queue</span>
+            <h2 id="fraud-review-queue-title">Orders requiring attention</h2>
+            <p>
+              Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
+            </p>
           </div>
-          <BotShieldAsyncButton action={actions.refresh} successMessage="Order risk status refreshed">Refresh</BotShieldAsyncButton>
-        </div>
-
-        <section className="botshield-fraud-native-status" aria-labelledby="order-risk-status-title">
-          <div className="botshield-fraud-native-status-icon" aria-hidden="true">◇</div>
-          <div className="botshield-fraud-native-status-copy botshield-v2-panel-header">
-            <span className="botshield-v2-eyebrow">Order risk status</span>
-            <h2 id="order-risk-status-title">Order risk needs setup</h2>
-            <p>Connect supported Shopify order access before BotShield can review fraud assessments and elevated-risk orders.</p>
-          </div>
-          <s-stack direction="inline" gap="small" alignItems="center">
-            <s-badge tone="caution">Setup required</s-badge>
-            <s-button variant="primary" onClick={() => actions.setPage("setup")}>Review setup</s-button>
-          </s-stack>
-        </section>
-
-        <section className="botshield-fraud-summary" aria-label="Fraud order summary">
-          {[["Needs review", "Orders currently requiring merchant review"], ["High risk", "Orders classified as high risk"], ["Pending fulfillment", "Elevated-risk orders not yet fulfilled"], ["Assessed orders", "Orders with supported assessments"]].map(([label, detail]) => (
-            <div className="botshield-fraud-summary-item" key={label}><span className="botshield-v2-kpi-label">{label}</span><strong className="botshield-v2-kpi-value" aria-label={`${label} unavailable`}>—</strong><small className="botshield-v2-kpi-detail">{detail}</small></div>
-          ))}
-        </section>
-
-        <section className="botshield-fraud-review-surface botshield-fraud-native-queue" aria-labelledby="fraud-review-queue-title">
-          <div className="botshield-fraud-section-header"><div className="botshield-v2-panel-header"><span className="botshield-v2-eyebrow">Review queue</span><h2 id="fraud-review-queue-title">Orders requiring attention</h2><p>Prioritized orders with elevated fraud assessments or recommendations that may need review before fulfillment.</p></div></div>
-          <div className="botshield-fraud-toolbar" aria-disabled="true">
-            <div className="botshield-fraud-filter-group" role="tablist" aria-label="Order review views">
-              {["Needs review", "High risk", "Medium risk", "Pending fulfillment", "All orders"].map((label, index) => <button aria-selected={index === 0} className={index === 0 ? "is-active" : ""} disabled key={label} role="tab" type="button">{label}</button>)}
+          <FraudReviewQueueToolbar
+            activeFilter="needs-review"
+            disabled
+            onFilterChange={() => {}}
+            onSearchChange={() => {}}
+            search=""
+          />
+          <div className="botshield-fraud-queue-empty">
+            <OverviewIcon name="activity" centered />
+            <div>
+              <h3>Connect order risk to begin reviewing orders</h3>
+              <p>
+                Once supported Shopify order access is connected, elevated-risk orders will appear here for review.
+              </p>
             </div>
-            <input aria-label="Search orders, customers, or email" disabled placeholder="Search orders, customers, or email" type="search" />
+            <BotShieldActionButton onClick={() => actions.setPage("setup")}>Review setup</BotShieldActionButton>
+            <small>No demo or simulated orders are shown.</small>
           </div>
-          <div className="botshield-fraud-native-empty botshield-v2-monitoring-empty">
-            <div className="botshield-fraud-empty-icon" aria-hidden="true">◇</div>
-            <div><h3>Connect order risk to begin reviewing orders</h3><p>BotShield will surface supported Shopify fraud assessments here after order access is available.</p></div>
-            <s-button onClick={() => actions.setPage("setup")}>Review setup</s-button>
-          </div>
-        </section>
-
-        <section className="botshield-fraud-native-response">
-          <div className="botshield-v2-panel-header"><h2>Fraud response</h2><p>Additional fraud-response actions require supported Shopify permissions.</p></div>
-          <s-badge tone="neutral">Not configured</s-badge>
         </section>
       </main>
     </div>
@@ -3341,9 +3646,24 @@ function FraudOrdersPage({ model, actions }) {
     if (needsReview(order)) result.review += 1;
     return result;
   }, { high: 0, low: 0, medium: 0, pending: 0, review: 0 });
+  const pendingFulfillment = orders.filter(
+    (order) => fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order),
+  ).length;
   const filteredOrders = orders.filter((order) => {
-    const filterMatch = activeFilter === "all" || (activeFilter === "needs-review" ? needsReview(order) : riskTone(order) === activeFilter);
-    const text = [order.name, order.orderName, order.customer, order.customerName, order.email].filter(Boolean).join(" ").toLowerCase();
+    const filterMatch =
+      activeFilter === "all"
+        ? true
+        : activeFilter === "needs-review"
+          ? needsReview(order)
+          : activeFilter === "pending-fulfillment"
+            ? fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order)
+            : activeFilter === "pending"
+              ? riskTone(order) === "pending"
+              : riskTone(order) === activeFilter;
+    const text = [order.name, order.orderName, order.customer, order.customerName, order.email]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     return filterMatch && (!search.trim() || text.includes(search.trim().toLowerCase()));
   });
   const refresh = async () => {
@@ -3361,65 +3681,61 @@ function FraudOrdersPage({ model, actions }) {
 
   if (!connected) return <FraudOrdersDisconnected actions={actions} />;
 
+  const snapshotItems = [
+    { label: "Needs review", value: metrics.review, detail: "Orders awaiting merchant review", unavailable: false },
+    { label: "High risk", value: metrics.high, detail: "Highest-priority orders", unavailable: false },
+    { label: "Pending fulfillment", value: pendingFulfillment, detail: "Risky orders not yet fulfilled", unavailable: false },
+    { label: "Assessed", value: orders.length, detail: "Orders checked for fraud risk", unavailable: false },
+  ];
+
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-fraud-orders-content">
-        <div className="botshield-protection-header botshield-fraud-header">
-          <div>
-            <h1 className="botshield-overview-title">Fraud Orders</h1>
-            <p className="botshield-overview-subtitle">Review risky orders, understand the signals behind them, and take action before fulfillment.</p>
+      <main className="botshield-page-content botshield-fraud-orders-content">
+        <FraudOrdersPageHeader onRefresh={refresh} />
+
+        <FraudReviewSnapshot items={snapshotItems} />
+
+        <section className="botshield-fraud-review-hero">
+          <div className="botshield-fraud-section-intro">
+            <span className="botshield-fraud-eyebrow">Review queue</span>
+            <h2>Orders requiring attention</h2>
+            <p>
+              Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
+            </p>
           </div>
-          <BotShieldAsyncButton action={refresh} successMessage="Order review refreshed">Refresh</BotShieldAsyncButton>
-        </div>
-
-        {!connected ? <section className="botshield-fraud-access-banner" aria-label="Order data connection">
-          <div className="botshield-fraud-access-icon" aria-hidden="true">↳</div>
-          <div><span className="botshield-fraud-eyebrow">Order intelligence</span><h2>Shopify order access is not connected</h2><p>BotShield cannot review orders, customers, totals, or fraud assessments until approved order-read access is available. No order data is inferred or displayed.</p></div>
-          <span className="botshield-fraud-risk botshield-fraud-risk--pending">Not connected</span>
-        </section> : null}
-
-        <section className="botshield-fraud-summary" aria-label="Fraud order summary">
-          {[["Orders reviewed", orders.length, "Evaluated in this workspace"], ["Needs review", metrics.review, "Awaiting merchant attention"], ["High risk", metrics.high, "Current high-risk assessments"], ["Pending assessment", metrics.pending, "Awaiting a risk result"]].map(([label, value, detail]) => <div className="botshield-fraud-summary-item" key={label}><span className="botshield-v2-kpi-label">{label}</span><strong className="botshield-v2-kpi-value">{value}</strong><small className="botshield-v2-kpi-detail">{detail}</small></div>)}
-        </section>
-
-        <section className="botshield-fraud-review-surface">
-          <div className="botshield-fraud-section-header"><div className="botshield-v2-panel-header"><span className="botshield-v2-eyebrow">Review queue</span><h2>Fraud review queue</h2><p>Prioritized orders that may require review before fulfillment.</p></div></div>
-          <div className="botshield-fraud-toolbar">
-            <div className="botshield-fraud-filter-group" role="group" aria-label="Order risk filter">
-              {[["needs-review", "Needs review"], ["high", "High risk"], ["medium", "Medium risk"], ["pending", "Pending"], ["all", "All orders"]].map(([value, label]) => <button aria-selected={activeFilter === value} className={activeFilter === value ? "is-active" : ""} key={value} onClick={() => setActiveFilter(value)} role="tab" type="button">{label}</button>)}
+          <FraudReviewQueueToolbar
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            onSearchChange={setSearch}
+            search={search}
+          />
+          {filteredOrders.length ? (
+            <FraudOrderInboxTable
+              onReview={setSelectedOrder}
+              orders={filteredOrders}
+              riskLabel={riskLabel}
+              riskTone={riskTone}
+            />
+          ) : (
+            <div className="botshield-fraud-queue-empty is-connected">
+              <OverviewIcon name="activity" centered />
+              <div>
+                <h3>No risky orders need attention</h3>
+                <p>New Shopify orders with elevated fraud risk will appear here for review.</p>
+              </div>
             </div>
-            <input aria-label="Search orders" disabled={!connected} onChange={(event) => setSearch(event.target.value)} placeholder="Search order, customer, or email" type="search" value={search} />
-          </div>
-          {filteredOrders.length ? <div className="botshield-fraud-table-wrap"><table className="botshield-fraud-table">
-            <thead><tr>{["Order", "Customer", "Amount", "Risk", "Recommendation", "Primary signal", "Fulfillment", "Created", "Action"].map((heading) => <th key={heading}>{heading}</th>)}</tr></thead>
-            <tbody>{filteredOrders.map((order) => <tr key={order.id || order.orderId || order.name}>
-              <td><strong>{order.name || order.orderName || "Order"}</strong></td>
-              <td><strong>{order.customer || order.customerName || "Unavailable"}</strong>{order.email ? <small>{order.email}</small> : null}</td>
-              <td>{order.amount || order.total || "Unavailable"}</td>
-              <td><span className={`botshield-fraud-risk botshield-fraud-risk--${riskTone(order)}`}>{riskLabel(order)}</span></td>
-              <td>{order.recommendation || "Pending"}</td>
-              <td>{normalizeOverviewText(order.reason || order.primarySignal || "No additional signals")}</td>
-              <td>{order.fulfillmentStatus || "Unavailable"}</td>
-              <td>{formatDate(order.date || order.createdAt, "Unavailable")}</td>
-              <td><BotShieldActionButton onClick={() => setSelectedOrder(order)}>Review order</BotShieldActionButton></td>
-            </tr>)}</tbody>
-          </table></div> : <div className="botshield-fraud-empty"><div className="botshield-fraud-empty-icon" aria-hidden="true">✓</div><h3>{connected ? "No risky orders need attention" : "Order review will appear here"}</h3><p>{connected ? "New Shopify orders with elevated fraud risk will appear here for review." : "Connect approved Shopify order access to review real, store-scoped fraud assessments. BotShield never creates demonstration orders."}</p></div>}
+          )}
         </section>
 
-        <section className="botshield-fraud-automation-panel">
-          <div className="botshield-fraud-automation-compact"><div><span className="botshield-fraud-eyebrow">Automated responses</span><h2>{model.fraudOrderFilterEnabled ? "Fraud assessment monitoring is active" : "Automated responses aren’t enabled for this store"}</h2><p>{model.fraudOrderFilterEnabled ? "BotShield is monitoring supported Shopify fraud assessments. Destructive order actions are never performed without explicit permission and confirmed execution." : "You can still review supported Shopify risk assessments manually once order access is connected."}</p></div><span className={`botshield-fraud-risk botshield-fraud-risk--${model.fraudOrderFilterEnabled ? "low" : "pending"}`}>{model.fraudOrderFilterEnabled ? "Monitoring" : "Not enabled"}</span></div>
-        </section>
-
-        {selectedOrder ? <div className="botshield-fraud-drawer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedOrder(null); }}><aside aria-label="Order review details" aria-modal="true" className="botshield-fraud-drawer" role="dialog">
-          <header><div><h2>{selectedOrder.name || selectedOrder.orderName || "Order details"}</h2><p>{[selectedOrder.amount || selectedOrder.total, formatDate(selectedOrder.createdAt || selectedOrder.date, "")].filter(Boolean).join(" · ")}</p></div><button aria-label="Close order details" onClick={() => setSelectedOrder(null)} type="button">×</button></header>
-          <div className="botshield-fraud-drawer-body">
-            <div className="botshield-fraud-risk-summary"><span className={`botshield-fraud-risk botshield-fraud-risk--${riskTone(selectedOrder)}`}>{riskLabel(selectedOrder)}</span><h3>{needsReview(selectedOrder) ? "Review before fulfillment" : "No elevated review requirement"}</h3><p>{needsReview(selectedOrder) ? "This order has an assessment or recommendation that may require merchant review before fulfillment." : "The current assessment does not indicate an elevated fraud-review requirement."}</p></div>
-            <section><h3>Risk assessment</h3><dl><div><dt>Risk level</dt><dd>{riskLabel(selectedOrder)}</dd></div><div><dt>Recommendation</dt><dd>{selectedOrder.recommendation || "Pending"}</dd></div><div><dt>Assessment source</dt><dd>{selectedOrder.assessmentSource || "Shopify"}</dd></div><div className="is-full"><dt>Risk signals</dt><dd>{normalizeOverviewText(selectedOrder.reason || selectedOrder.primarySignal || "No additional risk signals available")}</dd></div></dl></section>
-            <section><h3>Order context</h3><dl><div><dt>Order total</dt><dd>{selectedOrder.amount || selectedOrder.total || "Unavailable"}</dd></div><div><dt>Customer</dt><dd>{selectedOrder.customer || selectedOrder.customerName || "Unavailable"}</dd></div><div><dt>Financial status</dt><dd>{selectedOrder.financialStatus || "Unavailable"}</dd></div><div><dt>Fulfillment</dt><dd>{selectedOrder.fulfillmentStatus || "Unavailable"}</dd></div><div className="is-full"><dt>Created</dt><dd>{formatDate(selectedOrder.createdAt || selectedOrder.date, "Unavailable")}</dd></div></dl></section>
-            <section><h3>Recommended next step</h3><p>{selectedOrder.recommendation ? `Review Shopify's ${String(selectedOrder.recommendation).toLowerCase()} recommendation and the documented assessment facts before fulfilling this order.` : "Wait for the risk assessment to complete before making a fulfillment decision."}</p></section>
-          </div>
-          <footer><BotShieldActionButton onClick={() => setSelectedOrder(null)}>Close</BotShieldActionButton>{selectedOrder.adminUrl ? <a className="botshield-fraud-open-order" href={selectedOrder.adminUrl} rel="noreferrer" target="_top">Open in Shopify</a> : null}</footer>
-        </aside></div> : null}
+        {selectedOrder ? (
+          <FraudOrderReviewDrawer
+            needsReview={needsReview}
+            onClose={() => setSelectedOrder(null)}
+            order={selectedOrder}
+            riskLabel={riskLabel}
+            riskTone={riskTone}
+          />
+        ) : null}
       </main>
     </div>
   );
