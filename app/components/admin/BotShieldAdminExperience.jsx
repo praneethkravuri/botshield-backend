@@ -3336,7 +3336,7 @@ function FraudOrderStatusStrip({ onSetup }) {
         <OverviewIcon name="shield" centered />
       </div>
       <div className="botshield-fraud-status-strip-copy">
-        <span className="botshield-fraud-eyebrow">Order risk status</span>
+        <span className="botshield-v2-eyebrow">Order risk status</span>
         <h2 id="order-risk-status-title">Order risk needs setup</h2>
         <p>Connect Shopify order access to review risk assessments and elevated-risk orders.</p>
       </div>
@@ -3587,7 +3587,7 @@ function FraudOrdersDisconnected({ actions }) {
 
         <section className="botshield-fraud-review-hero" aria-labelledby="fraud-review-queue-title">
           <div className="botshield-fraud-section-intro">
-            <span className="botshield-fraud-eyebrow">Review queue</span>
+            <span className="botshield-v2-eyebrow">Review queue</span>
             <h2 id="fraud-review-queue-title">Orders requiring attention</h2>
             <p>
               Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
@@ -3697,7 +3697,7 @@ function FraudOrdersPage({ model, actions }) {
 
         <section className="botshield-fraud-review-hero">
           <div className="botshield-fraud-section-intro">
-            <span className="botshield-fraud-eyebrow">Review queue</span>
+            <span className="botshield-v2-eyebrow">Review queue</span>
             <h2>Orders requiring attention</h2>
             <p>
               Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
