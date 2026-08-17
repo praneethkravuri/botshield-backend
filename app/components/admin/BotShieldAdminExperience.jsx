@@ -3452,6 +3452,128 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
   );
 }
 
+function FraudOrderSetupDrawer({ connected, onClose, onOpenFullSetup }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  if (typeof document === "undefined") return null;
+
+  const orderAccessReady = connected;
+  const reviewQueueReady = connected;
+
+  return ReactDOM.createPortal(
+    <div
+      className="botshield-fraud-drawer-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <aside
+        aria-label="Fraud Orders setup"
+        aria-modal="true"
+        className="botshield-fraud-drawer botshield-fraud-drawer--setup"
+        role="dialog"
+      >
+        <header>
+          <div>
+            <h2>Fraud Orders setup</h2>
+            <p>Connect order risk review without leaving this workspace.</p>
+          </div>
+          <button aria-label="Close Fraud Orders setup" autoFocus onClick={onClose} type="button">
+            ×
+          </button>
+        </header>
+        <div className="botshield-fraud-drawer-body">
+          <div className="botshield-fraud-setup-card">
+            <div className="botshield-fraud-setup-heading">
+              <div aria-hidden="true" className="botshield-fraud-setup-icon">
+                <OverviewIcon name="shield" centered />
+              </div>
+              <div>
+                <h2>Enable order risk review</h2>
+                <p>
+                  Fraud Orders needs supported Shopify order access before elevated-risk orders can
+                  appear in your review queue.
+                </p>
+              </div>
+            </div>
+            <div className="botshield-fraud-setup-status">
+              <div>
+                <span className="botshield-v2-eyebrow">Setup status</span>
+                <strong>
+                  {orderAccessReady ? "Order review connected" : "Order access not connected"}
+                </strong>
+              </div>
+              <BotShieldStatusBadge
+                label={orderAccessReady ? "Connected" : "Setup required"}
+                status={orderAccessReady ? "active" : "setup_required"}
+              />
+            </div>
+            <ol className="botshield-fraud-setup-steps">
+              <li>
+                <span>1</span>
+                <div>
+                  <h3>BotShield app access</h3>
+                  <p>You are in Shopify Admin with BotShield installed.</p>
+                  <BotShieldStatusBadge label="Complete" status="active" />
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <h3>Shopify order access</h3>
+                  <p>
+                    Supported Shopify order permissions are required to read order risk assessments.
+                  </p>
+                  <BotShieldStatusBadge
+                    label={orderAccessReady ? "Connected" : "Not connected yet"}
+                    status={orderAccessReady ? "active" : "setup_required"}
+                  />
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <h3>Review queue sync</h3>
+                  <p>Elevated-risk orders appear here once order access is connected.</p>
+                  <BotShieldStatusBadge
+                    label={reviewQueueReady ? "Ready" : "Waiting for order access"}
+                    status={reviewQueueReady ? "active" : "pending"}
+                  />
+                </div>
+              </li>
+            </ol>
+            <div className="botshield-fraud-setup-next">
+              <span className="botshield-v2-eyebrow">Next required action</span>
+              <p>
+                {orderAccessReady
+                  ? "Your review queue will populate automatically as Shopify order risk assessments arrive."
+                  : "Order access is not connected in this BotShield release yet. When supported Shopify order access is available for your store, connect it here to begin reviewing elevated-risk orders."}
+              </p>
+            </div>
+            <div className="botshield-fraud-setup-foot">
+              <p>No demo or simulated orders are shown in Fraud Orders.</p>
+              <button className="botshield-fraud-setup-link" onClick={onOpenFullSetup} type="button">
+                View full BotShield setup
+              </button>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <BotShieldActionButton onClick={onClose}>Back to Fraud Orders</BotShieldActionButton>
+        </footer>
+      </aside>
+    </div>,
+    document.body,
+  );
+}
+
 function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTone }) {
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -3568,7 +3690,7 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
 // Retained only to keep older preview snapshots readable. No active route or
 // navigation exposes this screen until Shopify order-risk syncing exists.
 // eslint-disable-next-line no-unused-vars
-function FraudOrdersDisconnected({ actions }) {
+function FraudOrdersDisconnected({ onOpenSetup }) {
   const snapshotItems = [
     { label: "Needs review", value: null, detail: "Orders awaiting merchant review", unavailable: true },
     { label: "High risk", value: null, detail: "Highest-priority orders", unavailable: true },
@@ -3581,7 +3703,7 @@ function FraudOrdersDisconnected({ actions }) {
       <main className="botshield-page-content botshield-fraud-orders-content">
         <FraudOrdersPageHeader />
 
-        <FraudOrderStatusStrip onSetup={() => actions.setPage("setup")} />
+        <FraudOrderStatusStrip onSetup={onOpenSetup} />
 
         <FraudReviewSnapshot items={snapshotItems} />
 
@@ -3608,7 +3730,7 @@ function FraudOrdersDisconnected({ actions }) {
                 Once supported Shopify order access is connected, elevated-risk orders will appear here for review.
               </p>
             </div>
-            <BotShieldActionButton onClick={() => actions.setPage("setup")}>Review setup</BotShieldActionButton>
+            <BotShieldActionButton onClick={onOpenSetup}>Review setup</BotShieldActionButton>
             <small>No demo or simulated orders are shown.</small>
           </div>
         </section>
@@ -3621,6 +3743,7 @@ function FraudOrdersPage({ model, actions }) {
   const [activeFilter, setActiveFilter] = useState("needs-review");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [setupOpen, setSetupOpen] = useState(false);
   const orders = Array.isArray(model.fraudOrders) ? model.fraudOrders : [];
   const connected = Boolean(model.fraudOrderAccessConnected);
   const riskKey = (order) => String(order.risk || order.riskLevel || "pending").toLowerCase();
@@ -3679,7 +3802,27 @@ function FraudOrdersPage({ model, actions }) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [selectedOrder]);
 
-  if (!connected) return <FraudOrdersDisconnected actions={actions} />;
+  const openSetup = () => setSetupOpen(true);
+  const closeSetup = () => setSetupOpen(false);
+  const openFullSetup = () => {
+    setSetupOpen(false);
+    actions.setPage("setup");
+  };
+
+  if (!connected) {
+    return (
+      <>
+        <FraudOrdersDisconnected onOpenSetup={openSetup} />
+        {setupOpen ? (
+          <FraudOrderSetupDrawer
+            connected={connected}
+            onClose={closeSetup}
+            onOpenFullSetup={openFullSetup}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   const snapshotItems = [
     { label: "Needs review", value: metrics.review, detail: "Orders awaiting merchant review", unavailable: false },
