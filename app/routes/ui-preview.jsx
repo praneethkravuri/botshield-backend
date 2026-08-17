@@ -378,7 +378,7 @@ export default function UiPreview() {
     refreshBilling: async () => {},
     refreshIncidents: async () => {},
     clearSimulationData: async () => {},
-    openThemeEditor: () => navigatePreview("setup"),
+    openThemeEditor: () => navigatePreview("dashboard"),
     saveSettings: async (nextSettings) => {
       setSettings((current) => ({ ...current, ...nextSettings }));
     },

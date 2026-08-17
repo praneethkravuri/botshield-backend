@@ -358,7 +358,7 @@ function DashboardPage({ model, actions }) {
           title="Setup progress"
           subtitle={`${model.readinessItems.filter((item) => item.complete).length} of ${model.readinessItems.length} checks ready`}
           actions={
-            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+            <BotShieldActionButton onClick={() => actions.setPage("dashboard")}>
               View setup
             </BotShieldActionButton>
           }
@@ -478,7 +478,7 @@ function PremiumSetupBanner({ model, actions }) {
             <BotShieldActionButton variant="primary" onClick={actions.openThemeEditor}>
               Open Theme Editor
             </BotShieldActionButton>
-            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+            <BotShieldActionButton onClick={() => actions.setPage("dashboard")}>
               View Setup Guide
             </BotShieldActionButton>
           </s-button-group>
@@ -651,7 +651,7 @@ function PremiumDashboardPage({ model, actions }) {
                 : "setup_required"
             }
             action={
-              <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+              <BotShieldActionButton onClick={() => actions.setPage("dashboard")}>
                 View details
               </BotShieldActionButton>
             }
@@ -832,7 +832,7 @@ function PremiumDashboardPage({ model, actions }) {
               Follow the verified setup checklist and connect every protection
               service.
             </s-text>
-            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+            <BotShieldActionButton onClick={() => actions.setPage("dashboard")}>
               View setup guide
             </BotShieldActionButton>
           </s-stack>
@@ -1703,97 +1703,6 @@ function BillingPage({ model, actions }) {
   );
 }
 
-function SetupPage({ model, actions }) {
-  const actionForItem = (item) => {
-    if (item.complete) return null;
-    if (item.label.includes("Theme")) {
-      return (
-        <BotShieldActionButton onClick={actions.openThemeEditor}>
-          Enable
-        </BotShieldActionButton>
-      );
-    }
-    if (item.label.includes("Email") || item.label.includes("Alert")) {
-      return (
-        <BotShieldActionButton onClick={() => actions.setPage("policy")}>
-          Configure
-        </BotShieldActionButton>
-      );
-    }
-    if (item.label.includes("Billing")) {
-      return (
-        <BotShieldActionButton onClick={() => actions.setPage("billing")}>
-          Review
-        </BotShieldActionButton>
-      );
-    }
-    return null;
-  };
-  const readyCount = model.readinessItems.filter((item) => item.complete).length;
-
-  return (
-    <BotShieldPage
-      title="Setup & Support"
-      subtitle="Finish connecting BotShield and understand exactly how storefront protection works."
-    >
-      <BotShieldCommandCard
-        eyebrow="Launch readiness"
-        title={
-          readyCount === model.readinessItems.length
-            ? "BotShield setup is complete"
-            : `${model.readinessItems.length - readyCount} setup steps need attention`
-        }
-        description={`${readyCount} of ${model.readinessItems.length} checks are backed by verified production data.`}
-        status={
-          readyCount === model.readinessItems.length ? "active" : "setup_required"
-        }
-        primaryAction={
-          !model.protectionStatus.themeEmbedDetected ? (
-            <BotShieldActionButton variant="primary" onClick={actions.openThemeEditor}>
-              Enable theme embed
-            </BotShieldActionButton>
-          ) : null
-        }
-      />
-      <BotShieldCard
-        title="Protection setup"
-        subtitle="Complete these steps in order. BotShield verifies each one automatically."
-      >
-        <s-stack>
-          {model.readinessItems.map((item, index) => (
-            <BotShieldChecklistItem
-              key={item.label}
-              index={index + 1}
-              label={item.label}
-              detail={item.detail}
-              complete={item.complete}
-              action={actionForItem(item)}
-            />
-          ))}
-        </s-stack>
-      </BotShieldCard>
-      <BotShieldCard title="Support and legal">
-        <s-stack direction="inline" gap="base">
-          <BotShieldActionButton href="/support" target="_blank">
-            Support
-          </BotShieldActionButton>
-          <BotShieldActionButton href="/privacy" target="_blank">
-            Privacy policy
-          </BotShieldActionButton>
-          <BotShieldActionButton href="/terms" target="_blank">
-            Terms of service
-          </BotShieldActionButton>
-        </s-stack>
-      </BotShieldCard>
-      <BotShieldInlineHelp>
-        BotShield provides storefront bot monitoring, challenge, and automated
-        response through a theme app embed and app proxy. It does not provide
-        edge-level or guaranteed server-side interception.
-      </BotShieldInlineHelp>
-    </BotShieldPage>
-  );
-}
-
 export default function BotShieldPolarisExperience({ model, actions }) {
   const screen =
     model.page === "security"
@@ -1819,7 +1728,6 @@ export default function BotShieldPolarisExperience({ model, actions }) {
         ) : null}
         {screen === "policy" ? <PolicyPage model={model} actions={actions} /> : null}
         {screen === "billing" ? <BillingPage model={model} actions={actions} /> : null}
-        {screen === "setup" ? <SetupPage model={model} actions={actions} /> : null}
       </s-box>
     </BotShieldAppFrame>
   );

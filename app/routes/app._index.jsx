@@ -2951,7 +2951,7 @@ export default function Index() {
       "alerts-reports": "settings",
       settings: "settings",
       billing: "billing",
-      setup: "setup",
+      setup: "dashboard",
     };
     const pathPageMap = {
       "/app": "dashboard",
@@ -2964,7 +2964,6 @@ export default function Index() {
       "/app/alerts-reports": "settings",
       "/app/billing": "billing",
       "/app/settings": "settings",
-      "/app/setup": "setup",
     };
     const legacyViewPathMap = {
       dashboard: "/app",
@@ -2983,7 +2982,7 @@ export default function Index() {
       "alerts-reports": "/app/settings?tab=general",
       settings: "/app/settings",
       billing: "/app/billing",
-      setup: "/app/setup",
+      setup: "/app",
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
@@ -3756,6 +3755,7 @@ export default function Index() {
       "trusted-visitors": "settings",
       "alerts-reports": "settings",
       policy: "settings",
+      setup: "dashboard",
     };
     const resolvedPage = retiredPageMap[nextPage] || nextPage;
     const pageToView = {
@@ -3772,7 +3772,6 @@ export default function Index() {
       policy: "/app/settings",
       "detection-settings": "/app/protection-rules",
       billing: "/app/billing",
-      setup: "/app/setup",
       "alerts-reports": "/app/settings?tab=general",
     };
     const path = pageToView[resolvedPage] || "/app";

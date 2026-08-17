@@ -162,8 +162,8 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Plan details/);
   assert.match(source, /Activation checklist/);
   assert.match(source, /Safe fallback/);
-  assert.match(source, /Readiness checks/);
-  assert.match(source, /Merchant setup flow/);
+  assert.doesNotMatch(source, /Readiness checks/);
+  assert.doesNotMatch(source, /Merchant setup flow/);
   assert.doesNotMatch(source, /Launch checklist/);
   assert.doesNotMatch(source, /Reviewer test plan/);
   assert.doesNotMatch(source, /Partner API credentials/);
@@ -228,7 +228,7 @@ test("merchant-facing reason labels replace raw detection codes", async () => {
   assert.match(source, /rate pattern\|repeated traffic\|request rate/);
 });
 
-test("Setup experience uses verified checklist rows with contextual actions", async () => {
+test("Setup checklist stays on supported pages with contextual actions", async () => {
   const source = await readFile(
     new URL(
       "../app/components/admin/BotShieldAdminExperience.jsx",
@@ -244,18 +244,16 @@ test("Setup experience uses verified checklist rows with contextual actions", as
     "utf8",
   );
 
-  assert.match(source, /Setup & Help/);
-  assert.match(source, /Finish launch setup/);
-  assert.match(source, /Readiness checks/);
-  assert.match(source, /Merchant setup flow/);
-  assert.match(source, /How BotShield works/);
-  assert.doesNotMatch(source, /Reviewer and merchant guidance/);
-  assert.doesNotMatch(source, /before submitting/i);
-  assert.doesNotMatch(source, /before recording/i);
+  assert.doesNotMatch(source, /Setup & Help/);
+  assert.doesNotMatch(source, /Finish launch setup/);
+  assert.doesNotMatch(source, /Merchant setup flow/);
+  assert.doesNotMatch(source, /How BotShield works/);
+  assert.doesNotMatch(source, /setPage\("setup"\)/);
   assert.match(source, /getSetupChecklistItems/);
+  assert.match(source, /runNextSetupAction/);
   assert.match(source, /Storefront traffic has been received/);
   assert.match(source, /Open theme editor/);
-  assert.match(source, /View visitor activity/);
+  assert.match(source, /Setup Progress/);
   assert.match(designSystem, /Action needed/);
 });
 
@@ -317,6 +315,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /"\/app\/blocklist": "settings"/);
   assert.match(source, /"\/app\/trusted-visitors": "settings"/);
   assert.match(source, /retiredPageMap/);
+  assert.match(source, /setup: "dashboard"/);
   assert.match(source, /legacyViewPathMap/);
   assert.match(source, /useLocation/);
   assert.match(source, /\[location\.pathname, location\.search, navigate\]/);

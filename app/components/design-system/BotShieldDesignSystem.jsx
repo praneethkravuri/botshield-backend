@@ -2442,20 +2442,6 @@ export function BotShieldAppFrame({ children }) {
           font-size: 12px;
           line-height: 1.45;
         }
-        .botshield-fraud-setup-link {
-          appearance: none;
-          border: 0;
-          background: transparent;
-          color: var(--overview-blue, #2c6ecb);
-          cursor: pointer;
-          font-family: inherit;
-          font-size: 12px;
-          font-weight: 650;
-          line-height: 1.25rem;
-          padding: 0;
-          text-decoration: none;
-        }
-        .botshield-fraud-setup-link:hover { text-decoration: underline; }
         .botshield-fraud-drawer--setup .botshield-fraud-drawer-body { padding: 0 0 18px; }
         .botshield-fraud-drawer--setup .botshield-fraud-setup-card { border: 0; border-radius: 0; box-shadow: none; }
         .botshield-fraud-drawer--setup .botshield-fraud-setup-heading { padding: 0 20px 16px; }

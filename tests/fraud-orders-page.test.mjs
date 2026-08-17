@@ -53,11 +53,7 @@ test("Fraud Orders styling is scoped and responsive", () => {
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /function FraudOrderSetupDrawer/);
   assert.match(page, /onOpenSetup=\{openSetup\}/);
-  assert.match(page, /View full BotShield setup/);
+  assert.doesNotMatch(page, /View full BotShield setup/);
   assert.match(page, /Back to Fraud Orders/);
-  const disconnectedBlock = page.slice(
-    page.indexOf("function FraudOrdersDisconnected"),
-    page.indexOf("function FraudOrdersPage"),
-  );
-  assert.doesNotMatch(disconnectedBlock, /setPage\("setup"\)/);
+  assert.doesNotMatch(page, /setPage\("setup"\)/);
 });

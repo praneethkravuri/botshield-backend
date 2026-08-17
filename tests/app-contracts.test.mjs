@@ -110,6 +110,10 @@ test("retired raw and legacy pages return merchants to supported screens", async
     new URL("../app/routes/app.billing-return.jsx", import.meta.url),
     "utf8",
   );
+  const setupRoute = await readFile(
+    new URL("../app/routes/app.setup.jsx", import.meta.url),
+    "utf8",
+  );
 
   assert.match(botLogRoute, /redirect\("\/app\/visitors"\)/);
   assert.doesNotMatch(botLogRoute, /prisma|JSON\.stringify/);
@@ -117,6 +121,7 @@ test("retired raw and legacy pages return merchants to supported screens", async
     billingReturnRoute,
     /redirect\("\/app\/billing\?updated=true"\)/,
   );
+  assert.match(setupRoute, /redirect\("\/app"\)/);
 });
 
 test("public storefront decisions do not expose merchant settings", async () => {

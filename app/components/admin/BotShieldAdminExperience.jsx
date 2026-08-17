@@ -388,7 +388,7 @@ function OutcomeCard({ label, value, description, status }) {
   );
 }
 
-function HelpStrip({ actions }) {
+function HelpStrip({ model, actions }) {
   return (
     <BotShieldCard>
       <s-stack
@@ -404,7 +404,7 @@ function HelpStrip({ actions }) {
             adjust rules after reviewing real storefront activity.
           </s-text>
         </s-stack>
-        <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+        <BotShieldActionButton onClick={() => runNextSetupAction(model, actions)}>
           Get help
         </BotShieldActionButton>
       </s-stack>
@@ -599,7 +599,7 @@ function StoreHealthCard({ model, actions }) {
           status={trafficConnected ? "real_storefront" : "setup_required"}
           action={
             !trafficConnected ? (
-              <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+              <BotShieldActionButton onClick={actions.openThemeEditor}>
                 View steps
               </BotShieldActionButton>
             ) : null
@@ -646,8 +646,18 @@ function getSetupChecklistItems(model, actions = {}) {
         ? `Last event ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}.`
         : "Visit the storefront after enabling the embed.",
       complete: storefrontEventsReceived,
-      action: () => actions.setPage?.("setup"),
-      actionLabel: "View steps",
+      action: storefrontConnected
+        ? model.protectionStatus.shop
+          ? () => {
+              window.open(
+                `https://${model.protectionStatus.shop}`,
+                "_blank",
+                "noopener,noreferrer",
+              );
+            }
+          : null
+        : actions.openThemeEditor,
+      actionLabel: storefrontConnected ? "Open storefront" : "Enable",
     },
     {
       label: "Billing verified",
@@ -679,7 +689,18 @@ function getSetupChecklistItems(model, actions = {}) {
   ];
 }
 
-function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
+function runNextSetupAction(model, actions = {}) {
+  const nextItem = getSetupChecklistItems(model, actions).find(
+    (item) => !item.complete && item.action,
+  );
+  if (nextItem?.action) {
+    nextItem.action();
+    return;
+  }
+  actions.setPage?.("dashboard");
+}
+
+function SetupProgressCard({ model, actions }) {
   const items = getSetupChecklistItems(model, actions);
   const complete = items.filter((item) => item.complete).length;
 
@@ -687,13 +708,6 @@ function SetupProgressCard({ model, actions, showViewSetupAction = true }) {
     <BotShieldCard
       title="Setup Progress"
       subtitle={`${complete} of ${items.length} completed`}
-      actions={
-        showViewSetupAction ? (
-          <BotShieldActionButton onClick={() => actions.setPage("setup")}>
-            View setup
-          </BotShieldActionButton>
-        ) : null
-      }
     >
       <s-stack>
         {items.map((item) => (
@@ -2271,7 +2285,7 @@ function LegacyOverviewPage({ model, actions }) {
               <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
                 View activity
               </BotShieldActionButton>
-              <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+              <BotShieldActionButton onClick={() => runNextSetupAction(model, actions)}>
                 Finish setup
               </BotShieldActionButton>
             </div>
@@ -2350,7 +2364,7 @@ function LegacyOverviewPage({ model, actions }) {
             />
           }
           actions={
-            <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+            <BotShieldActionButton onClick={() => runNextSetupAction(model, actions)}>
               Review
             </BotShieldActionButton>
           }
@@ -2610,7 +2624,7 @@ function LegacyOverviewPage({ model, actions }) {
               title="Security health"
               subtitle="Calculated from verified setup and real storefront evidence."
               actions={
-                <BotShieldActionButton onClick={() => actions.setPage("setup")}>
+                <BotShieldActionButton onClick={() => runNextSetupAction(model, actions)}>
                   Improve setup
                 </BotShieldActionButton>
               }
@@ -3452,7 +3466,7 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
   );
 }
 
-function FraudOrderSetupDrawer({ connected, onClose, onOpenFullSetup }) {
+function FraudOrderSetupDrawer({ connected, onClose }) {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") onClose();
@@ -3559,9 +3573,6 @@ function FraudOrderSetupDrawer({ connected, onClose, onOpenFullSetup }) {
             </div>
             <div className="botshield-fraud-setup-foot">
               <p>No demo or simulated orders are shown in Fraud Orders.</p>
-              <button className="botshield-fraud-setup-link" onClick={onOpenFullSetup} type="button">
-                View full BotShield setup
-              </button>
             </div>
           </div>
         </div>
@@ -3804,10 +3815,6 @@ function FraudOrdersPage({ model, actions }) {
 
   const openSetup = () => setSetupOpen(true);
   const closeSetup = () => setSetupOpen(false);
-  const openFullSetup = () => {
-    setSetupOpen(false);
-    actions.setPage("setup");
-  };
 
   if (!connected) {
     return (
@@ -3817,7 +3824,6 @@ function FraudOrdersPage({ model, actions }) {
           <FraudOrderSetupDrawer
             connected={connected}
             onClose={closeSetup}
-            onOpenFullSetup={openFullSetup}
           />
         ) : null}
       </>
@@ -5158,7 +5164,7 @@ function ProtectionPage({ model, actions }) {
         setDraft={setDraft}
         actions={actions}
       />
-      <HelpStrip actions={actions} />
+      <HelpStrip model={model} actions={actions} />
       <s-grid gridTemplateColumns="1fr" gap="large">
         <s-stack gap="small">
           <s-heading>Protection mode</s-heading>
@@ -6776,370 +6782,6 @@ function BillingPage({ model, actions }) {
   );
 }
 
-function SetupPage({ model, actions }) {
-  const setupChecklistItems = getSetupChecklistItems(model, actions);
-  const complete = setupChecklistItems.filter((item) => item.complete).length;
-  const total = setupChecklistItems.length;
-  const setupComplete = complete === total;
-  const nextItem = setupChecklistItems.find((item) => !item.complete);
-  const storefrontConnected = hasStorefrontConnection(model);
-  const emailReady = Boolean(
-    model.emailProviderConfigured &&
-      model.emailAlerts &&
-      EMAIL_PATTERN.test(model.alertEmail || ""),
-  );
-  const executiveStatus = getExecutiveStatus(model);
-  const emailStatus = getEmailStatus({
-    configured: model.emailProviderConfigured,
-    lastStatus: model.lastAlertStatus,
-  });
-  const billingStatus = getBillingStatusModel(model.billingStatus || {});
-  const testSteps = [
-    {
-      label: "Enable the theme app embed",
-      detail: storefrontConnected
-        ? "BotShield has received real storefront traffic from the active store."
-        : "Open the theme editor, enable BotShield, save the theme, then return here.",
-      complete: storefrontConnected,
-      action: (
-        <BotShieldActionButton onClick={actions.openThemeEditor}>
-          Open theme editor
-        </BotShieldActionButton>
-      ),
-    },
-    {
-      label: "Visit the storefront",
-      detail:
-        model.protectionStatus.lastStorefrontDecisionAt
-          ? `Last storefront event: ${formatDate(model.protectionStatus.lastStorefrontDecisionAt)}`
-          : "Open the storefront homepage once the embed is enabled so BotShield can receive a real visit.",
-      complete: Boolean(model.protectionStatus.lastStorefrontDecisionAt),
-      action: model.protectionStatus.shop ? (
-        <BotShieldActionButton
-          href={`https://${model.protectionStatus.shop}`}
-          target="_blank"
-        >
-          Open storefront
-        </BotShieldActionButton>
-      ) : null,
-    },
-    {
-      label: "Configure alerts",
-      detail: emailReady
-        ? "Email alerts are configured with a valid recipient."
-        : "Add an alert email and verify delivery.",
-      complete: emailReady,
-      action: (
-        <BotShieldActionButton onClick={() => actions.setPage("policy")}>
-          Configure alerts
-        </BotShieldActionButton>
-      ),
-    },
-    {
-      label: "Confirm subscription flow",
-      detail: model.billingStatus?.active
-        ? "Billing is verified for this store."
-        : "Review the plan, trial, and subscription status.",
-      complete: Boolean(model.billingStatus?.active),
-      action: (
-        <BotShieldActionButton onClick={() => actions.setPage("billing")}>
-          Review billing
-        </BotShieldActionButton>
-      ),
-    },
-  ];
-
-  return (
-    <Screen
-      title="Setup & Help"
-      subtitle="Confirm BotShield is connected, configured, and ready for real storefront protection."
-      actions={
-        <BotShieldAsyncButton
-          action={actions.refresh}
-          successMessage="Setup status refreshed"
-          icon="refresh"
-        >
-          Refresh
-        </BotShieldAsyncButton>
-      }
-    >
-      <BotShieldCard
-        title={setupComplete ? "Launch checks complete" : "Finish launch setup"}
-        subtitle={
-          setupComplete
-            ? "Every required setup item is verified from live app data."
-            : nextItem
-              ? `Next step: ${nextItem.label}`
-              : "Review each setup area before launch."
-        }
-        badge={
-          <BotShieldStatusBadge
-            status={setupComplete ? "active" : "setup_required"}
-          />
-        }
-        actions={
-          !storefrontConnected ? (
-            <BotShieldActionButton
-              variant="primary"
-              onClick={actions.openThemeEditor}
-            >
-              Enable theme embed
-            </BotShieldActionButton>
-          ) : (
-            <BotShieldActionButton onClick={() => actions.setPage("incidents")}>
-              View visitor activity
-            </BotShieldActionButton>
-          )
-        }
-        raised
-        accent
-      >
-        <s-stack gap="large">
-          <s-grid
-            gridTemplateColumns="repeat(auto-fit, minmax(190px, 1fr))"
-            gap="base"
-          >
-            <Metric
-              label="Setup progress"
-              value={`${complete}/${total}`}
-              detail={
-                setupComplete
-                  ? "All required items verified"
-                  : `${total - complete} items remaining`
-              }
-              status={setupComplete ? "active" : "setup_required"}
-            />
-            <Metric
-              label="Protection status"
-              value={executiveStatus.label}
-              detail={executiveStatus.detail}
-              status={executiveStatus.status}
-            />
-            <Metric
-              label="Storefront"
-              value={
-                storefrontConnected
-                  ? "Connected"
-                  : "Not connected"
-              }
-              detail={formatDate(
-                model.protectionStatus.lastStorefrontDecisionAt,
-                "No storefront event yet",
-              )}
-              status={
-                storefrontConnected
-                  ? "theme_embed_connected"
-                  : "theme_embed_missing"
-              }
-            />
-            <Metric
-              label="Alerts"
-              value={emailStatus.label}
-              detail={
-                model.lastAlertSentAt
-                  ? `Last sent ${formatDate(model.lastAlertSentAt)}`
-                  : "Test before launch"
-              }
-              status={emailStatus.technicalStatus}
-            />
-          </s-grid>
-          {!setupComplete ? (
-            <BotShieldBanner
-              tone="warning"
-              title="Setup is not finished yet"
-              action={
-                nextItem?.label?.includes("Theme") ? (
-                  <BotShieldActionButton
-                    variant="primary"
-                    onClick={actions.openThemeEditor}
-                  >
-                    Open theme editor
-                  </BotShieldActionButton>
-                ) : null
-              }
-            >
-              Complete the remaining checklist items before treating BotShield
-              as launch-ready for a live merchant.
-            </BotShieldBanner>
-          ) : (
-            <BotShieldBanner tone="success" title="Setup verified">
-              BotShield has verified storefront connection, protection status,
-              and setup readiness from production data.
-            </BotShieldBanner>
-          )}
-        </s-stack>
-      </BotShieldCard>
-
-      <s-grid
-        gridTemplateColumns="minmax(0, 1.35fr) minmax(320px, 0.65fr)"
-        gap="base"
-      >
-        <SetupProgressCard
-          model={model}
-          actions={actions}
-          showViewSetupAction={false}
-        />
-        <BotShieldCard
-          title="Readiness checks"
-          subtitle="Live signals BotShield can verify automatically."
-        >
-          <s-stack>
-            <StatusRow
-              label="Theme app embed"
-              detail={
-                storefrontConnected
-                  ? "BotShield has received real storefront traffic."
-                  : "Enable the embed in the active theme."
-              }
-              status={storefrontConnected ? "active" : "setup_required"}
-              action={
-                !storefrontConnected ? (
-                  <BotShieldActionButton onClick={actions.openThemeEditor}>
-                    Open
-                  </BotShieldActionButton>
-                ) : null
-              }
-            />
-            <StatusRow
-              label="Storefront traffic"
-              detail={formatDate(
-                model.protectionStatus.lastStorefrontDecisionAt,
-                "No real storefront decision received yet.",
-              )}
-              status={
-                model.protectionStatus.lastStorefrontDecisionAt
-                  ? "active"
-                  : "setup_required"
-              }
-            />
-            <StatusRow
-              label="Email alerts"
-              detail={
-                model.emailProviderConfigured
-                  ? "Provider configured. Send a test email before launch."
-                  : "Resend and alert sender must be configured."
-              }
-              status={emailStatus.technicalStatus}
-              action={
-                <BotShieldActionButton onClick={() => actions.setPage("policy")}>
-                  Alerts
-                </BotShieldActionButton>
-              }
-            />
-            <StatusRow
-              label="Billing"
-              detail={billingStatus.description}
-              status={billingStatus.technicalStatus}
-              action={
-                <BotShieldActionButton
-                  onClick={() => actions.setPage("billing")}
-                >
-                  Billing
-                </BotShieldActionButton>
-              }
-            />
-          </s-stack>
-        </BotShieldCard>
-      </s-grid>
-
-      <BotShieldCard
-        title="Merchant setup flow"
-        subtitle="The exact steps a merchant follows after installing BotShield."
-      >
-        <s-stack>
-          {testSteps.map((step, index) => (
-            <div className="botshield-checklist-row" key={step.label}>
-              <s-stack direction="inline" gap="base" alignItems="start">
-                <span
-                  className={`botshield-check-icon${
-                    step.complete ? " botshield-check-icon--complete" : ""
-                  }`}
-                >
-                  {step.complete ? "Done" : index + 1}
-                </span>
-                <s-stack gap="small-200">
-                  <s-text type="strong">{step.label}</s-text>
-                  <s-text color="subdued">{step.detail}</s-text>
-                </s-stack>
-              </s-stack>
-              <s-stack direction="inline" gap="small" alignItems="center">
-                <BotShieldStatusBadge
-                  status={step.complete ? "active" : "setup_required"}
-                />
-                {!step.complete ? step.action : null}
-              </s-stack>
-            </div>
-          ))}
-        </s-stack>
-      </BotShieldCard>
-
-      <BotShieldCard
-        title="How BotShield works"
-        subtitle="Important details about storefront protection."
-      >
-        <s-grid
-          gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
-          gap="base"
-        >
-          <BotShieldInlineHelp>
-            BotShield protects JavaScript-enabled storefront visits through the
-            theme app embed and Shopify app proxy.
-          </BotShieldInlineHelp>
-          <BotShieldInlineHelp>
-            Diagnostic scans and simulations stay separate from real storefront
-            protection metrics.
-          </BotShieldInlineHelp>
-          <BotShieldInlineHelp>
-            If a real customer is blocked by mistake, use Visitors to unblock
-            or add them to Trusted Visitors.
-          </BotShieldInlineHelp>
-        </s-grid>
-      </BotShieldCard>
-
-      <s-grid
-        gridTemplateColumns="repeat(auto-fit, minmax(240px, 1fr))"
-        gap="base"
-      >
-        <BotShieldCard title="Support">
-          <s-stack gap="base">
-            <s-text color="subdued">
-              Get help with setup, incidents, or false positives.
-            </s-text>
-            <BotShieldActionButton href="/support" target="_blank">
-              Contact support
-            </BotShieldActionButton>
-          </s-stack>
-        </BotShieldCard>
-        <BotShieldCard title="Privacy">
-          <s-stack gap="base">
-            <s-text color="subdued">
-              Review how BotShield handles merchant and storefront event data.
-            </s-text>
-            <BotShieldActionButton href="/privacy" target="_blank">
-              View privacy policy
-            </BotShieldActionButton>
-          </s-stack>
-        </BotShieldCard>
-        <BotShieldCard title="Terms">
-          <s-stack gap="base">
-            <s-text color="subdued">
-              Review service terms and security limitations.
-            </s-text>
-            <BotShieldActionButton href="/terms" target="_blank">
-              View terms
-            </BotShieldActionButton>
-          </s-stack>
-        </BotShieldCard>
-      </s-grid>
-      <BotShieldInlineHelp>
-        BotShield evaluates JavaScript-enabled storefront visits through a theme
-        app embed and Shopify app proxy. It does not provide edge-level or
-        guaranteed server-side interception.
-      </BotShieldInlineHelp>
-    </Screen>
-  );
-}
-
 export default function BotShieldAdminExperience({ model, actions }) {
   const screen =
     model.page === "security"
@@ -7195,9 +6837,6 @@ export default function BotShieldAdminExperience({ model, actions }) {
       ) : null}
       {screen === "billing" ? (
         <BillingPage model={model} actions={actions} />
-      ) : null}
-      {screen === "setup" ? (
-        <SetupPage model={model} actions={actions} />
       ) : null}
     </div>
   );
