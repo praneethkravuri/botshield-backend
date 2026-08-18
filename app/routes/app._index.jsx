@@ -3746,6 +3746,10 @@ export default function Index() {
     lastScanTime,
     syncing,
     readinessItems: polarisReadinessItems,
+    fraudOrderAccessConnected: false,
+    fraudOrders: [],
+    fraudOrdersLoading: false,
+    fraudOrdersError: null,
   };
 
   const openPolarisPage = (nextPage) => {

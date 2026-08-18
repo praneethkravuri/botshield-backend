@@ -28,32 +28,44 @@ test("connected Fraud Orders remains an investigation workflow", () => {
   assert.match(page, /Orders requiring attention/);
   assert.match(page, /Search orders, customers, or email/);
   assert.match(page, /Review →/);
-  assert.match(page, /Why flagged/);
-  assert.match(page, /Risk assessment/);
   assert.match(page, /Why this order was flagged/);
+  assert.match(page, /Risk assessment/);
   assert.match(page, /Investigation/);
   assert.match(page, /event\.key === "Escape"/);
+  assert.match(page, /No orders currently need review/);
+  assert.match(page, /No orders match your filter or search/);
 });
 
 test("Fraud Orders does not claim unsupported production access", () => {
   assert.match(shopifyConfig, /scopes = "write_app_proxy"/);
   assert.doesNotMatch(shopifyConfig, /read_orders/);
   assert.doesNotMatch(page, /Fraud score|100% safe|Fraud confirmed/);
+  assert.match(page, /FRAUD_ORDER_ACCESS_AVAILABLE = false/);
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {
-  assert.match(styles, /\.botshield-fraud-setup-card/);
-  assert.match(styles, /\.botshield-fraud-preview-grid/);
+  assert.match(styles, /\.botshield-fraud-setup-progress/);
+  assert.match(styles, /\.botshield-fraud-setup-primary-status/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
   assert.match(styles, /justify-content: center/);
+  assert.match(styles, /\.botshield-fraud-drawer--setup \{ width: min\(520px/);
 });
 
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /function FraudOrderSetupDrawer/);
   assert.match(page, /onOpenSetup=\{openSetup\}/);
+  assert.match(page, /Connect order access/);
+  assert.match(page, /Cancel/);
+  assert.match(page, /Order risk isn't connected/);
   assert.doesNotMatch(page, /View full BotShield setup/);
-  assert.match(page, /Back to Fraud Orders/);
+  assert.doesNotMatch(page, /Back to Fraud Orders/);
   assert.doesNotMatch(page, /setPage\("setup"\)/);
+});
+
+test("Fraud Orders KPI cards can apply queue filters", () => {
+  assert.match(page, /FRAUD_METRIC_FILTERS/);
+  assert.match(page, /onMetricSelect=\{setActiveFilter\}/);
+  assert.match(page, /aria-pressed=\{isSelected\}/);
 });
