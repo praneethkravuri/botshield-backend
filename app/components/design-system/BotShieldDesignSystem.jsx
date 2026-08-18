@@ -1043,7 +1043,15 @@ export function BotShieldAppFrame({ children }) {
         /* Final Overview V2 polish */
         .botshield-overview-v2 > s-stack { gap: 18px; }
         .botshield-overview-v2 .botshield-overview-title,
-        .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-title { font-size: 26px; letter-spacing: -.025em; }
+        .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-title,
+        .botshield-protection-content .botshield-protection-header .botshield-overview-title {
+          margin: 0;
+          color: #111111;
+          font-size: 26px;
+          line-height: 1.15;
+          font-weight: 700;
+          letter-spacing: -0.025em;
+        }
         .botshield-overview-v2 .botshield-overview-subtitle,
         .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-subtitle { max-width: 680px; font-size: 13px; line-height: 1.5; }
         .botshield-v2-eyebrow { margin-bottom: 5px; font-size: 10px; letter-spacing: .075em; }
