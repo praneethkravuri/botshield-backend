@@ -21,7 +21,7 @@ test("Fraud Orders uses a dedicated disconnected experience", () => {
   assert.match(page, /Orders requiring attention/);
   assert.match(page, /Connect order risk to start reviewing orders/);
   assert.match(page, /Setup required/);
-  assert.match(page, /No demo or simulated orders are shown/);
+  assert.match(page, /Supported Shopify order access is not available in this BotShield release yet/);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
@@ -57,13 +57,13 @@ test("Fraud Orders does not claim unsupported production access", () => {
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {
-  assert.match(styles, /\.botshield-fraud-setup-progress/);
-  assert.match(styles, /\.botshield-fraud-setup-primary-status/);
+  assert.match(styles, /\.botshield-fraud-setup-checklist/);
+  assert.match(styles, /\.botshield-fraud-setup-status/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
   assert.match(styles, /justify-content: center/);
-  assert.match(styles, /\.botshield-fraud-drawer--setup \{ width: min\(540px/);
+  assert.match(styles, /\.botshield-fraud-drawer--setup \{ width: min\(500px/);
 });
 
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
@@ -72,6 +72,8 @@ test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /Connect order access/);
   assert.match(page, /Cancel/);
   assert.match(page, /Order risk isn't connected/);
+  assert.match(page, /Connect order risk to start reviewing suspicious orders/);
+  assert.match(page, /botshield-fraud-setup-checklist/);
   assert.doesNotMatch(page, /View full BotShield setup/);
   assert.doesNotMatch(page, /Back to Fraud Orders/);
   assert.doesNotMatch(page, /setPage\("setup"\)/);

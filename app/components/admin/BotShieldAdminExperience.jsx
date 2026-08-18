@@ -3670,26 +3670,30 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
   const orderAccessReady = connected;
   const steps = [
     {
-      number: 1,
+      key: "installed",
       title: "BotShield installed",
-      detail: "You are in Shopify Admin with BotShield installed.",
+      detail: "BotShield is installed and running inside Shopify Admin.",
       status: "complete",
       statusLabel: "Complete",
     },
     {
-      number: 2,
+      key: "access",
       title: "Connect order access",
       detail:
-        "Allow BotShield to access the supported Shopify order-risk information required for Fraud Orders.",
+        "Allow BotShield to read the supported order-risk information required by Fraud Orders.",
       status: orderAccessReady ? "complete" : "required",
       statusLabel: orderAccessReady ? "Complete" : "Required",
       active: !orderAccessReady,
+      note:
+        !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE
+          ? "Supported Shopify order access is not available in this BotShield release yet."
+          : null,
     },
     {
-      number: 3,
+      key: "queue",
       title: "Review queue ready",
       detail:
-        "Elevated-risk orders will appear in Fraud Orders after supported order access is connected.",
+        "Risky orders will automatically appear in the review queue once order access is available.",
       status: orderAccessReady ? "complete" : "waiting",
       statusLabel: orderAccessReady ? "Ready" : "Waiting",
     },
@@ -3709,76 +3713,94 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
         className="botshield-fraud-drawer botshield-fraud-drawer--setup"
         role="dialog"
       >
-        <header>
+        <header className="botshield-fraud-setup-drawer-header">
           <div>
             <h2>Fraud Orders setup</h2>
-            <p>Connect supported Shopify order access to review elevated-risk orders.</p>
+            <p>Connect order risk to start reviewing suspicious orders.</p>
           </div>
           <button aria-label="Close Fraud Orders setup" autoFocus onClick={onClose} type="button">
             ×
           </button>
         </header>
         <div className="botshield-fraud-drawer-body">
-          <div className="botshield-fraud-setup-primary-status">
-            <div className="botshield-fraud-setup-primary-status-copy">
-              <strong>
-                {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
-              </strong>
-              <p>Connect supported Shopify order access to review elevated-risk orders.</p>
-            </div>
-            {!orderAccessReady ? (
-              <span className="botshield-fraud-setup-status-label botshield-fraud-setup-status-label--required">
-                Setup required
-              </span>
-            ) : null}
-          </div>
-          <ol className="botshield-fraud-setup-progress">
-            {steps.map((step) => (
-              <li
-                className={`botshield-fraud-setup-progress-step botshield-fraud-setup-progress-step--${step.status}${
-                  step.active ? " is-active" : ""
-                }`}
-                key={step.number}
-              >
-                <div aria-hidden="true" className="botshield-fraud-setup-progress-marker">
-                  {step.number}
-                </div>
-                <div>
-                  <div className="botshield-fraud-setup-progress-heading">
-                    <h3>{step.title}</h3>
-                    <span
-                      className={`botshield-fraud-setup-status-label botshield-fraud-setup-status-label--${step.status}`}
-                    >
-                      {step.statusLabel}
-                    </span>
-                  </div>
-                  <p>{step.detail}</p>
-                  {step.active && !FRAUD_ORDER_ACCESS_AVAILABLE ? (
-                    <p className="botshield-fraud-setup-note" id="fraud-order-access-note">
-                      Supported Shopify order access is not available in this BotShield release yet.
-                    </p>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-          <p className="botshield-fraud-setup-footnote">
-            No demo or simulated orders are shown in Fraud Orders.
-          </p>
-        </div>
-        <footer>
-          <BotShieldActionButton onClick={onClose}>Cancel</BotShieldActionButton>
-          <BotShieldActionButton
-            aria-describedby={
-              !FRAUD_ORDER_ACCESS_AVAILABLE && !orderAccessReady
-                ? "fraud-order-access-note"
-                : undefined
-            }
-            disabled={!FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady}
-            variant="primary"
+          <section
+            aria-labelledby="fraud-setup-status-title"
+            className={`botshield-fraud-setup-status${
+              orderAccessReady ? " is-connected" : " is-required"
+            }`}
           >
-            Connect order access
-          </BotShieldActionButton>
+            <span className="botshield-v2-eyebrow">Order risk</span>
+            <div className="botshield-fraud-setup-status-row">
+              <div className="botshield-fraud-setup-status-copy">
+                <h3 id="fraud-setup-status-title">
+                  {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
+                </h3>
+                <p>
+                  Connect supported Shopify order access to begin reviewing elevated-risk orders.
+                </p>
+              </div>
+              <BotShieldStatusBadge
+                label={orderAccessReady ? "Connected" : "Setup required"}
+                status={orderAccessReady ? "active" : "setup_required"}
+              />
+            </div>
+          </section>
+
+          <section aria-label="Setup progress" className="botshield-fraud-setup-checklist">
+            <span className="botshield-v2-eyebrow">Setup progress</span>
+            <ol>
+              {steps.map((step) => (
+                <li
+                  className={`botshield-fraud-setup-checklist-item botshield-fraud-setup-checklist-item--${step.status}${
+                    step.active ? " is-active" : ""
+                  }`}
+                  key={step.key}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`botshield-fraud-setup-checklist-marker botshield-fraud-setup-checklist-marker--${step.status}`}
+                  >
+                    {step.status === "complete" ? "✓" : step.status === "required" ? "→" : "○"}
+                  </span>
+                  <div className="botshield-fraud-setup-checklist-copy">
+                    <div className="botshield-fraud-setup-checklist-topline">
+                      <h4>{step.title}</h4>
+                      <span
+                        className={`botshield-fraud-setup-pill botshield-fraud-setup-pill--${step.status}`}
+                      >
+                        {step.statusLabel}
+                      </span>
+                    </div>
+                    <p>{step.detail}</p>
+                    {step.note ? (
+                      <p className="botshield-fraud-setup-note" id="fraud-order-access-note">
+                        {step.note}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+        <footer className="botshield-fraud-setup-drawer-footer">
+          <BotShieldActionButton onClick={onClose}>Cancel</BotShieldActionButton>
+          <div className="botshield-fraud-setup-footer-actions">
+            {!FRAUD_ORDER_ACCESS_AVAILABLE && !orderAccessReady ? (
+              <span className="botshield-fraud-setup-footer-note">Unavailable in this release</span>
+            ) : null}
+            <BotShieldActionButton
+              aria-describedby={
+                !FRAUD_ORDER_ACCESS_AVAILABLE && !orderAccessReady
+                  ? "fraud-order-access-note"
+                  : undefined
+              }
+              disabled={!FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady}
+              variant="primary"
+            >
+              Connect order access
+            </BotShieldActionButton>
+          </div>
         </footer>
       </aside>
     </div>,
