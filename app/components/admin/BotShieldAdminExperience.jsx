@@ -5973,6 +5973,94 @@ function formatSimulationLabel(model) {
   return `${count.toLocaleString()} simulated event${count === 1 ? "" : "s"}`;
 }
 
+const BOTSHIELD_PUBLIC_PLAN_FEATURES = [
+  "Bot protection",
+  "Network / Proxy protection",
+  "Rate protection",
+  "Page protection",
+  "IP blocklist",
+  "Trusted visitors",
+  "Fraud order insights",
+  "Full visitor analytics",
+];
+
+function getTrialDaysRemaining(trialEndsAt) {
+  if (!trialEndsAt) return null;
+  const end = new Date(trialEndsAt).getTime();
+  if (Number.isNaN(end)) return null;
+  return Math.max(0, Math.ceil((end - Date.now()) / (24 * 60 * 60 * 1000)));
+}
+
+function getSettingsBillingView(billingStatus = {}) {
+  const configuredPlanName =
+    String(billingStatus.planName || "").trim() || "BotShield Basic";
+  const monthlyPrice = Number.isFinite(Number(billingStatus.monthlyPrice))
+    ? Number(billingStatus.monthlyPrice)
+    : 14.99;
+  const trialDays = Number.isFinite(Number(billingStatus.trialDays))
+    ? Number(billingStatus.trialDays)
+    : 7;
+  const subscription = billingStatus.subscription || null;
+  const active = Boolean(billingStatus.active);
+  const statusModel = getBillingStatusModel(billingStatus);
+  const trialRemaining = getTrialDaysRemaining(subscription?.trialEndsAt);
+  const isTestPlan = Boolean(
+    subscription?.test || subscription?.isTest || billingStatus.test,
+  );
+  const priceLabel = `$${monthlyPrice.toFixed(2)}/month`;
+
+  const currentPlanLabel = active
+    ? subscription?.name || billingStatus.planName || configuredPlanName
+    : statusModel.label;
+
+  let currentPlanDetail = statusModel.description;
+  if (active) {
+    currentPlanDetail = priceLabel;
+    if (subscription?.trial) {
+      if (trialRemaining !== null && trialRemaining > 0) {
+        currentPlanDetail += ` · ${trialRemaining} trial day${
+          trialRemaining === 1 ? "" : "s"
+        } left`;
+      } else {
+        currentPlanDetail += ` · ${trialDays}-day trial`;
+      }
+    }
+    if (subscription?.currentPeriodEnd) {
+      currentPlanDetail += ` · Renews ${formatDate(subscription.currentPeriodEnd)}`;
+    }
+  }
+
+  const isCurrentPublicPlan = active && !isTestPlan;
+
+  const currentPlanTone = active
+    ? isTestPlan
+      ? "monitor"
+      : "healthy"
+    : statusModel.tone === "critical"
+      ? "warning"
+      : "neutral";
+
+  return {
+    configuredPlanName,
+    monthlyPrice,
+    trialDays,
+    priceLabel,
+    subscription,
+    active,
+    statusModel,
+    trialRemaining,
+    currentPlanLabel,
+    currentPlanDetail,
+    isCurrentPublicPlan,
+    isTestPlan,
+    currentPlanTone,
+    pricingUrl: billingStatus.pricingUrl || null,
+    configured: Boolean(billingStatus.configured),
+    error: billingStatus.error || null,
+    checkedAt: billingStatus.checkedAt || null,
+  };
+}
+
 function getSettingsOperationalStrip(model) {
   const responseMode = getResponseMode(model);
   const storefrontConnected = hasStorefrontConnection(model);
@@ -6012,6 +6100,7 @@ function getSettingsOperationalStrip(model) {
 function SettingsHubIcon({ name }) {
   const icons = {
     general: "gauge",
+    billing: "page",
     notifications: "clock",
     reports: "page",
     connections: "connect",
@@ -6118,6 +6207,7 @@ function SettingsHubSection({ eyebrow, title, description, children, panel = "de
 
 const SETTINGS_HUB_SECTIONS = [
   { id: "general", label: "General" },
+  { id: "billing", label: "Plans & billing" },
   { id: "notifications", label: "Notifications" },
   { id: "reports", label: "Reports" },
   { id: "connections", label: "Connections" },
@@ -6159,6 +6249,45 @@ function SettingsPage({ model, actions }) {
     return () => window.removeEventListener("popstate", syncSectionFromUrl);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("updated") !== "true") return undefined;
+    if (readSettingsHubSection() !== "billing") return undefined;
+
+    let cancelled = false;
+    const refreshAfterReturn = async () => {
+      try {
+        await actions.refreshBilling?.();
+        if (!cancelled) {
+          toast.success("Billing status refreshed");
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Couldn't refresh billing status";
+          toast.error(message);
+        }
+      } finally {
+        if (cancelled || typeof window === "undefined") return;
+        const url = new URL(window.location.href);
+        url.searchParams.delete("updated");
+        window.history.replaceState(
+          {},
+          "",
+          `${url.pathname}${url.search}${url.hash}`,
+        );
+      }
+    };
+
+    refreshAfterReturn();
+    return () => {
+      cancelled = true;
+    };
+  }, [actions, toast]);
+
   const selectSection = (sectionId) => {
     setActiveSection(sectionId);
     if (typeof window === "undefined") return;
@@ -6192,7 +6321,7 @@ function SettingsPage({ model, actions }) {
   const lastReportDetail = model.lastWeeklyReportStatus
     ? formatDeliveryDetail(model.lastWeeklyReportStatus, model.lastWeeklyReportAt)
     : "No weekly report delivery recorded yet";
-  const planName = model.billingStatus?.planName || "BotShield Basic";
+  const billing = getSettingsBillingView(model.billingStatus || {});
   const alertEmailValid = EMAIL_PATTERN.test(draft.alertEmail);
   const operationalStrip = getSettingsOperationalStrip(model);
   const simulationLabel = formatSimulationLabel(model);
@@ -6291,7 +6420,16 @@ function SettingsPage({ model, actions }) {
               variant="info"
             />
             <SettingsHubRow
-              control={<span className="botshield-settings-hub-value">{planName}</span>}
+              control={
+                <div className="botshield-settings-hub-row-actions">
+                  <span className="botshield-settings-hub-value">
+                    {billing.currentPlanLabel}
+                  </span>
+                  <BotShieldActionButton onClick={() => selectSection("billing")}>
+                    Manage plan →
+                  </BotShieldActionButton>
+                </div>
+              }
               description="Current BotShield subscription plan for this store."
               title="Plan"
               variant="info"
@@ -6326,6 +6464,170 @@ function SettingsPage({ model, actions }) {
               </p>
             )}
           </div>
+        </SettingsHubSection>
+      );
+    }
+
+    if (activeSection === "billing") {
+      const managePlanAction = billing.pricingUrl ? (
+        <BotShieldActionButton href={billing.pricingUrl} target="_top">
+          {billing.active ? "Manage plan" : "Select plan"}
+        </BotShieldActionButton>
+      ) : null;
+
+      return (
+        <SettingsHubSection
+          eyebrow="Plans & billing"
+          panel="control"
+          title="Choose the protection level that fits your store."
+        >
+          {!billing.configured ? (
+            <p className="botshield-settings-hub-note is-error">
+              Shopify billing verification is not fully configured in this
+              environment. Plan changes still require Shopify approval once
+              billing credentials are available.
+            </p>
+          ) : null}
+          {billing.error ? (
+            <p className="botshield-settings-hub-note is-error">
+              {billing.error}
+            </p>
+          ) : null}
+
+          <div className="botshield-settings-hub-subgroup is-operational botshield-settings-hub-billing-current">
+            <SettingsHubRow
+              control={
+                <div className="botshield-settings-hub-row-actions">
+                  <SettingsHubStatusPill
+                    label={billing.statusModel.label}
+                    tone={billing.currentPlanTone}
+                  />
+                  {managePlanAction}
+                </div>
+              }
+              description={billing.currentPlanDetail}
+              lead="Current plan"
+              title={billing.currentPlanLabel}
+              variant="operational"
+            />
+          </div>
+
+          <div className="botshield-settings-hub-billing-plans">
+            <p className="botshield-settings-hub-billing-plans-label">
+              Available plans
+            </p>
+            <div className="botshield-settings-hub-plan-grid">
+              <article
+                className={`botshield-settings-hub-plan-card${
+                  billing.isCurrentPublicPlan
+                    ? " botshield-settings-hub-plan-card--current"
+                    : ""
+                }`}
+              >
+                <div className="botshield-settings-hub-plan-card-head">
+                  <div>
+                    <h3>{billing.configuredPlanName}</h3>
+                    <p className="botshield-settings-hub-plan-price">
+                      {billing.priceLabel}
+                    </p>
+                    <p className="botshield-settings-hub-plan-meta">
+                      {billing.trialDays}-day trial · Billed monthly in Shopify
+                    </p>
+                  </div>
+                  {billing.isCurrentPublicPlan ? (
+                    <SettingsHubStatusPill label="Active" tone="healthy" />
+                  ) : null}
+                </div>
+                <p className="botshield-settings-hub-plan-copy">
+                  Full storefront bot protection, enforcement controls, alerts,
+                  and analytics for one Shopify store.
+                </p>
+                <ul className="botshield-settings-hub-plan-features">
+                  {BOTSHIELD_PUBLIC_PLAN_FEATURES.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+                <div className="botshield-settings-hub-plan-actions">
+                  {billing.isCurrentPublicPlan ? (
+                    managePlanAction
+                  ) : billing.pricingUrl ? (
+                    <BotShieldActionButton
+                      href={billing.pricingUrl}
+                      target="_top"
+                      variant="primary"
+                    >
+                      {billing.active ? "Change plan" : "Select plan"}
+                    </BotShieldActionButton>
+                  ) : null}
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div className="botshield-settings-hub-delivery">
+            <div className="botshield-settings-hub-delivery-head">
+              <h3>Billing details</h3>
+            </div>
+            <div className="botshield-settings-hub-delivery-body">
+              <SettingsHubRow
+                control={
+                  <SettingsHubStatusPill
+                    label={billing.statusModel.label}
+                    tone={
+                      billing.active
+                        ? billing.isTestPlan
+                          ? "monitor"
+                          : "healthy"
+                        : billing.error
+                          ? "warning"
+                          : "neutral"
+                    }
+                  />
+                }
+                description="Verified through Shopify App Pricing and Partner API."
+                title="Subscription status"
+                variant="secondary"
+              />
+              <SettingsHubRow
+                control={
+                  <span className="botshield-settings-hub-value">
+                    {billing.subscription?.currentPeriodEnd
+                      ? formatDate(billing.subscription.currentPeriodEnd)
+                      : billing.active
+                        ? "Not available"
+                        : "—"}
+                  </span>
+                }
+                description="Billing cycle information comes from Shopify after approval."
+                title="Billing cycle end"
+                variant="secondary"
+              />
+              <SettingsHubRow
+                control={
+                  <BotShieldAsyncButton
+                    action={actions.refreshBilling}
+                    icon="refresh"
+                    successMessage="Billing refreshed"
+                  >
+                    Refresh billing
+                  </BotShieldAsyncButton>
+                }
+                description={
+                  billing.checkedAt
+                    ? `Last checked ${formatDate(billing.checkedAt)}.`
+                    : "Refresh after returning from Shopify plan approval."
+                }
+                title="Verification"
+                variant="diagnostic"
+              />
+            </div>
+          </div>
+
+          <p className="botshield-settings-hub-inline-note">
+            Plan selection, upgrades, downgrades, trials, and payment approval
+            are handled by Shopify. BotShield never stores card details and
+            only marks a plan active after Shopify confirms the subscription.
+          </p>
         </SettingsHubSection>
       );
     }

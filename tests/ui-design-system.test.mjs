@@ -54,6 +54,22 @@ test("email and billing UI models reflect verified backend state", () => {
     }).label,
     "Active",
   );
+  assert.equal(
+    getBillingStatusModel({
+      configured: true,
+      active: false,
+      error: "Unable to verify Shopify subscription.",
+    }).label,
+    "Billing could not be verified",
+  );
+  assert.equal(
+    getBillingStatusModel({
+      configured: true,
+      active: true,
+      subscription: { name: "Reviewer", test: true },
+    }).label,
+    "Test plan",
+  );
 });
 
 test("safeFetchJson returns readable provider errors", async () => {
@@ -159,6 +175,9 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /formatSimulationLabel/);
   assert.match(source, /botshield-settings-hub/);
   assert.match(source, /SETTINGS_HUB_SECTIONS/);
+  assert.match(source, /Plans & billing/);
+  assert.match(source, /Choose the protection level that fits your store/);
+  assert.match(source, /getSettingsBillingView/);
   assert.match(source, /Send test email/);
   assert.match(source, /Weekly security report/);
   assert.doesNotMatch(source, /Notification center/);

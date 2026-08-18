@@ -143,6 +143,59 @@ function getInitialPage() {
   return aliases[view] || view || "dashboard";
 }
 
+function getPreviewBillingStatus() {
+  const base = {
+    configured: true,
+    active: true,
+    planName: "BotShield Basic",
+    monthlyPrice: 14.99,
+    trialDays: 7,
+    enforcementEnabled: false,
+    pricingUrl: "https://admin.shopify.com/store/preview/charges/botshield/pricing_plans",
+    subscription: {
+      name: "BotShield Basic",
+      status: "ACTIVE",
+      trial: true,
+      trialEndsAt: new Date(now + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      currentPeriodEnd: new Date(now + 25 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  };
+
+  if (typeof window === "undefined") return base;
+
+  const variant = new URL(window.location.href).searchParams.get("billing");
+  if (variant === "inactive") {
+    return {
+      ...base,
+      active: false,
+      subscription: null,
+      error: null,
+    };
+  }
+  if (variant === "test") {
+    return {
+      ...base,
+      active: true,
+      test: true,
+      subscription: {
+        name: "BotShield Reviewer Plan",
+        status: "ACTIVE",
+        test: true,
+        currentPeriodEnd: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    };
+  }
+  if (variant === "unverified") {
+    return {
+      ...base,
+      active: false,
+      error: "Unable to verify Shopify subscription.",
+      subscription: null,
+    };
+  }
+  return base;
+}
+
 function getPreviewFraudConnected() {
   if (typeof window === "undefined") return false;
   return new URL(window.location.href).searchParams.get("connected") === "1";
@@ -344,18 +397,7 @@ export default function UiPreview() {
           ],
         },
       },
-      billingStatus: {
-        configured: true,
-        active: true,
-        planName: "BotShield Basic",
-        monthlyPrice: 14.99,
-        trialDays: 7,
-        enforcementEnabled: false,
-        subscription: {
-          name: "BotShield Basic",
-          status: "ACTIVE",
-        },
-      },
+      billingStatus: getPreviewBillingStatus(),
     };
 
     return {

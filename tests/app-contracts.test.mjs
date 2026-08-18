@@ -110,6 +110,10 @@ test("retired raw and legacy pages return merchants to supported screens", async
     new URL("../app/routes/app.billing-return.jsx", import.meta.url),
     "utf8",
   );
+  const billingRoute = await readFile(
+    new URL("../app/routes/app.billing.jsx", import.meta.url),
+    "utf8",
+  );
   const setupRoute = await readFile(
     new URL("../app/routes/app.setup.jsx", import.meta.url),
     "utf8",
@@ -119,8 +123,9 @@ test("retired raw and legacy pages return merchants to supported screens", async
   assert.doesNotMatch(botLogRoute, /prisma|JSON\.stringify/);
   assert.match(
     billingReturnRoute,
-    /redirect\("\/app\/billing\?updated=true"\)/,
+    /redirect\("\/app\/settings\?section=billing&updated=true"\)/,
   );
+  assert.match(billingRoute, /redirect\(`\/app\/settings\?\$\{params\.toString\(\)\}`\)/);
   assert.match(setupRoute, /redirect\("\/app"\)/);
 });
 

@@ -194,9 +194,19 @@ export function getEmailStatus({ configured, lastStatus }) {
 
 export function getBillingStatusModel(billing) {
   if (!billing?.configured) return getUiStatus("setup_required");
-  if (billing?.verificationError) return getUiStatus("verification_failed");
-  if (billing?.subscription?.isTest) return getUiStatus("test_plan");
-  if (billing?.subscription?.trialDaysRemaining > 0) return getUiStatus("trial");
+  if (billing?.error || billing?.verificationError) {
+    return getUiStatus("verification_failed");
+  }
+  if (billing?.subscription?.test || billing?.subscription?.isTest || billing?.test) {
+    return getUiStatus("test_plan");
+  }
+  if (billing?.subscription?.trialDaysRemaining > 0) {
+    return getUiStatus("trial");
+  }
   if (billing?.active) return getUiStatus("active");
-  return getUiStatus(billing?.subscription?.status || "inactive");
+  return getUiStatus(
+    String(billing?.subscription?.status || billing?.status || "inactive")
+      .trim()
+      .toLowerCase(),
+  );
 }

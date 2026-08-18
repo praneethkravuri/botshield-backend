@@ -2981,7 +2981,7 @@ export default function Index() {
       policy: "/app/settings",
       "alerts-reports": "/app/settings?tab=general",
       settings: "/app/settings",
-      billing: "/app/billing",
+      billing: "/app/settings?section=billing",
       setup: "/app",
     };
     if (requestedView && pageMap[requestedView]) {
@@ -3759,6 +3759,7 @@ export default function Index() {
       "trusted-visitors": "settings",
       "alerts-reports": "settings",
       policy: "settings",
+      billing: "settings",
       setup: "dashboard",
     };
     const resolvedPage = retiredPageMap[nextPage] || nextPage;
@@ -3775,10 +3776,13 @@ export default function Index() {
       settings: "/app/settings",
       policy: "/app/settings",
       "detection-settings": "/app/protection-rules",
-      billing: "/app/billing",
+      billing: "/app/settings?section=billing",
       "alerts-reports": "/app/settings?tab=general",
     };
-    const path = pageToView[resolvedPage] || "/app";
+    const path =
+      nextPage === "billing"
+        ? "/app/settings?section=billing"
+        : pageToView[resolvedPage] || "/app";
     setPage(resolvedPage);
     navigate(path, { replace: false });
   };
