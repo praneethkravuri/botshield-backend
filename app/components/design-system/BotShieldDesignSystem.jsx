@@ -2490,8 +2490,8 @@ export function BotShieldAppFrame({ children }) {
         .botshield-fraud-drawer--setup .botshield-fraud-drawer-body {
           display: flex;
           flex-direction: column;
-          gap: 16px;
-          padding: 14px 20px 18px;
+          gap: 12px;
+          padding: 12px 20px 14px;
         }
         .botshield-fraud-setup-drawer-header {
           display: flex;
@@ -2535,15 +2535,15 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-fraud-drawer--setup .botshield-v2-eyebrow {
           display: block;
-          margin-bottom: 6px;
+          margin-bottom: 4px;
           font-size: 10px;
           letter-spacing: 0.075em;
           text-transform: uppercase;
         }
         .botshield-fraud-setup-status {
-          padding: 11px 12px 12px;
+          padding: 9px 12px 10px;
           border: 1px solid #e3e5e7;
-          border-radius: 10px;
+          border-radius: 8px;
           background: #fff;
         }
         .botshield-fraud-setup-status.is-required {
@@ -2555,72 +2555,121 @@ export function BotShieldAppFrame({ children }) {
           background: #f8fbf9;
         }
         .botshield-fraud-setup-status-row {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 12px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 10px 12px;
+          align-items: start;
         }
         .botshield-fraud-setup-status-copy {
           min-width: 0;
         }
+        .botshield-fraud-setup-status-copy .botshield-v2-eyebrow {
+          margin-bottom: 3px;
+        }
         .botshield-fraud-setup-status-copy h3 {
           margin: 0;
           color: var(--overview-ink);
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 650;
           letter-spacing: -0.012em;
           line-height: 1.35;
         }
         .botshield-fraud-setup-status-copy p {
-          margin: 3px 0 0;
+          margin: 2px 0 0;
           color: var(--overview-muted);
           font-size: 12px;
-          line-height: 1.45;
+          line-height: 1.4;
         }
-        .botshield-fraud-setup-status-row s-badge {
+        .botshield-fraud-setup-status-badge {
           flex: 0 0 auto;
-          margin-top: 1px;
+          align-self: start;
+          max-width: none;
+        }
+        .botshield-fraud-setup-status-badge s-badge {
+          display: inline-flex;
+          flex-shrink: 0;
+          max-width: none;
+          white-space: nowrap;
         }
         .botshield-fraud-setup-checklist {
           margin: 0;
         }
-        .botshield-fraud-setup-checklist > .botshield-v2-eyebrow {
-          margin-bottom: 4px;
+        .botshield-fraud-setup-checklist-heading {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 6px;
         }
-        .botshield-fraud-setup-checklist ol {
+        .botshield-fraud-setup-checklist-heading .botshield-v2-eyebrow {
+          margin-bottom: 0;
+        }
+        .botshield-fraud-setup-progress-count {
+          flex: 0 0 auto;
+          color: var(--overview-muted);
+          font-size: 11px;
+          line-height: 1.3;
+          white-space: nowrap;
+        }
+        .botshield-fraud-setup-progress-bar {
+          height: 3px;
+          margin-bottom: 6px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: #ececec;
+        }
+        .botshield-fraud-setup-progress-bar span {
+          display: block;
+          height: 100%;
+          border-radius: inherit;
+          background: #8ec8a8;
+          transition: width 160ms ease;
+        }
+        .botshield-fraud-setup-checklist-steps {
+          position: relative;
           display: flex;
           flex-direction: column;
           margin: 0;
           padding: 0;
           list-style: none;
         }
+        .botshield-fraud-setup-checklist-steps::before {
+          content: "";
+          position: absolute;
+          top: 12px;
+          bottom: 12px;
+          left: 10px;
+          width: 1px;
+          background: rgba(225, 227, 229, 0.95);
+          pointer-events: none;
+        }
         .botshield-fraud-setup-checklist-item {
           display: grid;
           grid-template-columns: 22px minmax(0, 1fr);
-          gap: 10px 12px;
+          gap: 8px 12px;
           align-items: start;
-          padding: 11px 0;
-          border-bottom: 1px solid #ececec;
+          padding: 8px 0;
         }
         .botshield-fraud-setup-checklist-item:last-child {
-          border-bottom: 0;
           padding-bottom: 0;
         }
         .botshield-fraud-setup-checklist-item.is-active {
           margin: 0 -8px;
-          padding: 10px 8px;
-          border-bottom: 0;
+          padding: 8px;
           border-radius: 8px;
           background: #fafbfb;
           box-shadow: inset 0 0 0 1px #e3e5e7, inset 3px 0 0 #b98900;
         }
         .botshield-fraud-setup-checklist-marker {
+          position: relative;
+          z-index: 1;
           display: grid;
           width: 22px;
           height: 22px;
           place-items: center;
           margin-top: 1px;
           border-radius: 999px;
+          background: #fff;
           font-size: 11px;
           font-weight: 700;
           line-height: 1;
@@ -2634,30 +2683,47 @@ export function BotShieldAppFrame({ children }) {
           color: #6f5300;
         }
         .botshield-fraud-setup-checklist-marker--waiting {
-          background: #f1f2f3;
+          background: #f6f6f7;
           color: #8c9196;
+        }
+        .botshield-fraud-setup-step-eyebrow {
+          display: block;
+          margin-bottom: 2px;
+          color: #6f5300;
+          font-size: 10px;
+          font-weight: 650;
+          letter-spacing: 0.06em;
+          line-height: 1.2;
+          text-transform: uppercase;
         }
         .botshield-fraud-setup-checklist-topline {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 10px;
+          gap: 8px;
         }
         .botshield-fraud-setup-checklist-topline h4 {
+          min-width: 0;
           margin: 0;
           color: var(--overview-ink);
           font-size: 13px;
           font-weight: 600;
           line-height: 1.35;
         }
+        .botshield-fraud-setup-checklist-item--complete .botshield-fraud-setup-checklist-topline h4 {
+          color: #4a4a4a;
+        }
         .botshield-fraud-setup-checklist-item--waiting .botshield-fraud-setup-checklist-topline h4 {
           color: #616161;
         }
         .botshield-fraud-setup-checklist-copy p {
-          margin: 3px 0 0;
+          margin: 2px 0 0;
           color: var(--overview-muted);
           font-size: 12px;
-          line-height: 1.45;
+          line-height: 1.4;
+        }
+        .botshield-fraud-setup-checklist-item--complete .botshield-fraud-setup-checklist-copy p {
+          color: #8c9196;
         }
         .botshield-fraud-setup-checklist-item--waiting .botshield-fraud-setup-checklist-copy p {
           color: #8c9196;
@@ -2667,7 +2733,7 @@ export function BotShieldAppFrame({ children }) {
           flex: 0 0 auto;
           align-items: center;
           min-height: 20px;
-          padding: 1px 7px;
+          padding: 1px 8px;
           border-radius: 999px;
           font-size: 10px;
           font-weight: 650;
@@ -2688,10 +2754,10 @@ export function BotShieldAppFrame({ children }) {
           color: #616161;
         }
         .botshield-fraud-setup-note {
-          margin: 6px 0 0;
-          color: var(--overview-muted);
+          margin: 4px 0 0;
+          color: #8c9196;
           font-size: 11px;
-          line-height: 1.45;
+          line-height: 1.4;
         }
         .botshield-fraud-setup-drawer-footer {
           display: flex;
@@ -2699,24 +2765,29 @@ export function BotShieldAppFrame({ children }) {
           justify-content: space-between;
           gap: 12px;
           margin-top: auto;
-          padding: 12px 20px;
+          padding: 10px 20px;
           border-top: 1px solid #e3e5e7;
           background: #fafbfb;
           position: sticky;
           bottom: 0;
           z-index: 1;
         }
-        .botshield-fraud-setup-footer-actions {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 10px;
+        .botshield-fraud-setup-connect-wrap {
+          display: inline-flex;
+          flex: 0 0 auto;
         }
-        .botshield-fraud-setup-footer-note {
-          color: var(--overview-muted);
-          font-size: 11px;
-          line-height: 1.35;
-          white-space: nowrap;
+        @media (max-width: 420px) {
+          .botshield-fraud-setup-status-row {
+            grid-template-columns: 1fr;
+          }
+          .botshield-fraud-setup-status-badge {
+            justify-self: start;
+          }
+          .botshield-fraud-setup-checklist-topline {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 4px;
+          }
         }
         .botshield-fraud-preview { overflow: hidden; border: 1px solid #dedede; border-radius: 14px; background: #fff; }
         .botshield-fraud-preview-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid #e8e8e8; }
