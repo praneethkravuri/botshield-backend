@@ -3176,6 +3176,192 @@ export function BotShieldAppFrame({ children }) {
           gap: 10px;
           flex-wrap: wrap;
         }
+        .botshield-settings-hub-content {
+          width: min(1180px, calc(100vw - 56px));
+          padding-top: 34px;
+          padding-bottom: 48px;
+          color: #24272a;
+        }
+        .botshield-settings-hub-header {
+          padding-bottom: 22px;
+        }
+        .botshield-settings-hub-layout {
+          display: grid;
+          grid-template-columns: 196px minmax(0, 1fr);
+          gap: 28px;
+          align-items: start;
+        }
+        .botshield-settings-hub-nav {
+          display: grid;
+          gap: 4px;
+          position: sticky;
+          top: 12px;
+          padding: 8px;
+          border: 1px solid #dcdcdc;
+          border-radius: 12px;
+          background: #ffffff;
+        }
+        .botshield-settings-hub-nav-item {
+          display: block;
+          width: 100%;
+          padding: 9px 12px;
+          border: 0;
+          border-radius: 8px;
+          background: transparent;
+          color: #4a4a4a;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 560;
+          line-height: 1.3;
+          text-align: left;
+          cursor: pointer;
+        }
+        .botshield-settings-hub-nav-item:hover {
+          background: #f3f3f3;
+          color: #202223;
+        }
+        .botshield-settings-hub-nav-item.is-active {
+          background: #f1f2f3;
+          color: #202223;
+          font-weight: 650;
+        }
+        .botshield-settings-hub-nav-item:focus-visible {
+          outline: 2px solid #005bd3;
+          outline-offset: 1px;
+        }
+        .botshield-settings-hub-panel {
+          display: grid;
+          gap: 18px;
+          min-width: 0;
+        }
+        .botshield-settings-hub-section {
+          display: grid;
+          gap: 16px;
+        }
+        .botshield-settings-hub-section-head h2 {
+          margin: 6px 0 0;
+          color: #303030;
+          font-size: 17px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+        .botshield-settings-hub-section-head p {
+          margin: 8px 0 0;
+          max-width: 640px;
+          color: #616161;
+          font-size: 14px;
+          line-height: 1.42;
+        }
+        .botshield-settings-hub-group {
+          border: 1px solid #dcdcdc;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #ffffff;
+        }
+        .botshield-settings-hub-row {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(132px, auto);
+          gap: 18px;
+          align-items: center;
+          min-height: 66px;
+          padding: 13px 16px;
+          border-bottom: 1px solid #e3e3e3;
+        }
+        .botshield-settings-hub-row:last-child {
+          border-bottom: 0;
+        }
+        .botshield-settings-hub-row.is-muted {
+          background: #fafafa;
+        }
+        .botshield-settings-hub-row-copy h3 {
+          margin: 0;
+          color: #303030;
+          font-size: 15px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+        .botshield-settings-hub-row-copy p {
+          margin: 4px 0 0;
+          color: #616161;
+          font-size: 14px;
+          line-height: 1.42;
+        }
+        .botshield-settings-hub-row-control {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+          min-width: 0;
+        }
+        .botshield-settings-hub-row-control s-text-field {
+          width: min(280px, 100%);
+        }
+        .botshield-settings-hub-row-actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .botshield-settings-hub-value {
+          color: #303030;
+          font-size: 14px;
+          font-weight: 650;
+          line-height: 1.3;
+          white-space: nowrap;
+        }
+        .botshield-settings-hub-meta {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          padding: 0 4px 4px;
+          color: #616161;
+          font-size: 13px;
+          line-height: 1.35;
+        }
+        .botshield-settings-hub-meta-copy {
+          min-width: 0;
+        }
+        .botshield-settings-hub-note {
+          margin: 0 4px 4px;
+          padding: 10px 12px;
+          border: 1px solid #e3e3e3;
+          border-radius: 10px;
+          background: #fafafa;
+          color: #616161;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .botshield-settings-hub-note.is-error {
+          border-color: #fed3d1;
+          background: #fff4f4;
+          color: #8a1f11;
+        }
+        .botshield-settings-hub-danger {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 16px;
+          border: 1px solid #fed3d1;
+          border-radius: 12px;
+          background: #fff8f7;
+        }
+        .botshield-settings-hub-danger h3 {
+          margin: 0;
+          color: #303030;
+          font-size: 15px;
+          line-height: 1.25;
+          font-weight: 700;
+        }
+        .botshield-settings-hub-danger p {
+          margin: 6px 0 0;
+          max-width: 520px;
+          color: #616161;
+          font-size: 14px;
+          line-height: 1.42;
+        }
         .botshield-blocking-design-grid {
           display: grid;
           grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
@@ -3698,8 +3884,19 @@ export function BotShieldAppFrame({ children }) {
           .botshield-analytics-content,
           .botshield-protection-content,
           .botshield-fraud-orders-content,
-          .botshield-settings-content {
+          .botshield-settings-content,
+          .botshield-settings-hub-content {
             width: calc(100vw - 40px);
+          }
+          .botshield-settings-hub-layout {
+            grid-template-columns: 1fr;
+          }
+          .botshield-settings-hub-nav {
+            position: static;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          }
+          .botshield-settings-hub-row {
+            grid-template-columns: minmax(0, 1fr) auto;
           }
           .botshield-overview-metric-grid,
           .botshield-analytics-stat-grid,
@@ -3821,6 +4018,25 @@ export function BotShieldAppFrame({ children }) {
           .botshield-settings-row-actions,
           .botshield-settings-inline-action,
           .botshield-settings-action-row { justify-content: flex-start; }
+          .botshield-settings-hub-nav {
+            grid-template-columns: 1fr 1fr;
+          }
+          .botshield-settings-hub-row {
+            grid-template-columns: 1fr;
+            align-items: flex-start;
+          }
+          .botshield-settings-hub-row-control,
+          .botshield-settings-hub-row-actions {
+            width: 100%;
+            justify-content: flex-start;
+          }
+          .botshield-settings-hub-row-control s-text-field {
+            width: 100%;
+          }
+          .botshield-settings-hub-danger {
+            flex-direction: column;
+            align-items: stretch;
+          }
           .botshield-command-grid { grid-template-columns: 1fr; }
           .botshield-command-center { padding: 22px; }
           .botshield-titlebar-brand { font-size: 18px; }

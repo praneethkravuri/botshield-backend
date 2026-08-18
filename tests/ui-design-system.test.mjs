@@ -153,11 +153,15 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /fraudOrderAutoBlock/);
   assert.match(source, /saveFraudOrderSettings/);
   assert.match(source, /No risky orders yet/);
-  assert.match(source, /title="Alerts & Reports"/);
-  assert.match(source, /Notification center/);
-  assert.match(source, /Recent email activity/);
-  assert.match(source, /cooldown protection/);
-  assert.match(source, /Notification settings/);
+  assert.match(source, /Manage BotShield preferences/);
+  assert.match(source, /botshield-settings-hub/);
+  assert.match(source, /SETTINGS_HUB_SECTIONS/);
+  assert.match(source, /Send test email/);
+  assert.match(source, /Weekly security report/);
+  assert.doesNotMatch(source, /Notification center/);
+  assert.doesNotMatch(source, /Recent email activity/);
+  assert.doesNotMatch(source, /Security alerts are ready/);
+  assert.doesNotMatch(source, /title="Alerts & Reports"/);
   assert.match(source, /Billing overview/);
   assert.match(source, /Plan details/);
   assert.match(source, /Activation checklist/);
@@ -189,6 +193,7 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
   assert.match(source, /#0f766e/i);
   assert.match(source, /#ecfdf5/i);
   assert.match(source, /box-shadow/);
+  assert.match(source, /botshield-settings-hub-layout/);
   assert.match(source, /botshield-route-shell/);
   assert.match(source, /botshield-route-transition/);
   assert.doesNotMatch(source, /botshield-route-progress/);
