@@ -221,7 +221,10 @@ export default function UiPreview() {
   });
 
   useEffect(() => {
-    setPage(getInitialPage());
+    const syncPage = () => setPage(getInitialPage());
+    syncPage();
+    window.addEventListener("popstate", syncPage);
+    return () => window.removeEventListener("popstate", syncPage);
   }, []);
 
   const model = useMemo(() => {

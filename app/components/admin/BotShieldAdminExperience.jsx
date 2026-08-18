@@ -3283,6 +3283,123 @@ const FRAUD_METRIC_FILTERS = {
   Assessed: "all",
 };
 
+const FRAUD_FILTER_EMPTY = {
+  "needs-review": {
+    title: "No orders currently need review",
+    description: "Orders with elevated risk or review recommendations will appear here.",
+  },
+  high: {
+    title: "No high-risk orders",
+    description: "High-risk Shopify orders will appear here when order access is connected.",
+  },
+  medium: {
+    title: "No medium-risk orders",
+    description: "Medium-risk orders will appear here when order access is connected.",
+  },
+  "pending-fulfillment": {
+    title: "No risky orders are currently pending fulfillment",
+    description: "Risky unfulfilled orders will appear here when order access is connected.",
+  },
+  all: {
+    title: "No orders available for review",
+    description: "Assessed orders will appear here when order access is connected.",
+  },
+};
+
+function isSupportedFraudFilter(value) {
+  return FRAUD_REVIEW_FILTERS.some(([filterValue]) => filterValue === value);
+}
+
+function getFraudQueueEmptyState({
+  activeFilter,
+  connected,
+  filteredOrders,
+  onOpenSetup,
+  orders,
+  search,
+}) {
+  const filterKey = isSupportedFraudFilter(activeFilter) ? activeFilter : "needs-review";
+  const filterEmpty = FRAUD_FILTER_EMPTY[filterKey] || FRAUD_FILTER_EMPTY.all;
+  const trimmedSearch = String(search || "").trim();
+  const safeOrders = Array.isArray(orders) ? orders : [];
+  const safeFiltered = Array.isArray(filteredOrders) ? filteredOrders : [];
+  const hasOrders = safeOrders.length > 0;
+  const hasFiltered = safeFiltered.length > 0;
+
+  if (!connected) {
+    if (filterKey === "needs-review") {
+      return {
+        title: "Connect order risk to start reviewing orders",
+        description:
+          "Supported Shopify order access is required before elevated-risk orders can appear here.",
+        actionLabel: "Review setup",
+        onAction: onOpenSetup,
+        variant: "disconnected",
+        compact: true,
+      };
+    }
+
+    return {
+      title: filterEmpty.title,
+      description: "Order risk access is not connected yet.",
+      variant: "disconnected",
+      compact: true,
+    };
+  }
+
+  if (hasFiltered) return null;
+
+  if (hasOrders && trimmedSearch) {
+    return {
+      title: "No orders match your filter or search",
+      description: "Try a different filter or clear your search to see more orders.",
+      variant: "connected",
+      compact: true,
+    };
+  }
+
+  return {
+    title: filterEmpty.title,
+    description: filterEmpty.description,
+    variant: "connected",
+    compact: true,
+  };
+}
+
+function filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone }) {
+  const safeOrders = Array.isArray(orders)
+    ? orders.filter((order) => order && typeof order === "object")
+    : [];
+  const normalizedFilter = isSupportedFraudFilter(activeFilter) ? activeFilter : "needs-review";
+  const query = String(search || "").trim().toLowerCase();
+
+  return safeOrders.filter((order) => {
+    const filterMatch =
+      normalizedFilter === "all"
+        ? true
+        : normalizedFilter === "needs-review"
+          ? needsReview(order)
+          : normalizedFilter === "pending-fulfillment"
+            ? fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order)
+            : riskTone(order) === normalizedFilter;
+
+    if (!query) return filterMatch;
+
+    const text = [
+      order.name,
+      order.orderName,
+      order.customer,
+      order.customerName,
+      order.email,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return filterMatch && text.includes(query);
+  });
+}
+
 const FRAUD_ORDER_ACCESS_AVAILABLE = false;
 
 function fraudOrderAge(value) {
@@ -3361,9 +3478,7 @@ function FraudOrderStatusStrip({ onSetup }) {
       <div className="botshield-fraud-status-strip-copy">
         <span className="botshield-v2-eyebrow">Order risk status</span>
         <h2 id="order-risk-status-title">Order risk needs setup</h2>
-        <p>
-          Fraud Orders requires supported Shopify order-risk access before real orders can appear.
-        </p>
+        <p>Connect supported Shopify order access to review elevated-risk orders.</p>
       </div>
       <div className="botshield-fraud-status-strip-action">
         <BotShieldStatusBadge status="setup_required" label="Setup required" />
@@ -3383,8 +3498,7 @@ function FraudReviewSnapshot({
     <section className="botshield-fraud-snapshot" aria-label="Review snapshot">
       {items.map((item) => {
         const filterValue = FRAUD_METRIC_FILTERS[item.label];
-        const interactive =
-          !disabled && !item.unavailable && filterValue && onMetricSelect;
+        const interactive = !disabled && filterValue && onMetricSelect && !item.unavailable;
         const isSelected = interactive && activeFilter === filterValue;
         const className = [
           "botshield-fraud-snapshot-item",
@@ -3439,7 +3553,13 @@ function FraudReviewQueueToolbar({
   onFilterChange,
   onSearchChange,
   search,
+  searchDisabled = false,
 }) {
+  const handleFilterChange = (value) => {
+    if (!isSupportedFraudFilter(value)) return;
+    onFilterChange?.(value);
+  };
+
   return (
     <div className="botshield-fraud-toolbar" aria-disabled={disabled || undefined}>
       <div className="botshield-fraud-filter-group" role="tablist" aria-label="Order review views">
@@ -3449,7 +3569,7 @@ function FraudReviewQueueToolbar({
             className={activeFilter === value ? "is-active" : ""}
             disabled={disabled}
             key={value}
-            onClick={() => onFilterChange?.(value)}
+            onClick={() => handleFilterChange(value)}
             role="tab"
             type="button"
           >
@@ -3459,7 +3579,7 @@ function FraudReviewQueueToolbar({
       </div>
       <input
         aria-label="Search orders, customers, or email"
-        disabled={disabled}
+        disabled={disabled || searchDisabled}
         onChange={(event) => onSearchChange?.(event.target.value)}
         placeholder="Search orders, customers, or email"
         type="search"
@@ -3592,7 +3712,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
         <header>
           <div>
             <h2>Fraud Orders setup</h2>
-            <p>Connect Shopify order risk to start reviewing suspicious orders.</p>
+            <p>Connect supported Shopify order access to review elevated-risk orders.</p>
           </div>
           <button aria-label="Close Fraud Orders setup" autoFocus onClick={onClose} type="button">
             ×
@@ -3600,13 +3720,12 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
         </header>
         <div className="botshield-fraud-drawer-body">
           <div className="botshield-fraud-setup-primary-status">
-            <strong>
-              {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
-            </strong>
-            <p>
-              BotShield needs supported Shopify order access before elevated-risk orders can appear
-              in your review queue.
-            </p>
+            <div className="botshield-fraud-setup-primary-status-copy">
+              <strong>
+                {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
+              </strong>
+              <p>Connect supported Shopify order access to review elevated-risk orders.</p>
+            </div>
             {!orderAccessReady ? (
               <span className="botshield-fraud-setup-status-label botshield-fraud-setup-status-label--required">
                 Setup required
@@ -3796,6 +3915,7 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
 
 function FraudOrdersQueueEmpty({
   actionLabel,
+  compact = false,
   description,
   icon = "activity",
   onAction,
@@ -3803,17 +3923,18 @@ function FraudOrdersQueueEmpty({
   variant = "default",
 }) {
   return (
-    <div className={`botshield-fraud-queue-empty${variant === "connected" ? " is-connected" : ""}`}>
-      <OverviewIcon name={icon} centered />
+    <div
+      className={`botshield-fraud-queue-empty${variant === "connected" ? " is-connected" : ""}${
+        compact ? " is-compact" : ""
+      }${variant === "disconnected" ? " is-disconnected" : ""}`}
+    >
+      {!compact ? <OverviewIcon name={icon} centered /> : null}
       <div>
         <h3>{title}</h3>
         <p>{description}</p>
       </div>
       {onAction && actionLabel ? (
         <BotShieldActionButton onClick={onAction}>{actionLabel}</BotShieldActionButton>
-      ) : null}
-      {variant === "disconnected" ? (
-        <small>No demo or simulated orders are shown.</small>
       ) : null}
     </div>
   );
@@ -3828,54 +3949,6 @@ function FraudOrdersQueueLoading() {
   );
 }
 
-// Retained only to keep older preview snapshots readable. No active route or
-// navigation exposes this screen until Shopify order-risk syncing exists.
-// eslint-disable-next-line no-unused-vars
-function FraudOrdersDisconnected({ onOpenSetup }) {
-  const snapshotItems = [
-    { label: "Needs review", value: null, detail: "Orders awaiting merchant review", unavailable: true },
-    { label: "High risk", value: null, detail: "Highest-priority orders", unavailable: true },
-    { label: "Pending fulfillment", value: null, detail: "Risky orders not yet fulfilled", unavailable: true },
-    { label: "Assessed", value: null, detail: "Orders checked for fraud risk", unavailable: true },
-  ];
-
-  return (
-    <div className="botshield-page">
-      <main className="botshield-page-content botshield-fraud-orders-content">
-        <FraudOrdersPageHeader />
-
-        <FraudOrderStatusStrip onSetup={onOpenSetup} />
-
-        <FraudReviewSnapshot disabled items={snapshotItems} />
-
-        <section className="botshield-fraud-review-hero" aria-labelledby="fraud-review-queue-title">
-          <div className="botshield-fraud-section-intro">
-            <span className="botshield-v2-eyebrow">Review queue</span>
-            <h2 id="fraud-review-queue-title">Orders requiring attention</h2>
-            <p>
-              Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
-            </p>
-          </div>
-          <FraudReviewQueueToolbar
-            activeFilter="needs-review"
-            disabled
-            onFilterChange={() => {}}
-            onSearchChange={() => {}}
-            search=""
-          />
-          <FraudOrdersQueueEmpty
-            actionLabel="Review setup"
-            description="Once supported Shopify order access is connected, elevated-risk orders will appear here for review."
-            onAction={onOpenSetup}
-            title="Connect order risk to begin reviewing orders"
-            variant="disconnected"
-          />
-        </section>
-      </main>
-    </div>
-  );
-}
-
 function FraudOrdersPage({ model, actions }) {
   const [activeFilter, setActiveFilter] = useState("needs-review");
   const [search, setSearch] = useState("");
@@ -3885,9 +3958,9 @@ function FraudOrdersPage({ model, actions }) {
   const connected = Boolean(model.fraudOrderAccessConnected);
   const loading = Boolean(model.fraudOrdersLoading);
   const error = model.fraudOrdersError || null;
-  const isFiltering = activeFilter !== "all" || Boolean(search.trim());
-  const riskKey = (order) => String(order.risk || order.riskLevel || "pending").toLowerCase();
+  const riskKey = (order) => String(order?.risk || order?.riskLevel || "pending").toLowerCase();
   const needsReview = (order) => {
+    if (!order) return false;
     const risk = riskKey(order);
     const recommendation = String(order.recommendation || "").toLowerCase();
     return /high|medium/.test(risk) || /review|cancel/.test(recommendation);
@@ -3901,36 +3974,38 @@ function FraudOrdersPage({ model, actions }) {
   };
   const riskTone = (order) => {
     const risk = riskKey(order);
-    return risk.includes("high") ? "high" : risk.includes("medium") ? "medium" : risk.includes("low") ? "low" : "pending";
+    return risk.includes("high")
+      ? "high"
+      : risk.includes("medium")
+        ? "medium"
+        : risk.includes("low")
+          ? "low"
+          : "pending";
   };
-  const metrics = orders.reduce((result, order) => {
-    const tone = riskTone(order);
-    result[tone] += 1;
-    if (needsReview(order)) result.review += 1;
-    return result;
-  }, { high: 0, low: 0, medium: 0, pending: 0, review: 0 });
+  const metrics = orders.reduce(
+    (result, order) => {
+      const tone = riskTone(order);
+      if (Object.prototype.hasOwnProperty.call(result, tone)) {
+        result[tone] += 1;
+      }
+      if (needsReview(order)) result.review += 1;
+      return result;
+    },
+    { high: 0, low: 0, medium: 0, pending: 0, review: 0 },
+  );
   const pendingFulfillment = orders.filter(
     (order) => fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order),
   ).length;
-  const filteredOrders = orders.filter((order) => {
-    const filterMatch =
-      activeFilter === "all"
-        ? true
-        : activeFilter === "needs-review"
-          ? needsReview(order)
-          : activeFilter === "pending-fulfillment"
-            ? fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order)
-            : activeFilter === "pending"
-              ? riskTone(order) === "pending"
-              : riskTone(order) === activeFilter;
-    const text = [order.name, order.orderName, order.customer, order.customerName, order.email]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return filterMatch && (!search.trim() || text.includes(search.trim().toLowerCase()));
-  });
+  const filteredOrders = connected
+    ? filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone })
+    : [];
   const refresh = async () => {
     if (typeof actions.refresh === "function") await actions.refresh();
+  };
+  const openSetup = () => setSetupOpen(true);
+  const closeSetup = () => setSetupOpen(false);
+  const handleFilterChange = (value) => {
+    if (isSupportedFraudFilter(value)) setActiveFilter(value);
   };
 
   useEffect(() => {
@@ -3942,29 +4017,59 @@ function FraudOrdersPage({ model, actions }) {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [selectedOrder]);
 
-  const openSetup = () => setSetupOpen(true);
-  const closeSetup = () => setSetupOpen(false);
-
-  if (!connected) {
-    return (
-      <>
-        <FraudOrdersDisconnected onOpenSetup={openSetup} />
-        {setupOpen ? (
-          <FraudOrderSetupDrawer
-            connected={connected}
-            onClose={closeSetup}
-          />
-        ) : null}
-      </>
-    );
-  }
-
-  const snapshotItems = [
-    { label: "Needs review", value: metrics.review, detail: "Orders awaiting merchant review", unavailable: false },
-    { label: "High risk", value: metrics.high, detail: "Highest-priority orders", unavailable: false },
-    { label: "Pending fulfillment", value: pendingFulfillment, detail: "Risky orders not yet fulfilled", unavailable: false },
-    { label: "Assessed", value: orders.length, detail: "Orders checked for fraud risk", unavailable: false },
-  ];
+  const snapshotItems = connected
+    ? [
+        {
+          label: "Needs review",
+          value: metrics.review,
+          detail: "Orders awaiting merchant review",
+          unavailable: false,
+        },
+        {
+          label: "High risk",
+          value: metrics.high,
+          detail: "Highest-priority orders",
+          unavailable: false,
+        },
+        {
+          label: "Pending fulfillment",
+          value: pendingFulfillment,
+          detail: "Risky orders not yet fulfilled",
+          unavailable: false,
+        },
+        {
+          label: "Assessed",
+          value: orders.length,
+          detail: "Orders checked for fraud risk",
+          unavailable: false,
+        },
+      ]
+    : [
+        {
+          label: "Needs review",
+          value: null,
+          detail: "Orders awaiting merchant review",
+          unavailable: true,
+        },
+        {
+          label: "High risk",
+          value: null,
+          detail: "Highest-priority orders",
+          unavailable: true,
+        },
+        {
+          label: "Pending fulfillment",
+          value: null,
+          detail: "Risky orders not yet fulfilled",
+          unavailable: true,
+        },
+        {
+          label: "Assessed",
+          value: null,
+          detail: "Orders checked for fraud risk",
+          unavailable: true,
+        },
+      ];
 
   const renderQueueBody = () => {
     if (loading) {
@@ -3976,16 +4081,14 @@ function FraudOrdersPage({ model, actions }) {
         <BotShieldBanner
           tone="critical"
           title="Could not load Fraud Orders"
-          action={
-            <BotShieldActionButton onClick={refresh}>Retry</BotShieldActionButton>
-          }
+          action={<BotShieldActionButton onClick={refresh}>Retry</BotShieldActionButton>}
         >
           {error}
         </BotShieldBanner>
       );
     }
 
-    if (filteredOrders.length) {
+    if (connected && filteredOrders.length) {
       return (
         <FraudOrderInboxTable
           onReview={setSelectedOrder}
@@ -3996,66 +4099,90 @@ function FraudOrdersPage({ model, actions }) {
       );
     }
 
-    if (orders.length && isFiltering) {
-      return (
-        <FraudOrdersQueueEmpty
-          description="Try a different filter or clear your search to see more orders."
-          title="No orders match your filter or search"
-          variant="connected"
-        />
-      );
-    }
+    const emptyState = getFraudQueueEmptyState({
+      activeFilter,
+      connected,
+      filteredOrders,
+      onOpenSetup: openSetup,
+      orders,
+      search,
+    });
+
+    if (!emptyState) return null;
 
     return (
       <FraudOrdersQueueEmpty
-        description="New Shopify orders with elevated fraud risk will appear here for review."
-        title="No orders currently need review"
-        variant="connected"
+        actionLabel={emptyState.actionLabel}
+        compact={emptyState.compact}
+        description={emptyState.description}
+        onAction={emptyState.onAction}
+        title={emptyState.title}
+        variant={emptyState.variant}
       />
     );
   };
 
   return (
-    <div className="botshield-page">
-      <main className="botshield-page-content botshield-fraud-orders-content">
-        <FraudOrdersPageHeader onRefresh={refresh} />
+    <>
+      <div className="botshield-page">
+        <main className="botshield-page-content botshield-fraud-orders-content">
+          <FraudOrdersPageHeader onRefresh={connected ? refresh : undefined} />
 
-        <FraudReviewSnapshot
-          activeFilter={activeFilter}
-          items={snapshotItems}
-          onMetricSelect={setActiveFilter}
-        />
+          {!connected ? <FraudOrderStatusStrip onSetup={openSetup} /> : null}
 
-        <section className="botshield-fraud-review-hero">
-          <div className="botshield-fraud-section-intro">
-            <span className="botshield-v2-eyebrow">Review queue</span>
-            <h2>Orders requiring attention</h2>
-            <p>
-              Prioritized orders with elevated fraud signals or recommendations that may need review before fulfillment.
-            </p>
-          </div>
-          <FraudReviewQueueToolbar
+          <FraudReviewSnapshot
             activeFilter={activeFilter}
             disabled={loading}
-            onFilterChange={setActiveFilter}
-            onSearchChange={setSearch}
-            search={search}
+            items={snapshotItems}
+            onMetricSelect={handleFilterChange}
           />
-          {renderQueueBody()}
-        </section>
 
-        {selectedOrder ? (
-          <FraudOrderReviewDrawer
-            needsReview={needsReview}
-            onClose={() => setSelectedOrder(null)}
-            order={selectedOrder}
-            riskLabel={riskLabel}
-            riskTone={riskTone}
-          />
-        ) : null}
-      </main>
-    </div>
+          <section className="botshield-fraud-review-hero" aria-labelledby="fraud-review-queue-title">
+            <div className="botshield-fraud-section-intro">
+              <span className="botshield-v2-eyebrow">Review queue</span>
+              <h2 id="fraud-review-queue-title">Orders requiring attention</h2>
+              {!connected ? null : (
+                <p>
+                  Prioritized orders with elevated fraud signals or recommendations that may need
+                  review before fulfillment.
+                </p>
+              )}
+            </div>
+            <FraudReviewQueueToolbar
+              activeFilter={activeFilter}
+              disabled={loading}
+              onFilterChange={handleFilterChange}
+              onSearchChange={setSearch}
+              search={search}
+              searchDisabled={!connected}
+            />
+            {renderQueueBody()}
+          </section>
+        </main>
+      </div>
+
+      {setupOpen ? (
+        <FraudOrderSetupDrawer connected={connected} onClose={closeSetup} />
+      ) : null}
+
+      {selectedOrder ? (
+        <FraudOrderReviewDrawer
+          needsReview={needsReview}
+          onClose={() => setSelectedOrder(null)}
+          order={selectedOrder}
+          riskLabel={riskLabel}
+          riskTone={riskTone}
+        />
+      ) : null}
+    </>
   );
+}
+
+// Retained only to keep older preview snapshots readable. No active route or
+// navigation exposes this screen until Shopify order-risk syncing exists.
+// eslint-disable-next-line no-unused-vars
+function FraudOrdersDisconnected({ onOpenSetup }) {
+  return <FraudOrdersPage model={{ fraudOrderAccessConnected: false, fraudOrders: [] }} actions={{}} />;
 }
 
 // Kept temporarily for older preview snapshots; it is not rendered.
