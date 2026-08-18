@@ -6029,20 +6029,45 @@ function SettingsHubIcon({ name }) {
     email: "connect",
   };
   return (
-    <span className="botshield-settings-hub-icon" aria-hidden="true">
+    <span className="botshield-v2-icon" aria-hidden="true">
       <s-icon type={icons[name] || "gauge"} size="small" color="subdued" />
     </span>
   );
 }
 
 function SettingsOperationalDot({ tone = "neutral" }) {
-  return <span className={`botshield-settings-hub-dot is-${tone}`} aria-hidden="true" />;
+  const healthTone =
+    tone === "healthy"
+      ? "is-healthy"
+      : tone === "warning" || tone === "monitor"
+        ? "is-attention"
+        : "";
+  return (
+    <span
+      className={`botshield-v2-health-dot${healthTone ? ` ${healthTone}` : ""}`}
+      aria-hidden="true"
+    />
+  );
 }
 
 function SettingsHubStatusPill({ label, tone = "neutral" }) {
+  const pillTone =
+    tone === "healthy"
+      ? "is-healthy"
+      : tone === "warning" || tone === "monitor"
+        ? "is-attention"
+        : "is-neutral";
+  const dotTone =
+    tone === "healthy"
+      ? "healthy"
+      : tone === "warning" || tone === "monitor"
+        ? tone === "monitor"
+          ? "monitor"
+          : "warning"
+        : "neutral";
   return (
-    <span className={`botshield-settings-hub-status-pill is-${tone}`}>
-      <SettingsOperationalDot tone={tone} />
+    <span className={`botshield-settings-hub-status-pill ${pillTone}`}>
+      <SettingsOperationalDot tone={dotTone} />
       {label}
     </span>
   );
@@ -6670,8 +6695,8 @@ function SettingsPage({ model, actions }) {
 
   return (
     <div className="botshield-page">
-      <main className="botshield-page-content botshield-settings-hub-content">
-        <header className="botshield-settings-hub-header">
+      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
+        <header className="botshield-overview-header botshield-settings-hub-header">
           <div className="botshield-settings-hub-header-copy">
             <h1 className="botshield-overview-title">Settings</h1>
             <p className="botshield-overview-subtitle">
