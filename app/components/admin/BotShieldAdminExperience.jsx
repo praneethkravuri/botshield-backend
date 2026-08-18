@@ -3818,7 +3818,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
                   : undefined
               }
               disabled={connectDisabled}
-              variant="primary"
+              variant={connectDisabled ? "secondary" : "primary"}
             >
               Connect order access
             </BotShieldActionButton>

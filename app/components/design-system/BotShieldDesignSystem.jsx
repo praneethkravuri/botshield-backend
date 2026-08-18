@@ -2491,7 +2491,7 @@ export function BotShieldAppFrame({ children }) {
           display: flex;
           flex-direction: column;
           gap: 12px;
-          padding: 12px 20px 14px;
+          padding: 12px 20px 8px;
         }
         .botshield-fraud-setup-drawer-header {
           display: flex;
@@ -2764,7 +2764,7 @@ export function BotShieldAppFrame({ children }) {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-top: auto;
+          margin-top: 0;
           padding: 10px 20px;
           border-top: 1px solid #e3e5e7;
           background: #fafbfb;
@@ -2775,6 +2775,10 @@ export function BotShieldAppFrame({ children }) {
         .botshield-fraud-setup-connect-wrap {
           display: inline-flex;
           flex: 0 0 auto;
+        }
+        .botshield-fraud-setup-drawer-footer .botshield-fraud-setup-connect-wrap s-button[disabled] {
+          cursor: not-allowed;
+          opacity: 1;
         }
         @media (max-width: 420px) {
           .botshield-fraud-setup-status-row {
@@ -2888,7 +2892,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-fraud-drawer dl div.is-full { grid-column: 1 / -1; }
         .botshield-fraud-drawer dt { color: #737373; font-size: 11px; line-height: 1.3; }
         .botshield-fraud-drawer dd { overflow-wrap: anywhere; margin: 3px 0 0; color: #242424; font-size: 13px; font-weight: 580; line-height: 1.4; }
-        .botshield-fraud-drawer > footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: auto; padding: 14px 22px; border-top: 1px solid #e3e3e3; background: #fafafa; }
+        .botshield-fraud-drawer:not(.botshield-fraud-drawer--setup) > footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: auto; padding: 14px 22px; border-top: 1px solid #e3e3e3; background: #fafafa; }
         .botshield-fraud-open-order { border-radius: 8px; background: #303030; color: #fff; font-size: 13px; font-weight: 650; padding: 8px 12px; text-decoration: none; }
         .botshield-settings-content {
           width: min(1180px, calc(100vw - 56px));
