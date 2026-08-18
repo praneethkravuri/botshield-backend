@@ -5961,10 +5961,115 @@ function IpList({
   );
 }
 
-function SettingsHubRow({ title, description, control, muted = false }) {
+function getSimulationCount(model) {
+  if (Array.isArray(model?.simulatedScans)) return model.simulatedScans.length;
+  const parsed = Number(model?.simulatedScans);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatSimulationLabel(model) {
+  const count = getSimulationCount(model);
+  if (count <= 0) return "No simulated activity";
+  return `${count.toLocaleString()} simulated event${count === 1 ? "" : "s"}`;
+}
+
+function getSettingsOperationalStrip(model) {
+  const responseMode = getResponseMode(model);
+  const storefrontConnected = hasStorefrontConnection(model);
+  const receivingTraffic = Boolean(model.protectionStatus?.lastStorefrontDecisionAt);
+  const alertsEnabled = Boolean(
+    model.emailAlerts && model.emailProviderConfigured && model.alertEmail,
+  );
+
+  return [
+    {
+      label: "Protection",
+      value: model.protectionPaused ? "Paused" : responseMode.label,
+      tone: model.protectionPaused
+        ? "warning"
+        : responseMode.status === "active"
+          ? "healthy"
+          : "monitor",
+    },
+    {
+      label: "Storefront",
+      value: storefrontConnected ? "Connected" : "Setup required",
+      tone: storefrontConnected ? "healthy" : "warning",
+    },
+    {
+      label: "Traffic",
+      value: receivingTraffic ? "Receiving" : "Waiting",
+      tone: receivingTraffic ? "healthy" : "warning",
+    },
+    {
+      label: "Alerts",
+      value: alertsEnabled ? "Enabled" : model.emailAlerts ? "Needs setup" : "Off",
+      tone: alertsEnabled ? "healthy" : model.emailAlerts ? "warning" : "neutral",
+    },
+  ];
+}
+
+function SettingsHubIcon({ name }) {
+  const icons = {
+    general: "gauge",
+    notifications: "clock",
+    reports: "page",
+    connections: "connect",
+    privacy: "shield-check-mark",
+    diagnostics: "chart-line",
+    danger: "shield-pending",
+    shield: "shield-check-mark",
+    activity: "chart-line",
+    link: "connect",
+    lock: "shield-check-mark",
+    warning: "shield-pending",
+    diagnostic: "gauge",
+    privacyRow: "shield-check-mark",
+    connection: "globe-lines",
+    email: "connect",
+  };
   return (
-    <div className={`botshield-settings-hub-row${muted ? " is-muted" : ""}`}>
+    <span className="botshield-settings-hub-icon" aria-hidden="true">
+      <s-icon type={icons[name] || "gauge"} size="small" color="subdued" />
+    </span>
+  );
+}
+
+function SettingsOperationalDot({ tone = "neutral" }) {
+  return <span className={`botshield-settings-hub-dot is-${tone}`} aria-hidden="true" />;
+}
+
+function SettingsHubStatusPill({ label, tone = "neutral" }) {
+  return (
+    <span className={`botshield-settings-hub-status-pill is-${tone}`}>
+      <SettingsOperationalDot tone={tone} />
+      {label}
+    </span>
+  );
+}
+
+function SettingsHubRow({
+  title,
+  description,
+  control,
+  muted = false,
+  variant = "default",
+  icon,
+  lead,
+}) {
+  return (
+    <div
+      className={`botshield-settings-hub-row${muted ? " is-muted" : ""} is-${variant}${
+        icon ? " has-icon" : ""
+      }`}
+    >
+      {icon ? (
+        <div className="botshield-settings-hub-row-icon">
+          <SettingsHubIcon name={icon} />
+        </div>
+      ) : null}
       <div className="botshield-settings-hub-row-copy">
+        {lead ? <span className="botshield-settings-hub-row-eyebrow">{lead}</span> : null}
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
       </div>
@@ -5973,15 +6078,15 @@ function SettingsHubRow({ title, description, control, muted = false }) {
   );
 }
 
-function SettingsHubSection({ eyebrow, title, description, children }) {
+function SettingsHubSection({ eyebrow, title, description, children, panel = "default" }) {
   return (
-    <section className="botshield-settings-hub-section">
+    <section className={`botshield-settings-hub-section is-panel-${panel}`}>
       <header className="botshield-settings-hub-section-head">
         {eyebrow ? <span className="botshield-v2-eyebrow">{eyebrow}</span> : null}
         <h2>{title}</h2>
         {description ? <p>{description}</p> : null}
       </header>
-      <div className="botshield-settings-hub-group">{children}</div>
+      <div className={`botshield-settings-hub-group is-${panel}`}>{children}</div>
     </section>
   );
 }
@@ -6064,6 +6169,35 @@ function SettingsPage({ model, actions }) {
     : "No weekly report delivery recorded yet";
   const planName = model.billingStatus?.planName || "BotShield Basic";
   const alertEmailValid = EMAIL_PATTERN.test(draft.alertEmail);
+  const operationalStrip = getSettingsOperationalStrip(model);
+  const simulationLabel = formatSimulationLabel(model);
+  const protectionStateTone = model.protectionPaused
+    ? "warning"
+    : "healthy";
+  const responseModeTone =
+    responseMode.status === "active"
+      ? "healthy"
+      : responseMode.status === "paused"
+        ? "warning"
+        : "monitor";
+  const testEmailDisabledReason = dirty
+    ? "Save notification settings before sending a test email."
+    : !draft.emailAlerts
+      ? "Turn on security alerts before sending a test email."
+      : !model.emailProviderConfigured
+        ? "Email delivery is not configured in this environment."
+        : !alertEmailValid
+          ? "Enter a valid alert email before sending a test email."
+          : "";
+  const reportDisabledReason = dirty
+    ? "Save report settings before sending a manual report."
+    : !draft.weeklyReportsEnabled
+      ? "Turn on the weekly security report before sending one now."
+      : !model.emailProviderConfigured
+        ? "Email delivery is not configured in this environment."
+        : !alertEmailValid
+          ? "Enter a valid alert email before sending a report."
+          : "";
 
   const save = async () => {
     if (
@@ -6092,200 +6226,254 @@ function SettingsPage({ model, actions }) {
     if (activeSection === "general") {
       return (
         <SettingsHubSection
-          description="Core BotShield preferences and shortcuts to related configuration."
+          description="Operational posture and shortcuts into BotShield protection controls."
           eyebrow="General"
-          title="Application preferences"
+          panel="control"
+          title="Control center"
         >
-          <SettingsHubRow
-            control={
-              <BotShieldStatusBadge
-                label={responseMode.label}
-                status={responseMode.status}
-              />
-            }
-            description="Current storefront response mode used by BotShield."
-            title="Response mode"
-          />
-          <SettingsHubRow
-            control={
-              <BotShieldStatusBadge
-                label={model.protectionPaused ? "Paused" : "Active"}
-                status={model.protectionPaused ? "paused" : "active"}
-              />
-            }
-            description={
-              model.protectionPaused
-                ? "Automated storefront responses are paused until you resume protection."
-                : "BotShield is applying your configured storefront protection policy."
-            }
-            title="Protection state"
-          />
-          <SettingsHubRow
-            control={<span className="botshield-settings-hub-value">{protectionProfile}</span>}
-            description="Shared detection profile configured on the Protection page."
-            title="Protection profile"
-          />
-          <SettingsHubRow
-            control={<span className="botshield-settings-hub-value">{planName}</span>}
-            description="Current BotShield subscription plan for this store."
-            title="Plan"
-          />
-          <SettingsHubRow
-            control={
-              <div className="botshield-settings-hub-row-actions">
-                {model.protectionPaused ? (
-                  <BotShieldActionButton onClick={() => actions.resumeProtection()}>
-                    Resume protection
+          <div className="botshield-settings-hub-subgroup is-operational">
+            <SettingsHubRow
+              control={
+                <SettingsHubStatusPill label={responseMode.label} tone={responseModeTone} />
+              }
+              description="Current storefront response mode used by BotShield."
+              icon="shield"
+              title="Response mode"
+              variant="operational"
+            />
+            <SettingsHubRow
+              control={
+                <SettingsHubStatusPill
+                  label={model.protectionPaused ? "Paused" : "Active"}
+                  tone={protectionStateTone}
+                />
+              }
+              description={
+                model.protectionPaused
+                  ? "Automated storefront responses are paused until you resume protection."
+                  : "BotShield is applying your configured storefront protection policy."
+              }
+              icon="activity"
+              title="Protection state"
+              variant="operational"
+            />
+          </div>
+          <div className="botshield-settings-hub-subgroup is-info">
+            <SettingsHubRow
+              control={<span className="botshield-settings-hub-value">{protectionProfile}</span>}
+              description="Shared detection profile configured on the Protection page."
+              title="Protection profile"
+              variant="info"
+            />
+            <SettingsHubRow
+              control={<span className="botshield-settings-hub-value">{planName}</span>}
+              description="Current BotShield subscription plan for this store."
+              title="Plan"
+              variant="info"
+            />
+          </div>
+          <div className="botshield-settings-hub-subgroup is-action">
+            <SettingsHubRow
+              control={
+                <div className="botshield-settings-hub-row-actions">
+                  <BotShieldActionButton onClick={() => actions.setPage("detection")}>
+                    Open Protection
                   </BotShieldActionButton>
-                ) : (
-                  <BotShieldActionButton onClick={() => actions.pauseProtection(60)}>
-                    Pause 1 hour
-                  </BotShieldActionButton>
-                )}
-                <BotShieldActionButton onClick={() => actions.setPage("detection")}>
-                  Open Protection
-                </BotShieldActionButton>
-              </div>
-            }
-            description="Manage detection modules, enforcement policy, and visitor access on Protection."
-            title="Protection configuration"
-          />
+                  {model.protectionPaused ? (
+                    <BotShieldActionButton onClick={() => actions.resumeProtection()}>
+                      Resume protection
+                    </BotShieldActionButton>
+                  ) : (
+                    <BotShieldActionButton onClick={() => actions.pauseProtection(60)}>
+                      Pause 1 hour
+                    </BotShieldActionButton>
+                  )}
+                </div>
+              }
+              description="Manage detection modules, enforcement policy, and visitor access on Protection."
+              title="Protection configuration"
+              variant="action"
+            />
+            {model.protectionPaused ? null : (
+              <p className="botshield-settings-hub-inline-note">
+                Pause temporarily stops automated storefront responses for one hour. Monitoring
+                continues and protection can be resumed at any time.
+              </p>
+            )}
+          </div>
         </SettingsHubSection>
       );
     }
 
     if (activeSection === "notifications") {
       return (
-        <SettingsHubSection
-          description="Configure where BotShield sends security notifications."
-          eyebrow="Notifications"
-          title="Email alerts"
-        >
-          {!model.emailProviderConfigured ? (
-            <div className="botshield-settings-hub-note">
-              Email delivery is not configured for this environment. Alert settings can be saved,
-              but messages will not send until the provider is configured.
+        <>
+          <SettingsHubSection
+            description="Configure where BotShield sends security notifications."
+            eyebrow="Notifications"
+            panel="config"
+            title="Email alerts"
+          >
+            {!model.emailProviderConfigured ? (
+              <div className="botshield-settings-hub-note">
+                Email delivery is not configured for this environment. Alert settings can be saved,
+                but messages will not send until the provider is configured.
+              </div>
+            ) : null}
+            <SettingsHubRow
+              control={
+                <div className="botshield-settings-hub-field">
+                  <BotShieldTextField
+                    autocomplete="email"
+                    error={
+                      draft.alertEmail && !alertEmailValid ? "Enter a valid email address" : ""
+                    }
+                    label=""
+                    onChange={(alertEmail) => setDraft((current) => ({ ...current, alertEmail }))}
+                    placeholder="you@store.com"
+                    type="email"
+                    value={draft.alertEmail}
+                  />
+                </div>
+              }
+              description="Destination for security alerts and weekly reports."
+              icon="email"
+              title="Alert email"
+              variant="config"
+            />
+            <SettingsHubRow
+              control={
+                <BotShieldToggle
+                  checked={draft.emailAlerts}
+                  disabled={!model.emailProviderConfigured}
+                  label=""
+                  onChange={(emailAlerts) => setDraft((current) => ({ ...current, emailAlerts }))}
+                />
+              }
+              description="Receive notifications when BotShield detects important security events."
+              title="Security alerts"
+              variant="config"
+            />
+          </SettingsHubSection>
+          <section className="botshield-settings-hub-delivery">
+            <header className="botshield-settings-hub-delivery-head">
+              <span className="botshield-v2-eyebrow">Delivery status</span>
+              <h3>Notification delivery</h3>
+            </header>
+            <div className="botshield-settings-hub-delivery-body">
+              <SettingsHubRow
+                control={
+                  <BotShieldAsyncButton
+                    action={async () => {
+                      await safeFetchJson("/api/alerts/test", { method: "POST" });
+                      await actions.refreshSettings();
+                    }}
+                    disabled={
+                      dirty ||
+                      !draft.emailAlerts ||
+                      !model.emailProviderConfigured ||
+                      !alertEmailValid
+                    }
+                    successMessage="Test email sent"
+                    title={testEmailDisabledReason || undefined}
+                  >
+                    Send test email
+                  </BotShieldAsyncButton>
+                }
+                description={`Last delivery: ${lastAlertDetail}`}
+                title="Test notification"
+                variant="delivery"
+              />
+              <div className="botshield-settings-hub-meta">
+                <BotShieldStatusBadge
+                  label={emailStatus.label}
+                  status={emailStatus.technicalStatus}
+                />
+                <span className="botshield-settings-hub-meta-copy">
+                  {emailStatus.description}
+                </span>
+              </div>
+              {model.lastAlertError ? (
+                <div className="botshield-settings-hub-note is-error">{model.lastAlertError}</div>
+              ) : null}
             </div>
-          ) : null}
-          <SettingsHubRow
-            control={
-              <BotShieldTextField
-                autocomplete="email"
-                error={
-                  draft.alertEmail && !alertEmailValid ? "Enter a valid email address" : ""
-                }
-                label=""
-                onChange={(alertEmail) => setDraft((current) => ({ ...current, alertEmail }))}
-                type="email"
-                value={draft.alertEmail}
-              />
-            }
-            description="Destination for security alerts and weekly reports."
-            title="Alert email"
-          />
-          <SettingsHubRow
-            control={
-              <BotShieldToggle
-                checked={draft.emailAlerts}
-                disabled={!model.emailProviderConfigured}
-                label=""
-                onChange={(emailAlerts) => setDraft((current) => ({ ...current, emailAlerts }))}
-              />
-            }
-            description="Receive notifications when BotShield detects important security events."
-            title="Security alerts"
-          />
-          <SettingsHubRow
-            control={
-              <BotShieldAsyncButton
-                action={async () => {
-                  await safeFetchJson("/api/alerts/test", { method: "POST" });
-                  await actions.refreshSettings();
-                }}
-                disabled={
-                  dirty ||
-                  !draft.emailAlerts ||
-                  !model.emailProviderConfigured ||
-                  !alertEmailValid
-                }
-                successMessage="Test email sent"
-              >
-                Send test email
-              </BotShieldAsyncButton>
-            }
-            description={`Last delivery: ${lastAlertDetail}`}
-            muted
-            title="Test notification"
-          />
-          <div className="botshield-settings-hub-meta">
-            <BotShieldStatusBadge label={emailStatus.label} status={emailStatus.technicalStatus} />
-            <span className="botshield-settings-hub-meta-copy">{emailStatus.description}</span>
-          </div>
-          {model.lastAlertError ? (
-            <div className="botshield-settings-hub-note is-error">{model.lastAlertError}</div>
-          ) : null}
-        </SettingsHubSection>
+          </section>
+        </>
       );
     }
 
     if (activeSection === "reports") {
       return (
-        <SettingsHubSection
-          description="Configure automated weekly security summaries."
-          eyebrow="Reports"
-          title="Weekly security report"
-        >
-          <SettingsHubRow
-            control={
-              <BotShieldToggle
-                checked={draft.weeklyReportsEnabled}
-                disabled={!model.emailProviderConfigured}
-                label=""
-                onChange={(weeklyReportsEnabled) =>
-                  setDraft((current) => ({ ...current, weeklyReportsEnabled }))
-                }
-              />
-            }
-            description="Send a weekly summary of recorded storefront protection activity."
+        <>
+          <SettingsHubSection
+            description="Configure automated weekly security summaries."
+            eyebrow="Reports"
+            panel="config"
             title="Weekly security report"
-          />
-          <SettingsHubRow
-            control={
-              <BotShieldAsyncButton
-                action={async () => {
-                  await safeFetchJson("/api/weekly-report", { method: "POST" });
-                  await actions.refreshSettings();
-                }}
-                disabled={
-                  dirty ||
-                  !draft.weeklyReportsEnabled ||
-                  !model.emailProviderConfigured ||
-                  !alertEmailValid
+          >
+            <SettingsHubRow
+              control={
+                <BotShieldToggle
+                  checked={draft.weeklyReportsEnabled}
+                  disabled={!model.emailProviderConfigured}
+                  label=""
+                  onChange={(weeklyReportsEnabled) =>
+                    setDraft((current) => ({ ...current, weeklyReportsEnabled }))
+                  }
+                />
+              }
+              description="Send a weekly summary of recorded storefront protection activity."
+              title="Weekly security report"
+              variant="config"
+            />
+          </SettingsHubSection>
+          <section className="botshield-settings-hub-delivery">
+            <header className="botshield-settings-hub-delivery-head">
+              <span className="botshield-v2-eyebrow">Delivery status</span>
+              <h3>Report delivery</h3>
+            </header>
+            <div className="botshield-settings-hub-delivery-body">
+              <SettingsHubRow
+                control={
+                  <BotShieldAsyncButton
+                    action={async () => {
+                      await safeFetchJson("/api/weekly-report", { method: "POST" });
+                      await actions.refreshSettings();
+                    }}
+                    disabled={
+                      dirty ||
+                      !draft.weeklyReportsEnabled ||
+                      !model.emailProviderConfigured ||
+                      !alertEmailValid
+                    }
+                    successMessage="Weekly report sent"
+                    title={reportDisabledReason || undefined}
+                  >
+                    Send report now
+                  </BotShieldAsyncButton>
                 }
-                successMessage="Weekly report sent"
-              >
-                Send report now
-              </BotShieldAsyncButton>
-            }
-            description={`Last delivery: ${lastReportDetail}`}
-            muted
-            title="Manual report"
-          />
-          {model.lastWeeklyReportError ? (
-            <div className="botshield-settings-hub-note is-error">
-              {model.lastWeeklyReportError}
+                description={`Last report: ${lastReportDetail}`}
+                title="Manual report"
+                variant="delivery"
+              />
+              {model.lastWeeklyReportError ? (
+                <div className="botshield-settings-hub-note is-error">
+                  {model.lastWeeklyReportError}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </SettingsHubSection>
+          </section>
+        </>
       );
     }
 
     if (activeSection === "connections") {
       return (
         <SettingsHubSection
-          description="Supported BotShield and Shopify connection states."
+          description="Live connection health for supported BotShield services."
           eyebrow="Connections"
-          title="Integrations"
+          panel="connections"
+          title="System connections"
         >
           <SettingsHubRow
             control={
@@ -6295,7 +6483,9 @@ function SettingsPage({ model, actions }) {
               />
             }
             description="Email delivery provider used for alerts and weekly reports."
+            icon="email"
             title="Email provider"
+            variant="connection"
           />
           <SettingsHubRow
             control={
@@ -6309,7 +6499,9 @@ function SettingsPage({ model, actions }) {
                 ? "Theme app embed is active and BotShield can evaluate storefront traffic."
                 : "Enable the theme app embed to connect storefront protection."
             }
+            icon="connection"
             title="Storefront theme embed"
+            variant="connection"
           />
           <SettingsHubRow
             control={
@@ -6319,7 +6511,9 @@ function SettingsPage({ model, actions }) {
               />
             }
             description="BotShield app installation state inside Shopify Admin."
+            icon="shield"
             title="Shopify app"
+            variant="connection"
           />
           <SettingsHubRow
             control={
@@ -6331,7 +6525,9 @@ function SettingsPage({ model, actions }) {
               </BotShieldActionButton>
             }
             description="Review or enable the BotShield theme app embed in Shopify."
+            lead="Storefront"
             title="Theme editor"
+            variant="action"
           />
         </SettingsHubSection>
       );
@@ -6342,21 +6538,22 @@ function SettingsPage({ model, actions }) {
         <SettingsHubSection
           description="How BotShield handles merchant and storefront data."
           eyebrow="Data & privacy"
+          panel="privacy"
           title="Data handling"
         >
           <SettingsHubRow
             control={<span className="botshield-settings-hub-value">Storefront events</span>}
             description="BotShield records storefront protection decisions needed for analytics, alerts, and enforcement."
+            icon="activity"
             title="Recorded activity"
+            variant="info"
           />
           <SettingsHubRow
-            control={
-              <span className="botshield-settings-hub-value">
-                {Number(model.simulatedScans || 0).toLocaleString()} simulated
-              </span>
-            }
+            control={<span className="botshield-settings-hub-value">{simulationLabel}</span>}
             description="Dashboard simulations are kept separate from real storefront metrics."
+            icon="diagnostic"
             title="Simulation data"
+            variant="info"
           />
           <SettingsHubRow
             control={
@@ -6365,24 +6562,28 @@ function SettingsPage({ model, actions }) {
               </BotShieldActionButton>
             }
             description="Review how BotShield processes and retains merchant data."
+            icon="privacyRow"
             title="Privacy policy"
+            variant="action"
           />
         </SettingsHubSection>
       );
     }
 
     if (activeSection === "diagnostics") {
+      const trafficTone = storefrontConnected ? "healthy" : "warning";
       return (
         <SettingsHubSection
           description="Application health checks and supported troubleshooting tools."
           eyebrow="App & diagnostics"
+          panel="diagnostics"
           title="Diagnostics"
         >
           <SettingsHubRow
             control={
-              <BotShieldStatusBadge
+              <SettingsHubStatusPill
                 label={storefrontConnected ? "Receiving traffic" : "Not connected"}
-                status={storefrontConnected ? "active" : "setup_required"}
+                tone={trafficTone}
               />
             }
             description={
@@ -6390,7 +6591,9 @@ function SettingsPage({ model, actions }) {
                 ? `Last storefront decision ${formatRelativeTime(model.protectionStatus.lastStorefrontDecisionAt)}`
                 : "No recorded storefront decisions yet."
             }
+            icon="activity"
             title="Storefront activity"
+            variant="operational"
           />
           <SettingsHubRow
             control={
@@ -6403,8 +6606,10 @@ function SettingsPage({ model, actions }) {
                 Run diagnostic scan
               </BotShieldAsyncButton>
             }
-            description="Run a supported live scan to verify BotShield enforcement behavior."
+            description="Verify storefront reporting and BotShield enforcement behavior."
+            icon="diagnostic"
             title="Diagnostic scan"
+            variant="diagnostic"
           />
           <SettingsHubRow
             control={
@@ -6414,19 +6619,24 @@ function SettingsPage({ model, actions }) {
             }
             description="Reload settings, protection status, and recent activity from the backend."
             title="Refresh application data"
+            variant="secondary"
           />
         </SettingsHubSection>
       );
     }
 
     return (
-      <SettingsHubSection
-        description="Supported destructive actions for this store."
-        eyebrow="Danger zone"
-        title="Destructive actions"
-      >
+      <section className="botshield-settings-hub-section is-panel-danger">
+        <header className="botshield-settings-hub-section-head">
+          <span className="botshield-v2-eyebrow">Danger zone</span>
+          <h2>Destructive actions</h2>
+          <p>Supported destructive actions for this store.</p>
+        </header>
         <div className="botshield-settings-hub-danger">
-          <div>
+          <div className="botshield-settings-hub-danger-icon">
+            <SettingsHubIcon name="warning" />
+          </div>
+          <div className="botshield-settings-hub-danger-copy">
             <h3>Clear simulation data</h3>
             <p>
               Remove dashboard simulation events from BotShield analytics. Real storefront traffic,
@@ -6452,7 +6662,7 @@ function SettingsPage({ model, actions }) {
             Clear simulation data
           </BotShieldAsyncButton>
         </div>
-      </SettingsHubSection>
+      </section>
     );
   };
 
@@ -6462,12 +6672,28 @@ function SettingsPage({ model, actions }) {
     <div className="botshield-page">
       <main className="botshield-page-content botshield-settings-hub-content">
         <header className="botshield-settings-hub-header">
-          <div>
+          <div className="botshield-settings-hub-header-copy">
             <h1 className="botshield-overview-title">Settings</h1>
             <p className="botshield-overview-subtitle">
-              Manage BotShield preferences, notifications, connections, and application
+              Manage protection preferences, alerts, connections, and BotShield system
               configuration.
             </p>
+          </div>
+          <div
+            aria-label="BotShield operational status"
+            className="botshield-settings-hub-strip"
+            role="status"
+          >
+            {operationalStrip.map((item) => (
+              <div
+                className={`botshield-settings-hub-strip-item is-${item.tone}`}
+                key={item.label}
+              >
+                <SettingsOperationalDot tone={item.tone} />
+                <span className="botshield-settings-hub-strip-label">{item.label}</span>
+                <span className="botshield-settings-hub-strip-value">{item.value}</span>
+              </div>
+            ))}
           </div>
         </header>
 
@@ -6478,12 +6704,13 @@ function SettingsPage({ model, actions }) {
                 aria-current={activeSection === section.id ? "page" : undefined}
                 className={`botshield-settings-hub-nav-item${
                   activeSection === section.id ? " is-active" : ""
-                }`}
+                }${section.id === "danger" ? " is-danger" : ""}`}
                 key={section.id}
                 onClick={() => selectSection(section.id)}
                 type="button"
               >
-                {section.label}
+                <SettingsHubIcon name={section.id} />
+                <span>{section.label}</span>
               </button>
             ))}
           </nav>
