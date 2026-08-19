@@ -10,6 +10,7 @@ import {
   BotShieldConfirmationModal,
   BotShieldEmptyState,
   BotShieldInlineHelp,
+  BotShieldNativePage,
   BotShieldSaveState,
   BotShieldSelect,
   BotShieldStatusBadge,
@@ -17,6 +18,7 @@ import {
   BotShieldToggle,
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
+import { useBotShieldPageLoading } from "../../hooks/use-botshield-save-bar";
 import { safeFetchJson } from "../../lib/safe-fetch";
 import { isValidIpAddressInput } from "../../lib/ip-address";
 import {
@@ -202,24 +204,26 @@ function formatDelta(current, previous) {
 
 function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
   return (
-    <div className="botshield-page">
-      <main
-        className={`botshield-page-content${
-          maxWidth === "full" ? " botshield-page-content--wide" : ""
-        }`}
-      >
-        <div className="botshield-page-heading">
-          <div>
-            <h1 className="botshield-page-title">{title}</h1>
-            {subtitle ? (
-              <p className="botshield-page-subtitle">{subtitle}</p>
-            ) : null}
+    <BotShieldNativePage heading={title}>
+      <div className="botshield-page">
+        <main
+          className={`botshield-page-content${
+            maxWidth === "full" ? " botshield-page-content--wide" : ""
+          }`}
+        >
+          <div className="botshield-page-heading">
+            <div>
+              <h1 className="botshield-page-title">{title}</h1>
+              {subtitle ? (
+                <p className="botshield-page-subtitle">{subtitle}</p>
+              ) : null}
+            </div>
+            {actions}
           </div>
-          {actions}
-        </div>
-        <s-stack gap="large">{children}</s-stack>
-      </main>
-    </div>
+          <s-stack gap="large">{children}</s-stack>
+        </main>
+      </div>
+    </BotShieldNativePage>
   );
 }
 
@@ -1377,6 +1381,7 @@ function OverviewPage({ model, actions }) {
   ];
 
   return (
+    <BotShieldNativePage heading="Overview">
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-overview-v2">
         <s-stack gap="large">
@@ -1897,6 +1902,7 @@ function OverviewPage({ model, actions }) {
         </s-stack>
       </main>
     </div>
+    </BotShieldNativePage>
   );
 }
 
@@ -3004,6 +3010,7 @@ function AnalyticsPage({ model, actions }) {
   }
 
   return (
+    <BotShieldNativePage heading="Analytics">
     <div className="botshield-page">
       <main className="botshield-page-content botshield-analytics-content botshield-analytics-v2">
         <header className="botshield-overview-header">
@@ -3094,6 +3101,7 @@ function AnalyticsPage({ model, actions }) {
         {selectedEvent ? <AnalyticsEventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} /> : null}
       </main>
     </div>
+    </BotShieldNativePage>
   );
 }
 
@@ -4168,6 +4176,7 @@ function FraudOrdersPage({ model, actions }) {
   };
 
   return (
+    <BotShieldNativePage heading="Fraud Orders">
     <>
       <div className="botshield-page">
         <main className="botshield-page-content botshield-fraud-orders-content">
@@ -4220,6 +4229,7 @@ function FraudOrdersPage({ model, actions }) {
         />
       ) : null}
     </>
+    </BotShieldNativePage>
   );
 }
 
@@ -4540,6 +4550,15 @@ function LegacyFraudOrdersPage({ model, actions }) {
 }
 
 function ActivityTable({ model, actions }) {
+  const toast = useBotShieldToast();
+  const [pendingRecovery, setPendingRecovery] = useState(null);
+  const [recovering, setRecovering] = useState(false);
+
+  const openRecoveryModal = (incidentId, action) => {
+    setPendingRecovery({ id: incidentId, action });
+    document.getElementById("botshield-recover-visitor-modal")?.show?.();
+  };
+
   if (!model.incidentLoading && !model.incidents.length) {
     const realOnly = model.incidentFilters.source === "real";
     return (
@@ -4558,6 +4577,7 @@ function ActivityTable({ model, actions }) {
     );
   }
   return (
+    <>
     <s-table loading={model.incidentLoading} variant="auto">
       <s-table-header-row>
         {[
@@ -4607,22 +4627,16 @@ function ActivityTable({ model, actions }) {
             <s-table-cell>
               {incident.decision === "blocked" ? (
                 <s-button-group>
-                  <BotShieldAsyncButton
-                    action={() =>
-                      actions.recoverIncident(incident.id, "unblock")
-                    }
-                    successMessage="Visitor unblocked"
+                  <BotShieldActionButton
+                    onClick={() => openRecoveryModal(incident.id, "unblock")}
                   >
                     Unblock
-                  </BotShieldAsyncButton>
-                  <BotShieldAsyncButton
-                    action={() =>
-                      actions.recoverIncident(incident.id, "whitelist")
-                    }
-                    successMessage="Visitor trusted"
+                  </BotShieldActionButton>
+                  <BotShieldActionButton
+                    onClick={() => openRecoveryModal(incident.id, "whitelist")}
                   >
                     Trust
-                  </BotShieldAsyncButton>
+                  </BotShieldActionButton>
                 </s-button-group>
               ) : null}
             </s-table-cell>
@@ -4630,6 +4644,47 @@ function ActivityTable({ model, actions }) {
         ))}
       </s-table-body>
     </s-table>
+    <BotShieldConfirmationModal
+      confirmLabel={
+        pendingRecovery?.action === "whitelist" ? "Trust visitor" : "Unblock visitor"
+      }
+      heading={
+        pendingRecovery?.action === "whitelist"
+          ? "Trust this visitor?"
+          : "Unblock this visitor?"
+      }
+      id="botshield-recover-visitor-modal"
+      loading={recovering}
+      onConfirm={async () => {
+        if (!pendingRecovery) return;
+        setRecovering(true);
+        try {
+          await actions.recoverIncident(
+            pendingRecovery.id,
+            pendingRecovery.action,
+          );
+          toast.success(
+            pendingRecovery.action === "whitelist"
+              ? "Visitor trusted"
+              : "Visitor unblocked",
+          );
+          setPendingRecovery(null);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Couldn't update visitor";
+          toast.error(message);
+          throw error;
+        } finally {
+          setRecovering(false);
+        }
+      }}
+      tone={pendingRecovery?.action === "whitelist" ? "auto" : "critical"}
+    >
+      {pendingRecovery?.action === "whitelist"
+        ? "This visitor will bypass supported BotShield protection checks."
+        : "This visitor will be allowed through storefront protection again."}
+    </BotShieldConfirmationModal>
+    </>
   );
 }
 
@@ -4921,8 +4976,6 @@ function ProtectionPage({ model, actions }) {
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState("");
-  const closeButtonRef = useRef(null);
   const drawerOpenerRef = useRef(null);
 
   useEffect(() => {
@@ -4954,7 +5007,6 @@ function ProtectionPage({ model, actions }) {
   const closeDrawer = () => {
     setProtectionModal(null);
     setSaveError("");
-    setSaveSuccess("");
     window.setTimeout(() => drawerOpenerRef.current?.focus?.(), 0);
   };
 
@@ -4969,7 +5021,7 @@ function ProtectionPage({ model, actions }) {
 
   useEffect(() => {
     if (!protectionModal) return undefined;
-    closeButtonRef.current?.focus();
+    document.getElementById("botshield-protection-drawer-close")?.focus?.();
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -4984,7 +5036,6 @@ function ProtectionPage({ model, actions }) {
     if (!dirty || saving) return;
     setSaving(true);
     setSaveError("");
-    setSaveSuccess("");
     try {
       const persisted = await actions.saveSettings(draft);
       const savedDraft = {
@@ -4999,7 +5050,6 @@ function ProtectionPage({ model, actions }) {
       };
       setDraft(savedDraft);
       setOriginalDraft(savedDraft);
-      setSaveSuccess("Settings saved");
       toast.success("Protection settings saved");
     } catch (error) {
       const message =
@@ -5028,7 +5078,6 @@ function ProtectionPage({ model, actions }) {
     setDraft(persisted);
     setOriginalDraft(persisted);
     setSaveError("");
-    setSaveSuccess("");
     setProtectionModal({
       type: "profile",
       title,
@@ -5147,6 +5196,7 @@ function ProtectionPage({ model, actions }) {
 
   if (model) {
     return (
+      <BotShieldNativePage heading="Protection">
       <div className="botshield-page">
       <main className="botshield-page-content botshield-protection-content">
         <div className="botshield-protection-header">
@@ -5236,11 +5286,10 @@ function ProtectionPage({ model, actions }) {
                   : ""
               }`}
             >
-              <header className="botshield-protection-drawer-header"><div><h2 className="botshield-protection-modal-title" id="botshield-protection-drawer-title">{protectionModal.title}</h2><p className="botshield-protection-modal-copy">{protectionModal.text}</p></div><button aria-label="Close" ref={closeButtonRef} disabled={saving} onClick={requestClose} type="button">×</button></header>
+              <header className="botshield-protection-drawer-header"><div><h2 className="botshield-protection-modal-title" id="botshield-protection-drawer-title">{protectionModal.title}</h2><p className="botshield-protection-modal-copy">{protectionModal.text}</p></div><BotShieldActionButton accessibilityLabel="Close" disabled={saving} icon="x" id="botshield-protection-drawer-close" onClick={requestClose} /></header>
               {protectionModal.type === "profile" ? (
                 <div className="botshield-protection-modal-body">
                   {saveError ? <BotShieldBanner tone="critical" title={`Couldn’t save ${protectionModal.title} settings`}>Your changes haven’t been applied. {saveError}</BotShieldBanner> : null}
-                  {saveSuccess ? <div className="botshield-protection-save-success" role="status">{saveSuccess}</div> : null}
                   <section className="botshield-protection-drawer-section">
                     <div className="botshield-protection-drawer-section-label">Protection level</div>
                   <BotShieldSelect
@@ -5444,7 +5493,7 @@ function ProtectionPage({ model, actions }) {
               {protectionModal.type === "profile" ? (
                 <footer className="botshield-protection-drawer-footer">
                   <span className="botshield-protection-drawer-state" aria-live="polite">
-                    {saving ? "Saving changes…" : dirty ? "Unsaved changes" : saveSuccess || "All changes saved"}
+                    {saving ? "Saving changes…" : dirty ? "Unsaved changes" : "All changes saved"}
                   </span>
                   <div>
                     <BotShieldActionButton onClick={requestClose} disabled={saving}>Cancel</BotShieldActionButton>
@@ -5469,6 +5518,7 @@ function ProtectionPage({ model, actions }) {
       </BotShieldConfirmationModal>
       </main>
       </div>
+      </BotShieldNativePage>
     );
   }
 
@@ -5814,6 +5864,9 @@ function IpList({
   const [pendingRemoval, setPendingRemoval] = useState("");
   const [filterValue, setFilterValue] = useState("");
   const trusted = title.toLowerCase().includes("trusted");
+  const removeModalId = trusted
+    ? "botshield-trusted-remove-modal"
+    : "botshield-blocklist-remove-modal";
   const trimmedValue = value.trim();
   const validIp = !trimmedValue || isValidIpAddressInput(trimmedValue);
   const duplicateIp = Boolean(
@@ -5901,12 +5954,15 @@ function IpList({
                 }
                 status={trusted ? "active" : "blocked"}
                 action={
-                  <BotShieldAsyncButton
-                    action={() => setPendingRemoval(ip)}
+                  <BotShieldActionButton
+                    onClick={() => {
+                      setPendingRemoval(ip);
+                      document.getElementById(removeModalId)?.show?.();
+                    }}
                     tone="critical"
                   >
                     Remove
-                  </BotShieldAsyncButton>
+                  </BotShieldActionButton>
                 }
               />
             );
@@ -5917,29 +5973,20 @@ function IpList({
               <span>Try a different IP address, source, or reason.</span>
             </div>
           ) : null}
-          {pendingRemoval ? (
-            <div className="botshield-protection-remove-confirm" role="alert">
-              <div>
-                <strong>Remove {trusted ? "trusted" : "blocked"} visitor?</strong>
-                <p>
-                  This visitor will no longer be manually {trusted ? "trusted" : "blocked"}.
-                </p>
-              </div>
-              <div>
-                <BotShieldActionButton onClick={() => setPendingRemoval("")}>Cancel</BotShieldActionButton>
-                <BotShieldAsyncButton
-                  action={async () => {
-                    await onRemove(pendingRemoval);
-                    setPendingRemoval("");
-                  }}
-                  successMessage="IP removed"
-                  tone="critical"
-                >
-                  Remove
-                </BotShieldAsyncButton>
-              </div>
-            </div>
-          ) : null}
+          <BotShieldConfirmationModal
+            confirmLabel="Remove"
+            heading={`Remove ${trusted ? "trusted" : "blocked"} visitor?`}
+            id={removeModalId}
+            onConfirm={async () => {
+              if (!pendingRemoval) return;
+              await onRemove(pendingRemoval);
+              setPendingRemoval("");
+            }}
+            tone="critical"
+          >
+            This visitor will no longer be manually{" "}
+            {trusted ? "trusted" : "blocked"}.
+          </BotShieldConfirmationModal>
         </s-stack>
       ) : (
         <BotShieldEmptyState
@@ -7083,6 +7130,7 @@ function SettingsPage({ model, actions }) {
   const showSaveBar = ["notifications", "reports"].includes(activeSection);
 
   return (
+    <BotShieldNativePage heading="Settings">
     <div className="botshield-page">
       <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
         <header className="botshield-overview-header botshield-settings-hub-header">
@@ -7151,6 +7199,7 @@ function SettingsPage({ model, actions }) {
         </div>
       </main>
     </div>
+    </BotShieldNativePage>
   );
 }
 
@@ -8006,6 +8055,7 @@ function BillingPage({ model, actions }) {
 }
 
 export default function BotShieldAdminExperience({ model, actions }) {
+  useBotShieldPageLoading(Boolean(model.syncing));
   const screen =
     model.page === "security"
       ? "detection"
@@ -8030,7 +8080,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
   }, [lastScreen, screen]);
 
   const routeContent = (
-    <div className="botshield-route-transition" key={screen}>
+    <div key={screen}>
       {screen === "dashboard" ? (
         <OverviewPage model={model} actions={actions} />
       ) : null}

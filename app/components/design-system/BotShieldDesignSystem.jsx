@@ -100,20 +100,6 @@ export function BotShieldAppFrame({ children }) {
           position: relative;
           min-height: 100vh;
         }
-        .botshield-route-transition {
-          animation: botshield-route-enter 160ms cubic-bezier(0.2, 0, 0, 1);
-          will-change: opacity, transform;
-        }
-        @keyframes botshield-route-enter {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
         .botshield-titlebar {
           min-height: 56px;
           display: flex;
@@ -1220,7 +1206,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-chart-column.is-empty-day { pointer-events: none; }
         .botshield-v2-chart-column.is-active-day { cursor: help; }
         .botshield-v2-chart-column.is-active-day:hover .botshield-v2-chart-bar,
-        .botshield-v2-chart-column.is-active-day:focus-visible .botshield-v2-chart-bar { opacity: .78; transform: translateY(-1px); }
+        .botshield-v2-chart-column.is-active-day:focus-visible .botshield-v2-chart-bar { opacity: .78; }
         .botshield-v2-chart-bar { transition: opacity 120ms ease, transform 120ms ease; }
         .botshield-v2-chart-tooltip { line-height: 1.35; }
         .botshield-v2-chart-tooltip .is-allowed { background: var(--overview-blue); }
@@ -4097,13 +4083,11 @@ export function BotShieldAppFrame({ children }) {
           padding: 26px;
           transition:
             border-color 120ms ease,
-            box-shadow 120ms ease,
-            transform 120ms ease;
+            box-shadow 120ms ease;
         }
         .botshield-outcome-card:hover {
           border-color: var(--botshield-border-strong);
           box-shadow: var(--botshield-shadow-raised);
-          transform: translateY(-1px);
         }
         .botshield-outcome-card::after {
           content: "";
@@ -4190,13 +4174,11 @@ export function BotShieldAppFrame({ children }) {
           padding: 22px;
           transition:
             border-color 120ms ease,
-            box-shadow 120ms ease,
-            transform 120ms ease;
+            box-shadow 120ms ease;
         }
         .botshield-rule-card:hover {
           border-color: var(--botshield-border-strong);
           box-shadow: var(--botshield-shadow-raised);
-          transform: translateY(-1px);
         }
         .botshield-rule-icon {
           min-width: 52px;
@@ -4557,6 +4539,10 @@ export function BotShieldAppFrame({ children }) {
   );
 }
 
+export function BotShieldNativePage({ heading, children }) {
+  return <s-page heading={heading}>{children}</s-page>;
+}
+
 export function BotShieldPage({
   title,
   subtitle,
@@ -4909,9 +4895,11 @@ export function BotShieldActionButton({
   slot,
   commandFor,
   command,
+  id,
 }) {
   return (
     <s-button
+      id={id}
       variant={variant}
       tone={tone}
       loading={loading}
@@ -5181,6 +5169,24 @@ export function BotShieldDangerZone({ title, description, action }) {
         {action}
       </s-stack>
     </s-box>
+  );
+}
+
+export function BotShieldInfoModal({
+  id,
+  heading,
+  children,
+  closeLabel = "Close",
+}) {
+  return (
+    <s-modal id={id} heading={heading}>
+      <s-box padding="base">
+        <s-paragraph>{children}</s-paragraph>
+      </s-box>
+      <s-button slot="primary-action" commandFor={id} command="--hide">
+        {closeLabel}
+      </s-button>
+    </s-modal>
   );
 }
 

@@ -40,7 +40,8 @@ test("Protection controls use existing persisted actions", () => {
   assert.match(adminSource, /ReactDOM\.createPortal/);
   assert.match(adminSource, /duplicateIp/);
   assert.match(adminSource, /already on the \$\{listLabel\}/);
-  assert.match(adminSource, /Remove \{trusted \? "trusted" : "blocked"\} visitor\?/);
+  assert.match(adminSource, /heading=\{`Remove \$\{trusted \? "trusted" : "blocked"\} visitor\?\`\}/);
+  assert.match(adminSource, /botshield-blocklist-remove-modal/);
 });
 
 test("Protection profile drawer has explicit persisted save and discard lifecycle", () => {
@@ -52,7 +53,7 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /Saving changes…/);
   assert.match(adminSource, /Settings saved/);
   assert.match(adminSource, /Couldn’t save \$\{protectionModal\.title\} settings/);
-  assert.match(adminSource, /aria-label="Close"/);
+  assert.match(adminSource, /accessibilityLabel="Close"/);
   assert.match(adminSource, /event\.key === "Escape"/);
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
 });

@@ -219,7 +219,7 @@ test("admin design system provides elevated SaaS surfaces without branding", asy
   assert.match(source, /botshield-settings-hub-layout/);
   assert.match(source, /botshield-settings-hub-nav-item/);
   assert.match(source, /botshield-route-shell/);
-  assert.match(source, /botshield-route-transition/);
+  assert.doesNotMatch(source, /botshield-route-transition/);
   assert.doesNotMatch(source, /botshield-route-progress/);
   assert.doesNotMatch(source, /botshield-route-loading-pill/);
   assert.doesNotMatch(source, /botshield-logo/);
@@ -237,7 +237,7 @@ test("admin navigation moves immediately to the top of the next page", async () 
   assert.match(source, /window\.scrollTo\(0, 0\)/);
   assert.doesNotMatch(source, /routeBusy/);
   assert.doesNotMatch(source, /Opening \{/);
-  assert.match(source, /botshield-route-transition/);
+  assert.doesNotMatch(source, /botshield-route-transition/);
 });
 
 test("merchant-facing reason labels replace raw detection codes", async () => {
@@ -436,5 +436,42 @@ test("destructive settings actions use App Bridge confirmation modal", async () 
   assert.match(adminSource, /botshield-clear-simulation-modal/);
   assert.match(adminSource, /BotShieldConfirmationModal/);
   assert.match(adminSource, /botshield-protection-discard-modal/);
+  assert.match(adminSource, /botshield-recover-visitor-modal/);
+  assert.match(adminSource, /botshield-blocklist-remove-modal/);
   assert.doesNotMatch(adminSource, /window\.confirm\(/);
+});
+
+test("supported pages use Shopify native page chrome", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const adminSource = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const hookSource = await readFile(
+    new URL("../app/hooks/use-botshield-save-bar.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(designSource, /export function BotShieldNativePage/);
+  assert.match(designSource, /<s-page heading=\{heading\}>/);
+  assert.match(adminSource, /useBotShieldPageLoading\(Boolean\(model\.syncing\)\)/);
+  assert.match(hookSource, /export function useBotShieldPageLoading/);
+  for (const heading of [
+    'heading="Overview"',
+    'heading="Analytics"',
+    'heading="Fraud Orders"',
+    'heading="Protection"',
+    'heading="Settings"',
+  ]) {
+    assert.match(adminSource, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });

@@ -4,6 +4,15 @@
 **Scope:** Interaction and App Bridge polish across embedded Admin — **not** a visual redesign.  
 **Status:** Deployed to production via Render (push to `main`).
 
+### Pass 2 — whole-app Shopify interaction illusion (Aug 18, 2026)
+
+- **`s-page` native title bar** on Overview, Analytics, Fraud Orders, Protection, Settings (+ legacy `Screen` pages)
+- **`shopify.loading`** during full-app refresh (`model.syncing`)
+- **Removed route enter animation** and card hover `translateY` lifts
+- **All destructive confirms → `s-modal`:** IP remove, activity unblock/trust, danger zone, protection discard
+- **Drawer close → `s-button` icon**; inline save-success banners removed (toast only)
+- **`BotShieldInfoModal`** helper added for future info dialogs
+
 ---
 
 ## Executive summary

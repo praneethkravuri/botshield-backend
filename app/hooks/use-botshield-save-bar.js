@@ -55,3 +55,7 @@ export function useBotShieldLoadingIndicator(active) {
     };
   }, [active, shopify]);
 }
+
+export function useBotShieldPageLoading(active) {
+  return useBotShieldLoadingIndicator(active);
+}
