@@ -467,3 +467,40 @@ test("supported pages use Shopify native page chrome", async () => {
     assert.match(adminSource, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
 });
+
+test("supported pages share one stable outer page shell geometry", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const adminSource = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(designSource, /export function BotShieldPageShell/);
+  assert.match(designSource, /--botshield-shell-max-width: 1140px/);
+  assert.match(designSource, /--botshield-shell-padding-inline: 28px/);
+  assert.match(designSource, /--botshield-shell-padding-top: 34px/);
+  assert.match(designSource, /max-width: var\(--botshield-shell-max-width\)/);
+  assert.match(designSource, /padding-top: var\(--botshield-shell-padding-top\)/);
+  assert.match(designSource, /padding-inline: var\(--botshield-shell-padding-inline\)/);
+  assert.doesNotMatch(designSource, /min\(1180px, calc\(100vw - 56px\)\)/);
+  assert.doesNotMatch(designSource, /min\(1140px, calc\(100vw - 56px\)\)/);
+
+  for (const pageClass of [
+    "botshield-overview-content botshield-overview-v2",
+    "botshield-analytics-content botshield-analytics-v2",
+    "botshield-protection-content",
+    "botshield-fraud-orders-content",
+    "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content",
+  ]) {
+    assert.match(adminSource, new RegExp(`<BotShieldPageShell className="${pageClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+  }
+});

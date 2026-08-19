@@ -11,6 +11,7 @@ import {
   BotShieldEmptyState,
   BotShieldInlineHelp,
   BotShieldNativePage,
+  BotShieldPageShell,
   BotShieldSaveState,
   BotShieldSelect,
   BotShieldStatusBadge,
@@ -204,24 +205,20 @@ function formatDelta(current, previous) {
 function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
   return (
     <BotShieldNativePage heading={title}>
-      <div className="botshield-page">
-        <main
-          className={`botshield-page-content${
-            maxWidth === "full" ? " botshield-page-content--wide" : ""
-          }`}
-        >
-          <div className="botshield-page-heading">
-            <div>
-              <h1 className="botshield-page-title">{title}</h1>
-              {subtitle ? (
-                <p className="botshield-page-subtitle">{subtitle}</p>
-              ) : null}
-            </div>
-            {actions}
+      <BotShieldPageShell
+        className={maxWidth === "full" ? "botshield-page-content--wide" : ""}
+      >
+        <div className="botshield-page-heading">
+          <div>
+            <h1 className="botshield-page-title">{title}</h1>
+            {subtitle ? (
+              <p className="botshield-page-subtitle">{subtitle}</p>
+            ) : null}
           </div>
-          <s-stack gap="large">{children}</s-stack>
-        </main>
-      </div>
+          {actions}
+        </div>
+        <s-stack gap="large">{children}</s-stack>
+      </BotShieldPageShell>
     </BotShieldNativePage>
   );
 }
@@ -1381,8 +1378,7 @@ function OverviewPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Overview">
-    <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-overview-v2">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
         <s-stack gap="large">
           <div className="botshield-overview-header">
             <div>
@@ -1899,8 +1895,7 @@ function OverviewPage({ model, actions }) {
             </section>
           </div>
         </s-stack>
-      </main>
-    </div>
+      </BotShieldPageShell>
     </BotShieldNativePage>
   );
 }
@@ -2136,8 +2131,7 @@ function AnalyticsPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Analytics">
-    <div className="botshield-page">
-      <main className="botshield-page-content botshield-analytics-content botshield-analytics-v2">
+      <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">
         <header className="botshield-overview-header">
           <div>
             <h1 className="botshield-overview-title">Analytics</h1>
@@ -2224,8 +2218,7 @@ function AnalyticsPage({ model, actions }) {
         </AnalyticsPanel>
 
         {selectedEvent ? <AnalyticsEventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} /> : null}
-      </main>
-    </div>
+      </BotShieldPageShell>
     </BotShieldNativePage>
   );
 }
@@ -3302,9 +3295,8 @@ function FraudOrdersPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Fraud Orders">
-    <>
-      <div className="botshield-page">
-        <main className="botshield-page-content botshield-fraud-orders-content">
+      <>
+        <BotShieldPageShell className="botshield-fraud-orders-content">
           <FraudOrdersPageHeader onRefresh={connected ? refresh : undefined} />
 
           {!connected ? <FraudOrderStatusStrip onSetup={openSetup} /> : null}
@@ -3337,10 +3329,9 @@ function FraudOrdersPage({ model, actions }) {
             />
             {renderQueueBody()}
           </section>
-        </main>
-      </div>
+        </BotShieldPageShell>
 
-      {setupOpen ? (
+        {setupOpen ? (
         <FraudOrderSetupDrawer connected={connected} onClose={closeSetup} />
       ) : null}
 
@@ -3606,8 +3597,7 @@ function ProtectionPage({ model, actions }) {
   if (model) {
     return (
       <BotShieldNativePage heading="Protection">
-      <div className="botshield-page">
-      <main className="botshield-page-content botshield-protection-content">
+        <BotShieldPageShell className="botshield-protection-content">
         <div className="botshield-protection-header">
           <div>
             <h1 className="botshield-overview-title botshield-protection-page-title">
@@ -3925,8 +3915,7 @@ function ProtectionPage({ model, actions }) {
       >
         Your updates haven't been saved. You can keep editing or discard them.
       </BotShieldConfirmationModal>
-      </main>
-      </div>
+      </BotShieldPageShell>
       </BotShieldNativePage>
     );
   }
@@ -5540,8 +5529,7 @@ function SettingsPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Settings">
-    <div className="botshield-page">
-      <main className="botshield-page-content botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
         <header className="botshield-overview-header botshield-settings-hub-header">
           <div className="botshield-settings-hub-header-copy">
             <h1 className="botshield-overview-title">Settings</h1>
@@ -5606,8 +5594,7 @@ function SettingsPage({ model, actions }) {
             ) : null}
           </div>
         </div>
-      </main>
-    </div>
+      </BotShieldPageShell>
     </BotShieldNativePage>
   );
 }
