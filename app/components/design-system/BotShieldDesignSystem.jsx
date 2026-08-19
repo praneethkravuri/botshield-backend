@@ -1053,7 +1053,12 @@ export function BotShieldAppFrame({ children }) {
           letter-spacing: -0.025em;
         }
         .botshield-overview-v2 .botshield-overview-subtitle,
-        .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-subtitle { max-width: 680px; font-size: 13px; line-height: 1.5; }
+        .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-subtitle,
+        .botshield-overview-v2.botshield-settings-hub-content .botshield-overview-subtitle {
+          max-width: 720px;
+          font-size: 13px;
+          line-height: 1.5;
+        }
         .botshield-v2-eyebrow { margin-bottom: 5px; font-size: 10px; letter-spacing: .075em; }
         .botshield-v2-icon {
           width: 28px;
@@ -3191,28 +3196,28 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-settings-hub-header {
           display: grid;
-          gap: 14px;
-          padding-bottom: 14px;
+          gap: 12px;
+          padding-bottom: 10px;
         }
         .botshield-settings-hub-header-copy {
-          max-width: 680px;
+          max-width: 720px;
         }
         .botshield-settings-hub-strip {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: 6px;
         }
         .botshield-settings-hub-strip-item {
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          min-height: 30px;
-          padding: 0 11px;
+          gap: 6px;
+          min-height: 28px;
+          padding: 0 10px;
           border: 1px solid #dfe3e8;
           border-radius: 999px;
           background: #fafbfb;
           color: var(--overview-ink);
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1;
           white-space: nowrap;
         }
@@ -3235,16 +3240,16 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-settings-hub-layout {
           display: grid;
-          grid-template-columns: 212px minmax(0, 1fr);
-          gap: 24px;
+          grid-template-columns: 220px minmax(0, 1fr);
+          gap: 22px;
           align-items: start;
         }
         .botshield-settings-hub-nav {
           display: grid;
-          gap: 2px;
+          gap: 1px;
           position: sticky;
           top: 12px;
-          padding: 6px;
+          padding: 5px;
           border: 1px solid #dfe3e8;
           border-radius: 12px;
           background: #ffffff;
@@ -3256,7 +3261,8 @@ export function BotShieldAppFrame({ children }) {
           gap: 10px;
           align-items: center;
           width: 100%;
-          padding: 9px 10px;
+          min-height: 40px;
+          padding: 8px 10px;
           border: 0;
           border-radius: 8px;
           background: transparent;
@@ -3269,8 +3275,8 @@ export function BotShieldAppFrame({ children }) {
           cursor: pointer;
         }
         .botshield-settings-hub-nav-item .botshield-v2-icon {
-          width: 26px;
-          height: 26px;
+          width: 24px;
+          height: 24px;
         }
         .botshield-settings-hub-nav-item span {
           min-width: 0;
@@ -3282,7 +3288,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-settings-hub-nav-item.is-active {
           background: #f1f2f3;
           font-weight: 650;
-          box-shadow: inset 2px 0 0 var(--overview-ink);
+          box-shadow: inset 3px 0 0 var(--overview-ink);
         }
         .botshield-settings-hub-nav-item.is-danger span {
           color: var(--overview-red);
@@ -3570,95 +3576,278 @@ export function BotShieldAppFrame({ children }) {
         .botshield-settings-hub-billing-current .botshield-settings-hub-row {
           border-bottom: 0;
         }
-        .botshield-settings-hub-billing-plans {
+        .botshield-settings-billing-section {
           display: grid;
-          gap: 10px;
-        }
-        .botshield-settings-hub-billing-plans-label {
-          margin: 0;
-          color: var(--overview-muted);
-          font-size: 12px;
-          font-weight: 650;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
+          gap: 18px;
         }
         .botshield-settings-hub-plan-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 12px;
+          gap: 16px;
+          align-items: stretch;
+        }
+        .botshield-settings-hub-plan-grid.is-count-1 {
+          grid-template-columns: minmax(0, 520px);
+          justify-content: center;
+        }
+        .botshield-settings-hub-plan-grid.is-count-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .botshield-settings-hub-plan-grid.is-count-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
         .botshield-settings-hub-plan-card {
           display: grid;
-          gap: 12px;
-          padding: 16px;
+          gap: 16px;
+          padding: 24px;
           border: 1px solid #dfe3e8;
-          border-radius: 12px;
+          border-radius: 14px;
           background: #fff;
+          box-shadow: 0 1px 0 rgba(32, 34, 35, 0.04);
         }
         .botshield-settings-hub-plan-card--current {
-          border-color: #c9e3d0;
+          border-color: #b8dcc6;
+          background: linear-gradient(180deg, #f8fcf9 0%, #ffffff 38%);
+          box-shadow:
+            0 0 0 1px rgba(41, 132, 90, 0.08),
+            0 8px 24px rgba(32, 34, 35, 0.05);
+        }
+        .botshield-settings-hub-plan-current-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          align-self: start;
+          min-height: 28px;
+          padding: 0 10px;
+          border: 1px solid #c9e3d0;
+          border-radius: 999px;
           background: #f4fbf6;
+          color: var(--overview-ink);
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1;
         }
         .botshield-settings-hub-plan-card-head {
-          display: flex;
-          justify-content: space-between;
-          gap: 12px;
-          align-items: flex-start;
+          display: grid;
+          gap: 8px;
         }
         .botshield-settings-hub-plan-card-head h3 {
           margin: 0;
           color: var(--overview-ink);
-          font-size: 15px;
-          line-height: 1.25;
+          font-size: 18px;
+          line-height: 1.2;
           font-weight: 700;
-          letter-spacing: -0.01em;
-        }
-        .botshield-settings-hub-plan-price {
-          margin: 6px 0 0;
-          color: var(--overview-ink);
-          font-size: 22px;
-          line-height: 1.1;
-          font-weight: 750;
           letter-spacing: -0.02em;
         }
-        .botshield-settings-hub-plan-meta {
-          margin: 4px 0 0;
+        .botshield-settings-hub-plan-price-row {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+        .botshield-settings-hub-plan-price {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: 34px;
+          line-height: 1;
+          font-weight: 800;
+          letter-spacing: -0.04em;
+        }
+        .botshield-settings-hub-plan-price-suffix {
           color: var(--overview-muted);
-          font-size: 12px;
+          font-size: 15px;
+          font-weight: 650;
+          line-height: 1.2;
+        }
+        .botshield-settings-hub-plan-meta {
+          margin: 0;
+          color: var(--overview-green);
+          font-size: 13px;
           line-height: 1.35;
+          font-weight: 650;
         }
         .botshield-settings-hub-plan-copy {
           margin: 0;
           color: var(--overview-muted);
-          font-size: 13px;
-          line-height: 1.45;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+        .botshield-settings-hub-plan-divider {
+          height: 1px;
+          background: #e1e3e5;
         }
         .botshield-settings-hub-plan-features {
           margin: 0;
           padding: 0;
           list-style: none;
           display: grid;
-          gap: 4px;
+          gap: 8px;
+        }
+        .botshield-settings-hub-plan-features.is-checklist li {
+          display: grid;
+          grid-template-columns: 18px minmax(0, 1fr);
+          gap: 10px;
+          align-items: start;
+          color: var(--overview-ink);
+          font-size: 14px;
+          line-height: 1.45;
+        }
+        .botshield-settings-hub-plan-check {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          margin-top: 1px;
+          border-radius: 999px;
+          background: #f4fbf6;
+          color: var(--overview-green);
+        }
+        .botshield-settings-hub-plan-shopify-note {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0;
           color: var(--overview-muted);
           font-size: 13px;
           line-height: 1.35;
         }
-        .botshield-settings-hub-plan-features li {
-          position: relative;
-          padding-left: 14px;
-        }
-        .botshield-settings-hub-plan-features li::before {
-          content: "·";
-          position: absolute;
-          left: 0;
-          color: var(--overview-ink);
-          font-weight: 700;
+        .botshield-settings-hub-plan-shopify-note .botshield-v2-icon {
+          width: 24px;
+          height: 24px;
         }
         .botshield-settings-hub-plan-actions {
           display: flex;
           align-items: center;
           gap: 10px;
           flex-wrap: wrap;
+        }
+        .botshield-settings-hub-subscription-panel {
+          display: grid;
+          gap: 14px;
+          padding: 18px 20px;
+          border: 1px solid #dfe3e8;
+          border-radius: 12px;
+          background: #fafbfb;
+        }
+        .botshield-settings-hub-subscription-head {
+          display: grid;
+          gap: 4px;
+        }
+        .botshield-settings-hub-subscription-head h3 {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: 16px;
+          line-height: 1.25;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+        }
+        .botshield-settings-hub-subscription-head p {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        .botshield-settings-hub-subscription-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px 16px;
+        }
+        .botshield-settings-hub-subscription-item {
+          display: grid;
+          gap: 5px;
+          min-width: 0;
+        }
+        .botshield-settings-hub-subscription-label {
+          color: var(--overview-muted);
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          line-height: 1.2;
+          text-transform: uppercase;
+        }
+        .botshield-settings-hub-subscription-value {
+          display: flex;
+          align-items: center;
+          min-width: 0;
+        }
+        .botshield-settings-hub-subscription-foot {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          padding-top: 12px;
+          border-top: 1px solid #e1e3e5;
+        }
+        .botshield-settings-hub-subscription-foot p {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .botshield-settings-hub-dev-note {
+          padding: 12px 14px;
+          border: 1px solid #ead6a5;
+          border-left: 3px solid var(--overview-amber);
+          border-radius: 10px;
+          background: #fffaf0;
+        }
+        .botshield-settings-hub-dev-note-copy strong {
+          display: block;
+          color: var(--overview-ink);
+          font-size: 13px;
+          line-height: 1.3;
+        }
+        .botshield-settings-hub-dev-note-copy p {
+          margin: 4px 0 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        .botshield-settings-hub-footnote {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        @media (max-width: 980px) {
+          .botshield-settings-hub-layout {
+            grid-template-columns: 1fr;
+          }
+          .botshield-settings-hub-nav {
+            position: static;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .botshield-settings-hub-plan-grid.is-count-2,
+          .botshield-settings-hub-plan-grid.is-count-3 {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 640px) {
+          .botshield-settings-hub-nav {
+            grid-template-columns: 1fr;
+          }
+          .botshield-settings-hub-row {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+          }
+          .botshield-settings-hub-row.has-icon {
+            grid-template-columns: 28px minmax(0, 1fr);
+          }
+          .botshield-settings-hub-row-control {
+            justify-content: flex-start;
+          }
+          .botshield-settings-hub-subscription-grid {
+            grid-template-columns: 1fr;
+          }
+          .botshield-settings-hub-plan-card {
+            padding: 20px;
+          }
+        }
+        .botshield-settings-hub-billing-plans {
+          display: grid;
+          gap: 10px;
         }
         .botshield-blocking-design-grid {
           display: grid;
