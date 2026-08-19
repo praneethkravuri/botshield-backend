@@ -65,6 +65,10 @@ app.get("/health", async (_req, res) => {
       ok: true,
       database: "connected",
       emailProviderConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+      deployCommit:
+        process.env.RENDER_GIT_COMMIT?.trim() ||
+        process.env.GIT_COMMIT?.trim() ||
+        null,
     });
   } catch {
     res.status(503).json({ ok: false, database: "unavailable" });

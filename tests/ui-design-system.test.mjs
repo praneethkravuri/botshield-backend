@@ -408,7 +408,8 @@ test("save bar uses App Bridge ui-save-bar with preview fallback", async () => {
   assert.match(designSource, /BotShieldLoadingBridge/);
   assert.match(hookSource, /setSaveBarVisible/);
   assert.match(hookSource, /saveBar\?\.show/);
-  assert.match(hookSource, /shopify\.loading\(Boolean\(isLoading\)\)/);
+  assert.match(hookSource, /typeof loading === "function"/);
+  assert.match(hookSource, /loading\.start/);
   assert.match(hookSource, /isAppBridgeEnvironment/);
   assert.match(adminSource, /id="botshield-settings-save-bar"/);
   assert.match(adminSource, /id="botshield-protection-save-bar"/);
@@ -453,8 +454,9 @@ test("supported pages use Shopify native page chrome", async () => {
 
   assert.match(designSource, /export function BotShieldNativePage/);
   assert.match(designSource, /<s-page heading=\{heading\}>/);
-  assert.match(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
+  assert.doesNotMatch(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
   assert.match(hookSource, /export function BotShieldPageLoadingBridge/);
+  assert.match(hookSource, /return null;/);
   for (const heading of [
     'heading="Overview"',
     'heading="Analytics"',

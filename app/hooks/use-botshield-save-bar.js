@@ -50,12 +50,21 @@ function SaveBarBridgeInner({ id, dirty, enabled = true }) {
 }
 
 function setAppBridgeLoading(shopify, isLoading) {
-  if (typeof shopify?.loading !== "function") {
+  const loading = shopify?.loading;
+  if (!loading) {
     return;
   }
 
   try {
-    shopify.loading(Boolean(isLoading));
+    if (typeof loading === "function") {
+      loading(Boolean(isLoading));
+      return;
+    }
+
+    const action = isLoading ? loading.start : loading.stop;
+    if (typeof action === "function") {
+      action.call(loading);
+    }
   } catch {
     // Loading API is unavailable outside embedded Shopify Admin.
   }
@@ -89,6 +98,8 @@ export function BotShieldLoadingBridge({ active }) {
   return createElement(LoadingBridgeInner, { active });
 }
 
-export function BotShieldPageLoadingBridge({ active }) {
-  return createElement(BotShieldLoadingBridge, { active: Boolean(active) });
+export function BotShieldPageLoadingBridge() {
+  // Full-page App Bridge loading is disabled. It crashed embedded admin when
+  // Shopify exposed loading as a function instead of start/stop methods.
+  return null;
 }

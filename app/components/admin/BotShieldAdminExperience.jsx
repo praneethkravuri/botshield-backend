@@ -18,7 +18,6 @@ import {
   BotShieldToggle,
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
-import { BotShieldPageLoadingBridge } from "../../hooks/use-botshield-save-bar";
 import { safeFetchJson } from "../../lib/safe-fetch";
 import { isValidIpAddressInput } from "../../lib/ip-address";
 import {
@@ -5664,7 +5663,6 @@ export default function BotShieldAdminExperience({ model, actions }) {
 
   return (
     <BotShieldAppFrame>
-      <BotShieldPageLoadingBridge active={Boolean(model.syncing)} />
       <div className="botshield-route-shell">
         {model.backendErrors?.length ? (
           <div className="botshield-page-content">
