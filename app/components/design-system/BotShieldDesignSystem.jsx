@@ -2,6 +2,10 @@
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
+import {
+  useBotShieldLoadingIndicator,
+  useBotShieldSaveBar,
+} from "../../hooks/use-botshield-save-bar";
 import { getUiStatus } from "../../lib/ui-status";
 
 const defaultToastValue = {
@@ -68,7 +72,7 @@ export function BotShieldAppFrame({ children }) {
     <BotShieldToastProvider>
       <style>{`
         .botshield-admin-shell {
-          --botshield-bg: #f6f6f4;
+          --botshield-bg: transparent;
           --botshield-surface: #ffffff;
           --botshield-border: #e5e5e1;
           --botshield-border-strong: #cfcfca;
@@ -4549,13 +4553,6 @@ export function BotShieldAppFrame({ children }) {
         }
       `}</style>
       <div className="botshield-admin-shell">{children}</div>
-      <a
-        className="botshield-chat-bubble"
-        href="mailto:support@botshieldapp.com"
-        aria-label="Contact BotShield support"
-      >
-        ▰
-      </a>
     </BotShieldToastProvider>
   );
 }
@@ -4910,6 +4907,8 @@ export function BotShieldActionButton({
   href,
   target,
   slot,
+  commandFor,
+  command,
 }) {
   return (
     <s-button
@@ -4922,6 +4921,8 @@ export function BotShieldActionButton({
       href={href}
       target={target}
       slot={slot}
+      commandFor={commandFor}
+      command={command}
       onClick={onClick}
     >
       {children}
@@ -5044,46 +5045,78 @@ export function BotShieldToggle({
 }
 
 export function BotShieldSaveState({
+  id = "botshield-save-bar",
   dirty,
   saving,
   onSave,
   onDiscard,
   error,
+  enabled = true,
 }) {
-  if (!dirty && !error) return null;
-  return (
-    <s-box
-      background="subdued"
-      border="base"
-      borderRadius="large"
-      padding="base"
-    >
-      <s-stack
-        direction="inline"
-        gap="base"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <s-stack gap="small-200">
-          <s-text type="strong">
-            {error ? "Changes not saved" : "Unsaved changes"}
-          </s-text>
-          <s-text color="subdued">
-            {error ||
-              "Save or discard your changes before leaving this screen."}
-          </s-text>
-        </s-stack>
-        <s-button-group>
-          <s-button variant="secondary" disabled={saving} onClick={onDiscard}>
-            Discard
-          </s-button>
-          <s-button variant="primary" loading={saving} onClick={onSave}>
-            Save
-          </s-button>
-        </s-button-group>
-      </s-stack>
-    </s-box>
+  const isPreviewRoute =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/ui-preview");
+  const shouldUseSaveBar = enabled && Boolean(id);
+  const showSaveBar = shouldUseSaveBar && dirty;
+
+  useBotShieldSaveBar({
+    id,
+    dirty: showSaveBar,
+    enabled: shouldUseSaveBar && !isPreviewRoute,
+  });
+  useBotShieldLoadingIndicator(Boolean(saving) && !isPreviewRoute);
+
+  const saveBar = (
+    <ui-save-bar id={id} data-discard-confirmation>
+      <button type="button" variant="primary" disabled={saving} onClick={onSave}>
+        Save
+      </button>
+      <button type="button" disabled={saving} onClick={onDiscard}>
+        Discard
+      </button>
+    </ui-save-bar>
   );
+
+  if (isPreviewRoute && (dirty || error)) {
+    return (
+      <>
+        {saveBar}
+        <s-box
+          background="subdued"
+          border="base"
+          borderRadius="large"
+          padding="base"
+        >
+          <s-stack
+            direction="inline"
+            gap="base"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <s-stack gap="small-200">
+              <s-text type="strong">
+                {error ? "Changes not saved" : "Unsaved changes"}
+              </s-text>
+              <s-text color="subdued">
+                {error ||
+                  "Preview fallback save bar. In Shopify Admin this appears in the native App Bridge save bar."}
+              </s-text>
+            </s-stack>
+            <s-button-group>
+              <s-button variant="secondary" disabled={saving} onClick={onDiscard}>
+                Discard
+              </s-button>
+              <s-button variant="primary" loading={saving} onClick={onSave}>
+                Save
+              </s-button>
+            </s-button-group>
+          </s-stack>
+        </s-box>
+      </>
+    );
+  }
+
+  return saveBar;
 }
 
 export function BotShieldEmptyState({ title, description, action }) {
@@ -5160,6 +5193,12 @@ export function BotShieldConfirmationModal({
   loading,
   tone = "critical",
 }) {
+  const handleConfirm = async () => {
+    await onConfirm?.();
+    const modal = document.getElementById(id);
+    modal?.hide?.();
+  };
+
   return (
     <s-modal id={id} heading={heading}>
       <s-box padding="base">
@@ -5170,7 +5209,7 @@ export function BotShieldConfirmationModal({
         variant="primary"
         tone={tone}
         loading={loading}
-        onClick={onConfirm}
+        onClick={handleConfirm}
       >
         {confirmLabel}
       </s-button>

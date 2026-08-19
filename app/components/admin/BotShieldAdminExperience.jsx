@@ -7,6 +7,7 @@ import {
   BotShieldAsyncButton,
   BotShieldBanner,
   BotShieldCard,
+  BotShieldConfirmationModal,
   BotShieldEmptyState,
   BotShieldInlineHelp,
   BotShieldSaveState,
@@ -4921,7 +4922,6 @@ function ProtectionPage({ model, actions }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
   const closeButtonRef = useRef(null);
   const drawerOpenerRef = useRef(null);
 
@@ -4953,7 +4953,6 @@ function ProtectionPage({ model, actions }) {
 
   const closeDrawer = () => {
     setProtectionModal(null);
-    setConfirmDiscard(false);
     setSaveError("");
     setSaveSuccess("");
     window.setTimeout(() => drawerOpenerRef.current?.focus?.(), 0);
@@ -4962,14 +4961,9 @@ function ProtectionPage({ model, actions }) {
   const requestClose = () => {
     if (saving) return;
     if (dirty) {
-      setConfirmDiscard(true);
+      document.getElementById("botshield-protection-discard-modal")?.show?.();
       return;
     }
-    closeDrawer();
-  };
-
-  const discardAndClose = () => {
-    setDraft(originalDraft);
     closeDrawer();
   };
 
@@ -5035,7 +5029,6 @@ function ProtectionPage({ model, actions }) {
     setOriginalDraft(persisted);
     setSaveError("");
     setSaveSuccess("");
-    setConfirmDiscard(false);
     setProtectionModal({
       type: "profile",
       title,
@@ -5459,21 +5452,21 @@ function ProtectionPage({ model, actions }) {
                   </div>
                 </footer>
               ) : null}
-              {confirmDiscard ? (
-                <div className="botshield-protection-discard-layer" role="alertdialog" aria-modal="true" aria-labelledby="botshield-discard-title">
-                  <div className="botshield-protection-discard-dialog">
-                    <h3 id="botshield-discard-title">Discard unsaved changes?</h3>
-                    <p>Your updates haven’t been saved. You can keep editing or discard them.</p>
-                    <div>
-                      <BotShieldActionButton onClick={() => setConfirmDiscard(false)}>Keep editing</BotShieldActionButton>
-                      <BotShieldActionButton onClick={discardAndClose} variant="primary" tone="critical">Discard changes</BotShieldActionButton>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
             </div>
           </div>
         ), document.body) : null}
+      <BotShieldConfirmationModal
+        confirmLabel="Discard changes"
+        heading="Discard unsaved changes?"
+        id="botshield-protection-discard-modal"
+        onConfirm={async () => {
+          setDraft(originalDraft);
+          closeDrawer();
+        }}
+        tone="critical"
+      >
+        Your updates haven't been saved. You can keep editing or discard them.
+      </BotShieldConfirmationModal>
       </main>
       </div>
     );
@@ -5485,6 +5478,7 @@ function ProtectionPage({ model, actions }) {
       subtitle="Choose how BotShield monitors, verifies, and stops risky storefront visitors."
     >
       <BotShieldSaveState
+        id="botshield-protection-save-bar"
         dirty={dirty}
         saving={saving}
         error={saveError}
@@ -6258,6 +6252,7 @@ function readSettingsHubSection() {
 
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
+  const [clearingSimulation, setClearingSimulation] = useState(false);
   const [activeSection, setActiveSection] = useState(readSettingsHubSection);
   const [draft, setDraft] = useState({
     alertEmail: model.alertEmail,
@@ -7047,25 +7042,40 @@ function SettingsPage({ model, actions }) {
               settings, blocklists, and trusted visitors are not deleted.
             </p>
           </div>
-          <BotShieldAsyncButton
-            action={async () => {
-              if (
-                typeof window !== "undefined" &&
-                !window.confirm(
-                  "Clear all dashboard simulation data? Real storefront records will not be deleted.",
-                )
-              ) {
-                return;
-              }
-              await safeFetchJson("/api/clear-test-data", { method: "POST" });
-              await actions.refresh();
-            }}
-            successMessage="Simulation data cleared"
+          <BotShieldActionButton
+            command="--show"
+            commandFor="botshield-clear-simulation-modal"
             tone="critical"
           >
             Clear simulation data
-          </BotShieldAsyncButton>
+          </BotShieldActionButton>
         </div>
+        <BotShieldConfirmationModal
+          confirmLabel="Clear simulation data"
+          heading="Clear simulation data?"
+          id="botshield-clear-simulation-modal"
+          loading={clearingSimulation}
+          onConfirm={async () => {
+            setClearingSimulation(true);
+            try {
+              await safeFetchJson("/api/clear-test-data", { method: "POST" });
+              await actions.refresh();
+              toast.success("Simulation data cleared");
+            } catch (error) {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : "Couldn't clear simulation data";
+              toast.error(message);
+              throw error;
+            } finally {
+              setClearingSimulation(false);
+            }
+          }}
+        >
+          Remove dashboard simulation events from BotShield analytics. Real storefront
+          traffic, settings, blocklists, and trusted visitors are not deleted.
+        </BotShieldConfirmationModal>
       </section>
     );
   };
@@ -7123,6 +7133,7 @@ function SettingsPage({ model, actions }) {
             {renderSection()}
             {showSaveBar ? (
               <BotShieldSaveState
+                id="botshield-settings-save-bar"
                 dirty={dirty}
                 error={saveError}
                 onDiscard={() =>

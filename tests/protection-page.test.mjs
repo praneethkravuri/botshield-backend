@@ -46,7 +46,7 @@ test("Protection controls use existing persisted actions", () => {
 test("Protection profile drawer has explicit persisted save and discard lifecycle", () => {
   assert.match(adminSource, /const \[originalDraft, setOriginalDraft\]/);
   assert.match(adminSource, /const requestClose = \(\) =>/);
-  assert.match(adminSource, /setConfirmDiscard\(true\)/);
+  assert.match(adminSource, /botshield-protection-discard-modal/);
   assert.match(adminSource, /Save changes/);
   assert.match(adminSource, /Cancel/);
   assert.match(adminSource, /Saving changes…/);
@@ -57,12 +57,11 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
 });
 
-test("Protection drawer uses a sticky action footer and local discard dialog", () => {
+test("Protection drawer uses a sticky action footer and App Bridge discard modal", () => {
   assert.match(designSource, /\.botshield-protection-drawer-footer \{[^}]*flex: 0 0 auto/);
   assert.match(designSource, /\.botshield-protection-modal-body \{[^}]*overflow-y: auto/);
-  assert.match(designSource, /\.botshield-protection-discard-layer/);
+  assert.match(adminSource, /BotShieldConfirmationModal/);
   assert.match(adminSource, /Discard unsaved changes\?/);
-  assert.match(adminSource, /Keep editing/);
   assert.match(adminSource, /Discard changes/);
 });
 

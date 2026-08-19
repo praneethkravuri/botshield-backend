@@ -45,8 +45,8 @@ test("every enabled admin action button has a real handler or destination", asyn
     if (enabled) {
       assert.match(
         attributes,
-        /\bonClick=|\bhref=/,
-        "Enabled action button is missing an onClick handler or href",
+        /\bonClick=|\bhref=|\bcommandFor=/,
+        "Enabled action button is missing an onClick handler, href, or commandFor target",
       );
     }
   }

@@ -394,3 +394,47 @@ test("clearing simulation data preserves real storefront and merchant data", asy
   assert.doesNotMatch(source, /whitelistIP\.deleteMany/);
   assert.doesNotMatch(source, /appSetting\.deleteMany/);
 });
+
+test("save bar uses App Bridge ui-save-bar with preview fallback", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const hookSource = await readFile(
+    new URL("../app/hooks/use-botshield-save-bar.js", import.meta.url),
+    "utf8",
+  );
+  const adminSource = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(designSource, /<ui-save-bar id=\{id\} data-discard-confirmation>/);
+  assert.match(designSource, /useBotShieldSaveBar\(/);
+  assert.match(designSource, /useBotShieldLoadingIndicator\(/);
+  assert.match(hookSource, /shopify\.saveBar\.show\(id\)/);
+  assert.match(hookSource, /shopify\.loading\.start\(\)/);
+  assert.match(adminSource, /id="botshield-settings-save-bar"/);
+  assert.match(adminSource, /id="botshield-protection-save-bar"/);
+});
+
+test("destructive settings actions use App Bridge confirmation modal", async () => {
+  const adminSource = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(adminSource, /botshield-clear-simulation-modal/);
+  assert.match(adminSource, /BotShieldConfirmationModal/);
+  assert.match(adminSource, /botshield-protection-discard-modal/);
+  assert.doesNotMatch(adminSource, /window\.confirm\(/);
+});
