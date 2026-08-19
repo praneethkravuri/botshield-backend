@@ -176,11 +176,8 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /botshield-settings-hub/);
   assert.match(source, /SETTINGS_HUB_SECTIONS/);
   assert.match(source, /Plans & billing/);
-  assert.match(source, /Choose the protection that fits your store/);
+  assert.match(source, /Choose the protection level that fits your store/);
   assert.match(source, /getSettingsBillingView/);
-  assert.match(source, /getSettingsBillingPlans/);
-  assert.match(source, /botshield-pricing-grid/);
-  assert.match(source, /Subscription & billing/);
   assert.match(source, /Send test email/);
   assert.match(source, /Weekly security report/);
   assert.doesNotMatch(source, /Notification center/);
