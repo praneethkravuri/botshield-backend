@@ -504,3 +504,19 @@ test("supported pages share one stable outer page shell geometry", async () => {
     assert.match(adminSource, new RegExp(`<BotShieldPageShell className="${pageClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
   }
 });
+
+test("Overview quick response rows stack actions before text is crushed", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(designSource, /container-name: overview-quick-actions/);
+  assert.match(designSource, /grid-template-areas: "icon copy action"/);
+  assert.match(designSource, /@container overview-quick-actions \(max-width: 520px\)/);
+  assert.match(designSource, /"icon copy"\s+"\. action"/);
+  assert.doesNotMatch(designSource, /\.botshield-v2-quick-action-row span \{ max-width: 290px/);
+});
