@@ -84,8 +84,8 @@ test("active navigation exposes the five supported BotShield pages", async () =>
   );
 
   assert.match(shell, /Overview/);
-  assert.match(shell, /rel="home"/);
   assert.match(shell, /href="\/app"/);
+  assert.doesNotMatch(shell, /rel="home"/);
   assert.match(shell, />Fraud Orders</);
   assert.match(shell, /href="\/app\/fraud-orders"/);
   assert.match(fraudRoute, /export \{ default \} from "\.\/app\._index"/);
@@ -220,6 +220,8 @@ test("merchant product actions stay connected to real backend workflows", async 
   assert.match(indexSource, /setProtectionEntryIntent\("blocklist"\)/);
   assert.match(indexSource, /clearProtectionEntryIntent/);
   assert.match(indexSource, /await refreshBackendState\(\)/);
+  assert.match(indexSource, /refreshAnalytics/);
+  assert.match(indexSource, /cache: "no-store"/);
   assert.match(adminSource, /highRiskAlertsOnly/);
   assert.match(adminSource, /actions\.recoverIncident\(event\.id, "whitelist"\)/);
   assert.match(adminSource, /actions\.runSimulation\(\)/);

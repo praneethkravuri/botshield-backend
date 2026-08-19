@@ -2137,6 +2137,12 @@ function AnalyticsPage({ model, actions }) {
           </div>
         </header>
 
+        {model.analyticsRefreshError ? (
+          <BotShieldBanner tone="critical" title="Analytics refresh failed">
+            {model.analyticsRefreshError}
+          </BotShieldBanner>
+        ) : null}
+
         <section className="botshield-analytics-controls" aria-label="Analytics controls">
           <div className="botshield-analytics-period" aria-label="Date range">
             {ANALYTICS_PERIODS.map((period) => (
@@ -2157,7 +2163,15 @@ function AnalyticsPage({ model, actions }) {
             {availableSignals.length ? <label>Threat signal<select value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
             <label className="botshield-analytics-search">Search<input onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
             <div className="botshield-analytics-toolbar-actions">
-              <BotShieldActionButton onClick={actions.refresh}>Refresh</BotShieldActionButton>
+              <BotShieldActionButton
+                disabled={model.analyticsRefreshing}
+                loading={model.analyticsRefreshing}
+                onClick={() => {
+                  void actions.refreshAnalytics?.();
+                }}
+              >
+                Refresh
+              </BotShieldActionButton>
               {filtersActive ? <button className="botshield-analytics-clear" onClick={clearFilters} type="button">Clear filters</button> : null}
             </div>
           </div>

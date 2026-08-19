@@ -288,7 +288,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
   assert.match(source, /href="\/app\/protection-rules"/);
   assert.match(source, /href="\/app\/fraud-orders"/);
   assert.match(source, /href="\/app\/settings"/);
-  assert.match(source, /rel="home"/);
+  assert.doesNotMatch(source, /rel="home"/);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Visitors</);
   assert.doesNotMatch(source, />Blocklist</);

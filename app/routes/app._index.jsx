@@ -135,6 +135,9 @@ export default function Index() {
   });
   const [notification, setNotification] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [analyticsRefreshing, setAnalyticsRefreshing] = useState(false);
+  const [analyticsRefreshError, setAnalyticsRefreshError] = useState("");
+  const analyticsRefreshInFlight = useRef(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [teamNotes, setTeamNotes] = useState({});
   const [trustedTags, setTrustedTags] = useState({});
@@ -538,9 +541,15 @@ export default function Index() {
     animationDelay: `${index * 0.05}s`,
   });
 
-  const loadScans = async () => {
+  const loadScans = async ({ bustCache = false, throwOnError = false } = {}) => {
     try {
-      const res = await fetch("/api/scans");
+      const url = bustCache
+        ? `/api/scans?_=${Date.now()}`
+        : "/api/scans";
+      const res = await fetch(
+        url,
+        bustCache ? { cache: "no-store" } : undefined,
+      );
       if (!res.ok) throw new Error("Security activity could not be loaded.");
       const data = await res.json();
       const nextScans = (data.scans || []).map((scan, index) => ({
@@ -575,9 +584,12 @@ export default function Index() {
       setBlocked(
         diagnostics.filter((scan) => scan.actionTaken === "blocked").length,
       );
+      return nextScans;
     } catch (err) {
       console.error("Failed to load scans", err);
       recordBackendError("Activity", err);
+      if (throwOnError) throw err;
+      return null;
     }
   };
 
@@ -856,6 +868,24 @@ export default function Index() {
       setLastSyncedAt(new Date().toLocaleTimeString());
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const refreshAnalytics = async () => {
+    if (analyticsRefreshInFlight.current) return;
+    analyticsRefreshInFlight.current = true;
+    setAnalyticsRefreshing(true);
+    setAnalyticsRefreshError("");
+    try {
+      await loadScans({ bustCache: true, throwOnError: true });
+      setLastSyncedAt(new Date().toLocaleTimeString());
+    } catch (error) {
+      setAnalyticsRefreshError(
+        toMerchantErrorMessage(error, "Analytics could not be refreshed."),
+      );
+    } finally {
+      analyticsRefreshInFlight.current = false;
+      setAnalyticsRefreshing(false);
     }
   };
 
@@ -2548,6 +2578,8 @@ export default function Index() {
     result,
     lastScanTime,
     syncing,
+    analyticsRefreshing,
+    analyticsRefreshError,
     readinessItems: polarisReadinessItems,
     fraudOrderAccessConnected: false,
     fraudOrders: [],
@@ -2603,6 +2635,8 @@ export default function Index() {
     },
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
+    refreshAnalytics,
+    clearAnalyticsRefreshError: () => setAnalyticsRefreshError(""),
     openThemeEditor,
     refreshSettings: loadSettings,
     refreshBilling: loadBillingStatus,
