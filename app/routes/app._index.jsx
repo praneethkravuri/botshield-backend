@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
+import { toMerchantErrorMessage } from "../lib/merchant-error-message";
 import { safeFetchJson } from "../lib/safe-fetch";
+import { readThemeAppEmbedStatus } from "../lib/theme-extension-status.client";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -120,7 +122,10 @@ export default function Index() {
   const [protectionStatus, setProtectionStatus] = useState({
     shop: "",
     appInstalled: true,
-    themeEmbedDetected: false,
+    themeAppEmbedActive: false,
+    themeAppEmbedStatus: "available",
+    storefrontReportingActive: false,
+    lastStorefrontHeartbeatAt: null,
     lastStorefrontDecisionAt: null,
     protectionActive: false,
     protectionPaused: false,
@@ -179,7 +184,7 @@ export default function Index() {
 
   const protectionPaused = pauseUntil && new Date(pauseUntil).getTime() > Date.now();
   const protectionReady =
-    protectionStatus.themeEmbedDetected && protectionOn && !protectionPaused;
+    protectionStatus.themeAppEmbedActive && protectionOn && !protectionPaused;
 
   useEffect(() => {
     if (threatLevel === "high") {
@@ -624,13 +629,28 @@ export default function Index() {
       if (!res.ok) throw new Error("Protection status could not be loaded.");
       const data = await res.json();
       const status = data.status || {};
-      setProtectionStatus((previous) => ({ ...previous, ...status }));
+      setProtectionStatus((previous) => ({
+        ...previous,
+        ...status,
+        themeAppEmbedActive: previous.themeAppEmbedActive,
+        themeAppEmbedStatus: previous.themeAppEmbedStatus,
+      }));
       setPauseUntil(status.protectionPausedUntil || null);
       setProtectionOn(Boolean(status.protectionActive));
     } catch (err) {
       console.error("Failed to load protection status", err);
       recordBackendError("Protection status", err);
     }
+  };
+
+  const loadThemeExtensionStatus = async () => {
+    const embedStatus = await readThemeAppEmbedStatus();
+    if (!embedStatus) return;
+    setProtectionStatus((previous) => ({
+      ...previous,
+      themeAppEmbedActive: embedStatus.themeAppEmbedActive,
+      themeAppEmbedStatus: embedStatus.themeAppEmbedStatus,
+    }));
   };
 
   const loadSecurityPosture = async () => {
@@ -806,7 +826,7 @@ export default function Index() {
   };
 
   const recordBackendError = (area, error) => {
-    const detail = error instanceof Error ? error.message : "Request failed.";
+    const detail = toMerchantErrorMessage(error, "Request failed.");
     const message = `${area}: ${detail}`;
     setBackendErrors((current) =>
       current.includes(message) ? current : [...current, message],
@@ -820,6 +840,7 @@ export default function Index() {
       loadBlocklist(),
       loadWhitelist(),
       loadProtectionStatus(),
+      loadThemeExtensionStatus(),
       loadIncidents(),
       loadBillingStatus(),
       loadFinancialImpact(),
@@ -1113,7 +1134,7 @@ export default function Index() {
     switch (actionKey) {
       case "runtime":
         if (
-          !protectionStatus.themeEmbedDetected &&
+          !protectionStatus.themeAppEmbedActive &&
           protectionStatus.shop
         ) {
           window.open(
@@ -2086,10 +2107,16 @@ export default function Index() {
       : [
           { status: "Waiting", message: "No storefront traffic received yet" },
           {
-            status: protectionStatus.themeEmbedDetected ? "Connected" : "Setup",
-            message: protectionStatus.themeEmbedDetected
-              ? "Theme embed heartbeat detected"
-              : "Theme embed not detected",
+            status: protectionStatus.themeAppEmbedActive ? "Connected" : "Setup",
+            message: protectionStatus.themeAppEmbedActive
+              ? "Theme app embed is active on the published theme"
+              : "Enable the BotShield theme app embed in the theme editor",
+          },
+          {
+            status: protectionStatus.storefrontReportingActive ? "Live" : "Waiting",
+            message: protectionStatus.storefrontReportingActive
+              ? "Recent storefront heartbeat detected"
+              : "No recent storefront heartbeat",
           },
         ];
 
@@ -2135,18 +2162,28 @@ export default function Index() {
       actionKey: "runtime",
     },
     {
-      label: protectionStatus.themeEmbedDetected
+      label: protectionStatus.themeAppEmbedActive
         ? "Theme embed connected"
         : "Theme embed not connected",
-      active: protectionStatus.themeEmbedDetected,
-      detail: protectionStatus.lastStorefrontDecisionAt
-        ? `last event ${new Date(protectionStatus.lastStorefrontDecisionAt).toLocaleTimeString()}`
+      active: protectionStatus.themeAppEmbedActive,
+      detail: protectionStatus.themeAppEmbedStatus
+        ? `Shopify status: ${protectionStatus.themeAppEmbedStatus}`
         : "enable the app embed to start protection",
       actionKey: "runtime",
     },
     {
+      label: protectionStatus.storefrontReportingActive
+        ? "Storefront traffic active"
+        : "Storefront traffic quiet",
+      active: protectionStatus.storefrontReportingActive,
+      detail: protectionStatus.lastStorefrontHeartbeatAt
+        ? `last heartbeat ${new Date(protectionStatus.lastStorefrontHeartbeatAt).toLocaleTimeString()}`
+        : "waiting for storefront heartbeat",
+      actionKey: "runtime",
+    },
+    {
       label: protectionPaused ? "Protection paused" : "Protection policy ready",
-      active: protectionStatus.themeEmbedDetected && !protectionPaused,
+      active: protectionStatus.themeAppEmbedActive && !protectionPaused,
       detail: protectionPaused
         ? `resumes in ${pauseCountdown}m`
         : autoBlock
@@ -2393,10 +2430,17 @@ export default function Index() {
     },
     {
       label: "Theme app embed enabled",
-      complete: Boolean(protectionStatus.themeEmbedDetected),
-      detail: protectionStatus.themeEmbedDetected
-        ? "The storefront connection is active."
+      complete: Boolean(protectionStatus.themeAppEmbedActive),
+      detail: protectionStatus.themeAppEmbedActive
+        ? "BotShield is enabled in the published theme."
         : "Enable BotShield in the Shopify theme editor.",
+    },
+    {
+      label: "Storefront traffic received",
+      complete: Boolean(protectionStatus.storefrontReportingActive),
+      detail: protectionStatus.storefrontReportingActive
+        ? "Recent storefront heartbeat detected."
+        : "Visit the storefront after enabling the theme embed.",
     },
     {
       label: "Storefront events received",

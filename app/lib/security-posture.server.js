@@ -51,7 +51,7 @@ export async function getMerchantSecurityPosture(shop) {
       {
         key: "embed",
         label: "Theme embed enabled",
-        complete: status.themeEmbedDetected,
+        complete: false,
       },
       {
         key: "connected",

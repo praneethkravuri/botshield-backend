@@ -239,7 +239,7 @@ export async function getProtectionStatus(shop) {
   const heartbeatAge = lastHeartbeatAt
     ? Date.now() - new Date(lastHeartbeatAt).getTime()
     : Number.POSITIVE_INFINITY;
-  const themeEmbedDetected = heartbeatAge <= 15 * 60 * 1000;
+  const storefrontReportingActive = heartbeatAge <= 15 * 60 * 1000;
   const protectionPaused =
     Boolean(settings.protectionPausedUntil) &&
     new Date(settings.protectionPausedUntil).getTime() > Date.now();
@@ -252,11 +252,10 @@ export async function getProtectionStatus(shop) {
   return {
     shop: normalizedShop,
     appInstalled: true,
-    themeEmbedDetected,
+    storefrontReportingActive,
     lastStorefrontHeartbeatAt: lastHeartbeatAt,
     lastStorefrontDecisionAt: lastDecisionAt,
-    protectionActive:
-      themeEmbedDetected && !protectionPaused && billingAllowsProtection,
+    protectionActive: !protectionPaused && billingAllowsProtection,
     protectionPaused,
     protectionPausedUntil: settings.protectionPausedUntil,
     billingEnforcementEnabled,

@@ -37,7 +37,7 @@ export function buildWeeklyReportFromEvents({
     ).slice(0, 5),
     topReasonCodes: countBy(allReasonCodes, (code) => code).slice(0, 8),
     protectionActive: status.protectionActive,
-    themeEmbedDetected: status.themeEmbedDetected,
+    storefrontReportingActive: status.storefrontReportingActive,
     alertsConfigured:
       settings.emailAlerts &&
       settings.emailProvider.configured &&
@@ -58,8 +58,13 @@ export function calculateSecurityScore({
     Boolean(settings.alertEmail);
   const factors = [
     { key: "app", label: "Shopify app installed", points: 10, earned: status.appInstalled ? 10 : 0 },
-    { key: "embed", label: "Theme embed active", points: 20, earned: status.themeEmbedDetected ? 20 : 0 },
-    { key: "traffic", label: "Storefront connected", points: 15, earned: status.lastStorefrontDecisionAt ? 15 : 0 },
+    { key: "embed", label: "Theme embed active", points: 20, earned: 0 },
+    {
+      key: "traffic",
+      label: "Storefront connected",
+      points: 15,
+      earned: status.lastStorefrontDecisionAt ? 15 : 0,
+    },
     { key: "protection", label: "Protection active", points: 25, earned: status.protectionActive ? 25 : 0 },
     {
       key: "alerts",

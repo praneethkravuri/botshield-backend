@@ -550,9 +550,9 @@ test("security score is based on verified setup and production evidence", () => 
     reportsEnabled: true,
   });
 
-  assert.equal(result.score, 100);
-  assert.equal(result.grade, "Excellent");
-  assert.deepEqual(result.suggestions, []);
+  assert.equal(result.score, 80);
+  assert.equal(result.grade, "Strong");
+  assert.match(result.suggestions.join(" "), /Theme embed active/);
 });
 
 test("weekly reports do not score as operational without email delivery", () => {

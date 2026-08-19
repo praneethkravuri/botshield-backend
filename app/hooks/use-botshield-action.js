@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
+import { toMerchantErrorMessage } from "../lib/merchant-error-message";
 
 function normalizeError(error, fallback) {
-  return error instanceof Error && error.message ? error.message : fallback;
+  return toMerchantErrorMessage(error, fallback);
 }
 
 export function useBotShieldAction({
@@ -30,7 +31,6 @@ export function useBotShieldAction({
       } catch (caught) {
         const message = normalizeError(caught, errorMessage);
         setError(message);
-        toast?.error(message);
         await onError?.(caught);
         return null;
       } finally {
@@ -38,7 +38,7 @@ export function useBotShieldAction({
         setLoading(false);
       }
     },
-    [action, errorMessage, onError, onSuccess, successMessage, toast],
+    [action, errorMessage, onError, onSuccess, successMessage],
   );
 
   return { run, loading, error, clearError: () => setError("") };

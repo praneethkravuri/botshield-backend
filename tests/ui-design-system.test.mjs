@@ -266,7 +266,7 @@ test("Setup checklist stays on supported pages with contextual actions", async (
   assert.doesNotMatch(source, /setPage\("setup"\)/);
   assert.match(source, /getSetupChecklistItems/);
   assert.match(source, /runNextSetupAction/);
-  assert.match(source, /Storefront traffic has been received/);
+  assert.match(source, /BotShield is enabled in the published theme/);
   assert.match(source, /Open theme editor/);
   assert.match(source, /Setup Progress/);
   assert.match(designSystem, /Action needed/);
@@ -280,7 +280,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
 
   assert.match(source, />Analytics</);
   assert.match(source, />Protection</);
-  assert.match(source, />Overview</);
+  assert.match(source, /Overview/);
   assert.match(source, />Fraud Orders</);
   assert.match(source, />Settings</);
   assert.match(source, /href="\/app"/);
@@ -288,6 +288,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
   assert.match(source, /href="\/app\/protection-rules"/);
   assert.match(source, /href="\/app\/fraud-orders"/);
   assert.match(source, /href="\/app\/settings"/);
+  assert.match(source, /rel="home"/);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Visitors</);
   assert.doesNotMatch(source, />Blocklist</);

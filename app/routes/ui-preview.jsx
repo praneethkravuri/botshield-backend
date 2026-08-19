@@ -105,7 +105,7 @@ function buildReadinessItems(model) {
     {
       label: "Theme embed enabled",
       detail: "The storefront theme is connected.",
-      complete: model.protectionStatus.themeEmbedDetected,
+      complete: model.protectionStatus.themeAppEmbedActive,
     },
     {
       label: "Storefront connected",
@@ -366,7 +366,9 @@ export default function UiPreview() {
       fraudOrderFilterEnabled: false,
       protectionStatus: {
         appInstalled: true,
-        themeEmbedDetected: true,
+        themeAppEmbedActive: true,
+        themeAppEmbedStatus: "active",
+        storefrontReportingActive: true,
         protectionActive: true,
         protectionPaused: settings.protectionPaused,
         policyReady: true,

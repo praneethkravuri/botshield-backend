@@ -83,7 +83,8 @@ test("active navigation exposes the five supported BotShield pages", async () =>
     "utf8",
   );
 
-  assert.match(shell, />Overview</);
+  assert.match(shell, /Overview/);
+  assert.match(shell, /rel="home"/);
   assert.match(shell, /href="\/app"/);
   assert.match(shell, />Fraud Orders</);
   assert.match(shell, /href="\/app\/fraud-orders"/);

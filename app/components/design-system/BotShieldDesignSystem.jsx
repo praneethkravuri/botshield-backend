@@ -52,7 +52,7 @@ function BrowserBotShieldToastProvider({ children }) {
   const value = useMemo(
     () => ({
       success: (message) => show(message),
-      error: (message) => show(message, { isError: true, duration: 5000 }),
+      error: (message) => show(message, { isError: true }),
       warning: (message) => show(message, { duration: 4500 }),
     }),
     [show],
@@ -5002,14 +5002,21 @@ export function BotShieldAsyncButton({
   });
 
   return (
-    <BotShieldActionButton
-      {...buttonProps}
-      loading={asyncAction.loading}
-      disabled={disabled}
-      onClick={asyncAction.run}
-    >
-      {children}
-    </BotShieldActionButton>
+    <s-stack gap="small-200">
+      <BotShieldActionButton
+        {...buttonProps}
+        loading={asyncAction.loading}
+        disabled={disabled}
+        onClick={asyncAction.run}
+      >
+        {children}
+      </BotShieldActionButton>
+      {asyncAction.error ? (
+        <s-text tone="critical" role="alert">
+          {asyncAction.error}
+        </s-text>
+      ) : null}
+    </s-stack>
   );
 }
 

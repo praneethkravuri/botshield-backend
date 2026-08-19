@@ -20,6 +20,7 @@ import {
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
 import { safeFetchJson } from "../../lib/safe-fetch";
+import { toMerchantErrorMessage } from "../../lib/merchant-error-message";
 import { isValidIpAddressInput } from "../../lib/ip-address";
 import {
   getBillingStatusModel,
@@ -190,10 +191,7 @@ function inRecentDays(value, days, offsetDays = 0) {
 }
 
 function hasStorefrontConnection(model) {
-  return Boolean(
-    model?.protectionStatus?.themeEmbedDetected ||
-      model?.protectionStatus?.lastStorefrontDecisionAt,
-  );
+  return Boolean(model?.protectionStatus?.themeAppEmbedActive);
 }
 
 function formatDelta(current, previous) {
@@ -635,7 +633,7 @@ function getSetupChecklistItems(model, actions = {}) {
     {
       label: "Theme embed enabled",
       detail: storefrontConnected
-        ? "Storefront traffic has been received."
+        ? "BotShield is enabled in the published theme."
         : "Enable the theme app embed to connect storefront traffic.",
       complete: storefrontConnected,
       action: actions.openThemeEditor,
@@ -1183,7 +1181,7 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
 function OverviewPage({ model, actions }) {
   const [threatPeriod, setThreatPeriod] = useState(30);
   const storefrontConnected = hasStorefrontConnection(model);
-  const storefrontSensorActive = Boolean(model.protectionStatus?.themeEmbedDetected);
+  const storefrontSensorActive = Boolean(model.protectionStatus?.themeAppEmbedActive);
   const storefrontEvents = Number.isFinite(Number(model.incidentCounts?.total))
     ? Number(model.incidentCounts.total)
     : model.storefrontScans.length;
@@ -1382,7 +1380,6 @@ function OverviewPage({ model, actions }) {
         <s-stack gap="large">
           <div className="botshield-overview-header">
             <div>
-              <h1 className="botshield-overview-title">Overview</h1>
               <p className="botshield-overview-subtitle">
                 Monitor storefront protection, security activity, and
                 enforcement decisions from one place.
@@ -2134,7 +2131,6 @@ function AnalyticsPage({ model, actions }) {
       <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">
         <header className="botshield-overview-header">
           <div>
-            <h1 className="botshield-overview-title">Analytics</h1>
             <p className="botshield-overview-subtitle">
               Investigate storefront threats, visitor behavior, detection signals, and protection performance.
             </p>
@@ -2610,7 +2606,6 @@ function FraudOrdersPageHeader({ onRefresh }) {
   return (
     <header className="botshield-overview-header botshield-fraud-header">
       <div>
-        <h1 className="botshield-overview-title">Fraud Orders</h1>
         <p className="botshield-overview-subtitle">
           Review risky Shopify orders, understand why they were flagged, and investigate them before fulfillment.
         </p>
@@ -3480,12 +3475,11 @@ function ProtectionPage({ model, actions }) {
       setOriginalDraft(savedDraft);
       toast.success("Protection settings saved");
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Couldn’t save protection settings";
+      const message = toMerchantErrorMessage(
+        error,
+        "Couldn’t save protection settings",
+      );
       setSaveError(message);
-      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -3529,7 +3523,7 @@ function ProtectionPage({ model, actions }) {
     });
   };
 
-  const storefrontConnected = Boolean(model.protectionStatus?.themeEmbedDetected);
+  const storefrontConnected = hasStorefrontConnection(model);
   const runtimeActive = Boolean(model.protectionReady && !model.protectionPaused);
   const moduleStatus = runtimeActive
     ? { label: "Active", status: "active" }
@@ -3647,9 +3641,6 @@ function ProtectionPage({ model, actions }) {
         <BotShieldPageShell className="botshield-protection-content">
         <div className="botshield-protection-header">
           <div>
-            <h1 className="botshield-overview-title botshield-protection-page-title">
-              Protection
-            </h1>
             <p className="botshield-overview-subtitle">
               Configure how BotShield detects and responds to suspicious storefront traffic.
             </p>
@@ -4582,7 +4573,7 @@ function getSettingsBillingTrialLabel(billing) {
 function getSettingsOperationalStrip(model) {
   const responseMode = getResponseMode(model);
   const storefrontConnected = hasStorefrontConnection(model);
-  const receivingTraffic = Boolean(model.protectionStatus?.lastStorefrontDecisionAt);
+  const receivingTraffic = Boolean(model.protectionStatus?.storefrontReportingActive);
   const alertsEnabled = Boolean(
     model.emailAlerts && model.emailProviderConfigured && model.alertEmail,
   );
@@ -4754,6 +4745,8 @@ function SettingsPage({ model, actions }) {
   });
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [billingRefreshError, setBillingRefreshError] = useState("");
+  const [diagnosticsError, setDiagnosticsError] = useState("");
 
   useEffect(() => {
     setDraft({
@@ -4784,17 +4777,16 @@ function SettingsPage({ model, actions }) {
     let cancelled = false;
     const refreshAfterReturn = async () => {
       try {
+        setBillingRefreshError("");
         await actions.refreshBilling?.();
         if (!cancelled) {
           toast.success("Billing status refreshed");
         }
       } catch (error) {
         if (!cancelled) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Couldn't refresh billing status";
-          toast.error(message);
+          setBillingRefreshError(
+            toMerchantErrorMessage(error, "Couldn't refresh billing status"),
+          );
         }
       } finally {
         if (cancelled || typeof window === "undefined") return;
@@ -4894,10 +4886,9 @@ function SettingsPage({ model, actions }) {
       await actions.saveSettings(draft);
       toast.success("Settings saved");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Couldn’t save settings";
-      setSaveError(message);
-      toast.error(message);
+      setSaveError(
+        toMerchantErrorMessage(error, "Couldn’t save settings"),
+      );
     } finally {
       setSaving(false);
     }
@@ -5594,16 +5585,15 @@ function SettingsPage({ model, actions }) {
           loading={clearingSimulation}
           onConfirm={async () => {
             setClearingSimulation(true);
+            setDiagnosticsError("");
             try {
               await safeFetchJson("/api/clear-test-data", { method: "POST" });
               await actions.refresh();
               toast.success("Simulation data cleared");
             } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Couldn't clear simulation data";
-              toast.error(message);
+              setDiagnosticsError(
+                toMerchantErrorMessage(error, "Couldn't clear simulation data"),
+              );
               throw error;
             } finally {
               setClearingSimulation(false);
@@ -5624,7 +5614,6 @@ function SettingsPage({ model, actions }) {
       <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
         <header className="botshield-overview-header botshield-settings-hub-header">
           <div className="botshield-settings-hub-header-copy">
-            <h1 className="botshield-overview-title">Settings</h1>
             <p className="botshield-overview-subtitle">
               Manage protection preferences, alerts, connections, billing, and BotShield
               system configuration.
@@ -5667,6 +5656,21 @@ function SettingsPage({ model, actions }) {
           </nav>
 
           <div className="botshield-settings-hub-panel">
+            {saveError && showSaveBar ? (
+              <BotShieldBanner tone="critical" title="Settings not saved">
+                {saveError}
+              </BotShieldBanner>
+            ) : null}
+            {billingRefreshError && activeSection === "billing" ? (
+              <BotShieldBanner tone="critical" title="Billing status unavailable">
+                {billingRefreshError}
+              </BotShieldBanner>
+            ) : null}
+            {diagnosticsError && activeSection === "danger" ? (
+              <BotShieldBanner tone="critical" title="Diagnostics action failed">
+                {diagnosticsError}
+              </BotShieldBanner>
+            ) : null}
             {renderSection()}
             {showSaveBar ? (
               <BotShieldSaveState
