@@ -3570,6 +3570,296 @@ export function BotShieldAppFrame({ children }) {
         .botshield-settings-hub-billing-current .botshield-settings-hub-row {
           border-bottom: 0;
         }
+        .botshield-settings-billing-page {
+          display: grid;
+          gap: 28px;
+        }
+        .botshield-settings-billing-hero {
+          display: grid;
+          gap: 10px;
+          max-width: 720px;
+        }
+        .botshield-settings-billing-hero h2 {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: clamp(28px, 3vw, 36px);
+          line-height: 1.08;
+          font-weight: 750;
+          letter-spacing: -0.03em;
+        }
+        .botshield-settings-billing-hero p {
+          margin: 0;
+          max-width: 640px;
+          color: var(--overview-muted);
+          font-size: 15px;
+          line-height: 1.55;
+        }
+        .botshield-pricing-grid {
+          display: grid;
+          gap: 18px;
+          align-items: stretch;
+        }
+        .botshield-pricing-grid.is-count-1 {
+          grid-template-columns: minmax(0, 560px);
+          justify-content: center;
+        }
+        .botshield-pricing-grid.is-count-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .botshield-pricing-grid.is-count-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .botshield-pricing-card {
+          display: grid;
+          gap: 22px;
+          min-height: 100%;
+          padding: 28px;
+          border: 1px solid #dfe3e8;
+          border-radius: 16px;
+          background: #fff;
+          box-shadow: 0 1px 0 rgba(32, 34, 35, 0.04);
+        }
+        .botshield-pricing-card.is-current {
+          border-color: #b8dcc6;
+          background: linear-gradient(180deg, #f8fcf9 0%, #ffffff 42%);
+          box-shadow:
+            0 0 0 1px rgba(41, 132, 90, 0.08),
+            0 10px 28px rgba(32, 34, 35, 0.06);
+        }
+        .botshield-pricing-current-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          align-self: start;
+          min-height: 30px;
+          padding: 0 12px;
+          border: 1px solid #c9e3d0;
+          border-radius: 999px;
+          background: #f4fbf6;
+          color: var(--overview-ink);
+          font-size: 12px;
+          font-weight: 700;
+          line-height: 1;
+        }
+        .botshield-pricing-card-top {
+          display: grid;
+          gap: 12px;
+        }
+        .botshield-pricing-card-top h3 {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: 18px;
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+        }
+        .botshield-pricing-price {
+          display: flex;
+          align-items: baseline;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+        .botshield-pricing-price-value {
+          color: var(--overview-ink);
+          font-size: clamp(36px, 4vw, 44px);
+          line-height: 1;
+          font-weight: 800;
+          letter-spacing: -0.04em;
+        }
+        .botshield-pricing-price-period {
+          color: var(--overview-muted);
+          font-size: 16px;
+          line-height: 1.2;
+          font-weight: 650;
+        }
+        .botshield-pricing-trial {
+          margin: 0;
+          color: var(--overview-green);
+          font-size: 14px;
+          line-height: 1.35;
+          font-weight: 650;
+        }
+        .botshield-pricing-description {
+          margin: 0;
+          max-width: 42ch;
+          color: var(--overview-muted);
+          font-size: 14px;
+          line-height: 1.55;
+        }
+        .botshield-pricing-card-actions {
+          padding-top: 4px;
+        }
+        .botshield-pricing-divider {
+          height: 1px;
+          background: #e1e3e5;
+        }
+        .botshield-pricing-card-bottom {
+          display: grid;
+          gap: 14px;
+        }
+        .botshield-pricing-features-label {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: 13px;
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+        }
+        .botshield-pricing-features {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          display: grid;
+          gap: 10px;
+        }
+        .botshield-pricing-feature {
+          display: grid;
+          grid-template-columns: 18px minmax(0, 1fr);
+          gap: 10px;
+          align-items: start;
+          color: var(--overview-ink);
+          font-size: 14px;
+          line-height: 1.45;
+        }
+        .botshield-pricing-feature-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          margin-top: 1px;
+          border-radius: 999px;
+          background: #f4fbf6;
+          color: var(--overview-green);
+        }
+        .botshield-pricing-shopify-note {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin: 2px 0 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.35;
+        }
+        .botshield-pricing-shopify-note .botshield-v2-icon {
+          width: 24px;
+          height: 24px;
+        }
+        .botshield-settings-billing-subscription {
+          display: grid;
+          gap: 18px;
+          padding: 22px 24px;
+          border: 1px solid #dfe3e8;
+          border-radius: 14px;
+          background: #fafbfb;
+        }
+        .botshield-settings-billing-subscription-head {
+          display: grid;
+          gap: 6px;
+        }
+        .botshield-settings-billing-subscription-head h3 {
+          margin: 0;
+          color: var(--overview-ink);
+          font-size: 18px;
+          line-height: 1.25;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+        }
+        .botshield-settings-billing-subscription-head p {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 14px;
+          line-height: 1.45;
+        }
+        .botshield-settings-billing-meta-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px 18px;
+        }
+        .botshield-settings-billing-meta-item {
+          display: grid;
+          gap: 6px;
+          min-width: 0;
+        }
+        .botshield-settings-billing-meta-label {
+          color: var(--overview-muted);
+          font-size: 12px;
+          line-height: 1.2;
+          font-weight: 650;
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+        }
+        .botshield-settings-billing-meta-value {
+          color: var(--overview-ink);
+          font-size: 14px;
+          line-height: 1.35;
+          font-weight: 650;
+        }
+        .botshield-settings-billing-subscription-foot {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+          padding-top: 4px;
+          border-top: 1px solid #e1e3e5;
+        }
+        .botshield-settings-billing-subscription-foot p {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .botshield-settings-billing-dev-note {
+          display: grid;
+          grid-template-columns: 34px minmax(0, 1fr);
+          gap: 12px;
+          align-items: start;
+          padding: 14px 16px;
+          border: 1px solid #ead6a5;
+          border-left: 3px solid var(--overview-amber);
+          border-radius: 12px;
+          background: #fffaf0;
+        }
+        .botshield-settings-billing-dev-note-icon .botshield-v2-icon {
+          width: 34px;
+          height: 34px;
+          border-color: #ead6a5;
+          background: #fff6e8;
+        }
+        .botshield-settings-billing-dev-note-copy strong {
+          display: block;
+          color: var(--overview-ink);
+          font-size: 13px;
+          line-height: 1.3;
+        }
+        .botshield-settings-billing-dev-note-copy p {
+          margin: 4px 0 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+        .botshield-settings-billing-footnote {
+          margin: 0;
+          color: var(--overview-muted);
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        @media (max-width: 980px) {
+          .botshield-pricing-grid.is-count-2,
+          .botshield-pricing-grid.is-count-3 {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 720px) {
+          .botshield-pricing-card {
+            padding: 22px;
+          }
+          .botshield-settings-billing-meta-grid {
+            grid-template-columns: 1fr;
+          }
+        }
         .botshield-settings-hub-billing-plans {
           display: grid;
           gap: 10px;
