@@ -1,9 +1,7 @@
 import { redirect } from "react-router";
 
 export function loader() {
-  return redirect("/app/settings?tab=general");
+  return redirect("/app/settings?section=notifications");
 }
 
-export default function RetiredAlertsReportsRoute() {
-  return null;
-}
+export { default } from "./app._index";

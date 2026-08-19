@@ -103,7 +103,7 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
   );
 
   assert.match(source, /14\.99/);
-  assert.match(source, /trialDays \|\| 7/);
+  assert.match(source, /billingStatus\.trialDays\)[\s\S]*?: 7/);
   assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro\b/);
 });
 
@@ -116,38 +116,26 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
     "utf8",
   );
 
-  assert.match(source, /title="Overview"/);
-  assert.match(source, /Monitor storefront protection, setup readiness/);
-  assert.match(source, /Protection Status/);
-  assert.match(source, /Quick Actions/);
+  assert.match(source, /heading="Overview"/);
+  assert.match(source, /Monitor storefront protection, security activity/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
   assert.match(source, /Paused/);
-  assert.match(source, /Storefront activity/);
-  assert.match(source, /Visitors evaluated/);
   assert.match(source, /Challenged visitors/);
   assert.match(source, /Blocked visitors/);
   assert.match(source, /Needs review/);
-  assert.match(source, /Store Health/);
-  assert.match(source, /Setup Progress/);
+  assert.match(source, /Store health/);
   assert.match(source, /Response mode/);
   assert.match(source, /Recent security activity/);
-  assert.match(source, /Support Channels/);
-  assert.match(source, /title="Visitor Activity"/);
+  assert.match(source, /View activity/);
+  assert.match(source, /actions\.setPage\("analytics"\)/);
+  assert.match(source, /heading="Analytics"/);
+  assert.match(source, /Event explorer/);
+  assert.match(source, /heading="Fraud Orders"/);
   assert.match(source, /Review queue/);
-  assert.match(source, /Next best action/);
-  assert.match(source, /Filter activity/);
-  assert.match(source, /Visitor decisions/);
-  assert.match(source, /title="Blocklist"/);
-  assert.match(source, /title="Trusted Visitors"/);
-  assert.match(source, /Manual blocklist/);
-  assert.match(source, /Block safely/);
-  assert.match(source, /Trusted access/);
-  assert.match(source, /Recovery workflow/);
+  assert.match(source, /heading="Protection"/);
   assert.match(source, /Changes to the \{listLabel\}/);
-  assert.match(source, /Blocked visitors/);
-  assert.match(source, /High-risk visitors/);
   assert.match(source, /title="Protection Rules"/);
   assert.match(source, /Current protection policy/);
   assert.match(source, /Recommended next step/);
@@ -163,12 +151,9 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /await actions\.addTrustedIp\(trustedIpInput\)/);
   assert.match(source, /type: "profile"/);
   assert.match(source, /actions\.saveSettings\(draft\)/);
-  assert.match(source, /Auto-block visitors placing fraud orders/);
-  assert.match(source, /Auto-cancel high-risk orders/);
-  assert.match(source, /Fraud filter/);
-  assert.match(source, /fraudOrderAutoBlock/);
-  assert.match(source, /saveFraudOrderSettings/);
-  assert.match(source, /No risky orders yet/);
+  assert.match(source, /filterFraudOrders/);
+  assert.match(source, /Fraud Orders setup/);
+  assert.match(source, /No risky orders are currently pending fulfillment/);
   assert.match(source, /Manage protection preferences/);
   assert.match(source, /botshield-overview-v2 botshield-settings-hub-content/);
   assert.match(source, /botshield-v2-health-dot/);
@@ -185,10 +170,11 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.doesNotMatch(source, /Recent email activity/);
   assert.doesNotMatch(source, /Security alerts are ready/);
   assert.doesNotMatch(source, /title="Alerts & Reports"/);
-  assert.match(source, /Billing overview/);
-  assert.match(source, /Plan details/);
-  assert.match(source, /Activation checklist/);
-  assert.match(source, /Safe fallback/);
+  assert.doesNotMatch(source, /title="Visitor Activity"/);
+  assert.doesNotMatch(source, /title="Blocklist"/);
+  assert.doesNotMatch(source, /title="Trusted Visitors"/);
+  assert.doesNotMatch(source, /Filter activity/);
+  assert.doesNotMatch(source, /Visitor decisions/);
   assert.doesNotMatch(source, /Readiness checks/);
   assert.doesNotMatch(source, /Merchant setup flow/);
   assert.doesNotMatch(source, /Launch checklist/);
@@ -329,23 +315,24 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /analytics: "analytics"/);
   assert.match(source, /rules: "security"/);
   assert.match(source, /"protection-rules": "security"/);
-  assert.match(source, /visitors: "incidents"/);
+  assert.match(source, /visitors: "analytics"/);
   assert.match(source, /"fraud-orders": "fraud-orders"/);
-  assert.match(source, /blocklist: "settings"/);
-  assert.match(source, /trusted: "settings"/);
-  assert.match(source, /"trusted-visitors": "settings"/);
+  assert.match(source, /blocklist: "security"/);
+  assert.match(source, /trusted: "security"/);
+  assert.match(source, /"trusted-visitors": "security"/);
   assert.match(source, /settings: "settings"/);
-  assert.match(source, /activity: "incidents"/);
-  assert.match(source, /incidents: "incidents"/);
+  assert.match(source, /activity: "analytics"/);
+  assert.match(source, /incidents: "analytics"/);
   assert.match(source, /"\/app\/protection-rules": "security"/);
   assert.match(source, /"\/app\/analytics": "analytics"/);
-  assert.match(source, /"\/app\/visitors": "incidents"/);
   assert.match(source, /"\/app\/fraud-orders": "fraud-orders"/);
-  assert.match(source, /"\/app\/blocklist": "settings"/);
-  assert.match(source, /"\/app\/trusted-visitors": "settings"/);
+  assert.match(source, /"\/app\/settings": "settings"/);
+  assert.doesNotMatch(source, /"\/app\/visitors": "incidents"/);
   assert.match(source, /retiredPageMap/);
   assert.match(source, /setup: "dashboard"/);
   assert.match(source, /legacyViewPathMap/);
+  assert.match(source, /visitors: "\/app\/analytics"/);
+  assert.match(source, /incidents: "\/app\/analytics"/);
   assert.match(source, /useLocation/);
   assert.match(source, /\[location\.pathname, location\.search, navigate\]/);
   assert.match(source, /setPage\("dashboard"\)/);
@@ -353,6 +340,7 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /navigate\(path, \{ replace: false \}\)/);
   assert.doesNotMatch(source, /navigate\(`\/app\?view=/);
   assert.doesNotMatch(source, /setPage\(parsed\.page/);
+  assert.doesNotMatch(source, /page !== "legacy"/);
 });
 
 test("root app URL opens the embedded overview instead of standalone login", async () => {
@@ -379,7 +367,7 @@ test("dashboard totals use exact 30-day storefront counts", async () => {
   assert.match(apiSource, /source: "storefront-proxy"/);
   assert.match(apiSource, /total: real/);
   assert.match(apiSource, /periodDays: 30/);
-  assert.match(uiSource, /Storefront events in the last 30 days/);
+  assert.match(uiSource, /label: "Storefront events"[\s\S]*detail: "Last 30 days"/);
   assert.doesNotMatch(uiSource, /Visitor sessions in this cycle/);
 });
 
@@ -416,10 +404,12 @@ test("save bar uses App Bridge ui-save-bar with preview fallback", async () => {
   );
 
   assert.match(designSource, /<ui-save-bar id=\{id\} data-discard-confirmation>/);
-  assert.match(designSource, /useBotShieldSaveBar\(/);
-  assert.match(designSource, /useBotShieldLoadingIndicator\(/);
-  assert.match(hookSource, /shopify\.saveBar\.show\(id\)/);
-  assert.match(hookSource, /shopify\.loading\.start\(\)/);
+  assert.match(designSource, /BotShieldSaveBarBridge/);
+  assert.match(designSource, /BotShieldLoadingBridge/);
+  assert.match(hookSource, /setSaveBarVisible/);
+  assert.match(hookSource, /saveBar\?\.show/);
+  assert.match(hookSource, /shopify\.loading\(Boolean\(isLoading\)\)/);
+  assert.match(hookSource, /isAppBridgeEnvironment/);
   assert.match(adminSource, /id="botshield-settings-save-bar"/);
   assert.match(adminSource, /id="botshield-protection-save-bar"/);
 });
@@ -436,8 +426,8 @@ test("destructive settings actions use App Bridge confirmation modal", async () 
   assert.match(adminSource, /botshield-clear-simulation-modal/);
   assert.match(adminSource, /BotShieldConfirmationModal/);
   assert.match(adminSource, /botshield-protection-discard-modal/);
-  assert.match(adminSource, /botshield-recover-visitor-modal/);
   assert.match(adminSource, /botshield-blocklist-remove-modal/);
+  assert.match(adminSource, /botshield-trusted-remove-modal/);
   assert.doesNotMatch(adminSource, /window\.confirm\(/);
 });
 
@@ -463,8 +453,8 @@ test("supported pages use Shopify native page chrome", async () => {
 
   assert.match(designSource, /export function BotShieldNativePage/);
   assert.match(designSource, /<s-page heading=\{heading\}>/);
-  assert.match(adminSource, /useBotShieldPageLoading\(Boolean\(model\.syncing\)\)/);
-  assert.match(hookSource, /export function useBotShieldPageLoading/);
+  assert.match(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
+  assert.match(hookSource, /export function BotShieldPageLoadingBridge/);
   for (const heading of [
     'heading="Overview"',
     'heading="Analytics"',

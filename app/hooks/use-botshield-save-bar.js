@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { createElement, useEffect } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
 function isPreviewRoute() {
@@ -8,54 +8,87 @@ function isPreviewRoute() {
   );
 }
 
-export function useBotShieldSaveBar({ id, dirty, enabled = true }) {
+export function isAppBridgeEnvironment() {
+  return (
+    typeof window !== "undefined" &&
+    !isPreviewRoute() &&
+    typeof window.shopify !== "undefined"
+  );
+}
+
+async function setSaveBarVisible(shopify, id, visible) {
+  const saveBar = shopify?.saveBar;
+  const action = visible ? saveBar?.show : saveBar?.hide;
+
+  if (typeof action !== "function") {
+    return;
+  }
+
+  try {
+    await action.call(saveBar, id);
+  } catch {
+    // Save bar is unavailable outside embedded Shopify Admin.
+  }
+}
+
+function SaveBarBridgeInner({ id, dirty, enabled = true }) {
   const shopify = useAppBridge();
 
   useEffect(() => {
-    if (isPreviewRoute() || !enabled || !id || !shopify?.saveBar) {
+    if (!enabled || !id) {
       return undefined;
     }
 
-    const sync = async () => {
-      try {
-        if (dirty) {
-          await shopify.saveBar.show(id);
-        } else {
-          await shopify.saveBar.hide(id);
-        }
-      } catch {
-        // Save bar is unavailable outside embedded Shopify Admin.
-      }
-    };
-
-    sync();
+    setSaveBarVisible(shopify, id, dirty);
 
     return () => {
-      shopify.saveBar.hide(id).catch(() => {});
+      setSaveBarVisible(shopify, id, false);
     };
   }, [dirty, enabled, id, shopify]);
+
+  return null;
 }
 
-export function useBotShieldLoadingIndicator(active) {
+function setAppBridgeLoading(shopify, isLoading) {
+  if (typeof shopify?.loading !== "function") {
+    return;
+  }
+
+  try {
+    shopify.loading(Boolean(isLoading));
+  } catch {
+    // Loading API is unavailable outside embedded Shopify Admin.
+  }
+}
+
+function LoadingBridgeInner({ active }) {
   const shopify = useAppBridge();
 
   useEffect(() => {
-    if (isPreviewRoute() || !shopify?.loading) {
-      return undefined;
-    }
-
-    if (active) {
-      shopify.loading.start().catch(() => {});
-    } else {
-      shopify.loading.stop().catch(() => {});
-    }
+    setAppBridgeLoading(shopify, active);
 
     return () => {
-      shopify.loading.stop().catch(() => {});
+      setAppBridgeLoading(shopify, false);
     };
   }, [active, shopify]);
+
+  return null;
 }
 
-export function useBotShieldPageLoading(active) {
-  return useBotShieldLoadingIndicator(active);
+export function BotShieldSaveBarBridge(props) {
+  if (!isAppBridgeEnvironment()) {
+    return null;
+  }
+  return createElement(SaveBarBridgeInner, props);
+}
+
+export function BotShieldLoadingBridge({ active }) {
+  if (!isAppBridgeEnvironment()) {
+    return null;
+  }
+  return createElement(LoadingBridgeInner, { active });
+}
+
+export function BotShieldPageLoadingBridge({ active }) {
+  return createElement(BotShieldLoadingBridge, { active: Boolean(active) });
 }

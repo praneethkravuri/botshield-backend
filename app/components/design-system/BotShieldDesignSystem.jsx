@@ -3,8 +3,8 @@ import { createContext, useCallback, useContext, useMemo, useRef } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import {
-  useBotShieldLoadingIndicator,
-  useBotShieldSaveBar,
+  BotShieldLoadingBridge,
+  BotShieldSaveBarBridge,
 } from "../../hooks/use-botshield-save-bar";
 import { getUiStatus } from "../../lib/ui-status";
 
@@ -5047,13 +5047,6 @@ export function BotShieldSaveState({
   const shouldUseSaveBar = enabled && Boolean(id);
   const showSaveBar = shouldUseSaveBar && dirty;
 
-  useBotShieldSaveBar({
-    id,
-    dirty: showSaveBar,
-    enabled: shouldUseSaveBar && !isPreviewRoute,
-  });
-  useBotShieldLoadingIndicator(Boolean(saving) && !isPreviewRoute);
-
   const saveBar = (
     <ui-save-bar id={id} data-discard-confirmation>
       <button type="button" variant="primary" disabled={saving} onClick={onSave}>
@@ -5068,6 +5061,12 @@ export function BotShieldSaveState({
   if (isPreviewRoute && (dirty || error)) {
     return (
       <>
+        <BotShieldSaveBarBridge
+          id={id}
+          dirty={showSaveBar}
+          enabled={shouldUseSaveBar && !isPreviewRoute}
+        />
+        <BotShieldLoadingBridge active={Boolean(saving) && !isPreviewRoute} />
         {saveBar}
         <s-box
           background="subdued"
@@ -5104,7 +5103,17 @@ export function BotShieldSaveState({
     );
   }
 
-  return saveBar;
+  return (
+    <>
+      <BotShieldSaveBarBridge
+        id={id}
+        dirty={showSaveBar}
+        enabled={shouldUseSaveBar && !isPreviewRoute}
+      />
+      <BotShieldLoadingBridge active={Boolean(saving) && !isPreviewRoute} />
+      {saveBar}
+    </>
+  );
 }
 
 export function BotShieldEmptyState({ title, description, action }) {

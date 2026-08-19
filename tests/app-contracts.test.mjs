@@ -119,7 +119,7 @@ test("retired raw and legacy pages return merchants to supported screens", async
     "utf8",
   );
 
-  assert.match(botLogRoute, /redirect\("\/app\/visitors"\)/);
+  assert.match(botLogRoute, /redirect\("\/app\/analytics"\)/);
   assert.doesNotMatch(botLogRoute, /prisma|JSON\.stringify/);
   assert.match(
     billingReturnRoute,
@@ -127,6 +127,17 @@ test("retired raw and legacy pages return merchants to supported screens", async
   );
   assert.match(billingRoute, /redirect\(`\/app\/settings\?\$\{params\.toString\(\)\}`\)/);
   assert.match(setupRoute, /redirect\("\/app"\)/);
+
+  const visitorsRoute = await readFile(
+    new URL("../app/routes/app.visitors.jsx", import.meta.url),
+    "utf8",
+  );
+  const blocklistRoute = await readFile(
+    new URL("../app/routes/app.blocklist.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(visitorsRoute, /redirect\("\/app\/analytics"\)/);
+  assert.match(blocklistRoute, /redirect\("\/app\/protection-rules"\)/);
 });
 
 test("public storefront decisions do not expose merchant settings", async () => {

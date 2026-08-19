@@ -1,9 +1,7 @@
 import { redirect } from "react-router";
 
 export function loader() {
-  return redirect("/app/settings?tab=general");
+  return redirect("/app/protection-rules");
 }
 
-export default function RetiredBlocklistRoute() {
-  return null;
-}
+export { default } from "./app._index";

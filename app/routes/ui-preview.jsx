@@ -137,7 +137,7 @@ function getInitialPage() {
   const view = new URL(window.location.href).searchParams.get("view");
   const aliases = {
     rules: "detection",
-    visitors: "incidents",
+    visitors: "analytics",
     settings: "policy",
   };
   return aliases[view] || view || "dashboard";
