@@ -38,6 +38,8 @@ test("Analytics controls provide supported periods and connected filters", () =>
   assert.match(analyticsSource, /riskFilter/);
   assert.match(analyticsSource, /signalFilter/);
   assert.match(analyticsSource, /Clear filters/);
+  assert.match(analyticsSource, /getUiStatus\(normalized\)\.label/);
+  assert.doesNotMatch(analyticsSource, /setSaveSuccess/);
   assert.match(analyticsSource, /refreshAnalytics/);
   assert.match(analyticsSource, /analyticsRefreshing/);
   assert.match(analyticsSource, /Analytics refresh failed/);

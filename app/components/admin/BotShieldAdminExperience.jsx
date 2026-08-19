@@ -10,6 +10,7 @@ import {
   BotShieldConfirmationModal,
   BotShieldEmptyState,
   BotShieldInlineHelp,
+  BotShieldLoadingState,
   BotShieldNativePage,
   BotShieldPageShell,
   BotShieldSaveState,
@@ -170,9 +171,9 @@ function formatMerchantReasons(value) {
 }
 
 function getOutcomeLabel(action) {
-  if (action === "blocked") return "Stopped";
-  if (action === "challenged") return "Verification requested";
-  return "Allowed";
+  const normalized =
+    action === "whitelisted" ? "allowed" : String(action || "allowed").toLowerCase();
+  return getUiStatus(normalized).label;
 }
 
 function getRiskLabel(risk) {
@@ -192,6 +193,23 @@ function inRecentDays(value, days, offsetDays = 0) {
 
 function hasStorefrontConnection(model) {
   return Boolean(model?.protectionStatus?.themeAppEmbedActive);
+}
+
+function hasStorefrontTraffic(model) {
+  return Boolean(
+    model?.protectionStatus?.storefrontReportingActive ||
+      model?.protectionStatus?.lastStorefrontDecisionAt,
+  );
+}
+
+function getStorefrontReportingStatus(model) {
+  if (model?.protectionStatus?.storefrontReportingActive) {
+    return { label: "Receiving traffic", healthy: true };
+  }
+  if (model?.protectionStatus?.lastStorefrontDecisionAt) {
+    return { label: "Previously reporting", healthy: false };
+  }
+  return { label: "Waiting for traffic", healthy: false };
 }
 
 function formatDelta(current, previous) {
@@ -1182,6 +1200,7 @@ function OverviewPage({ model, actions }) {
   const [threatPeriod, setThreatPeriod] = useState(30);
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontSensorActive = Boolean(model.protectionStatus?.themeAppEmbedActive);
+  const storefrontReportingStatus = getStorefrontReportingStatus(model);
   const storefrontEvents = Number.isFinite(Number(model.incidentCounts?.total))
     ? Number(model.incidentCounts.total)
     : model.storefrontScans.length;
@@ -1430,6 +1449,8 @@ function OverviewPage({ model, actions }) {
                 <h2 id="store-health-title">Store health</h2>
               </div>
               <BotShieldActionButton
+                disabled={model.syncing}
+                loading={model.syncing}
                 variant="tertiary"
                 onClick={storefrontSensorActive ? actions.refresh : actions.openThemeEditor}
               >
@@ -1440,7 +1461,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="reporting" />
                 <span>Storefront reporting</span>
-                <strong><i className={`botshield-v2-health-dot ${storefrontSensorActive ? "is-healthy" : "is-attention"}`} />{storefrontSensorActive ? "Connected" : lastStorefrontDecisionAt ? "Previously reporting" : "Needs verification"}</strong>
+                <strong><i className={`botshield-v2-health-dot ${storefrontReportingStatus.healthy ? "is-healthy" : "is-attention"}`} />{storefrontReportingStatus.label}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="page" />
@@ -1565,7 +1586,11 @@ function OverviewPage({ model, actions }) {
                   >
                     Refresh BotShield to load recorded storefront decisions again.
                   </BotShieldBanner>
-                  <BotShieldActionButton onClick={actions.refresh}>
+                  <BotShieldActionButton
+                    disabled={model.syncing}
+                    loading={model.syncing}
+                    onClick={actions.refresh}
+                  >
                     Refresh data
                   </BotShieldActionButton>
                 </div>
@@ -2143,6 +2168,10 @@ function AnalyticsPage({ model, actions }) {
           </BotShieldBanner>
         ) : null}
 
+        {model.syncing && !model.storefrontScans?.length ? (
+          <BotShieldLoadingState label="Loading analytics" />
+        ) : (
+          <>
         <section className="botshield-analytics-controls" aria-label="Analytics controls">
           <div className="botshield-analytics-period" aria-label="Date range">
             {ANALYTICS_PERIODS.map((period) => (
@@ -2158,10 +2187,10 @@ function AnalyticsPage({ model, actions }) {
             ))}
           </div>
           <div className="botshield-analytics-filter-row">
-            <label>Decision<select value={decisionFilter} onChange={(event) => { setDecisionFilter(event.target.value); setPage(1); }}><option value="all">All decisions</option><option value="allowed">Allowed</option><option value="challenged">Challenged</option><option value="blocked">Blocked</option></select></label>
-            <label>Risk<select value={riskFilter} onChange={(event) => { setRiskFilter(event.target.value); setPage(1); }}><option value="all">All risk levels</option><option value="high">High risk</option><option value="medium">Medium risk</option><option value="low">Low risk</option></select></label>
-            {availableSignals.length ? <label>Threat signal<select value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
-            <label className="botshield-analytics-search">Search<input onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
+            <label htmlFor="analytics-decision-filter">Decision<select id="analytics-decision-filter" value={decisionFilter} onChange={(event) => { setDecisionFilter(event.target.value); setPage(1); }}><option value="all">All decisions</option><option value="allowed">Allowed</option><option value="challenged">Challenged</option><option value="blocked">Blocked</option></select></label>
+            <label htmlFor="analytics-risk-filter">Risk<select id="analytics-risk-filter" value={riskFilter} onChange={(event) => { setRiskFilter(event.target.value); setPage(1); }}><option value="all">All risk levels</option><option value="high">High risk</option><option value="medium">Medium risk</option><option value="low">Low risk</option></select></label>
+            {availableSignals.length ? <label htmlFor="analytics-signal-filter">Threat signal<select id="analytics-signal-filter" value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
+            <label className="botshield-analytics-search" htmlFor="analytics-search-filter">Search<input id="analytics-search-filter" onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
             <div className="botshield-analytics-toolbar-actions">
               <BotShieldActionButton
                 disabled={model.analyticsRefreshing}
@@ -2234,6 +2263,8 @@ function AnalyticsPage({ model, actions }) {
             onClose={() => setSelectedEvent(null)}
           />
         ) : null}
+          </>
+        )}
       </BotShieldPageShell>
     </BotShieldNativePage>
   );
@@ -2984,7 +3015,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
               disabled={connectDisabled}
               variant={connectDisabled ? "secondary" : "primary"}
             >
-              Connect order access
+              {FRAUD_ORDER_ACCESS_AVAILABLE ? "Connect order access" : "Coming soon"}
             </BotShieldActionButton>
           </span>
         </footer>
@@ -3542,10 +3573,10 @@ function ProtectionPage({ model, actions }) {
   const moduleStatus = runtimeActive
     ? { label: "Active", status: "active" }
     : model.protectionPaused
-      ? { label: "Paused", status: "attention" }
+      ? { label: "Paused", status: "paused" }
       : { label: "Needs setup", status: "setup_required" };
   const pageStatus = storefrontConnected
-    ? { label: model.protectionPaused ? "Paused" : "Connected", status: model.protectionPaused ? "attention" : "active" }
+    ? { label: model.protectionPaused ? "Paused" : "Connected", status: model.protectionPaused ? "paused" : "active" }
     : { label: "Needs setup", status: "setup_required" };
   const protectionRows = [
     {
@@ -3749,7 +3780,6 @@ function ProtectionPage({ model, actions }) {
                     details={draft.blockLevel === "Low" ? "Limits intervention to the clearest abuse signals." : draft.blockLevel === "High" ? "Applies the strongest supported detection profile." : "Balanced detection intended for most storefronts."}
                     onChange={(blockLevel) => {
                       setSaveError("");
-                      setSaveSuccess("");
                       setDraft((current) => ({ ...current, blockLevel, strictMode: blockLevel !== "High" ? false : current.strictMode }));
                     }}
                     options={[
@@ -3767,7 +3797,6 @@ function ProtectionPage({ model, actions }) {
                     checked={draft.autoBlock}
                     onChange={(autoBlock) => {
                       setSaveError("");
-                      setSaveSuccess("");
                       setDraft((current) => ({ ...current, autoBlock }));
                     }}
                   />
@@ -3777,7 +3806,6 @@ function ProtectionPage({ model, actions }) {
                     checked={draft.strictMode}
                     onChange={(strictMode) => {
                       setSaveError("");
-                      setSaveSuccess("");
                       setDraft((current) => ({
                         ...current,
                         strictMode,
@@ -4975,13 +5003,13 @@ function SettingsPage({ model, actions }) {
                     Open Protection →
                   </BotShieldActionButton>
                   {model.protectionPaused ? (
-                    <BotShieldActionButton onClick={() => actions.resumeProtection()}>
+                    <BotShieldAsyncButton action={() => actions.resumeProtection()}>
                       Resume protection
-                    </BotShieldActionButton>
+                    </BotShieldAsyncButton>
                   ) : (
-                    <BotShieldActionButton onClick={() => actions.pauseProtection(60)}>
+                    <BotShieldAsyncButton action={() => actions.pauseProtection(60)}>
                       Pause 1 hour
-                    </BotShieldActionButton>
+                    </BotShieldAsyncButton>
                   )}
                 </div>
               }
@@ -5204,7 +5232,7 @@ function SettingsPage({ model, actions }) {
                     error={
                       draft.alertEmail && !alertEmailValid ? "Enter a valid email address" : ""
                     }
-                    label=""
+                    label="Alert email"
                     onChange={(alertEmail) => setDraft((current) => ({ ...current, alertEmail }))}
                     placeholder="you@store.com"
                     type="email"
@@ -5222,7 +5250,7 @@ function SettingsPage({ model, actions }) {
                 <BotShieldToggle
                   checked={draft.emailAlerts}
                   disabled={!model.emailProviderConfigured}
-                  label=""
+                  label="Security alerts"
                   onChange={(emailAlerts) => setDraft((current) => ({ ...current, emailAlerts }))}
                 />
               }
@@ -5235,7 +5263,7 @@ function SettingsPage({ model, actions }) {
                 <BotShieldToggle
                   checked={draft.highRiskAlertsOnly}
                   disabled={!model.emailProviderConfigured || !draft.emailAlerts}
-                  label=""
+                  label="High-risk alerts only"
                   onChange={(highRiskAlertsOnly) =>
                     setDraft((current) => ({ ...current, highRiskAlertsOnly }))
                   }
@@ -5322,7 +5350,7 @@ function SettingsPage({ model, actions }) {
               <BotShieldToggle
                 checked={draft.weeklyReportsEnabled}
                 disabled={!model.emailProviderConfigured}
-                label=""
+                label="Weekly security report"
                 onChange={(weeklyReportsEnabled) =>
                   setDraft((current) => ({ ...current, weeklyReportsEnabled }))
                 }
@@ -5473,7 +5501,8 @@ function SettingsPage({ model, actions }) {
     }
 
     if (activeSection === "diagnostics") {
-      const trafficTone = storefrontConnected ? "healthy" : "warning";
+      const trafficActive = hasStorefrontTraffic(model);
+      const trafficTone = trafficActive ? "healthy" : "warning";
       return (
         <SettingsHubSection
           description="Application health checks and supported troubleshooting tools."
@@ -5484,7 +5513,7 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubStatusPill
-                label={storefrontConnected ? "Receiving traffic" : "Not connected"}
+                label={trafficActive ? "Receiving traffic" : "Waiting for traffic"}
                 tone={trafficTone}
               />
             }

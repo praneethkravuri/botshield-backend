@@ -1828,12 +1828,18 @@ export default function Index() {
     trustedTagInput,
   ]);
 
+  const skipIncidentFilterFetch = useRef(true);
+
   useEffect(() => {
     refreshBackendState();
   }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (skipIncidentFilterFetch.current) {
+        skipIncidentFilterFetch.current = false;
+        return;
+      }
       loadIncidents(incidentFilters);
     }, 250);
     return () => clearTimeout(timer);
