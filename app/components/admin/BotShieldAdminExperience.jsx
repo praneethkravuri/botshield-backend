@@ -2217,7 +2217,13 @@ function AnalyticsPage({ model, actions }) {
           {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Detection reason</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
         </AnalyticsPanel>
 
-        {selectedEvent ? <AnalyticsEventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} /> : null}
+        {selectedEvent ? (
+          <AnalyticsEventDetails
+            actions={actions}
+            event={selectedEvent}
+            onClose={() => setSelectedEvent(null)}
+          />
+        ) : null}
       </BotShieldPageShell>
     </BotShieldNativePage>
   );
@@ -2326,7 +2332,7 @@ function getAnalyticsDecisionContext(event, signalLabel) {
     : "BotShield allowed this request because no elevated signals were recorded.";
 }
 
-function AnalyticsEventDetails({ event, onClose }) {
+function AnalyticsEventDetails({ actions, event, onClose }) {
   const signals = getAnalyticsSignals(event);
   const networkClassification = getAnalyticsAttackOrigin(event);
   const signalLabel = signals.join(", ") || "No elevated signal";
@@ -2389,6 +2395,28 @@ function AnalyticsEventDetails({ event, onClose }) {
             {event.networkOrg || event.networkProvider ? <div><dt>Network</dt><dd>{event.networkOrg || event.networkProvider}</dd></div> : null}
           </dl>
         </div> : null}
+        {event.actionTaken === "blocked" && event.id ? (
+          <div className="botshield-analytics-detail-actions">
+            <BotShieldAsyncButton
+              action={async () => {
+                await actions.recoverIncident(event.id, "whitelist");
+                onClose();
+              }}
+              successMessage="Visitor trusted"
+            >
+              Trust visitor
+            </BotShieldAsyncButton>
+            <BotShieldAsyncButton
+              action={async () => {
+                await actions.recoverIncident(event.id, "unblock");
+                onClose();
+              }}
+              successMessage="IP unblocked"
+            >
+              Unblock IP
+            </BotShieldAsyncButton>
+          </div>
+        ) : null}
       </section>
     </div>,
     document.body,
@@ -3594,6 +3622,25 @@ function ProtectionPage({ model, actions }) {
   const openBlocklist = () => setProtectionModal({ type: "blocklist", title: "Blocked visitors", text: "Manage visitors manually prevented from accessing the storefront." });
   const openTrusted = () => setProtectionModal({ type: "trusted", title: "Trusted visitors", text: "Manage visitors allowed to bypass supported BotShield protection checks." });
 
+  useEffect(() => {
+    if (!model.protectionEntryIntent) return undefined;
+    if (model.protectionEntryIntent === "blocklist") {
+      setProtectionModal({
+        type: "blocklist",
+        title: "Blocked visitors",
+        text: "Manage visitors manually prevented from accessing the storefront.",
+      });
+    } else if (model.protectionEntryIntent === "trusted") {
+      setProtectionModal({
+        type: "trusted",
+        title: "Trusted visitors",
+        text: "Manage visitors allowed to bypass supported BotShield protection checks.",
+      });
+    }
+    actions.clearProtectionEntryIntent?.();
+    return undefined;
+  }, [actions, model.protectionEntryIntent]);
+
   if (model) {
     return (
       <BotShieldNativePage heading="Protection">
@@ -4702,6 +4749,7 @@ function SettingsPage({ model, actions }) {
   const [draft, setDraft] = useState({
     alertEmail: model.alertEmail,
     emailAlerts: model.emailAlerts,
+    highRiskAlertsOnly: model.highRiskAlertsOnly,
     weeklyReportsEnabled: model.weeklyReportsEnabled,
   });
   const [saving, setSaving] = useState(false);
@@ -4711,9 +4759,15 @@ function SettingsPage({ model, actions }) {
     setDraft({
       alertEmail: model.alertEmail,
       emailAlerts: model.emailAlerts,
+      highRiskAlertsOnly: model.highRiskAlertsOnly,
       weeklyReportsEnabled: model.weeklyReportsEnabled,
     });
-  }, [model.alertEmail, model.emailAlerts, model.weeklyReportsEnabled]);
+  }, [
+    model.alertEmail,
+    model.emailAlerts,
+    model.highRiskAlertsOnly,
+    model.weeklyReportsEnabled,
+  ]);
 
   useEffect(() => {
     const syncSectionFromUrl = () => setActiveSection(readSettingsHubSection());
@@ -4776,6 +4830,7 @@ function SettingsPage({ model, actions }) {
     () =>
       draft.alertEmail !== model.alertEmail ||
       draft.emailAlerts !== model.emailAlerts ||
+      draft.highRiskAlertsOnly !== model.highRiskAlertsOnly ||
       draft.weeklyReportsEnabled !== model.weeklyReportsEnabled,
     [draft, model],
   );
@@ -5170,6 +5225,21 @@ function SettingsPage({ model, actions }) {
               title="Security alerts"
               variant="config"
             />
+            <SettingsHubRow
+              control={
+                <BotShieldToggle
+                  checked={draft.highRiskAlertsOnly}
+                  disabled={!model.emailProviderConfigured || !draft.emailAlerts}
+                  label=""
+                  onChange={(highRiskAlertsOnly) =>
+                    setDraft((current) => ({ ...current, highRiskAlertsOnly }))
+                  }
+                />
+              }
+              description="Send alerts only for high-risk storefront incidents instead of broader suspicious activity."
+              title="High-risk alerts only"
+              variant="config"
+            />
           </SettingsHubSection>
           <section className="botshield-settings-hub-delivery">
             <header className="botshield-settings-hub-delivery-head">
@@ -5457,6 +5527,28 @@ function SettingsPage({ model, actions }) {
           />
           <SettingsHubRow
             control={
+              <BotShieldAsyncButton
+                action={async () => {
+                  await actions.runSimulation();
+                }}
+                disabled={model.protectionPaused}
+                successMessage="Simulation recorded"
+                title={
+                  model.protectionPaused
+                    ? "Resume protection before running a simulation."
+                    : undefined
+                }
+              >
+                Run simulation scan
+              </BotShieldAsyncButton>
+            }
+            description="Record a labeled simulation event without changing storefront enforcement."
+            icon="diagnostic"
+            title="Simulation scan"
+            variant="diagnostic"
+          />
+          <SettingsHubRow
+            control={
               <BotShieldActionButton loading={model.syncing} onClick={actions.refresh}>
                 Refresh status
               </BotShieldActionButton>
@@ -5585,6 +5677,7 @@ function SettingsPage({ model, actions }) {
                   setDraft({
                     alertEmail: model.alertEmail,
                     emailAlerts: model.emailAlerts,
+                    highRiskAlertsOnly: model.highRiskAlertsOnly,
                     weeklyReportsEnabled: model.weeklyReportsEnabled,
                   })
                 }

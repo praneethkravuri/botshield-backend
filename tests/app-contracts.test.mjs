@@ -201,3 +201,26 @@ test("settings backend persists only supported protection and email features", a
     /emailAlerts === "true" \|\| weeklyReportsEnabled === "true"/,
   );
 });
+
+test("merchant product actions stay connected to real backend workflows", async () => {
+  const indexSource = await readFile(
+    new URL("../app/routes/app._index.jsx", import.meta.url),
+    "utf8",
+  );
+  const adminSource = await readFile(
+    new URL(
+      "../app/components/admin/BotShieldAdminExperience.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(indexSource, /protectionEntryIntent/);
+  assert.match(indexSource, /setProtectionEntryIntent\("blocklist"\)/);
+  assert.match(indexSource, /clearProtectionEntryIntent/);
+  assert.match(indexSource, /await refreshBackendState\(\)/);
+  assert.match(adminSource, /highRiskAlertsOnly/);
+  assert.match(adminSource, /actions\.recoverIncident\(event\.id, "whitelist"\)/);
+  assert.match(adminSource, /actions\.runSimulation\(\)/);
+  assert.match(adminSource, /model\.protectionEntryIntent === "blocklist"/);
+});

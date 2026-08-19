@@ -39,6 +39,7 @@ export default function Index() {
   const location = useLocation();
   const navigate = useNavigate();
   const [page, setPage] = useState("dashboard");
+  const [protectionEntryIntent, setProtectionEntryIntent] = useState(null);
 
   const [threatLevel, setThreatLevel] = useState("low");
   const [strictMode, setStrictMode] = useState(false);
@@ -820,7 +821,6 @@ export default function Index() {
       loadWhitelist(),
       loadProtectionStatus(),
       loadIncidents(),
-      loadSecurityPosture(),
       loadBillingStatus(),
       loadFinancialImpact(),
       loadOverviewThreatActivity(),
@@ -2509,6 +2509,7 @@ export default function Index() {
     fraudOrders: [],
     fraudOrdersLoading: false,
     fraudOrdersError: null,
+    protectionEntryIntent,
   };
 
   const openPolarisPage = (nextPage) => {
@@ -2548,8 +2549,15 @@ export default function Index() {
 
   const polarisActions = {
     setPage: openPolarisPage,
-    openBlocklist: () => openPolarisPage("detection"),
-    openTrustedVisitors: () => openPolarisPage("detection"),
+    openBlocklist: () => {
+      setProtectionEntryIntent("blocklist");
+      openPolarisPage("detection");
+    },
+    openTrustedVisitors: () => {
+      setProtectionEntryIntent("trusted");
+      openPolarisPage("detection");
+    },
+    clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
     openThemeEditor,
     refreshSettings: loadSettings,
@@ -2594,7 +2602,7 @@ export default function Index() {
         `Simulation: ${data.threatLevel || risk} risk, ${data.actionTaken || data.action}`,
       );
       setLastScanTime(new Date().toLocaleTimeString());
-      await loadScans();
+      await refreshBackendState();
       return data;
     },
     recoverIncident: async (eventId, action) => {
@@ -2603,12 +2611,7 @@ export default function Index() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ eventId, action }),
       });
-      await Promise.all([
-        loadIncidents(incidentFilters),
-        loadBlocklist(),
-        loadWhitelist(),
-        loadProtectionStatus(),
-      ]);
+      await refreshBackendState();
     },
     addBlockedIp: async (ipAddress) => {
       await addBlockedIp(ipAddress, "Manual block from policy settings");

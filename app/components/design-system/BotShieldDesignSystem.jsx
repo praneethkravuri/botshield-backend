@@ -1654,6 +1654,13 @@ export function BotShieldAppFrame({ children }) {
         .botshield-analytics-detail-reason dd { padding: 11px 12px; border-left: 2px solid #c9cccf; border-radius: 0 7px 7px 0; background: #f7f7f8; font-weight: 450; line-height: 1.4rem; }
         .botshield-analytics-detail-reference dd { overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .75rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
         .botshield-analytics-detail-reference small { color: #8c9196; font-size: .6875rem; line-height: 1rem; }
+        .botshield-analytics-detail-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding-top: 18px;
+          border-top: 1px solid #e5e6e7;
+        }
         .botshield-analytics-v2 button:focus-visible { outline: 2px solid #2c6ecb; outline-offset: 2px; }
         @media (max-width: 980px) {
           .botshield-analytics-controls { align-items: stretch; flex-direction: column; }
