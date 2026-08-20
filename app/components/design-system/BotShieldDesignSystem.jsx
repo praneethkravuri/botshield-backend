@@ -5269,6 +5269,42 @@ export function BotShieldInfoModal({
   );
 }
 
+function runBotShieldModalCommand(id, command) {
+  if (typeof document === "undefined" || !id) return;
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  const nativeCommand =
+    command === "--show"
+      ? typeof modal.show === "function"
+        ? modal.show.bind(modal)
+        : null
+      : typeof modal.hide === "function"
+        ? modal.hide.bind(modal)
+        : null;
+  if (nativeCommand) {
+    nativeCommand();
+    return;
+  }
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.setAttribute("command", command);
+  trigger.setAttribute("commandfor", id);
+  trigger.style.position = "fixed";
+  trigger.style.opacity = "0";
+  trigger.style.pointerEvents = "none";
+  document.body.appendChild(trigger);
+  trigger.click();
+  document.body.removeChild(trigger);
+}
+
+export function showBotShieldModal(id) {
+  runBotShieldModalCommand(id, "--show");
+}
+
+export function hideBotShieldModal(id) {
+  runBotShieldModalCommand(id, "--hide");
+}
+
 export function BotShieldConfirmationModal({
   id,
   heading,
@@ -5280,8 +5316,7 @@ export function BotShieldConfirmationModal({
 }) {
   const handleConfirm = async () => {
     await onConfirm?.();
-    const modal = document.getElementById(id);
-    modal?.hide?.();
+    hideBotShieldModal(id);
   };
 
   return (

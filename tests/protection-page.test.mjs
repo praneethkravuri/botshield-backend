@@ -47,6 +47,7 @@ test("Protection controls use existing persisted actions", () => {
 test("Protection profile drawer has explicit persisted save and discard lifecycle", () => {
   assert.match(adminSource, /const \[originalDraft, setOriginalDraft\]/);
   assert.match(adminSource, /const requestClose = \(\) =>/);
+  assert.match(adminSource, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
   assert.match(adminSource, /botshield-protection-discard-modal/);
   assert.match(adminSource, /Save changes/);
   assert.match(adminSource, /Cancel/);
@@ -56,6 +57,27 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /accessibilityLabel="Close"/);
   assert.match(adminSource, /event\.key === "Escape"/);
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
+  assert.doesNotMatch(
+    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
+    /getElementById\("botshield-protection-discard-modal"\)\?\.show/,
+  );
+});
+
+test("Protection drawer cancel and close restore persisted draft state", () => {
+  const protectionPage = adminSource.slice(
+    adminSource.indexOf("function ProtectionPage"),
+    adminSource.indexOf("function IpList"),
+  );
+  assert.match(protectionPage, /onClick=\{requestClose\} disabled=\{saving\}>Cancel<\/BotShieldActionButton>/);
+  assert.match(protectionPage, /onClick=\{requestClose\} \/>/);
+  assert.match(protectionPage, /onConfirm=\{async \(\) => \{\s*setDraft\(originalDraft\);\s*closeDrawer\(\);\s*\}\}/s);
+  assert.match(protectionPage, /setDraft\(persisted\);\s*setOriginalDraft\(persisted\);/s);
+  assert.match(protectionPage, /await actions\.saveSettings\(draft\)/);
+});
+
+test("Protection visitor removal uses shared modal show helper", () => {
+  assert.match(adminSource, /showBotShieldModal\(removeModalId\)/);
+  assert.doesNotMatch(adminSource, /getElementById\(removeModalId\)\?\.show/);
 });
 
 test("Protection drawer uses a sticky action footer and App Bridge discard modal", () => {

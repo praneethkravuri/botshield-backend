@@ -424,12 +424,23 @@ test("destructive settings actions use App Bridge confirmation modal", async () 
     ),
     "utf8",
   );
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   assert.match(adminSource, /botshield-clear-simulation-modal/);
   assert.match(adminSource, /BotShieldConfirmationModal/);
   assert.match(adminSource, /botshield-protection-discard-modal/);
   assert.match(adminSource, /botshield-blocklist-remove-modal/);
   assert.match(adminSource, /botshield-trusted-remove-modal/);
+  assert.match(designSource, /export function showBotShieldModal/);
+  assert.match(designSource, /export function hideBotShieldModal/);
+  assert.match(designSource, /runBotShieldModalCommand/);
+  assert.match(designSource, /trigger\.setAttribute\("command", command\)/);
   assert.doesNotMatch(adminSource, /window\.confirm\(/);
 });
 

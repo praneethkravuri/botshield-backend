@@ -18,6 +18,7 @@ import {
   BotShieldStatusBadge,
   BotShieldTextField,
   BotShieldToggle,
+  showBotShieldModal,
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
 import { safeFetchJson } from "../../lib/safe-fetch";
@@ -3503,7 +3504,7 @@ function ProtectionPage({ model, actions }) {
   const requestClose = () => {
     if (saving) return;
     if (dirty) {
-      document.getElementById("botshield-protection-discard-modal")?.show?.();
+      showBotShieldModal("botshield-protection-discard-modal");
       return;
     }
     closeDrawer();
@@ -4457,7 +4458,7 @@ function IpList({
                   <BotShieldActionButton
                     onClick={() => {
                       setPendingRemoval(ip);
-                      document.getElementById(removeModalId)?.show?.();
+                      showBotShieldModal(removeModalId);
                     }}
                     tone="critical"
                   >
