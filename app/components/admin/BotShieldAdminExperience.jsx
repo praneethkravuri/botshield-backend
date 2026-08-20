@@ -1208,37 +1208,59 @@ function OverviewPage({ model, actions }) {
     ? Number(model.incidentCounts.blocked)
     : model.blockedCount;
   const enforcementOn = Boolean(model.autoBlock && !model.protectionPaused);
+  const runtimeActive = Boolean(model.protectionReady && !model.protectionPaused);
   const protectionRows = [
     {
       label: "Bot protection",
       detail: "Detects automated storefront activity.",
-      active: storefrontSensorActive,
-      status: storefrontSensorActive ? (enforcementOn ? "Enforcing" : "Monitoring") : "Needs setup",
-      tone: storefrontSensorActive ? (enforcementOn ? "success" : "info") : "warning",
+      active: runtimeActive,
+      status: runtimeActive
+        ? enforcementOn
+          ? "Enforcing"
+          : "Monitoring"
+        : model.protectionPaused
+          ? "Paused"
+          : "Needs setup",
+      tone: runtimeActive ? (enforcementOn ? "success" : "info") : "warning",
       icon: "shield",
     },
     {
       label: "Network / Proxy protection",
       detail: "Identifies suspicious network traffic.",
-      active: storefrontSensorActive,
-      status: storefrontSensorActive ? "Monitoring" : "Needs setup",
-      tone: storefrontSensorActive ? "info" : "warning",
+      active: runtimeActive,
+      status: runtimeActive
+        ? "Monitoring"
+        : model.protectionPaused
+          ? "Paused"
+          : "Needs setup",
+      tone: runtimeActive ? "info" : "warning",
       icon: "network",
     },
     {
       label: "Rate protection",
       detail: "Detects unusually repetitive behavior.",
-      active: storefrontSensorActive,
-      status: storefrontSensorActive ? (enforcementOn ? "Enforcing" : "Monitoring") : "Needs setup",
-      tone: storefrontSensorActive ? (enforcementOn ? "success" : "info") : "warning",
+      active: runtimeActive,
+      status: runtimeActive
+        ? enforcementOn
+          ? "Enforcing"
+          : "Monitoring"
+        : model.protectionPaused
+          ? "Paused"
+          : "Needs setup",
+      tone: runtimeActive ? (enforcementOn ? "success" : "info") : "warning",
       icon: "rate",
     },
     {
       label: "Page protection",
       detail: "Applies protection decisions on storefront pages.",
-      active: storefrontSensorActive,
-      status: storefrontSensorActive ? "Connected" : "Needs setup",
-      tone: storefrontSensorActive ? "success" : "warning",
+      active: storefrontConnected && !model.protectionPaused,
+      status: storefrontConnected
+        ? model.protectionPaused
+          ? "Paused"
+          : "Connected"
+        : "Needs setup",
+      tone:
+        storefrontConnected && !model.protectionPaused ? "success" : "warning",
       icon: "page",
     },
   ];
