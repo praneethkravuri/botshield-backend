@@ -61,6 +61,14 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
     adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
     /getElementById\("botshield-protection-discard-modal"\)\?\.show/,
   );
+  assert.match(
+    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
+    /dirty && protectionModal\?\.type === "profile"/,
+  );
+  assert.doesNotMatch(
+    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
+    /onClick=\{\(\) => setProtectionModal\(null\)\}/,
+  );
 });
 
 test("Protection drawer cancel and close restore persisted draft state", () => {

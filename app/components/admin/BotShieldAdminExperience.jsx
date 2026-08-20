@@ -3498,16 +3498,27 @@ function ProtectionPage({ model, actions }) {
   const closeDrawer = () => {
     setProtectionModal(null);
     setSaveError("");
+    setBlockedIpInput("");
+    setTrustedIpInput("");
     window.setTimeout(() => drawerOpenerRef.current?.focus?.(), 0);
   };
 
   const requestClose = () => {
     if (saving) return;
-    if (dirty) {
+    if (dirty && protectionModal?.type === "profile") {
       showBotShieldModal("botshield-protection-discard-modal");
       return;
     }
     closeDrawer();
+  };
+
+  const guardProfileDraft = () => {
+    if (saving) return true;
+    if (dirty && protectionModal?.type === "profile") {
+      showBotShieldModal("botshield-protection-discard-modal");
+      return true;
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -3554,6 +3565,7 @@ function ProtectionPage({ model, actions }) {
   };
 
   const openProfileManager = (title, text, note, module = "policy") => {
+    if (guardProfileDraft()) return;
     drawerOpenerRef.current = document.activeElement;
     const persisted = {
       autoBlock: model.autoBlock,
@@ -3580,6 +3592,7 @@ function ProtectionPage({ model, actions }) {
   };
 
   const openStatusManager = (title, text, note, status, module) => {
+    if (guardProfileDraft()) return;
     drawerOpenerRef.current = document.activeElement;
     setProtectionModal({
       type: "status",
@@ -3681,27 +3694,53 @@ function ProtectionPage({ model, actions }) {
   const interventionCount =
     Number(model.incidentCounts?.blocked || 0) +
     Number(model.incidentCounts?.challenged || 0);
-  const openBlocklist = () => setProtectionModal({ type: "blocklist", title: "Blocked visitors", text: "Manage visitors manually prevented from accessing the storefront." });
-  const openTrusted = () => setProtectionModal({ type: "trusted", title: "Trusted visitors", text: "Manage visitors allowed to bypass supported BotShield protection checks." });
+  const openBlocklist = () => {
+    if (guardProfileDraft()) return;
+    drawerOpenerRef.current = document.activeElement;
+    setBlockedIpInput("");
+    setProtectionModal({
+      type: "blocklist",
+      title: "Blocked visitors",
+      text: "Manage visitors manually prevented from accessing the storefront.",
+    });
+  };
+  const openTrusted = () => {
+    if (guardProfileDraft()) return;
+    drawerOpenerRef.current = document.activeElement;
+    setTrustedIpInput("");
+    setProtectionModal({
+      type: "trusted",
+      title: "Trusted visitors",
+      text: "Manage visitors allowed to bypass supported BotShield protection checks.",
+    });
+  };
 
   useEffect(() => {
     if (!model.protectionEntryIntent) return undefined;
     if (model.protectionEntryIntent === "blocklist") {
+      if (guardProfileDraft()) return undefined;
+      drawerOpenerRef.current = document.activeElement;
+      setBlockedIpInput("");
       setProtectionModal({
         type: "blocklist",
         title: "Blocked visitors",
         text: "Manage visitors manually prevented from accessing the storefront.",
       });
     } else if (model.protectionEntryIntent === "trusted") {
+      if (guardProfileDraft()) return undefined;
+      drawerOpenerRef.current = document.activeElement;
+      setTrustedIpInput("");
       setProtectionModal({
         type: "trusted",
         title: "Trusted visitors",
         text: "Manage visitors allowed to bypass supported BotShield protection checks.",
       });
+    } else {
+      return undefined;
     }
     actions.clearProtectionEntryIntent?.();
     return undefined;
-  }, [actions, model.protectionEntryIntent]);
+  }, [actions, dirty, model.protectionEntryIntent, protectionModal?.type]);
 
   if (model) {
     return (
@@ -3912,9 +3951,7 @@ function ProtectionPage({ model, actions }) {
                     emptyTitle="No blocked visitors yet."
                   />
                   <div className="botshield-protection-modal-actions">
-                    <BotShieldActionButton
-                      onClick={() => setProtectionModal(null)}
-                    >
+                    <BotShieldActionButton onClick={requestClose}>
                       Close
                     </BotShieldActionButton>
                   </div>
@@ -3937,9 +3974,7 @@ function ProtectionPage({ model, actions }) {
                     emptyTitle="No trusted visitors yet."
                   />
                   <div className="botshield-protection-modal-actions">
-                    <BotShieldActionButton
-                      onClick={() => setProtectionModal(null)}
-                    >
+                    <BotShieldActionButton onClick={requestClose}>
                       Close
                     </BotShieldActionButton>
                   </div>
@@ -3985,10 +4020,7 @@ function ProtectionPage({ model, actions }) {
                 </div>
               ) : null}
               {!protectionModal.type ? (
-                <BotShieldActionButton
-                  onClick={() => setProtectionModal(null)}
-                  variant="primary"
-                >
+                <BotShieldActionButton onClick={requestClose} variant="primary">
                   Close
                 </BotShieldActionButton>
               ) : null}

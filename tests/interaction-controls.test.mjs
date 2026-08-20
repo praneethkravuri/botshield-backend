@@ -1,0 +1,109 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import test from "node:test";
+
+const adminSource = fs.readFileSync(
+  new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
+  "utf8",
+);
+const designSource = fs.readFileSync(
+  new URL("../app/components/design-system/BotShieldDesignSystem.jsx", import.meta.url),
+  "utf8",
+);
+
+const overviewSource = adminSource.slice(
+  adminSource.indexOf("function OverviewPage"),
+  adminSource.indexOf("function AnalyticsPage"),
+);
+const analyticsSource = adminSource.slice(
+  adminSource.indexOf("function AnalyticsPage"),
+  adminSource.indexOf("function FraudOrderSetupDrawer"),
+);
+const fraudSource = adminSource.slice(
+  adminSource.indexOf("function FraudOrderSetupDrawer"),
+  adminSource.indexOf("function ProtectionPage"),
+);
+const protectionSource = adminSource.slice(
+  adminSource.indexOf("function ProtectionPage"),
+  adminSource.indexOf("function SettingsPage"),
+);
+const settingsSource = adminSource.slice(
+  adminSource.indexOf("function SettingsPage"),
+  adminSource.indexOf("export default function BotShieldAdminExperience"),
+);
+
+test("shared modal helpers avoid silent show() no-ops", () => {
+  assert.match(designSource, /export function showBotShieldModal/);
+  assert.match(designSource, /export function hideBotShieldModal/);
+  assert.match(designSource, /runBotShieldModalCommand/);
+  assert.doesNotMatch(adminSource, /getElementById\([^)]+\)\?\.show/);
+});
+
+test("Overview has no drawer close controls to regress", () => {
+  assert.doesNotMatch(overviewSource, /createPortal/);
+  assert.doesNotMatch(overviewSource, /requestClose/);
+  assert.doesNotMatch(overviewSource, /BotShieldConfirmationModal/);
+});
+
+test("Analytics event details close controls respond directly", () => {
+  const detailsSource = adminSource.slice(
+    adminSource.indexOf("function AnalyticsEventDetails"),
+    adminSource.indexOf("const FRAUD_REVIEW_FILTERS"),
+  );
+  assert.match(detailsSource, /function AnalyticsEventDetails/);
+  assert.match(analyticsSource, /onClose=\{\(\) => setSelectedEvent\(null\)\}/);
+  assert.match(detailsSource, /if \(keyEvent\.key === "Escape"\) onClose\(\)/);
+  assert.match(
+    detailsSource,
+    /onMouseDown=\{\(mouseEvent\) => \{ if \(mouseEvent\.target === mouseEvent\.currentTarget\) onClose\(\); \}\}/,
+  );
+  assert.match(detailsSource, /aria-label="Close event details"/);
+});
+
+test("Fraud Orders drawers close without unsaved draft state", () => {
+  for (const source of [fraudSource.match(/function FraudOrderSetupDrawer[\s\S]*?^}/m)?.[0], fraudSource.match(/function FraudOrderReviewDrawer[\s\S]*?^}/m)?.[0]]) {
+    assert.ok(source);
+    assert.match(source, /onClose/);
+    assert.match(source, /event\.key === "Escape"\)/);
+    assert.match(source, /event\.target === event\.currentTarget\) onClose\(\)/);
+  }
+  assert.match(fraudSource, /<BotShieldActionButton onClick=\{onClose\}>Cancel<\/BotShieldActionButton>/);
+  assert.match(fraudSource, /<BotShieldActionButton onClick=\{onClose\}>Close<\/BotShieldActionButton>/);
+});
+
+test("Protection profile cancel and close use discard confirmation only for profile drafts", () => {
+  assert.match(protectionSource, /const guardProfileDraft = \(\) =>/);
+  assert.match(
+    protectionSource,
+    /if \(dirty && protectionModal\?\.type === "profile"\)/,
+  );
+  assert.match(protectionSource, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
+  assert.match(protectionSource, /setDraft\(originalDraft\);\s*closeDrawer\(\);/s);
+  assert.match(protectionSource, /setBlockedIpInput\(""\)/);
+  assert.match(protectionSource, /setTrustedIpInput\(""\)/);
+  assert.doesNotMatch(protectionSource, /onClick=\{\(\) => setProtectionModal\(null\)\}/);
+  assert.match(protectionSource, /onClick=\{requestClose\} disabled=\{saving\}>Cancel<\/BotShieldActionButton>/);
+  assert.match(protectionSource, /accessibilityLabel="Close"[^]*onClick=\{requestClose\}/s);
+});
+
+test("Protection modal switches cannot silently discard profile drafts", () => {
+  assert.match(protectionSource, /if \(guardProfileDraft\(\)\) return;/);
+  assert.match(protectionSource, /openBlocklist = \(\) => \{/);
+  assert.match(protectionSource, /openTrusted = \(\) => \{/);
+  assert.match(protectionSource, /model\.protectionEntryIntent, protectionModal\?\.type\]/);
+});
+
+test("Protection visitor removal confirmations use shared modal helper", () => {
+  assert.match(protectionSource, /showBotShieldModal\(removeModalId\)/);
+});
+
+test("Settings destructive confirmation uses native modal command pattern", () => {
+  assert.match(settingsSource, /command="--show"/);
+  assert.match(settingsSource, /commandFor="botshield-clear-simulation-modal"/);
+  assert.match(settingsSource, /id="botshield-clear-simulation-modal"/);
+  assert.match(
+    settingsSource,
+    /onDiscard=\{\(\) =>\s*setDraft\(\{/,
+  );
+  assert.match(settingsSource, /alertEmail: model\.alertEmail/);
+});
