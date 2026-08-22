@@ -2408,6 +2408,24 @@ function getAnalyticsDecisionContext(event, signalLabel) {
     : "This request was allowed because no elevated signals were recorded.";
 }
 
+function AnalyticsEventDetailField({ label, children }) {
+  return (
+    <s-stack gap="small-100">
+      <s-text color="subdued">{label}</s-text>
+      {children}
+    </s-stack>
+  );
+}
+
+function AnalyticsEventDetailSection({ title, children }) {
+  return (
+    <s-stack gap="small">
+      <s-text color="subdued">{title}</s-text>
+      <s-stack gap="base">{children}</s-stack>
+    </s-stack>
+  );
+}
+
 function AnalyticsEventDetails({ actions, event, onClose }) {
   const requestClose = () => {
     hideBotShieldModal(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID);
@@ -2433,9 +2451,9 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
 
   return (
     <BotShieldNativeModal
-      bodyClassName="botshield-analytics-event-modal-body"
       heading="Event details"
       id={BOTSHIELD_ANALYTICS_EVENT_MODAL_ID}
+      modalPadding="none"
       onAfterHide={onClose}
       open={Boolean(event)}
       secondaryActions={
@@ -2443,116 +2461,141 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
           Close
         </s-button>
       }
-      size="small-100"
+      size="base"
     >
       {event ? (
-        <>
-          <p className="botshield-analytics-event-modal-meta">
+        <s-stack gap="base">
+          <s-paragraph color="subdued">
             {formatAnalyticsDetailTimestamp(event.createdAt)}
-          </p>
-          <div className="botshield-analytics-detail-summary">
-            <div>
-              <BotShieldStatusBadge
-                label={getOutcomeLabel(event.actionTaken)}
-                status={event.actionTaken}
-              />
-              <strong>
-                {getRiskLabel(event.threatLevel)} · {signalLabel}
-              </strong>
-            </div>
-            <p>{decisionContext}</p>
-          </div>
-          <section className="botshield-analytics-detail-section">
-            <h3>Detection</h3>
-            <dl className="botshield-analytics-detail-grid">
-              <div>
-                <dt>Risk</dt>
-                <dd>
-                  <BotShieldStatusBadge
-                    label={getRiskLabel(event.threatLevel)}
-                    status={event.threatLevel}
-                  />
-                </dd>
-              </div>
-              <div>
-                <dt>Decision</dt>
-                <dd>
-                  <BotShieldStatusBadge
-                    label={getOutcomeLabel(event.actionTaken)}
-                    status={event.actionTaken}
-                  />
-                </dd>
-              </div>
-              <div className="is-full">
-                <dt>Threat signal</dt>
-                <dd>{signalLabel}</dd>
-              </div>
-              <div className="is-full botshield-analytics-detail-reason">
-                <dt>Detection reason</dt>
-                <dd>{reason}</dd>
-              </div>
-            </dl>
-          </section>
-          <section className="botshield-analytics-detail-section">
-            <h3>Request</h3>
-            <dl className="botshield-analytics-detail-grid">
-              <div>
-                <dt>Page / path</dt>
-                <dd>{event.pathVisited || "/"}</dd>
-              </div>
-              <div>
-                <dt>Time</dt>
-                <dd>{formatAnalyticsDetailTimestamp(event.createdAt)}</dd>
-              </div>
-              {event.id ? (
-                <div className="is-full botshield-analytics-detail-reference">
-                  <dt>Event reference</dt>
-                  <dd title={String(event.id)}>{String(event.id)}</dd>
-                  <small>
-                    Use this reference when reviewing the event or contacting
-                    support.
-                  </small>
-                </div>
-              ) : null}
-            </dl>
-          </section>
+          </s-paragraph>
+
+          <s-box background="subdued" borderRadius="base" padding="base">
+            <s-stack gap="small">
+              <s-stack direction="inline" gap="small" alignItems="center">
+                <BotShieldStatusBadge
+                  label={getOutcomeLabel(event.actionTaken)}
+                  status={event.actionTaken}
+                />
+                <s-text type="strong">
+                  {getRiskLabel(event.threatLevel)} · {signalLabel}
+                </s-text>
+              </s-stack>
+              <s-paragraph color="subdued">{decisionContext}</s-paragraph>
+            </s-stack>
+          </s-box>
+
+          <AnalyticsEventDetailSection title="Detection">
+            <s-grid
+              gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+              gap="base"
+            >
+              <AnalyticsEventDetailField label="Risk">
+                <BotShieldStatusBadge
+                  label={getRiskLabel(event.threatLevel)}
+                  status={event.threatLevel}
+                />
+              </AnalyticsEventDetailField>
+              <AnalyticsEventDetailField label="Decision">
+                <BotShieldStatusBadge
+                  label={getOutcomeLabel(event.actionTaken)}
+                  status={event.actionTaken}
+                />
+              </AnalyticsEventDetailField>
+            </s-grid>
+            <AnalyticsEventDetailField label="Threat signal">
+              <s-text type="strong">{signalLabel}</s-text>
+            </AnalyticsEventDetailField>
+            <s-box
+              background="subdued"
+              border="base"
+              borderRadius="base"
+              padding="base"
+            >
+              <AnalyticsEventDetailField label="Detection reason">
+                <s-text>{reason}</s-text>
+              </AnalyticsEventDetailField>
+            </s-box>
+          </AnalyticsEventDetailSection>
+
+          <AnalyticsEventDetailSection title="Request">
+            <s-grid
+              gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+              gap="base"
+            >
+              <AnalyticsEventDetailField label="Page / path">
+                <s-text type="strong">{event.pathVisited || "/"}</s-text>
+              </AnalyticsEventDetailField>
+              <AnalyticsEventDetailField label="Time">
+                <s-text type="strong">
+                  {formatAnalyticsDetailTimestamp(event.createdAt)}
+                </s-text>
+              </AnalyticsEventDetailField>
+            </s-grid>
+            {event.id ? (
+              <AnalyticsEventDetailField label="Event reference">
+                <s-text
+                  title={String(event.id)}
+                  type="strong"
+                  style={{
+                    display: "block",
+                    overflow: "hidden",
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                    fontSize: "12px",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {String(event.id)}
+                </s-text>
+                <s-text color="subdued">
+                  Use this reference when reviewing the event or contacting
+                  support.
+                </s-text>
+              </AnalyticsEventDetailField>
+            ) : null}
+          </AnalyticsEventDetailSection>
+
           {hasVisitorDetails ? (
-            <section className="botshield-analytics-detail-section">
-              <h3>Visitor</h3>
-              <dl className="botshield-analytics-detail-grid">
+            <AnalyticsEventDetailSection title="Visitor">
+              <s-grid
+                gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+                gap="base"
+              >
                 {event.ipAddress ? (
-                  <div>
-                    <dt>Visitor</dt>
-                    <dd>{maskAnalyticsVisitor(event.ipAddress)}</dd>
-                  </div>
+                  <AnalyticsEventDetailField label="Visitor">
+                    <s-text type="strong">
+                      {maskAnalyticsVisitor(event.ipAddress)}
+                    </s-text>
+                  </AnalyticsEventDetailField>
                 ) : null}
                 {networkClassification ? (
-                  <div>
-                    <dt>Network classification</dt>
-                    <dd>{networkClassification}</dd>
-                  </div>
+                  <AnalyticsEventDetailField label="Network classification">
+                    <s-text type="strong">{networkClassification}</s-text>
+                  </AnalyticsEventDetailField>
                 ) : null}
                 {event.networkCountry ? (
-                  <div>
-                    <dt>Recorded location</dt>
-                    <dd>
+                  <AnalyticsEventDetailField label="Recorded location">
+                    <s-text type="strong">
                       {[event.networkCity, event.networkCountry]
                         .filter(Boolean)
                         .join(", ")}
-                    </dd>
-                  </div>
+                    </s-text>
+                  </AnalyticsEventDetailField>
                 ) : null}
                 {event.networkOrg || event.networkProvider ? (
-                  <div>
-                    <dt>Network</dt>
-                    <dd>{event.networkOrg || event.networkProvider}</dd>
-                  </div>
+                  <AnalyticsEventDetailField label="Network">
+                    <s-text type="strong">
+                      {event.networkOrg || event.networkProvider}
+                    </s-text>
+                  </AnalyticsEventDetailField>
                 ) : null}
-              </dl>
-            </section>
+              </s-grid>
+            </AnalyticsEventDetailSection>
           ) : null}
+
           {event.actionTaken === "blocked" && event.id ? (
-            <div className="botshield-analytics-detail-actions">
+            <s-stack direction="inline" gap="small">
               <BotShieldAsyncButton
                 action={async () => {
                   await actions.recoverIncident(event.id, "whitelist");
@@ -2571,9 +2614,9 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
               >
                 Unblock IP
               </BotShieldAsyncButton>
-            </div>
+            </s-stack>
           ) : null}
-        </>
+        </s-stack>
       ) : null}
     </BotShieldNativeModal>
   );
