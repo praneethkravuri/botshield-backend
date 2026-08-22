@@ -653,7 +653,7 @@ function getSetupChecklistItems(model, actions = {}) {
       label: "Theme embed enabled",
       detail: storefrontConnected
         ? "BotShield is enabled in the published theme."
-        : "Enable the theme app embed to connect storefront traffic.",
+        : "Enable the theme app embed to start recording storefront activity.",
       complete: storefrontConnected,
       action: actions.openThemeEditor,
       actionLabel: "Enable",
@@ -858,17 +858,17 @@ function RuleSummaryCard({
   count,
 }) {
   const cleanIcon =
-    title === "Bot detection"
+    title === "Bot Protection"
       ? "Bot"
       : title === "IP address blocklist"
         ? "IP"
         : title === "Trusted visitors"
           ? "Trust"
-          : title === "Network intelligence"
+          : title === "Network / Proxy Protection"
             ? "Net"
-            : title === "Repeated visitor activity"
+            : title === "Rate Protection"
               ? "Rate"
-              : title === "Blocked page"
+              : title === "Page Protection"
                 ? "Page"
                 : "Rule";
 
@@ -1204,7 +1204,7 @@ function OverviewPage({ model, actions }) {
     const result = await actions.refreshStoreHealth?.();
     if (result?.skipped) return;
     if (result?.ok) {
-      toast.success("Store health refreshed");
+      toast.success("Store health updated");
       return;
     }
   };
@@ -1221,8 +1221,8 @@ function OverviewPage({ model, actions }) {
   const runtimeActive = Boolean(model.protectionReady && !model.protectionPaused);
   const protectionRows = [
     {
-      label: "Bot protection",
-      detail: "Detects automated storefront activity.",
+      label: "Bot Protection",
+      detail: "Detects automated browsers and bot-like behavior.",
       module: "bot",
       active: runtimeActive,
       status: runtimeActive
@@ -1236,8 +1236,8 @@ function OverviewPage({ model, actions }) {
       icon: "shield",
     },
     {
-      label: "Network / Proxy protection",
-      detail: "Identifies suspicious network traffic.",
+      label: "Network / Proxy Protection",
+      detail: "Identifies VPN, proxy, and datacenter traffic.",
       module: "network",
       active: runtimeActive,
       status: runtimeActive
@@ -1249,8 +1249,8 @@ function OverviewPage({ model, actions }) {
       icon: "network",
     },
     {
-      label: "Rate protection",
-      detail: "Detects unusually repetitive behavior.",
+      label: "Rate Protection",
+      detail: "Detects unusually frequent or repetitive visits.",
       module: "rate",
       active: runtimeActive,
       status: runtimeActive
@@ -1264,8 +1264,8 @@ function OverviewPage({ model, actions }) {
       icon: "rate",
     },
     {
-      label: "Page protection",
-      detail: "Applies protection decisions on storefront pages.",
+      label: "Page Protection",
+      detail: "Applies protection decisions through supported storefront requests.",
       module: "page",
       active: storefrontConnected && !model.protectionPaused,
       status: storefrontConnected
@@ -1352,7 +1352,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Automated interventions",
       value: automatedInterventions,
-      detail: "Blocked or challenged storefront visits",
+      detail: "Blocked or challenged storefront events",
     },
     {
       label: "High-risk events identified",
@@ -1386,7 +1386,7 @@ function OverviewPage({ model, actions }) {
         tone: "critical",
         className: "botshield-v2-status--degraded",
         detail:
-          "Some security data could not be loaded. Protection may still be active, but this view requires attention.",
+          "Some data could not be loaded. Protection may still be running, but this view needs attention.",
       }
     : model.protectionPaused || !storefrontConnected || !model.protectionReady
         ? {
@@ -1400,25 +1400,25 @@ function OverviewPage({ model, actions }) {
               ? "Enable the theme app embed to begin receiving and enforcing live storefront decisions."
               : protectionsNeedingAttention
                 ? `${protectionsNeedingAttention} protection module${protectionsNeedingAttention === 1 ? "" : "s"} require setup before full storefront coverage is available.`
-                : "Complete the remaining protection setup to fully secure storefront traffic.",
+                : "Complete the remaining setup to restore full storefront coverage.",
         }
         : {
             label: "Active",
-            title: "Your store is protected",
+            title: "Protection is active",
           tone: "success",
           className: "botshield-v2-status--active",
           detail:
-            "BotShield is connected and actively evaluating storefront traffic using your current protection policy.",
+            "BotShield is connected and evaluating storefront activity using your protection settings.",
         };
   const metrics = [
     { label: "Storefront events", value: storefrontEvents, detail: "Last 30 days", icon: "activity" },
-    { label: "Bots blocked", value: botsBlocked, detail: "Blocked by your protection policy", icon: "block" },
+    { label: "Blocked events", value: botsBlocked, detail: "Blocked storefront decisions", icon: "block" },
     {
-      label: "Challenged visitors",
+      label: "Challenged events",
       value: Number.isFinite(Number(model.incidentCounts?.challenged))
         ? Number(model.incidentCounts.challenged)
         : model.challengedCount,
-      detail: "Asked to complete verification",
+      detail: "Verification requested on storefront decisions",
       icon: "verify",
     },
     {
@@ -1436,8 +1436,8 @@ function OverviewPage({ model, actions }) {
           <div className="botshield-overview-header">
             <div>
               <p className="botshield-overview-subtitle">
-                Monitor storefront protection, security activity, and
-                enforcement decisions from one place.
+                Monitor storefront protection, activity, and
+                enforcement decisions in one place.
               </p>
             </div>
           </div>
@@ -1481,7 +1481,7 @@ function OverviewPage({ model, actions }) {
           <section className="botshield-v2-health" aria-labelledby="store-health-title">
             <div className="botshield-v2-section-heading botshield-v2-health-heading">
               <div>
-                <div className="botshield-v2-eyebrow">Operational telemetry</div>
+                <div className="botshield-v2-eyebrow">Connection status</div>
                 <h2 id="store-health-title">Store health</h2>
               </div>
               <BotShieldActionButton
@@ -1500,7 +1500,7 @@ function OverviewPage({ model, actions }) {
               </BotShieldActionButton>
             </div>
             {model.storeHealthRefreshError ? (
-              <BotShieldBanner tone="critical" title="Store health refresh failed">
+              <BotShieldBanner tone="critical" title="Couldn't refresh store health">
                 {model.storeHealthRefreshError}
               </BotShieldBanner>
             ) : null}
@@ -1530,9 +1530,9 @@ function OverviewPage({ model, actions }) {
 
           <section className="botshield-v2-impact" aria-labelledby="security-impact-title">
             <div className="botshield-v2-impact-heading">
-              <div className="botshield-v2-eyebrow">Verified outcomes {"\u00B7"} Last 30 days</div>
+              <div className="botshield-v2-eyebrow">Protection outcomes {"\u00B7"} Last 30 days</div>
               <h2 id="security-impact-title">Security impact</h2>
-              <p>Verified protection outcomes from the last 30 days.</p>
+              <p>Recorded protection outcomes from the last 30 days.</p>
             </div>
             <div className="botshield-v2-impact-metrics">
               {securityImpact.map((item, index) => (
@@ -1560,7 +1560,7 @@ function OverviewPage({ model, actions }) {
               <div>
                 <div className="botshield-v2-eyebrow">Financial impact {"\u00B7"} Last {financialImpact.periodDays || 30} days</div>
                 <h2 id="estimated-value-title">Estimated value protected</h2>
-                <p>Verified order value linked to documented qualifying protection outcomes.</p>
+                <p>Order value linked to qualifying protection outcomes BotShield can document.</p>
               </div>
               <details className="botshield-v2-methodology">
                 <summary>How this is calculated</summary>
@@ -1589,7 +1589,7 @@ function OverviewPage({ model, actions }) {
                 <strong aria-label="Value unavailable">{"\u2014"}</strong>
                 <div>
                   <h3>No verified financial impact data yet</h3>
-                  <p>BotShield does not estimate value from traffic, blocked visitors, challenges, or risk scores.</p>
+                  <p>BotShield doesn't estimate value from traffic, blocks, challenges, or risk scores.</p>
                 </div>
               </div>
             )}
@@ -1631,7 +1631,7 @@ function OverviewPage({ model, actions }) {
                     tone="critical"
                     title="Threat activity could not be loaded"
                   >
-                    Refresh BotShield to load recorded storefront decisions again.
+                    Try refreshing to load recorded storefront decisions again.
                   </BotShieldBanner>
                   <BotShieldActionButton
                     disabled={model.storeHealthRefreshing}
@@ -1711,14 +1711,14 @@ function OverviewPage({ model, actions }) {
                   <div>
                     <h3>Threat composition</h3>
                     <p>
-                      Share of suspicious events containing each signal. One event may contain multiple signals.
+                      Share of suspicious events by threat signal. Events can include multiple signals.
                     </p>
                   </div>
                   <BotShieldActionButton
                     variant="tertiary"
                     onClick={() => actions.setPage("analytics")}
                   >
-                    Investigate
+                    View in Analytics
                   </BotShieldActionButton>
                 </div>
                 {threatComposition.length ? (
@@ -1761,7 +1761,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-panel-header">
                 <div>
                   <h2>Protection health</h2>
-                  <p>Live coverage by protection module.</p>
+                  <p>Live status by protection module.</p>
                 </div>
               </div>
               <div className="botshield-v2-protection-list">
@@ -1810,7 +1810,7 @@ function OverviewPage({ model, actions }) {
                     variant="tertiary"
                     onClick={() => actions.setPage("analytics")}
                   >
-                    Investigate {"\u2192"}
+                    View in Analytics {"\u2192"}
                   </BotShieldActionButton>
                 </div>
                 {selectedSuspiciousEvents.length ? (
@@ -1925,7 +1925,7 @@ function OverviewPage({ model, actions }) {
               ) : (
                 <BotShieldEmptyState
                   title="No recent security activity"
-                  description="Live visitor decisions will appear here when BotShield receives storefront traffic."
+                  description="Storefront decisions will appear here when BotShield records storefront activity."
                 />
               )}
             </section>
@@ -1940,14 +1940,14 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-quick-action-list">
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="block" centered />
-                  <div><strong>Block an IP</strong><span>Stop a known visitor from accessing the storefront.</span></div>
+                  <div><strong>Block an IP</strong><span>Block a known IP address from the storefront.</span></div>
                   <BotShieldActionButton onClick={actions.openBlocklist}>
                     Block an IP
                   </BotShieldActionButton>
                 </div>
                 <div className="botshield-v2-quick-action-row">
                   <OverviewIcon name="visitor" centered />
-                  <div><strong>Trust a visitor</strong><span>Allow a verified visitor through protection checks.</span></div>
+                  <div><strong>Trust a visitor</strong><span>Allow a trusted visitor to bypass automated checks.</span></div>
                   <BotShieldActionButton onClick={actions.openTrustedVisitors}>
                     Trust a visitor
                   </BotShieldActionButton>
@@ -2184,10 +2184,10 @@ function AnalyticsPage({ model, actions }) {
   ) || searchFilter.trim();
   const insight = topSignal && suspiciousEvents.length
     ? `${topSignal.label} was the leading threat signal this period, appearing in ${analyticsPercent(topSignal.count, suspiciousEvents.length)}% of suspicious events.`
-    : "More storefront activity is needed before BotShield can identify a reliable pattern.";
+    : "Not enough activity to identify a pattern yet.";
   const insightTitle = topSignal && suspiciousEvents.length
     ? `${topSignal.label} dominated suspicious activity`
-    : "No reliable threat pattern yet";
+    : "Not enough activity for a pattern yet";
   const insightDetail = topSignal && suspiciousEvents.length
     ? `This signal appeared in ${analyticsPercent(topSignal.count, suspiciousEvents.length)}% of suspicious events during the selected period.`
     : insight;
@@ -2206,13 +2206,13 @@ function AnalyticsPage({ model, actions }) {
         <header className="botshield-overview-header">
           <div>
             <p className="botshield-overview-subtitle">
-              Investigate storefront threats, visitor behavior, detection signals, and protection performance.
+              Review suspicious storefront activity, threat signals, and protection performance.
             </p>
           </div>
         </header>
 
         {model.analyticsRefreshError ? (
-          <BotShieldBanner tone="critical" title="Analytics refresh failed">
+          <BotShieldBanner tone="critical" title="Couldn't refresh analytics">
             {model.analyticsRefreshError}
           </BotShieldBanner>
         ) : null}
@@ -2263,8 +2263,8 @@ function AnalyticsPage({ model, actions }) {
         </section>
 
         <section className="botshield-analytics-kpis" aria-label="Analytical metrics">
-          <AnalyticsKpi label="Suspicious events" value={suspiciousEvents.length} detail="Events containing elevated threat signals" />
-          <AnalyticsKpi label="Intervention rate" value={`${analyticsPercent(interventionCount, suspiciousEvents.length)}%`} detail="Suspicious traffic blocked or challenged" />
+          <AnalyticsKpi label="Suspicious events" value={suspiciousEvents.length} detail="Storefront events with elevated threat signals" />
+          <AnalyticsKpi label="Intervention rate" value={`${analyticsPercent(interventionCount, suspiciousEvents.length)}%`} detail="Share of suspicious events blocked or challenged" />
           <AnalyticsKpi label="Top threat signal" value={topSignal?.label || "—"} detail={topSignal ? `${topSignal.count} event${topSignal.count === 1 ? "" : "s"} in this period` : "No suspicious signals detected"} compact />
           <AnalyticsKpi label="High-risk activity" value={highRiskCount} detail="Events classified as high risk" />
         </section>
@@ -2273,7 +2273,7 @@ function AnalyticsPage({ model, actions }) {
         <div className="botshield-analytics-split botshield-analytics-split--primary">
           <AnalyticsPanel title="Threat signal analysis" subtitle="Understand which detection signals are driving suspicious storefront activity.">
             {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => { const interventionRate = analyticsPercent(row.blocked + row.challenged, row.count); return <div className="botshield-analytics-ranked-row" key={row.label}><div className="botshield-analytics-ranked-copy"><strong>{row.label}</strong><span>{row.count.toLocaleString()} event{row.count === 1 ? "" : "s"} · {analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><div className="botshield-analytics-ranked-measure"><AnalyticsBar maximum={signalMaximum} value={row.count} /><span>{interventionRate}% intervention</span></div></div>; })}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
-            {signalRows.length ? <p className="botshield-analytics-footnote">An event may contain multiple signals, so combined signal percentages may exceed 100%.</p> : null}
+            {signalRows.length ? <p className="botshield-analytics-footnote">Events can include multiple signals, so signal percentages may total more than 100%.</p> : null}
           </AnalyticsPanel>
           <AnalyticsPanel title="Risk distribution" subtitle="Distribution of storefront activity by assessed risk level.">
             {filteredEvents.length ? <><div className="botshield-analytics-risk-total"><strong>{filteredEvents.length.toLocaleString()}</strong><span>analyzed event{filteredEvents.length === 1 ? "" : "s"}</span></div><div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div></> : <AnalyticsEmpty text="No risk activity is available for this period." />}
@@ -2287,10 +2287,10 @@ function AnalyticsPage({ model, actions }) {
 
         <div className="botshield-analytics-section-label">Behavior</div>
         <AnalyticsPanel title="Activity patterns" subtitle="See when suspicious storefront activity is most concentrated.">
-          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong>{formatRelativeTime(lastSuspiciousEvent?.createdAt)}</strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity was recorded during this period. Try a wider date range or clear filters." />}
+          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong>{formatRelativeTime(lastSuspiciousEvent?.createdAt)}</strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity recorded for this period. Try a wider date range or clear filters." />}
         </AnalyticsPanel>
 
-        <><div className="botshield-analytics-section-label">Target and origin intelligence</div><div className="botshield-analytics-split"><AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity.">{pathRows.length ? <AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No targeted storefront paths were recorded during this period." />}</AnalyticsPanel><AnalyticsPanel title="Attack origins" subtitle="Recorded network classifications associated with suspicious storefront activity.">{attackOriginRows.length ? <AnalyticsCompactRanking rows={attackOriginRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No reliable network origin data was recorded during this period." />}</AnalyticsPanel></div></>
+        <><div className="botshield-analytics-section-label">Paths and network sources</div><div className="botshield-analytics-split"><AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity.">{pathRows.length ? <AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No targeted storefront paths were recorded during this period." />}</AnalyticsPanel><AnalyticsPanel title="Network sources" subtitle="Network types recorded for suspicious storefront events.">{attackOriginRows.length ? <AnalyticsCompactRanking rows={attackOriginRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No reliable network origin data was recorded during this period." />}</AnalyticsPanel></div></>
 
         <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers.">{visitorRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No recurring suspicious visitors matched this period and filter selection." />}</AnalyticsPanel></>
 
@@ -2301,8 +2301,8 @@ function AnalyticsPage({ model, actions }) {
         <section className="botshield-analytics-summary" aria-labelledby="analytics-summary-title"><header><span>Investigation</span><h2 id="analytics-summary-title">Investigation summary</h2></header>{suspiciousEvents.length ? <dl>{topSignal ? <div><dt>Most common signal</dt><dd>{topSignal.label}</dd></div> : null}{peakActivityBucket ? <div><dt>Highest-risk period</dt><dd>{peakActivityLabel}</dd></div> : null}{pathRows[0] ? <div><dt>Most targeted path</dt><dd>{formatAnalyticsPath(pathRows[0].label)}</dd></div> : null}{visitorRows[0] ? <div><dt>Most active visitor</dt><dd>{visitorRows[0].masked}</dd></div> : null}</dl> : <p>No suspicious activity is available to summarize for this selection.</p>}</section>
 
         <div className="botshield-analytics-section-label">Investigation</div>
-        <AnalyticsPanel title="Event explorer" subtitle="Filter and inspect the storefront events behind your analytics.">
-          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Detection reason</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
+        <AnalyticsPanel title="Event explorer" subtitle="Filter and review the storefront events behind these metrics.">
+          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Reasons</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
         </AnalyticsPanel>
 
         {selectedEvent ? (
@@ -2409,17 +2409,17 @@ function getAnalyticsDecisionContext(event, signalLabel) {
   const hasElevatedSignal = signalLabel !== "No elevated signal";
   if (decision === "blocked" || decision === "stopped") {
     return hasElevatedSignal
-      ? `BotShield stopped this request after recording ${signalLabel.toLowerCase()}.`
-      : "BotShield stopped this request based on the recorded protection decision.";
+      ? `This request was blocked based on ${signalLabel.toLowerCase()}.`
+      : "This request was blocked based on the recorded protection decision.";
   }
   if (decision === "challenged" || decision === "challenge") {
     return hasElevatedSignal
-      ? `BotShield requested verification after recording ${signalLabel.toLowerCase()}.`
-      : "BotShield requested verification based on the recorded protection decision.";
+      ? `Verification was requested based on ${signalLabel.toLowerCase()}.`
+      : "Verification was requested based on the recorded protection decision.";
   }
   return hasElevatedSignal
-    ? `BotShield allowed this request while recording ${signalLabel.toLowerCase()} for review.`
-    : "BotShield allowed this request because no elevated signals were recorded.";
+    ? `This request was allowed. ${signalLabel} was recorded for review.`
+    : "This request was allowed because no elevated signals were recorded.";
 }
 
 function AnalyticsEventDetails({ actions, event, onClose }) {
@@ -2473,7 +2473,7 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
           <dl className="botshield-analytics-detail-grid">
             <div><dt>Page / path</dt><dd>{event.pathVisited || "/"}</dd></div>
             <div><dt>Time</dt><dd>{formatAnalyticsDetailTimestamp(event.createdAt)}</dd></div>
-            {event.id ? <div className="is-full botshield-analytics-detail-reference"><dt>Event reference</dt><dd title={String(event.id)}>{String(event.id)}</dd><small>Use this reference when investigating or contacting support.</small></div> : null}
+            {event.id ? <div className="is-full botshield-analytics-detail-reference"><dt>Event reference</dt><dd title={String(event.id)}>{String(event.id)}</dd><small>Use this reference when reviewing the event or contacting support.</small></div> : null}
           </dl>
         </div>
         {hasVisitorDetails ? <div className="botshield-analytics-detail-section">
@@ -2531,23 +2531,23 @@ const FRAUD_METRIC_FILTERS = {
 const FRAUD_FILTER_EMPTY = {
   "needs-review": {
     title: "No orders currently need review",
-    description: "Orders with elevated risk or review recommendations will appear here.",
+    description: "Orders with elevated risk or Shopify recommendations will appear here when order review is available.",
   },
   high: {
     title: "No high-risk orders",
-    description: "High-risk Shopify orders will appear here when order access is connected.",
+    description: "High-risk Shopify orders will appear here when order review is available.",
   },
   medium: {
     title: "No medium-risk orders",
-    description: "Medium-risk orders will appear here when order access is connected.",
+    description: "Medium-risk orders will appear here when order review is available.",
   },
   "pending-fulfillment": {
     title: "No risky orders are currently pending fulfillment",
-    description: "Risky unfulfilled orders will appear here when order access is connected.",
+    description: "Risky unfulfilled orders will appear here when order review is available.",
   },
   all: {
     title: "No orders available for review",
-    description: "Assessed orders will appear here when order access is connected.",
+    description: "Assessed orders will appear here when order review is available.",
   },
 };
 
@@ -2574,9 +2574,9 @@ function getFraudQueueEmptyState({
   if (!connected) {
     if (filterKey === "needs-review") {
       return {
-        title: "Connect order risk to start reviewing orders",
+        title: "Fraud Orders isn't available yet",
         description:
-          "Supported Shopify order access is required before elevated-risk orders can appear here.",
+          "Order review will be available in a future BotShield update. Setup steps show what's coming.",
         actionLabel: "Review setup",
         onAction: onOpenSetup,
         variant: "disconnected",
@@ -2586,7 +2586,7 @@ function getFraudQueueEmptyState({
 
     return {
       title: filterEmpty.title,
-      description: "Order risk access is not connected yet.",
+      description: "Order review isn't available in this version of BotShield.",
       variant: "disconnected",
       compact: true,
     };
@@ -2701,7 +2701,7 @@ function FraudOrdersPageHeader({ onRefresh }) {
     <header className="botshield-overview-header botshield-fraud-header">
       <div>
         <p className="botshield-overview-subtitle">
-          Review risky Shopify orders, understand why they were flagged, and investigate them before fulfillment.
+          Review Shopify orders with elevated risk and the signals associated with them.
         </p>
       </div>
       {onRefresh ? (
@@ -2720,9 +2720,9 @@ function FraudOrderStatusStrip({ onSetup }) {
         <OverviewIcon name="shield" centered />
       </div>
       <div className="botshield-fraud-status-strip-copy">
-        <span className="botshield-v2-eyebrow">Order risk status</span>
-        <h2 id="order-risk-status-title">Order risk needs setup</h2>
-        <p>Connect supported Shopify order access to review elevated-risk orders.</p>
+        <span className="botshield-v2-eyebrow">Fraud Orders status</span>
+        <h2 id="order-risk-status-title">Order review isn't available yet</h2>
+        <p>Order review will be available in a future BotShield update. Review setup to see what's coming.</p>
       </div>
       <div className="botshield-fraud-status-strip-action">
         <BotShieldStatusBadge status="setup_required" label="Setup required" />
@@ -2929,7 +2929,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       active: !orderAccessReady,
       note:
         !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE
-          ? "Not available in this BotShield release yet."
+          ? "Not available in this version of BotShield yet."
           : null,
     },
     {
@@ -2961,7 +2961,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
         <header className="botshield-fraud-setup-drawer-header">
           <div>
             <h2>Fraud Orders setup</h2>
-            <p>Connect order risk to start reviewing suspicious orders.</p>
+            <p>See what's required for order review when this feature becomes available.</p>
           </div>
           <button aria-label="Close Fraud Orders setup" autoFocus onClick={onClose} type="button">
             ×
@@ -2981,7 +2981,9 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
                   {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
                 </h3>
                 <p>
-                  Connect supported Shopify order access to begin reviewing elevated-risk orders.
+                  {orderAccessReady
+                    ? "Order review is connected for this store."
+                    : "Order review isn't available in this version of BotShield."}
                 </p>
               </div>
               <div className="botshield-fraud-setup-status-badge">
@@ -3051,7 +3053,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
             className="botshield-fraud-setup-connect-wrap"
             title={
               connectDisabled && !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE
-                ? "Order access isn't available in this release."
+                ? "Order review isn't available in this version of BotShield."
                 : undefined
             }
           >
@@ -3064,7 +3066,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
               disabled={connectDisabled}
               variant={connectDisabled ? "secondary" : "primary"}
             >
-              {FRAUD_ORDER_ACCESS_AVAILABLE ? "Connect order access" : "Coming soon"}
+              {FRAUD_ORDER_ACCESS_AVAILABLE ? "Connect order access" : "Not available yet"}
             </BotShieldActionButton>
           </span>
         </footer>
@@ -3120,7 +3122,7 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
             <BotShieldStatusBadge label={riskLabel(order)} status={riskTone(order)} />
             <p>
               {needsReview(order)
-                ? "This order may require review before fulfillment."
+                ? "This order has elevated risk signals that may warrant review."
                 : "No elevated review requirement is indicated for this order."}
             </p>
           </div>
@@ -3150,7 +3152,7 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
                 ))}
               </ul>
             ) : (
-              <p>No additional risk signals are available for this order.</p>
+              <p>No additional risk details are available for this order.</p>
             )}
           </section>
           <section>
@@ -3178,12 +3180,11 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
             <h3>Investigation</h3>
             <p>
               {order.recommendation
-                ? `Review Shopify's ${String(order.recommendation).toLowerCase()} recommendation and documented assessment facts before fulfilling this order.`
-                : "Wait for the risk assessment to complete before making a fulfillment decision."}
+                ? `Review Shopify's ${String(order.recommendation).toLowerCase()} recommendation and documented assessment details in Shopify Admin.`
+                : "Wait for Shopify's risk assessment to finish before taking action on this order."}
             </p>
             <p className="botshield-fraud-drawer-source-note">
-              Risk information shown here comes from Shopify. BotShield does not generate Shopify
-              order risk assessments.
+              Order risk data comes from Shopify. BotShield does not create Shopify risk assessments.
             </p>
           </section>
         </div>
@@ -3232,7 +3233,7 @@ function FraudOrdersQueueLoading() {
   return (
     <div aria-live="polite" className="botshield-fraud-queue-loading" role="status">
       <span aria-hidden="true" className="botshield-fraud-queue-loading-spinner" />
-      <p>Loading order risk assessments…</p>
+      <p>Loading orders…</p>
     </div>
   );
 }
@@ -3429,10 +3430,14 @@ function FraudOrdersPage({ model, actions }) {
             <div className="botshield-fraud-section-intro">
               <span className="botshield-v2-eyebrow">Review queue</span>
               <h2 id="fraud-review-queue-title">Orders requiring attention</h2>
-              {!connected ? null : (
+              {!connected ? (
                 <p>
-                  Prioritized orders with elevated fraud signals or recommendations that may need
-                  review before fulfillment.
+                  Order review isn't available yet. Filters and queue preview will activate when
+                  this feature launches.
+                </p>
+              ) : (
+                <p>
+                  Orders with elevated risk or Shopify recommendations that may need review.
                 </p>
               )}
             </div>
@@ -3642,38 +3647,38 @@ function ProtectionPage({ model, actions }) {
     : { label: "Needs setup", status: "setup_required" };
   const openBotProtectionModule = () =>
     openProfileManager(
-      "Bot protection",
+      "Bot Protection",
       "Detects automated browsers and suspicious user-agent patterns.",
       undefined,
       "bot",
     );
   const openNetworkProtectionModule = () =>
     openStatusManager(
-      "Network / Proxy protection",
+      "Network / Proxy Protection",
       "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
-      "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
+          "Network / Proxy Protection is active when storefront traffic is evaluated. Network signal weighting follows your active protection profile.",
       moduleStatus,
       "network",
     );
   const openRateProtectionModule = () =>
     openProfileManager(
-      "Rate protection",
+      "Rate Protection",
       "Flags unusually frequent visits from the same visitor pattern.",
-      "Rate protection uses the active protection profile. Adjust sensitivity and automated response below.",
+      "Rate Protection uses the active protection profile. Adjust sensitivity and automated response below.",
       "rate",
     );
   const openPageProtectionModule = () =>
     openStatusManager(
-      "Page protection",
-      "Redirects stopped visitors to BotShield's blocked page.",
-      "Page protection is active through the storefront theme embed and app proxy.",
+      "Page Protection",
+      "Redirects blocked visitors to BotShield's blocked page.",
+      "Page Protection is active through the storefront theme embed and app proxy.",
       pageStatus,
       "page",
     );
   const protectionRows = [
     {
       icon: "shield",
-      name: "Bot protection",
+      name: "Bot Protection",
       description: "Detects automated browsers and suspicious automation behavior.",
       configLabel: "Protection profile",
       configValue: model.strictMode ? "Strict" : model.blockLevel,
@@ -3683,7 +3688,7 @@ function ProtectionPage({ model, actions }) {
     },
     {
       icon: "network",
-      name: "Network / Proxy protection",
+      name: "Network / Proxy Protection",
       description: "Identifies suspicious VPN, proxy, hosting, and datacenter traffic.",
       configLabel: "Detection",
       configValue: "Automatic",
@@ -3693,7 +3698,7 @@ function ProtectionPage({ model, actions }) {
     },
     {
       icon: "rate",
-      name: "Rate protection",
+      name: "Rate Protection",
       description: "Detects unusually frequent or repetitive visitor activity.",
       configLabel: "Protection profile",
       configValue: model.strictMode ? "Strict" : model.blockLevel,
@@ -3703,7 +3708,7 @@ function ProtectionPage({ model, actions }) {
     },
     {
       icon: "page",
-      name: "Page protection",
+      name: "Page Protection",
       description: "Applies protection decisions across supported storefront requests.",
       configLabel: "Storefront connection",
       configValue: storefrontConnected ? "Theme embed" : "Not connected",
@@ -3770,7 +3775,7 @@ function ProtectionPage({ model, actions }) {
         <div className="botshield-protection-header">
           <div>
             <p className="botshield-overview-subtitle">
-              Configure how BotShield detects and responds to suspicious storefront traffic.
+              Configure how BotShield detects and responds to suspicious storefront activity.
             </p>
           </div>
         </div>
@@ -3780,7 +3785,7 @@ function ProtectionPage({ model, actions }) {
           <div>
             <span>Protection status</span>
             <h2>{protectionHealthy ? "Protection active" : "Protection needs attention"}</h2>
-            <p>{model.protectionPaused ? "Protection is temporarily paused. Resume protection to restore storefront enforcement." : storefrontConnected ? "BotShield is evaluating storefront traffic using your configured protection rules." : "Connect the storefront theme app embed before full storefront coverage is available."}</p>
+            <p>{model.protectionPaused ? "Protection is temporarily paused. Resume protection to restore storefront enforcement." : storefrontConnected ? "BotShield is evaluating storefront activity using your protection settings." : "Enable the theme app embed to enable full storefront coverage."}</p>
           </div>
           <div className="botshield-protection-status-action">
             <BotShieldStatusBadge status={protectionHealthy ? "active" : "setup_required"} label={`${activeProtections} of ${protectionRows.length} modules active`} />
@@ -3789,7 +3794,7 @@ function ProtectionPage({ model, actions }) {
         </section>
 
         <section className="botshield-protection-section">
-          <div className="botshield-protection-section-heading"><span>Protection modules</span><h2>Protection modules</h2><p>Configure the detection layers BotShield uses to protect your storefront.</p></div>
+          <div className="botshield-protection-section-heading"><span>Protection modules</span><h2>Protection modules</h2><p>Configure the protection modules BotShield uses on your storefront.</p></div>
           <div className="botshield-protection-list">
             {protectionRows.map((row) => <div className="botshield-protection-row" key={row.name}>
               <div className="botshield-protection-module-icon"><OverviewIcon name={row.icon} centered /></div>
@@ -3808,7 +3813,7 @@ function ProtectionPage({ model, actions }) {
         </section>
 
         <section className="botshield-protection-section">
-          <div className="botshield-protection-section-heading"><span>Enforcement</span><h2>Protection policy</h2><p>Control how BotShield responds when suspicious traffic is detected.</p></div>
+          <div className="botshield-protection-section-heading"><span>Enforcement</span><h2>Protection policy</h2><p>Control how BotShield responds to suspicious storefront activity.</p></div>
           <div className="botshield-protection-policy">
             <div className="botshield-protection-policy-main">
               <div className="botshield-protection-policy-flow">
@@ -3818,7 +3823,7 @@ function ProtectionPage({ model, actions }) {
                 <b aria-hidden="true">→</b>
                 <div><span>Action</span><strong>{model.autoBlock ? "Enforce" : "Record only"}</strong><small>{model.autoBlock ? "Apply configured response" : "Observe without intervention"}</small></div>
               </div>
-              <p>BotShield evaluates recorded signals, classifies risk, and applies the configured storefront response.</p>
+              <p>BotShield evaluates threat signals, assigns risk, and applies your configured response.</p>
             </div>
             <div className="botshield-protection-policy-side">
               <div className="botshield-protection-policy-map"><div><BotShieldStatusBadge status="high" label="High risk" /><span>{model.autoBlock ? "Stop or request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="medium" label="Medium risk" /><span>{model.autoBlock ? "Request verification" : "Allow and record"}</span></div><div><BotShieldStatusBadge status="low" label="Low risk" /><span>Allow</span></div></div>
@@ -3828,7 +3833,7 @@ function ProtectionPage({ model, actions }) {
         </section>
 
         <section className="botshield-protection-section">
-          <div className="botshield-protection-section-heading"><span>Access controls</span><h2>Visitor access</h2><p>Manage visitors that BotShield should always block or trust.</p></div>
+          <div className="botshield-protection-section-heading"><span>Access controls</span><h2>Visitor access</h2><p>Manage IP addresses BotShield should always block or trust.</p></div>
           <div className="botshield-protection-access-grid">
             <article><div className="botshield-protection-access-icon"><OverviewIcon name="block" centered /></div><div className="botshield-protection-access-content"><h3>Blocked visitors</h3><p>Visitors manually prevented from accessing the storefront.</p><div className="botshield-protection-access-count"><strong>{model.blockedIPs.length}</strong><span>Blocked visitor{model.blockedIPs.length === 1 ? "" : "s"}</span></div></div><BotShieldActionButton onClick={openBlocklist}>Manage blocklist</BotShieldActionButton></article>
             <article><div className="botshield-protection-access-icon"><OverviewIcon name="visitor" centered /></div><div className="botshield-protection-access-content"><h3>Trusted visitors</h3><p>Visitors allowed to bypass supported BotShield protection checks.</p><div className="botshield-protection-access-count"><strong>{model.whitelist.length}</strong><span>Trusted visitor{model.whitelist.length === 1 ? "" : "s"}</span></div></div><BotShieldActionButton onClick={openTrusted}>Manage trusted visitors</BotShieldActionButton></article>
@@ -3854,7 +3859,7 @@ function ProtectionPage({ model, actions }) {
               <header className="botshield-protection-drawer-header"><div><h2 className="botshield-protection-modal-title" id="botshield-protection-drawer-title">{protectionModal.title}</h2><p className="botshield-protection-modal-copy">{protectionModal.text}</p></div><BotShieldActionButton accessibilityLabel="Close" disabled={saving} icon="x" id="botshield-protection-drawer-close" onClick={requestClose} /></header>
               {protectionModal.type === "profile" ? (
                 <div className="botshield-protection-modal-body">
-                  {saveError ? <BotShieldBanner tone="critical" title={`Couldn’t save ${protectionModal.title} settings`}>Your changes haven’t been applied. {saveError}</BotShieldBanner> : null}
+                  {saveError ? <BotShieldBanner tone="critical" title={`Couldn't save ${protectionModal.title}`}>Your changes haven't been applied. {saveError}</BotShieldBanner> : null}
                   <section className="botshield-protection-drawer-section">
                     <div className="botshield-protection-drawer-section-label">Protection level</div>
                   <BotShieldSelect
@@ -3876,7 +3881,7 @@ function ProtectionPage({ model, actions }) {
                     <div className="botshield-protection-drawer-section-label">Automation</div>
                   <BotShieldToggle
                     label="Auto Block"
-                    details="Automatically block requests that cross the active risk threshold."
+                    details="Automatically block visitors that exceed your risk threshold."
                     checked={draft.autoBlock}
                     onChange={(autoBlock) => {
                       setSaveError("");
@@ -3902,7 +3907,7 @@ function ProtectionPage({ model, actions }) {
                     <div className="botshield-protection-drawer-section-label">Effective enforcement</div>
                     <div className="botshield-protection-decision-preview">
                       <div><span>Risk threshold</span><strong>{effectiveThreshold} / 100</strong></div>
-                      <div><span>Response</span><strong>{draft.autoBlock ? "Stop matching traffic" : "Record only"}</strong></div>
+                      <div><span>Response</span><strong>{draft.autoBlock ? "Block matching traffic" : "Record only"}</strong></div>
                     </div>
                     <p className="botshield-protection-drawer-explanation">
                       {draft.autoBlock
@@ -3919,7 +3924,7 @@ function ProtectionPage({ model, actions }) {
                         <p className="botshield-protection-signal-note">
                           Choose which behavioral signals contribute to a visitor’s risk score. Changes apply after you save.
                         </p>
-                        <div className="botshield-protection-rate-controls" aria-label="Rate protection controls">
+                        <div className="botshield-protection-rate-controls" aria-label="Rate Protection controls">
                           <BotShieldToggle label="Repeated activity" details="Adds 8 risk points after 3 recent requests from the same IP within one hour." checked={draft.repeatedActivityEnabled} onChange={(repeatedActivityEnabled) => setDraft((current) => ({ ...current, repeatedActivityEnabled }))} />
                           <BotShieldToggle label="Elevated request rate" details="Adds 20 risk points after 6 recent requests from the same IP within one hour." checked={draft.elevatedRateEnabled} onChange={(elevatedRateEnabled) => setDraft((current) => ({ ...current, elevatedRateEnabled }))} />
                           <BotShieldToggle label="Burst traffic" details="Adds 40 risk points after 12 recent requests from the same IP within one hour." checked={draft.burstTrafficEnabled} onChange={(burstTrafficEnabled) => setDraft((current) => ({ ...current, burstTrafficEnabled }))} />
@@ -4020,18 +4025,18 @@ function ProtectionPage({ model, actions }) {
                           <div><strong>Network reputation</strong><span>Provider and ASN risk signals where available</span></div>
                         </div>
                       </section>
-                      <BotShieldInlineHelp>Network intelligence contributes to the real request risk score. It does not claim a visitor’s exact physical location.</BotShieldInlineHelp>
+                      <BotShieldInlineHelp>Network signals contribute to the risk score. They do not identify a visitor's exact location.</BotShieldInlineHelp>
                       <div className="botshield-protection-modal-actions"><BotShieldActionButton onClick={() => openProfileManager("Protection policy", "Configure how BotShield responds to recorded storefront risk.")}>Review protection policy</BotShieldActionButton></div>
                     </>
                   ) : (
                     <>
                       <section className="botshield-protection-drawer-section">
-                        <div className="botshield-protection-drawer-section-label">Protected storefront areas</div>
+                        <div className="botshield-protection-drawer-section-label">Sensitive storefront paths</div>
                         <div className="botshield-protection-path-grid">
                           {["Account", "Login", "Cart", "Checkout", "Admin", "API routes"].map((path) => <span key={path}>{path}</span>)}
                         </div>
                       </section>
-                      <BotShieldInlineHelp>BotShield applies storefront decisions through the theme app embed and Shopify app proxy. Shopify-controlled surfaces remain subject to Shopify platform limitations.</BotShieldInlineHelp>
+                      <BotShieldInlineHelp>These paths contribute to sensitive-path threat signals when accessed. Storefront enforcement applies broadly through the theme app embed and app proxy.</BotShieldInlineHelp>
                       <div className="botshield-protection-modal-actions">
                         {!storefrontConnected ? <BotShieldActionButton onClick={actions.openThemeEditor} variant="primary">Connect storefront</BotShieldActionButton> : null}
                         <BotShieldActionButton onClick={requestClose}>Close</BotShieldActionButton>
@@ -4069,7 +4074,7 @@ function ProtectionPage({ model, actions }) {
         }}
         tone="critical"
       >
-        Your updates haven't been saved. You can keep editing or discard them.
+        Your changes haven't been saved. Keep editing or discard them.
       </BotShieldConfirmationModal>
       </BotShieldPageShell>
       </BotShieldNativePage>
@@ -4150,7 +4155,7 @@ function ProtectionPage({ model, actions }) {
             />
             <ProtectionModeCard
               title="Strict"
-              description="Responds aggressively to risky traffic. Use when the store is under attack."
+              description="Responds aggressively to risky traffic. Use when suspicious activity is elevated."
               selected={draft.blockLevel === "High" && draft.strictMode}
               onSelect={() =>
                 setDraft((current) => ({
@@ -4229,7 +4234,7 @@ function ProtectionPage({ model, actions }) {
             gap="base"
           >
             <RuleSummaryCard
-              title="Bot detection"
+              title="Bot Protection"
               status="active"
               count="Active"
               description="Detects automated browsers and suspicious user-agent patterns."
@@ -4273,19 +4278,19 @@ function ProtectionPage({ model, actions }) {
               }
             />
             <RuleSummaryCard
-              title="Network intelligence"
+              title="Network / Proxy Protection"
               status="active"
               count="Enabled"
               description="Uses VPN, proxy, datacenter, hosting provider, and ASN signals."
             />
             <RuleSummaryCard
-              title="Repeated visitor activity"
+              title="Rate Protection"
               status="active"
               count="Active"
               description="Flags unusually frequent visits from the same visitor pattern."
             />
             <RuleSummaryCard
-              title="Blocked page"
+              title="Page Protection"
               status="active"
               count="Configured"
               description="Stopped visitors are redirected to BotShield's app-proxy blocked page."
@@ -4322,7 +4327,7 @@ function ProtectionPage({ model, actions }) {
             />
             <BotShieldToggle
               label="Auto Block"
-              details="Automatically block requests that cross the active risk threshold."
+              details="Automatically block visitors that exceed your risk threshold."
               checked={draft.autoBlock}
               onChange={(autoBlock) =>
                 setDraft((current) => ({ ...current, autoBlock }))
@@ -4350,7 +4355,7 @@ function ProtectionPage({ model, actions }) {
         </BotShieldCard>
 
         <s-stack gap="small">
-          <s-heading>Network intelligence</s-heading>
+          <s-heading>Network / Proxy Protection</s-heading>
           <s-paragraph color="subdued">
             Use enriched network data to explain suspicious storefront activity.
           </s-paragraph>
@@ -4364,7 +4369,7 @@ function ProtectionPage({ model, actions }) {
               contribute to real storefront risk scores.
             </s-text>
             <BotShieldInlineHelp>
-              Network intelligence is approximate and does not identify a
+              Network / Proxy Protection signals are approximate and do not identify a
               visitor’s exact physical location.
             </BotShieldInlineHelp>
           </s-stack>
@@ -4569,14 +4574,14 @@ function formatSimulationLabel(model) {
 }
 
 const BOTSHIELD_PUBLIC_PLAN_FEATURES = [
-  "Bot protection",
-  "Network / Proxy protection",
-  "Rate protection",
-  "Page protection",
+  "Bot Protection",
+  "Network / Proxy Protection",
+  "Rate Protection",
+  "Page Protection",
   "IP blocklist",
   "Trusted visitors",
-  "Fraud order insights",
-  "Full visitor analytics",
+  "Fraud order review (coming soon)",
+  "Storefront analytics",
 ];
 
 function getTrialDaysRemaining(trialEndsAt) {
@@ -4666,7 +4671,7 @@ function getSettingsBillingPlans(billingStatus = {}) {
       monthlyPrice: billing.monthlyPrice,
       trialDays: billing.trialDays,
       description:
-        "Essential storefront bot protection, enforcement, alerts, and analytics for one Shopify store.",
+        "Storefront bot protection, enforcement, alerts, and analytics for one Shopify store.",
       features: BOTSHIELD_PUBLIC_PLAN_FEATURES,
       isCurrent: billing.isCurrentPublicPlan,
     },
@@ -4976,7 +4981,7 @@ function SettingsPage({ model, actions }) {
     : !draft.emailAlerts
       ? "Turn on security alerts before sending a test email."
       : !model.emailProviderConfigured
-        ? "Email delivery is not configured in this environment."
+        ? "Email delivery isn't set up yet."
         : !alertEmailValid
           ? "Enter a valid alert email before sending a test email."
           : "";
@@ -4985,7 +4990,7 @@ function SettingsPage({ model, actions }) {
     : !draft.weeklyReportsEnabled
       ? "Turn on the weekly security report before sending one now."
       : !model.emailProviderConfigured
-        ? "Email delivery is not configured in this environment."
+        ? "Email delivery isn't set up yet."
         : !alertEmailValid
           ? "Enter a valid alert email before sending a report."
           : "";
@@ -5040,8 +5045,8 @@ function SettingsPage({ model, actions }) {
               }
               description={
                 model.protectionPaused
-                  ? "Automated storefront responses are paused until you resume protection."
-                  : "BotShield is applying your configured storefront protection policy."
+                  ? "Automated responses are paused until you resume protection."
+                  : "BotShield is applying your protection settings."
               }
               icon="activity"
               title="Protection state"
@@ -5051,7 +5056,7 @@ function SettingsPage({ model, actions }) {
           <div className="botshield-settings-hub-subgroup is-info">
             <SettingsHubRow
               control={<span className="botshield-settings-hub-value">{protectionProfile}</span>}
-              description="Shared detection profile configured on the Protection page."
+              description="Shared protection profile configured on the Protection page."
               title="Protection profile"
               variant="info"
             />
@@ -5089,14 +5094,13 @@ function SettingsPage({ model, actions }) {
                   )}
                 </div>
               }
-              description="Manage detection modules, enforcement policy, and visitor access."
+              description="Manage protection modules, enforcement policy, and visitor access."
               title="Protection configuration"
               variant="action"
             />
             {model.protectionPaused ? null : (
               <p className="botshield-settings-hub-inline-note">
-                Pause temporarily stops automated storefront responses for one hour. Monitoring
-                continues and protection can be resumed at any time.
+                Pausing stops automated responses for one hour. Storefront activity is still recorded, and you can resume anytime.
               </p>
             )}
           </div>
@@ -5289,15 +5293,14 @@ function SettingsPage({ model, actions }) {
       return (
         <>
           <SettingsHubSection
-            description="Configure where BotShield sends security notifications."
+            description="Choose where BotShield sends security alerts."
             eyebrow="Notifications"
             panel="config"
             title="Alert configuration"
           >
             {!model.emailProviderConfigured ? (
               <div className="botshield-settings-hub-note">
-                Email delivery is not configured for this environment. Settings can
-                be saved, but messages will not send until delivery is configured.
+                Email delivery isn't set up yet. You can save settings, but messages won't send until delivery is configured.
               </div>
             ) : null}
             <SettingsHubRow
@@ -5345,7 +5348,7 @@ function SettingsPage({ model, actions }) {
                   }
                 />
               }
-              description="Send alerts only for high-risk storefront incidents instead of broader suspicious activity."
+              description="Send alerts only for high-risk storefront events."
               title="High-risk alerts only"
               variant="config"
             />
@@ -5432,7 +5435,7 @@ function SettingsPage({ model, actions }) {
                 }
               />
             }
-            description="Send a weekly summary of recorded storefront protection activity."
+            description="Send a weekly summary of storefront protection activity."
             title="Weekly security report"
             variant="config"
           />
@@ -5503,7 +5506,7 @@ function SettingsPage({ model, actions }) {
             description={
               storefrontConnected
                 ? "Theme app embed is active and BotShield can evaluate storefront traffic."
-                : "Enable the theme app embed to connect storefront protection."
+                : "Enable the theme app embed to start recording storefront activity."
             }
             icon="connection"
             title="Storefront theme embed"
@@ -5612,7 +5615,7 @@ function SettingsPage({ model, actions }) {
               }
               description={
                 billing.error ||
-                "Shopify Partner API billing variables are not fully configured in this environment."
+                "Complete Shopify billing setup before testing plan changes."
               }
               icon="diagnostic"
               title="Billing verification"
@@ -5630,7 +5633,7 @@ function SettingsPage({ model, actions }) {
                 Run diagnostic scan
               </BotShieldAsyncButton>
             }
-            description="Verify storefront reporting and BotShield enforcement behavior."
+            description="Check that storefront activity is being recorded and enforcement is working."
             icon="diagnostic"
             title="Diagnostic scan"
             variant="diagnostic"
@@ -5652,7 +5655,7 @@ function SettingsPage({ model, actions }) {
                 Run simulation scan
               </BotShieldAsyncButton>
             }
-            description="Record a labeled simulation event without changing storefront enforcement."
+            description="Record a test event without changing live enforcement."
             icon="diagnostic"
             title="Simulation scan"
             variant="diagnostic"
@@ -5663,7 +5666,7 @@ function SettingsPage({ model, actions }) {
                 Refresh status
               </BotShieldActionButton>
             }
-            description="Reload settings, protection state, and recent activity from the backend."
+            description="Reload settings, protection status, and recent activity."
             title="Refresh application data"
             variant="secondary"
           />
@@ -5676,7 +5679,7 @@ function SettingsPage({ model, actions }) {
         <header className="botshield-settings-hub-section-head">
           <span className="botshield-v2-eyebrow">Danger zone</span>
           <h2>Destructive actions</h2>
-          <p>Irreversible actions for this store. Use only when you understand the impact.</p>
+          <p>Permanent actions for this store. Proceed only if you understand the impact.</p>
         </header>
         <div className="botshield-settings-hub-danger">
           <div className="botshield-settings-hub-danger-icon">
@@ -5685,8 +5688,8 @@ function SettingsPage({ model, actions }) {
           <div className="botshield-settings-hub-danger-copy">
             <h3>Clear simulation data</h3>
             <p>
-              Remove dashboard simulation events from BotShield analytics. Real storefront traffic,
-              settings, blocklists, and trusted visitors are not deleted.
+              Remove test events from analytics. Real storefront traffic, settings, blocklists, and
+              trusted visitors are not deleted.
             </p>
           </div>
           <BotShieldActionButton
@@ -5719,8 +5722,8 @@ function SettingsPage({ model, actions }) {
             }
           }}
         >
-          Remove dashboard simulation events from BotShield analytics. Real storefront
-          traffic, settings, blocklists, and trusted visitors are not deleted.
+          Remove test events from analytics. Real storefront traffic, settings, blocklists, and
+          trusted visitors are not deleted.
         </BotShieldConfirmationModal>
       </section>
     );
@@ -5734,8 +5737,7 @@ function SettingsPage({ model, actions }) {
         <header className="botshield-overview-header botshield-settings-hub-header">
           <div className="botshield-settings-hub-header-copy">
             <p className="botshield-overview-subtitle">
-              Manage protection preferences, alerts, connections, billing, and BotShield
-              system configuration.
+              Manage protection, alerts, billing, connections, and app settings.
             </p>
           </div>
           <div
@@ -5871,7 +5873,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
           <div className="botshield-page-content">
             <BotShieldBanner
               tone="critical"
-              title="Some BotShield data could not be loaded"
+              title="Some data couldn't be loaded"
             >
               {model.backendErrors.join(" ")}
             </BotShieldBanner>

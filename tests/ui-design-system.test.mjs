@@ -117,13 +117,13 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   );
 
   assert.match(source, /heading="Overview"/);
-  assert.match(source, /Monitor storefront protection, security activity/);
+  assert.match(source, /Monitor storefront protection, activity, and/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
   assert.match(source, /Paused/);
-  assert.match(source, /Challenged visitors/);
-  assert.match(source, /Blocked visitors/);
+  assert.match(source, /Challenged events/);
+  assert.match(source, /Blocked events/);
   assert.match(source, /Needs review/);
   assert.match(source, /Store health/);
   assert.match(source, /Response mode/);
@@ -142,8 +142,8 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /Protection mode/);
   assert.match(source, /Automated response is active/);
   assert.match(source, /Active protections/);
-  assert.match(source, /Bot detection/);
-  assert.match(source, /Network intelligence/);
+  assert.match(source, /Bot Protection/);
+  assert.match(source, /Network \/ Proxy Protection/);
   assert.match(source, /Storefront signals BotShield uses today/);
   assert.match(source, /type: "blocklist"/);
   assert.match(source, /await actions\.addBlockedIp\(blockedIpInput\)/);
@@ -154,7 +154,7 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /filterFraudOrders/);
   assert.match(source, /Fraud Orders setup/);
   assert.match(source, /No risky orders are currently pending fulfillment/);
-  assert.match(source, /Manage protection preferences/);
+  assert.match(source, /Manage protection, alerts, billing, connections, and app settings\./);
   assert.match(source, /botshield-overview-v2 botshield-settings-hub-content/);
   assert.match(source, /botshield-v2-health-dot/);
   assert.match(source, /formatSimulationLabel/);

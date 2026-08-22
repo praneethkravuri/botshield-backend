@@ -28,11 +28,11 @@ test("Overview store health refresh uses a dedicated lifecycle", () => {
 
 test("Overview refresh status button shows loading and merchant feedback", () => {
   assert.match(overviewSource, /handleRefreshStoreHealth/);
-  assert.match(overviewSource, /toast\.success\("Store health refreshed"\)/);
+  assert.match(overviewSource, /toast\.success\("Store health updated"\)/);
   assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /loading=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /Refresh status/);
-  assert.match(overviewSource, /Store health refresh failed/);
+  assert.match(indexSource, /Couldn't refresh store health\./);
   assert.doesNotMatch(
     overviewSource,
     /Refresh status[\s\S]{0,220}onClick=\{storefrontSensorActive \? actions\.refresh/,

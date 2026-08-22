@@ -851,10 +851,9 @@ export default function Index() {
   };
 
   const recordBackendError = (area, error) => {
-    const detail = toMerchantErrorMessage(error, "Request failed.");
-    const message = `${area}: ${detail}`;
+    const detail = toMerchantErrorMessage(error, "Couldn't load this data.");
     setBackendErrors((current) =>
-      current.includes(message) ? current : [...current, message],
+      current.includes(detail) ? current : [...current, detail],
     );
   };
 
@@ -894,7 +893,7 @@ export default function Index() {
       setLastSyncedAt(new Date().toLocaleTimeString());
     } catch (error) {
       setAnalyticsRefreshError(
-        toMerchantErrorMessage(error, "Analytics could not be refreshed."),
+        toMerchantErrorMessage(error, "Couldn't refresh analytics."),
       );
     } finally {
       analyticsRefreshInFlight.current = false;
@@ -919,7 +918,7 @@ export default function Index() {
     } catch (error) {
       const message = toMerchantErrorMessage(
         error,
-        "Store health could not be refreshed.",
+        "Couldn't refresh store health.",
       );
       setStoreHealthRefreshError(message);
       return { ok: false, error: message };
@@ -1134,7 +1133,7 @@ export default function Index() {
 
   const handleEmailAlertsToggle = () => {
     if (!emailProviderConfigured && !emailAlerts) {
-      triggerAlert("Email delivery requires RESEND_API_KEY and ALERT_FROM_EMAIL on Render.");
+      triggerAlert("Email delivery isn't configured. Contact your administrator or support.");
       return;
     }
     setEmailAlerts((prev) => {
@@ -1218,7 +1217,7 @@ export default function Index() {
           break;
         }
         await refreshBackendState();
-        triggerAlert("Runtime refreshed from the live backend.");
+        triggerAlert("Application data refreshed.");
         break;
       case "autoblock":
         await handleAutoBlockToggle();
@@ -1404,7 +1403,7 @@ export default function Index() {
       );
     } catch (err) {
       console.error("Failed to generate test traffic", err);
-      triggerAlert("Failed to generate backend test traffic.");
+      triggerAlert("Couldn't generate test traffic.");
     }
   };
 
@@ -2540,7 +2539,7 @@ export default function Index() {
       complete: Boolean(emailProviderConfigured),
       detail: emailProviderConfigured
         ? "Resend is available for alerts and reports."
-        : "Configure RESEND_API_KEY and verify botshieldapp.com.",
+        : "Set up email delivery before alerts can send.",
     },
     {
       label: "Alert email configured",

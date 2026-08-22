@@ -17,11 +17,11 @@ const shopifyConfig = await readFile(
 
 test("Fraud Orders uses a dedicated disconnected experience", () => {
   assert.match(page, /if \(!connected\)/);
-  assert.match(page, /Order risk needs setup/);
+  assert.match(page, /Order review isn't available yet/);
   assert.match(page, /Orders requiring attention/);
-  assert.match(page, /Connect order risk to start reviewing orders/);
+  assert.match(page, /Order review isn't available in this version of BotShield/);
   assert.match(page, /Setup required/);
-  assert.match(page, /Not available in this BotShield release yet/);
+  assert.match(page, /Not available in this version of BotShield yet\./);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
@@ -72,7 +72,7 @@ test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /Connect order access/);
   assert.match(page, /Cancel/);
   assert.match(page, /Order risk isn't connected/);
-  assert.match(page, /Connect order risk to start reviewing suspicious orders/);
+  assert.match(page, /See what's required for order review when this feature becomes available\./);
   assert.match(page, /botshield-fraud-setup-checklist/);
   assert.match(page, /botshield-fraud-setup-progress-count/);
   assert.doesNotMatch(page, /Unavailable in this release/);

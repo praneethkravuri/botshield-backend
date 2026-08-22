@@ -1,5 +1,5 @@
 const GENERIC_ACTION_ERROR =
-  "BotShield could not complete that action. Try again or refresh the page.";
+  "That action couldn't be completed. Try again or refresh the page.";
 
 export function toMerchantErrorMessage(error, fallback = GENERIC_ACTION_ERROR) {
   if (!(error instanceof Error) || !error.message) return fallback;

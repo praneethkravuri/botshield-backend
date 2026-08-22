@@ -42,7 +42,7 @@ test("Analytics controls provide supported periods and connected filters", () =>
   assert.doesNotMatch(analyticsSource, /setSaveSuccess/);
   assert.match(analyticsSource, /refreshAnalytics/);
   assert.match(analyticsSource, /analyticsRefreshing/);
-  assert.match(analyticsSource, /Analytics refresh failed/);
+  assert.match(analyticsSource, /Couldn't refresh analytics/);
 });
 
 test("scan telemetry exposes only recorded dimensions needed by Analytics", () => {
@@ -65,8 +65,8 @@ test("Analytics premium refinement remains data-derived and adapts to sparse act
 
 test("Analytics pairs target intelligence with recorded network origins", () => {
   assert.match(analyticsSource, /title="Most targeted storefront areas"/);
-  assert.match(analyticsSource, /title="Attack origins"/);
-  assert.match(analyticsSource, /Recorded network classifications associated with suspicious storefront activity/);
+  assert.match(analyticsSource, /title="Network sources"/);
+  assert.match(analyticsSource, /Network types recorded for suspicious storefront events\./);
   assert.match(analyticsSource, /No reliable network origin data was recorded during this period/);
   assert.doesNotMatch(analyticsSource, /title=\{originRows\.length \? "Threat origins"/);
 });

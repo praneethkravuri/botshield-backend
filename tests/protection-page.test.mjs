@@ -21,10 +21,10 @@ const controlSource = fs.readFileSync(
 
 test("Protection remains a control plane with four real modules", () => {
   for (const label of [
-    "Bot protection",
-    "Network / Proxy protection",
-    "Rate protection",
-    "Page protection",
+    "Bot Protection",
+    "Network / Proxy Protection",
+    "Rate Protection",
+    "Page Protection",
   ]) assert.match(adminSource, new RegExp(label.replace("/", "\\/")));
   assert.match(adminSource, /Protection policy/);
   assert.match(adminSource, /Visitor access/);
@@ -53,7 +53,7 @@ test("Protection profile drawer has explicit persisted save and discard lifecycl
   assert.match(adminSource, /Cancel/);
   assert.match(adminSource, /Saving changes…/);
   assert.match(adminSource, /Settings saved/);
-  assert.match(adminSource, /Couldn’t save \$\{protectionModal\.title\} settings/);
+  assert.match(adminSource, /Couldn't save \$\{protectionModal\.title\}/);
   assert.match(adminSource, /accessibilityLabel="Close"/);
   assert.match(adminSource, /event\.key === "Escape"/);
   assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
@@ -105,7 +105,7 @@ test("Protection V2.1 exposes only real detection and enforcement capabilities",
     "VPN / Proxy",
     "Hosting / Datacenter",
     "Network reputation",
-    "Protected storefront areas",
+    "Sensitive storefront paths",
     "Risk threshold",
     "Verified activity · Last 30 days",
   ]) assert.match(adminSource, new RegExp(copy.replace("/", "\\/")));
