@@ -218,3 +218,26 @@ test("Overview Configure deep links still open Protection module managers", () =
   assert.match(protectionPage, /if \(guardProfileDraft\(\)\) return undefined;/);
   assert.match(protectionPage, /BOTSHIELD_PROTECTION_MODAL_ID/);
 });
+
+test("blocked and trusted visitor lists stay mutually exclusive", () => {
+  const upsertBlocked = controlSource.slice(
+    controlSource.indexOf("export async function upsertBlockedIp"),
+    controlSource.indexOf("export async function removeBlockedIp"),
+  );
+  const upsertWhitelist = controlSource.slice(
+    controlSource.indexOf("export async function upsertWhitelistIp"),
+    controlSource.indexOf("export async function removeWhitelistIp"),
+  );
+
+  assert.match(
+    upsertBlocked,
+    /db\.\$transaction\(\[[\s\S]*db\.blockedIP\.upsert[\s\S]*db\.whitelistIP\.deleteMany/,
+  );
+  assert.match(upsertBlocked, /where: \{ shop: normalizedShop, ipAddress \}/);
+
+  assert.match(
+    upsertWhitelist,
+    /db\.\$transaction\(\[[\s\S]*db\.whitelistIP\.upsert[\s\S]*db\.blockedIP\.deleteMany/,
+  );
+  assert.match(upsertWhitelist, /where: \{ shop: normalizedShop, ipAddress \}/);
+});

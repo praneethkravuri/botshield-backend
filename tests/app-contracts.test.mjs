@@ -223,7 +223,10 @@ test("merchant product actions stay connected to real backend workflows", async 
   assert.match(indexSource, /refreshAnalytics/);
   assert.match(indexSource, /cache: "no-store"/);
   assert.match(adminSource, /highRiskAlertsOnly/);
-  assert.match(adminSource, /actions\.recoverIncident\(event\.id, "whitelist"\)/);
+  assert.match(adminSource, /actions\.addTrustedIp\(visitorIp\)/);
+  assert.match(adminSource, /actions\.addBlockedIp\(ip\)/);
+  assert.match(adminSource, /actions\.removeBlockedIp\(ip\)/);
+  assert.match(adminSource, /actions\.removeTrustedIp\(ip\)/);
   assert.match(adminSource, /actions\.runSimulation\(\)/);
   assert.match(adminSource, /blocklist: openBlocklist/);
   assert.match(adminSource, /openProtectionModule\?\.\(row\.module\)/);

@@ -2295,8 +2295,10 @@ function AnalyticsPage({ model, actions }) {
 
         <AnalyticsEventDetails
           actions={actions}
+          blockedIPs={model.blockedIPs}
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+          whitelist={model.whitelist}
         />
           </>
         )}
@@ -2408,6 +2410,64 @@ function getAnalyticsDecisionContext(event, signalLabel) {
     : "This request was allowed because no elevated signals were recorded.";
 }
 
+const BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID =
+  "botshield-analytics-block-visitor-modal";
+const BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID =
+  "botshield-analytics-unblock-visitor-modal";
+const BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID =
+  "botshield-analytics-remove-trusted-modal";
+
+function normalizeAnalyticsVisitorIp(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^::ffff:/i, "")
+    .toLowerCase();
+}
+
+function getAnalyticsVisitorIp(event) {
+  const raw = String(event?.ipAddress || "").trim();
+  if (!raw || raw.toLowerCase() === "unknown") {
+    return null;
+  }
+  if (!isValidIpAddressInput(raw)) {
+    return null;
+  }
+  return raw;
+}
+
+function getAnalyticsVisitorAccessState(visitorIp, blockedIPs, whitelist) {
+  if (!visitorIp) {
+    return "unavailable";
+  }
+  const normalized = normalizeAnalyticsVisitorIp(visitorIp);
+  const isBlocked = (blockedIPs || []).some(
+    (row) => normalizeAnalyticsVisitorIp(row.ip) === normalized,
+  );
+  if (isBlocked) {
+    return "blocked";
+  }
+  const isTrusted = (whitelist || []).some(
+    (ip) => normalizeAnalyticsVisitorIp(ip) === normalized,
+  );
+  if (isTrusted) {
+    return "trusted";
+  }
+  return "normal";
+}
+
+function getAnalyticsAccessStateLabel(state) {
+  if (state === "blocked") return "Blocked";
+  if (state === "trusted") return "Trusted";
+  if (state === "normal") return "Normal";
+  return "Unavailable";
+}
+
+function getAnalyticsAccessStateBadgeStatus(state) {
+  if (state === "blocked") return "blocked";
+  if (state === "trusted") return "whitelisted";
+  return "allowed";
+}
+
 function AnalyticsEventDetailField({ label, children }) {
   return (
     <s-stack gap="small-100">
@@ -2426,9 +2486,85 @@ function AnalyticsEventDetailSection({ title, children }) {
   );
 }
 
-function AnalyticsEventDetails({ actions, event, onClose }) {
+function AnalyticsEventDetails({
+  actions,
+  blockedIPs,
+  event,
+  onClose,
+  whitelist,
+}) {
+  const toast = useBotShieldToast();
+  const [pendingAccessAction, setPendingAccessAction] = useState(null);
+  const eventOpenRef = useRef(false);
+
+  useEffect(() => {
+    eventOpenRef.current = Boolean(event);
+  }, [event]);
+
   const requestClose = () => {
     hideBotShieldModal(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID);
+  };
+
+  const resumeEventDetails = () => {
+    if (eventOpenRef.current) {
+      queueBotShieldModalShow(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID);
+    }
+  };
+
+  const openAccessConfirmation = (type, ip) => {
+    hideBotShieldModal(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID);
+    setPendingAccessAction({ type, ip });
+    const modalId =
+      type === "block"
+        ? BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID
+        : type === "unblock"
+          ? BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID
+          : BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID;
+    queueBotShieldModalShow(modalId);
+  };
+
+  const dismissAccessConfirmation = () => {
+    const modalId =
+      pendingAccessAction?.type === "block"
+        ? BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID
+        : pendingAccessAction?.type === "unblock"
+          ? BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID
+          : BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID;
+    setPendingAccessAction(null);
+    hideBotShieldModal(modalId);
+    resumeEventDetails();
+  };
+
+  const confirmAccessAction = async () => {
+    if (!pendingAccessAction?.ip) {
+      return;
+    }
+    const { type, ip } = pendingAccessAction;
+    const modalId =
+      type === "block"
+        ? BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID
+        : type === "unblock"
+          ? BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID
+          : BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID;
+    try {
+      if (type === "block") {
+        await actions.addBlockedIp(ip);
+        toast.success("Visitor added to blocked visitors");
+      } else if (type === "unblock") {
+        await actions.removeBlockedIp(ip);
+        toast.success("Visitor removed from blocked visitors");
+      } else if (type === "remove-trusted") {
+        await actions.removeTrustedIp(ip);
+        toast.success("Visitor removed from trusted visitors");
+      }
+      setPendingAccessAction(null);
+      hideBotShieldModal(modalId);
+      resumeEventDetails();
+    } catch (error) {
+      toast.error(
+        toMerchantErrorMessage(error, "Unable to update visitor access."),
+      );
+    }
   };
 
   const signals = event ? getAnalyticsSignals(event) : [];
@@ -2440,6 +2576,12 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
   const decisionContext = event
     ? getAnalyticsDecisionContext(event, signalLabel)
     : "";
+  const visitorIp = event ? getAnalyticsVisitorIp(event) : null;
+  const accessState = getAnalyticsVisitorAccessState(
+    visitorIp,
+    blockedIPs,
+    whitelist,
+  );
   const hasVisitorDetails = Boolean(
     event &&
       (event.ipAddress ||
@@ -2450,175 +2592,246 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
   );
 
   return (
-    <BotShieldNativeModal
-      heading="Event details"
-      id={BOTSHIELD_ANALYTICS_EVENT_MODAL_ID}
-      modalPadding="none"
-      onAfterHide={onClose}
-      open={Boolean(event)}
-      secondaryActions={
-        <s-button slot="secondary-actions" onClick={requestClose}>
-          Close
-        </s-button>
-      }
-      size="base"
-    >
-      {event ? (
-        <s-stack gap="base">
-          <s-paragraph color="subdued">
-            {formatAnalyticsDetailTimestamp(event.createdAt)}
-          </s-paragraph>
+    <>
+      <BotShieldNativeModal
+        heading="Event details"
+        id={BOTSHIELD_ANALYTICS_EVENT_MODAL_ID}
+        modalPadding="none"
+        onAfterHide={onClose}
+        open={Boolean(event)}
+        secondaryActions={
+          <s-button slot="secondary-actions" onClick={requestClose}>
+            Close
+          </s-button>
+        }
+        size="base"
+      >
+        {event ? (
+          <s-stack gap="base">
+            <s-paragraph color="subdued">
+              {formatAnalyticsDetailTimestamp(event.createdAt)}
+            </s-paragraph>
 
-          <s-box background="subdued" borderRadius="base" padding="base">
-            <s-stack gap="small">
-              <s-stack direction="inline" gap="small" alignItems="center">
-                <BotShieldStatusBadge
-                  label={getOutcomeLabel(event.actionTaken)}
-                  status={event.actionTaken}
-                />
-                <s-text type="strong">
-                  {getRiskLabel(event.threatLevel)} · {signalLabel}
-                </s-text>
+            <s-box background="subdued" borderRadius="base" padding="base">
+              <s-stack gap="small">
+                <s-stack direction="inline" gap="small" alignItems="center">
+                  <BotShieldStatusBadge
+                    label={getOutcomeLabel(event.actionTaken)}
+                    status={event.actionTaken}
+                  />
+                  <s-text type="strong">
+                    {getRiskLabel(event.threatLevel)} · {signalLabel}
+                  </s-text>
+                </s-stack>
+                <s-paragraph color="subdued">{decisionContext}</s-paragraph>
               </s-stack>
-              <s-paragraph color="subdued">{decisionContext}</s-paragraph>
-            </s-stack>
-          </s-box>
-
-          <AnalyticsEventDetailSection title="Detection">
-            <s-grid
-              gridTemplateColumns="repeat(2, minmax(0, 1fr))"
-              gap="base"
-            >
-              <AnalyticsEventDetailField label="Risk">
-                <BotShieldStatusBadge
-                  label={getRiskLabel(event.threatLevel)}
-                  status={event.threatLevel}
-                />
-              </AnalyticsEventDetailField>
-              <AnalyticsEventDetailField label="Decision">
-                <BotShieldStatusBadge
-                  label={getOutcomeLabel(event.actionTaken)}
-                  status={event.actionTaken}
-                />
-              </AnalyticsEventDetailField>
-            </s-grid>
-            <AnalyticsEventDetailField label="Threat signal">
-              <s-text type="strong">{signalLabel}</s-text>
-            </AnalyticsEventDetailField>
-            <s-box
-              background="subdued"
-              border="base"
-              borderRadius="base"
-              padding="base"
-            >
-              <AnalyticsEventDetailField label="Detection reason">
-                <s-text>{reason}</s-text>
-              </AnalyticsEventDetailField>
             </s-box>
-          </AnalyticsEventDetailSection>
 
-          <AnalyticsEventDetailSection title="Request">
-            <s-grid
-              gridTemplateColumns="repeat(2, minmax(0, 1fr))"
-              gap="base"
-            >
-              <AnalyticsEventDetailField label="Page / path">
-                <s-text type="strong">{event.pathVisited || "/"}</s-text>
-              </AnalyticsEventDetailField>
-              <AnalyticsEventDetailField label="Time">
-                <s-text type="strong">
-                  {formatAnalyticsDetailTimestamp(event.createdAt)}
-                </s-text>
-              </AnalyticsEventDetailField>
-            </s-grid>
-            {event.id ? (
-              <AnalyticsEventDetailField label="Event reference">
-                <s-text
-                  title={String(event.id)}
-                  type="strong"
-                  style={{
-                    display: "block",
-                    overflow: "hidden",
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-                    fontSize: "12px",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {String(event.id)}
-                </s-text>
-                <s-text color="subdued">
-                  Use this reference when reviewing the event or contacting
-                  support.
-                </s-text>
-              </AnalyticsEventDetailField>
-            ) : null}
-          </AnalyticsEventDetailSection>
-
-          {hasVisitorDetails ? (
-            <AnalyticsEventDetailSection title="Visitor">
+            <AnalyticsEventDetailSection title="Detection">
               <s-grid
                 gridTemplateColumns="repeat(2, minmax(0, 1fr))"
                 gap="base"
               >
-                {event.ipAddress ? (
-                  <AnalyticsEventDetailField label="Visitor">
-                    <s-text type="strong">
-                      {maskAnalyticsVisitor(event.ipAddress)}
-                    </s-text>
-                  </AnalyticsEventDetailField>
-                ) : null}
-                {networkClassification ? (
-                  <AnalyticsEventDetailField label="Network classification">
-                    <s-text type="strong">{networkClassification}</s-text>
-                  </AnalyticsEventDetailField>
-                ) : null}
-                {event.networkCountry ? (
-                  <AnalyticsEventDetailField label="Recorded location">
-                    <s-text type="strong">
-                      {[event.networkCity, event.networkCountry]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </s-text>
-                  </AnalyticsEventDetailField>
-                ) : null}
-                {event.networkOrg || event.networkProvider ? (
-                  <AnalyticsEventDetailField label="Network">
-                    <s-text type="strong">
-                      {event.networkOrg || event.networkProvider}
-                    </s-text>
-                  </AnalyticsEventDetailField>
-                ) : null}
+                <AnalyticsEventDetailField label="Risk">
+                  <BotShieldStatusBadge
+                    label={getRiskLabel(event.threatLevel)}
+                    status={event.threatLevel}
+                  />
+                </AnalyticsEventDetailField>
+                <AnalyticsEventDetailField label="Decision">
+                  <BotShieldStatusBadge
+                    label={getOutcomeLabel(event.actionTaken)}
+                    status={event.actionTaken}
+                  />
+                </AnalyticsEventDetailField>
               </s-grid>
+              <AnalyticsEventDetailField label="Threat signal">
+                <s-text type="strong">{signalLabel}</s-text>
+              </AnalyticsEventDetailField>
+              <s-box
+                background="subdued"
+                border="base"
+                borderRadius="base"
+                padding="base"
+              >
+                <AnalyticsEventDetailField label="Detection reason">
+                  <s-text>{reason}</s-text>
+                </AnalyticsEventDetailField>
+              </s-box>
             </AnalyticsEventDetailSection>
-          ) : null}
 
-          {event.actionTaken === "blocked" && event.id ? (
-            <s-stack direction="inline" gap="small">
-              <BotShieldAsyncButton
-                action={async () => {
-                  await actions.recoverIncident(event.id, "whitelist");
-                  requestClose();
-                }}
-                successMessage="Visitor trusted"
+            <AnalyticsEventDetailSection title="Request">
+              <s-grid
+                gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+                gap="base"
               >
-                Trust visitor
-              </BotShieldAsyncButton>
-              <BotShieldAsyncButton
-                action={async () => {
-                  await actions.recoverIncident(event.id, "unblock");
-                  requestClose();
-                }}
-                successMessage="IP unblocked"
-              >
-                Unblock IP
-              </BotShieldAsyncButton>
-            </s-stack>
-          ) : null}
-        </s-stack>
-      ) : null}
-    </BotShieldNativeModal>
+                <AnalyticsEventDetailField label="Page / path">
+                  <s-text type="strong">{event.pathVisited || "/"}</s-text>
+                </AnalyticsEventDetailField>
+                <AnalyticsEventDetailField label="Time">
+                  <s-text type="strong">
+                    {formatAnalyticsDetailTimestamp(event.createdAt)}
+                  </s-text>
+                </AnalyticsEventDetailField>
+              </s-grid>
+              {event.id ? (
+                <AnalyticsEventDetailField label="Event reference">
+                  <s-text
+                    title={String(event.id)}
+                    type="strong"
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+                      fontSize: "12px",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {String(event.id)}
+                  </s-text>
+                  <s-text color="subdued">
+                    Use this reference when reviewing the event or contacting
+                    support.
+                  </s-text>
+                </AnalyticsEventDetailField>
+              ) : null}
+            </AnalyticsEventDetailSection>
+
+            {hasVisitorDetails ? (
+              <AnalyticsEventDetailSection title="Visitor">
+                <s-grid
+                  gridTemplateColumns="repeat(2, minmax(0, 1fr))"
+                  gap="base"
+                >
+                  {event.ipAddress ? (
+                    <AnalyticsEventDetailField label="Visitor">
+                      <s-text type="strong">
+                        {maskAnalyticsVisitor(event.ipAddress)}
+                      </s-text>
+                    </AnalyticsEventDetailField>
+                  ) : null}
+                  {networkClassification ? (
+                    <AnalyticsEventDetailField label="Network classification">
+                      <s-text type="strong">{networkClassification}</s-text>
+                    </AnalyticsEventDetailField>
+                  ) : null}
+                  {event.networkCountry ? (
+                    <AnalyticsEventDetailField label="Recorded location">
+                      <s-text type="strong">
+                        {[event.networkCity, event.networkCountry]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </s-text>
+                    </AnalyticsEventDetailField>
+                  ) : null}
+                  {event.networkOrg || event.networkProvider ? (
+                    <AnalyticsEventDetailField label="Network">
+                      <s-text type="strong">
+                        {event.networkOrg || event.networkProvider}
+                      </s-text>
+                    </AnalyticsEventDetailField>
+                  ) : null}
+                </s-grid>
+              </AnalyticsEventDetailSection>
+            ) : null}
+
+            <AnalyticsEventDetailSection title="Visitor access">
+              {visitorIp ? (
+                <>
+                  <AnalyticsEventDetailField label="Current access">
+                    <BotShieldStatusBadge
+                      label={getAnalyticsAccessStateLabel(accessState)}
+                      status={getAnalyticsAccessStateBadgeStatus(accessState)}
+                    />
+                  </AnalyticsEventDetailField>
+                  <s-stack direction="inline" gap="small">
+                    {accessState === "normal" ? (
+                      <>
+                        <BotShieldActionButton
+                          tone="critical"
+                          onClick={() =>
+                            openAccessConfirmation("block", visitorIp)
+                          }
+                        >
+                          Block visitor
+                        </BotShieldActionButton>
+                        <BotShieldAsyncButton
+                          action={async () => {
+                            await actions.addTrustedIp(visitorIp);
+                          }}
+                          successMessage="Visitor added to trusted visitors"
+                        >
+                          Trust visitor
+                        </BotShieldAsyncButton>
+                      </>
+                    ) : null}
+                    {accessState === "blocked" ? (
+                      <BotShieldActionButton
+                        onClick={() =>
+                          openAccessConfirmation("unblock", visitorIp)
+                        }
+                      >
+                        Unblock visitor
+                      </BotShieldActionButton>
+                    ) : null}
+                    {accessState === "trusted" ? (
+                      <BotShieldActionButton
+                        onClick={() =>
+                          openAccessConfirmation("remove-trusted", visitorIp)
+                        }
+                      >
+                        Remove from trusted
+                      </BotShieldActionButton>
+                    ) : null}
+                  </s-stack>
+                </>
+              ) : (
+                <BotShieldBanner
+                  title="Visitor access unavailable"
+                  tone="info"
+                >
+                  This event does not include a reliable visitor IP address, so
+                  BotShield cannot block or trust it from here.
+                </BotShieldBanner>
+              )}
+            </AnalyticsEventDetailSection>
+          </s-stack>
+        ) : null}
+      </BotShieldNativeModal>
+
+      <BotShieldConfirmationModal
+        confirmLabel="Block visitor"
+        heading="Block this visitor?"
+        id={BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID}
+        onConfirm={confirmAccessAction}
+        onDismiss={dismissAccessConfirmation}
+        tone="critical"
+      >
+        This visitor will be added to your Blocked visitors list on Protection.
+      </BotShieldConfirmationModal>
+      <BotShieldConfirmationModal
+        confirmLabel="Unblock visitor"
+        heading="Unblock this visitor?"
+        id={BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID}
+        onConfirm={confirmAccessAction}
+        onDismiss={dismissAccessConfirmation}
+        tone="critical"
+      >
+        This visitor will be removed from your Blocked visitors list.
+      </BotShieldConfirmationModal>
+      <BotShieldConfirmationModal
+        confirmLabel="Remove"
+        heading="Remove trusted visitor?"
+        id={BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID}
+        onConfirm={confirmAccessAction}
+        onDismiss={dismissAccessConfirmation}
+        tone="critical"
+      >
+        This visitor will be removed from your Trusted visitors list.
+      </BotShieldConfirmationModal>
+    </>
   );
 }
 

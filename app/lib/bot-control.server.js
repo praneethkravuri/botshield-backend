@@ -306,27 +306,32 @@ export async function upsertBlockedIp(shop, input = {}) {
   const active = input.active !== false;
   const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
 
-  const row = await db.blockedIP.upsert({
-    where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
-    create: {
-      shop: normalizedShop,
-      ipAddress,
-      reason,
-      source,
-      hits: 1,
-      active,
-      expiresAt,
-      lastSeenAt: now,
-    },
-    update: {
-      reason,
-      source,
-      active,
-      expiresAt,
-      hits: source === "dashboard" ? undefined : { increment: 1 },
-      lastSeenAt: now,
-    },
-  });
+  const [row] = await db.$transaction([
+    db.blockedIP.upsert({
+      where: { shop_ipAddress: { shop: normalizedShop, ipAddress } },
+      create: {
+        shop: normalizedShop,
+        ipAddress,
+        reason,
+        source,
+        hits: 1,
+        active,
+        expiresAt,
+        lastSeenAt: now,
+      },
+      update: {
+        reason,
+        source,
+        active,
+        expiresAt,
+        hits: source === "dashboard" ? undefined : { increment: 1 },
+        lastSeenAt: now,
+      },
+    }),
+    db.whitelistIP.deleteMany({
+      where: { shop: normalizedShop, ipAddress },
+    }),
+  ]);
   return {
     id: row.id,
     ipAddress: row.ipAddress,

@@ -90,6 +90,10 @@ test("Event Explorer details use the native centered modal shell", () => {
   assert.match(analyticsSource, /BOTSHIELD_ANALYTICS_EVENT_MODAL_ID/);
   assert.match(analyticsSource, /open={Boolean\(event\)}/);
   assert.match(analyticsSource, /AnalyticsEventDetailSection/);
+  assert.match(analyticsSource, /Visitor access/);
+  assert.match(analyticsSource, /getAnalyticsVisitorAccessState/);
+  assert.match(analyticsSource, /actions\.addBlockedIp/);
+  assert.match(analyticsSource, /actions\.addTrustedIp/);
   assert.match(analyticsSource, /size="base"/);
   assert.match(analyticsSource, /Network classification/);
   assert.match(analyticsSource, /setSelectedEvent\(event\)/);

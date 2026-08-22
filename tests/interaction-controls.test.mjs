@@ -59,8 +59,17 @@ test("Analytics event details use native modal open and close controls", () => {
   assert.match(detailsSource, /hideBotShieldModal\(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID\)/);
   assert.match(detailsSource, /onAfterHide={onClose}/);
   assert.match(detailsSource, /AnalyticsEventDetailField/);
+  assert.match(detailsSource, /Visitor access/);
+  assert.match(adminSource, /BOTSHIELD_ANALYTICS_BLOCK_VISITOR_MODAL_ID/);
+  assert.match(adminSource, /BOTSHIELD_ANALYTICS_UNBLOCK_VISITOR_MODAL_ID/);
+  assert.match(adminSource, /BOTSHIELD_ANALYTICS_REMOVE_TRUSTED_MODAL_ID/);
+  assert.match(analyticsSource, /blockedIPs={model\.blockedIPs}/);
+  assert.match(analyticsSource, /whitelist={model\.whitelist}/);
+  assert.match(detailsSource, /blockedIPs,/);
+  assert.match(detailsSource, /whitelist,/);
   assert.match(detailsSource, /size="base"/);
   assert.match(detailsSource, /modalPadding="none"/);
+  assert.doesNotMatch(detailsSource, /recoverIncident/);
   assert.doesNotMatch(detailsSource, /botshield-analytics-detail-backdrop/);
   assert.doesNotMatch(detailsSource, /botshield-analytics-event-modal-toolbar/);
   assert.doesNotMatch(detailsSource, /botshield-analytics-detail-grid/);
