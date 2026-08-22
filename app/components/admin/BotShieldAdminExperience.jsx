@@ -1198,7 +1198,16 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
 }
 
 function OverviewPage({ model, actions }) {
+  const toast = useBotShieldToast();
   const [threatPeriod, setThreatPeriod] = useState(30);
+  const handleRefreshStoreHealth = async () => {
+    const result = await actions.refreshStoreHealth?.();
+    if (result?.skipped) return;
+    if (result?.ok) {
+      toast.success("Store health refreshed");
+      return;
+    }
+  };
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontSensorActive = Boolean(model.protectionStatus?.themeAppEmbedActive);
   const storefrontReportingStatus = getStorefrontReportingStatus(model);
@@ -1472,14 +1481,25 @@ function OverviewPage({ model, actions }) {
                 <h2 id="store-health-title">Store health</h2>
               </div>
               <BotShieldActionButton
-                disabled={model.syncing}
-                loading={model.syncing}
+                disabled={model.storeHealthRefreshing}
+                loading={model.storeHealthRefreshing}
                 variant="tertiary"
-                onClick={storefrontSensorActive ? actions.refresh : actions.openThemeEditor}
+                onClick={() => {
+                  if (storefrontSensorActive) {
+                    void handleRefreshStoreHealth();
+                    return;
+                  }
+                  actions.openThemeEditor?.();
+                }}
               >
                 {storefrontSensorActive ? "Refresh status" : "Verify connection"}
               </BotShieldActionButton>
             </div>
+            {model.storeHealthRefreshError ? (
+              <BotShieldBanner tone="critical" title="Store health refresh failed">
+                {model.storeHealthRefreshError}
+              </BotShieldBanner>
+            ) : null}
             <div className="botshield-v2-health-grid">
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="reporting" />
@@ -1610,9 +1630,11 @@ function OverviewPage({ model, actions }) {
                     Refresh BotShield to load recorded storefront decisions again.
                   </BotShieldBanner>
                   <BotShieldActionButton
-                    disabled={model.syncing}
-                    loading={model.syncing}
-                    onClick={actions.refresh}
+                    disabled={model.storeHealthRefreshing}
+                    loading={model.storeHealthRefreshing}
+                    onClick={() => {
+                      void handleRefreshStoreHealth();
+                    }}
                   >
                     Refresh data
                   </BotShieldActionButton>

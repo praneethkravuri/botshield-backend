@@ -138,6 +138,9 @@ export default function Index() {
   const [analyticsRefreshing, setAnalyticsRefreshing] = useState(false);
   const [analyticsRefreshError, setAnalyticsRefreshError] = useState("");
   const analyticsRefreshInFlight = useRef(false);
+  const [storeHealthRefreshing, setStoreHealthRefreshing] = useState(false);
+  const [storeHealthRefreshError, setStoreHealthRefreshError] = useState("");
+  const storeHealthRefreshInFlight = useRef(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [teamNotes, setTeamNotes] = useState({});
   const [trustedTags, setTrustedTags] = useState({});
@@ -635,7 +638,7 @@ export default function Index() {
     }
   };
 
-  const loadProtectionStatus = async () => {
+  const loadProtectionStatus = async ({ throwOnError = false } = {}) => {
     try {
       const res = await fetch("/api/status");
       if (!res.ok) throw new Error("Protection status could not be loaded.");
@@ -652,17 +655,26 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to load protection status", err);
       recordBackendError("Protection status", err);
+      if (throwOnError) throw err;
     }
   };
 
-  const loadThemeExtensionStatus = async () => {
-    const embedStatus = await readThemeAppEmbedStatus();
-    if (!embedStatus) return;
-    setProtectionStatus((previous) => ({
-      ...previous,
-      themeAppEmbedActive: embedStatus.themeAppEmbedActive,
-      themeAppEmbedStatus: embedStatus.themeAppEmbedStatus,
-    }));
+  const loadThemeExtensionStatus = async ({ throwOnError = false } = {}) => {
+    try {
+      const embedStatus = await readThemeAppEmbedStatus();
+      if (!embedStatus) {
+        throw new Error("Theme app embed status could not be read.");
+      }
+      setProtectionStatus((previous) => ({
+        ...previous,
+        themeAppEmbedActive: embedStatus.themeAppEmbedActive,
+        themeAppEmbedStatus: embedStatus.themeAppEmbedStatus,
+      }));
+    } catch (err) {
+      console.error("Failed to load theme extension status", err);
+      recordBackendError("Theme app embed", err);
+      if (throwOnError) throw err;
+    }
   };
 
   const loadSecurityPosture = async () => {
@@ -784,7 +796,7 @@ export default function Index() {
     }
   };
 
-  const loadOverviewThreatActivity = async () => {
+  const loadOverviewThreatActivity = async ({ throwOnError = false } = {}) => {
     try {
       const response = await fetch("/api/overview-threat-activity");
       const data = await response.json().catch(() => ({}));
@@ -796,6 +808,7 @@ export default function Index() {
     } catch (error) {
       console.error("Failed to load Overview threat activity", error);
       recordBackendError("Threat activity", error);
+      if (throwOnError) throw error;
     }
   };
 
@@ -886,6 +899,33 @@ export default function Index() {
     } finally {
       analyticsRefreshInFlight.current = false;
       setAnalyticsRefreshing(false);
+    }
+  };
+
+  const refreshStoreHealth = async () => {
+    if (storeHealthRefreshInFlight.current) {
+      return { ok: false, skipped: true };
+    }
+    storeHealthRefreshInFlight.current = true;
+    setStoreHealthRefreshing(true);
+    setStoreHealthRefreshError("");
+    try {
+      await loadThemeExtensionStatus({ throwOnError: true });
+      await loadProtectionStatus({ throwOnError: true });
+      await loadSettings();
+      await loadOverviewThreatActivity({ throwOnError: true });
+      setLastSyncedAt(new Date().toLocaleTimeString());
+      return { ok: true };
+    } catch (error) {
+      const message = toMerchantErrorMessage(
+        error,
+        "Store health could not be refreshed.",
+      );
+      setStoreHealthRefreshError(message);
+      return { ok: false, error: message };
+    } finally {
+      storeHealthRefreshInFlight.current = false;
+      setStoreHealthRefreshing(false);
     }
   };
 
@@ -2586,6 +2626,8 @@ export default function Index() {
     syncing,
     analyticsRefreshing,
     analyticsRefreshError,
+    storeHealthRefreshing,
+    storeHealthRefreshError,
     readinessItems: polarisReadinessItems,
     fraudOrderAccessConnected: false,
     fraudOrders: [],
@@ -2642,7 +2684,9 @@ export default function Index() {
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
     refreshAnalytics,
+    refreshStoreHealth,
     clearAnalyticsRefreshError: () => setAnalyticsRefreshError(""),
+    clearStoreHealthRefreshError: () => setStoreHealthRefreshError(""),
     openThemeEditor,
     refreshSettings: loadSettings,
     refreshBilling: loadBillingStatus,
