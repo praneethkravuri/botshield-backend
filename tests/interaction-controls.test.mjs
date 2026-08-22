@@ -58,8 +58,10 @@ test("Analytics event details use native modal open and close controls", () => {
   assert.match(detailsSource, /BOTSHIELD_ANALYTICS_EVENT_MODAL_ID/);
   assert.match(detailsSource, /hideBotShieldModal\(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID\)/);
   assert.match(detailsSource, /onAfterHide={onClose}/);
-  assert.match(detailsSource, /accessibilityLabel="Close event details"/);
+  assert.match(detailsSource, /botshield-analytics-event-modal-meta/);
+  assert.match(detailsSource, /size="small-100"/);
   assert.doesNotMatch(detailsSource, /botshield-analytics-detail-backdrop/);
+  assert.doesNotMatch(detailsSource, /botshield-analytics-event-modal-toolbar/);
 });
 
 test("Fraud Orders drawers close without unsaved draft state", () => {
