@@ -1223,6 +1223,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Bot protection",
       detail: "Detects automated storefront activity.",
+      module: "bot",
       active: runtimeActive,
       status: runtimeActive
         ? enforcementOn
@@ -1237,6 +1238,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Network / Proxy protection",
       detail: "Identifies suspicious network traffic.",
+      module: "network",
       active: runtimeActive,
       status: runtimeActive
         ? "Monitoring"
@@ -1249,6 +1251,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Rate protection",
       detail: "Detects unusually repetitive behavior.",
+      module: "rate",
       active: runtimeActive,
       status: runtimeActive
         ? enforcementOn
@@ -1263,6 +1266,7 @@ function OverviewPage({ model, actions }) {
     {
       label: "Page protection",
       detail: "Applies protection decisions on storefront pages.",
+      module: "page",
       active: storefrontConnected && !model.protectionPaused,
       status: storefrontConnected
         ? model.protectionPaused
@@ -1776,7 +1780,7 @@ function OverviewPage({ model, actions }) {
                       />
                       <BotShieldActionButton
                         variant="tertiary"
-                        onClick={() => actions.setPage("detection")}
+                        onClick={() => actions.openProtectionModule?.(row.module)}
                       >
                         Configure
                       </BotShieldActionButton>
@@ -3636,6 +3640,36 @@ function ProtectionPage({ model, actions }) {
   const pageStatus = storefrontConnected
     ? { label: model.protectionPaused ? "Paused" : "Connected", status: model.protectionPaused ? "paused" : "active" }
     : { label: "Needs setup", status: "setup_required" };
+  const openBotProtectionModule = () =>
+    openProfileManager(
+      "Bot protection",
+      "Detects automated browsers and suspicious user-agent patterns.",
+      undefined,
+      "bot",
+    );
+  const openNetworkProtectionModule = () =>
+    openStatusManager(
+      "Network / Proxy protection",
+      "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
+      "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
+      moduleStatus,
+      "network",
+    );
+  const openRateProtectionModule = () =>
+    openProfileManager(
+      "Rate protection",
+      "Flags unusually frequent visits from the same visitor pattern.",
+      "Rate protection uses the active protection profile. Adjust sensitivity and automated response below.",
+      "rate",
+    );
+  const openPageProtectionModule = () =>
+    openStatusManager(
+      "Page protection",
+      "Redirects stopped visitors to BotShield's blocked page.",
+      "Page protection is active through the storefront theme embed and app proxy.",
+      pageStatus,
+      "page",
+    );
   const protectionRows = [
     {
       icon: "shield",
@@ -3645,13 +3679,7 @@ function ProtectionPage({ model, actions }) {
       configValue: model.strictMode ? "Strict" : model.blockLevel,
       ...moduleStatus,
       active: runtimeActive,
-      action: () =>
-        openProfileManager(
-          "Bot protection",
-          "Detects automated browsers and suspicious user-agent patterns.",
-          undefined,
-          "bot",
-        ),
+      action: openBotProtectionModule,
     },
     {
       icon: "network",
@@ -3661,14 +3689,7 @@ function ProtectionPage({ model, actions }) {
       configValue: "Automatic",
       ...moduleStatus,
       active: runtimeActive,
-      action: () =>
-        openStatusManager(
-          "Network / Proxy protection",
-          "Uses VPN, proxy, datacenter, hosting provider, and ASN signals.",
-          "Network intelligence is active when storefront traffic is evaluated. Per-module network risk weighting is controlled by the active protection profile.",
-          moduleStatus,
-          "network",
-        ),
+      action: openNetworkProtectionModule,
     },
     {
       icon: "rate",
@@ -3678,13 +3699,7 @@ function ProtectionPage({ model, actions }) {
       configValue: model.strictMode ? "Strict" : model.blockLevel,
       ...moduleStatus,
       active: runtimeActive,
-      action: () =>
-        openProfileManager(
-          "Rate protection",
-          "Flags unusually frequent visits from the same visitor pattern.",
-          "Rate protection uses the active protection profile. Adjust sensitivity and automated response below.",
-          "rate",
-        ),
+      action: openRateProtectionModule,
     },
     {
       icon: "page",
@@ -3694,14 +3709,7 @@ function ProtectionPage({ model, actions }) {
       configValue: storefrontConnected ? "Theme embed" : "Not connected",
       ...pageStatus,
       active: storefrontConnected && !model.protectionPaused,
-      action: () =>
-        openStatusManager(
-          "Page protection",
-          "Redirects stopped visitors to BotShield's blocked page.",
-          "Page protection is active through the storefront theme embed and app proxy.",
-          pageStatus,
-          "page",
-        ),
+      action: openPageProtectionModule,
     },
   ];
   const activeProtections = protectionRows.filter((row) => row.active).length;
@@ -3739,27 +3747,18 @@ function ProtectionPage({ model, actions }) {
 
   useEffect(() => {
     if (!model.protectionEntryIntent) return undefined;
-    if (model.protectionEntryIntent === "blocklist") {
-      if (guardProfileDraft()) return undefined;
-      drawerOpenerRef.current = document.activeElement;
-      setBlockedIpInput("");
-      setProtectionModal({
-        type: "blocklist",
-        title: "Blocked visitors",
-        text: "Manage visitors manually prevented from accessing the storefront.",
-      });
-    } else if (model.protectionEntryIntent === "trusted") {
-      if (guardProfileDraft()) return undefined;
-      drawerOpenerRef.current = document.activeElement;
-      setTrustedIpInput("");
-      setProtectionModal({
-        type: "trusted",
-        title: "Trusted visitors",
-        text: "Manage visitors allowed to bypass supported BotShield protection checks.",
-      });
-    } else {
-      return undefined;
-    }
+    const intentOpeners = {
+      blocklist: openBlocklist,
+      trusted: openTrusted,
+      bot: openBotProtectionModule,
+      network: openNetworkProtectionModule,
+      rate: openRateProtectionModule,
+      page: openPageProtectionModule,
+    };
+    const openIntent = intentOpeners[model.protectionEntryIntent];
+    if (!openIntent) return undefined;
+    if (guardProfileDraft()) return undefined;
+    openIntent();
     actions.clearProtectionEntryIntent?.();
     return undefined;
   }, [actions, dirty, model.protectionEntryIntent, protectionModal?.type]);

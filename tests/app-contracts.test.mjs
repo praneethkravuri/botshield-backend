@@ -225,5 +225,6 @@ test("merchant product actions stay connected to real backend workflows", async 
   assert.match(adminSource, /highRiskAlertsOnly/);
   assert.match(adminSource, /actions\.recoverIncident\(event\.id, "whitelist"\)/);
   assert.match(adminSource, /actions\.runSimulation\(\)/);
-  assert.match(adminSource, /model\.protectionEntryIntent === "blocklist"/);
+  assert.match(adminSource, /blocklist: openBlocklist/);
+  assert.match(adminSource, /openProtectionModule\?\.\(row\.module\)/);
 });

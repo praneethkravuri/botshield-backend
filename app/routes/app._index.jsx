@@ -2681,6 +2681,10 @@ export default function Index() {
       setProtectionEntryIntent("trusted");
       openPolarisPage("detection");
     },
+    openProtectionModule: (module) => {
+      setProtectionEntryIntent(module);
+      openPolarisPage("detection");
+    },
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
     refreshAnalytics,
