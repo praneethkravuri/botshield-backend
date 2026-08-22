@@ -77,13 +77,14 @@ test("Protection profile cancel and close use discard confirmation only for prof
     protectionSource,
     /if \(dirty && protectionModal\?\.type === "profile"\)/,
   );
-  assert.match(protectionSource, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
+  assert.match(protectionSource, /pendingTransitionRef\.current = "discard"/);
   assert.match(protectionSource, /setDraft\(originalDraft\);\s*closeDrawer\(\);/s);
   assert.match(protectionSource, /setBlockedIpInput\(""\)/);
   assert.match(protectionSource, /setTrustedIpInput\(""\)/);
   assert.doesNotMatch(protectionSource, /onClick=\{\(\) => setProtectionModal\(null\)\}/);
-  assert.match(protectionSource, /onClick=\{requestClose\} disabled=\{saving\}>Cancel<\/BotShieldActionButton>/);
-  assert.match(protectionSource, /accessibilityLabel="Close"[^]*onClick=\{requestClose\}/s);
+  assert.match(protectionSource, /onClick=\{requestClose\}/);
+  assert.match(protectionSource, /BotShieldNativeModal/);
+  assert.doesNotMatch(protectionSource, /accessibilityLabel="Close"/);
 });
 
 test("Protection modal switches cannot silently discard profile drafts", () => {
@@ -93,8 +94,11 @@ test("Protection modal switches cannot silently discard profile drafts", () => {
   assert.match(protectionSource, /model\.protectionEntryIntent, protectionModal\?\.type\]/);
 });
 
-test("Protection visitor removal confirmations use shared modal helper", () => {
-  assert.match(protectionSource, /showBotShieldModal\(removeModalId\)/);
+test("Protection visitor removal confirmations use sequenced native modals", () => {
+  assert.match(protectionSource, /requestVisitorRemoval/);
+  assert.match(protectionSource, /hideBotShieldModal\(BOTSHIELD_PROTECTION_MODAL_ID\)/);
+  assert.match(protectionSource, /showBotShieldModal\("botshield-blocklist-remove-modal"\)/);
+  assert.match(protectionSource, /showBotShieldModal\("botshield-trusted-remove-modal"\)/);
 });
 
 test("Settings destructive confirmation uses native modal command pattern", () => {

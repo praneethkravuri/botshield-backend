@@ -19,6 +19,11 @@ const controlSource = fs.readFileSync(
   "utf8",
 );
 
+const protectionPage = adminSource.slice(
+  adminSource.indexOf("function ProtectionPage"),
+  adminSource.indexOf("function IpList"),
+);
+
 test("Protection remains a control plane with four real modules", () => {
   for (const label of [
     "Bot Protection",
@@ -28,7 +33,7 @@ test("Protection remains a control plane with four real modules", () => {
   ]) assert.match(adminSource, new RegExp(label.replace("/", "\\/")));
   assert.match(adminSource, /Protection policy/);
   assert.match(adminSource, /Visitor access/);
-  assert.doesNotMatch(adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")), /Threat Activity|Event Explorer|Intervention rate/);
+  assert.doesNotMatch(protectionPage, /Threat Activity|Event Explorer|Intervention rate/);
 });
 
 test("Protection controls use existing persisted actions", () => {
@@ -37,63 +42,66 @@ test("Protection controls use existing persisted actions", () => {
   assert.match(adminSource, /actions\.removeBlockedIp/);
   assert.match(adminSource, /actions\.addTrustedIp/);
   assert.match(adminSource, /actions\.removeTrustedIp/);
-  assert.match(adminSource, /ReactDOM\.createPortal/);
+  assert.match(adminSource, /BotShieldNativeModal/);
   assert.match(adminSource, /duplicateIp/);
   assert.match(adminSource, /already on the \$\{listLabel\}/);
-  assert.match(adminSource, /heading=\{`Remove \$\{trusted \? "trusted" : "blocked"\} visitor\?\`\}/);
-  assert.match(adminSource, /botshield-blocklist-remove-modal/);
+  assert.match(protectionPage, /botshield-blocklist-remove-modal/);
+  assert.match(protectionPage, /botshield-trusted-remove-modal/);
 });
 
-test("Protection profile drawer has explicit persisted save and discard lifecycle", () => {
-  assert.match(adminSource, /const \[originalDraft, setOriginalDraft\]/);
-  assert.match(adminSource, /const requestClose = \(\) =>/);
-  assert.match(adminSource, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
-  assert.match(adminSource, /botshield-protection-discard-modal/);
-  assert.match(adminSource, /Save changes/);
-  assert.match(adminSource, /Cancel/);
-  assert.match(adminSource, /Saving changes…/);
-  assert.match(adminSource, /Settings saved/);
-  assert.match(adminSource, /Couldn't save \$\{protectionModal\.title\}/);
-  assert.match(adminSource, /accessibilityLabel="Close"/);
-  assert.match(adminSource, /event\.key === "Escape"/);
-  assert.match(adminSource, /onMouseDown=\{\(event\) => \{ if \(event\.target === event\.currentTarget\) requestClose\(\); \}\}/);
-  assert.doesNotMatch(
-    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
-    /getElementById\("botshield-protection-discard-modal"\)\?\.show/,
-  );
-  assert.match(
-    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
-    /dirty && protectionModal\?\.type === "profile"/,
-  );
-  assert.doesNotMatch(
-    adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")),
-    /onClick=\{\(\) => setProtectionModal\(null\)\}/,
-  );
+test("Protection profile modal has explicit persisted save and discard lifecycle", () => {
+  assert.match(protectionPage, /const \[originalDraft, setOriginalDraft\]/);
+  assert.match(protectionPage, /const requestClose = \(\) =>/);
+  assert.match(protectionPage, /pendingTransitionRef\.current = "discard"/);
+  assert.match(protectionPage, /botshield-protection-discard-modal/);
+  assert.match(protectionPage, /Save changes/);
+  assert.match(protectionPage, /Cancel/);
+  assert.match(protectionPage, /Saving changes…/);
+  assert.match(protectionPage, /Protection settings saved/);
+  assert.match(protectionPage, /Couldn't save \$\{protectionModal\.title\}/);
+  assert.match(protectionPage, /slot="primary-action"/);
+  assert.match(protectionPage, /slot="secondary-actions"/);
+  assert.match(protectionPage, /onAfterHide=\{handleProtectionModalAfterHide\}/);
+  assert.doesNotMatch(protectionPage, /ReactDOM\.createPortal/);
+  assert.doesNotMatch(protectionPage, /botshield-protection-drawer-header/);
+  assert.doesNotMatch(protectionPage, /botshield-protection-drawer-footer/);
+  assert.doesNotMatch(protectionPage, /event\.key === "Escape"/);
+  assert.match(protectionPage, /dirty && protectionModal\?\.type === "profile"/);
+  assert.doesNotMatch(protectionPage, /onClick=\{\(\) => setProtectionModal\(null\)\}/);
 });
 
-test("Protection drawer cancel and close restore persisted draft state", () => {
-  const protectionPage = adminSource.slice(
-    adminSource.indexOf("function ProtectionPage"),
-    adminSource.indexOf("function IpList"),
-  );
-  assert.match(protectionPage, /onClick=\{requestClose\} disabled=\{saving\}>Cancel<\/BotShieldActionButton>/);
-  assert.match(protectionPage, /onClick=\{requestClose\} \/>/);
+test("Protection profile cancel and close restore persisted draft state", () => {
+  assert.match(protectionPage, /onClick=\{requestClose\}/);
   assert.match(protectionPage, /onConfirm=\{async \(\) => \{\s*setDraft\(originalDraft\);\s*closeDrawer\(\);\s*\}\}/s);
+  assert.match(protectionPage, /onDismiss=\{resumeProtectionModal\}/);
   assert.match(protectionPage, /setDraft\(persisted\);\s*setOriginalDraft\(persisted\);/s);
   assert.match(protectionPage, /await actions\.saveSettings\(draft\)/);
 });
 
-test("Protection visitor removal uses shared modal show helper", () => {
-  assert.match(adminSource, /showBotShieldModal\(removeModalId\)/);
-  assert.doesNotMatch(adminSource, /getElementById\(removeModalId\)\?\.show/);
+test("Protection native modals sequence discard and remove confirmations without nesting", () => {
+  assert.match(protectionPage, /hideBotShieldModal\(BOTSHIELD_PROTECTION_MODAL_ID\)/);
+  assert.match(protectionPage, /"remove-blocklist"/);
+  assert.match(protectionPage, /"remove-trusted"/);
+  assert.match(protectionPage, /pendingTransitionRef\.current = "open-policy"/);
+  assert.match(protectionPage, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
+  assert.match(protectionPage, /showBotShieldModal\("botshield-blocklist-remove-modal"\)/);
+  assert.match(protectionPage, /showBotShieldModal\("botshield-trusted-remove-modal"\)/);
+  assert.match(protectionPage, /onRequestRemove=\{\(ip\) => requestVisitorRemoval\(ip, false\)\}/);
+  assert.match(protectionPage, /onRequestRemove=\{\(ip\) => requestVisitorRemoval\(ip, true\)\}/);
+  assert.doesNotMatch(
+    protectionPage.slice(protectionPage.indexOf("function IpList")),
+    /BotShieldConfirmationModal/,
+  );
 });
 
-test("Protection drawer uses a sticky action footer and App Bridge discard modal", () => {
-  assert.match(designSource, /\.botshield-protection-drawer-footer \{[^}]*flex: 0 0 auto/);
-  assert.match(designSource, /\.botshield-protection-modal-body \{[^}]*overflow-y: auto/);
-  assert.match(adminSource, /BotShieldConfirmationModal/);
-  assert.match(adminSource, /Discard unsaved changes\?/);
-  assert.match(adminSource, /Discard changes/);
+test("Protection module managers use native modal sizing and actions", () => {
+  assert.match(adminSource, /function getProtectionModalSize/);
+  assert.match(adminSource, /return "large-100"/);
+  assert.match(protectionPage, /openPolicyFromNetwork/);
+  assert.match(protectionPage, /Review protection policy/);
+  assert.match(protectionPage, /Connect storefront/);
+  assert.match(designSource, /export function BotShieldNativeModal/);
+  assert.match(designSource, /<s-modal/);
 });
 
 test("Protection V2.1 exposes only real detection and enforcement capabilities", () => {
@@ -113,7 +121,7 @@ test("Protection V2.1 exposes only real detection and enforcement capabilities",
   assert.match(adminSource, /draft\.blockLevel === "Low"\s*\? 90/);
   assert.match(adminSource, /draft\.blockLevel === "High"\s*\? 50/);
   assert.match(adminSource, /: 70;/);
-  assert.doesNotMatch(adminSource.slice(adminSource.indexOf("function ProtectionPage"), adminSource.indexOf("function IpList")), /money saved|estimated savings|country blocker|verified bot/iu);
+  assert.doesNotMatch(protectionPage, /money saved|estimated savings|country blocker|verified bot/iu);
 });
 
 test("Rate signals expose real persisted controls with clear explanations", () => {
@@ -158,12 +166,25 @@ test("Visitor access supports real-data search and removal confirmation", () => 
     /StatusRow/,
   );
   assert.match(adminSource, /No matching visitors/);
+  assert.match(adminSource, /Changes to the \{listLabel\} are saved immediately/);
 });
 
-test("Protection drawers and responsive layouts are scoped locally", () => {
+test("Protection modal content styles remain scoped without drawer shell CSS", () => {
   assert.match(designSource, /\/\* Protection control center \*\//);
-  assert.match(designSource, /\.botshield-protection-modal-backdrop/);
+  assert.match(designSource, /\.botshield-native-modal-body/);
   assert.match(designSource, /\.botshield-protection-access-grid/);
   assert.match(designSource, /\.botshield-visitor-access-record-top/);
   assert.match(designSource, /@media \(max-width: 640px\)/);
+  assert.doesNotMatch(designSource, /\.botshield-protection-modal-backdrop/);
+  assert.doesNotMatch(designSource, /\.botshield-protection-drawer-footer/);
+});
+
+test("Overview Configure deep links still open Protection module managers", () => {
+  assert.match(protectionPage, /bot: openBotProtectionModule/);
+  assert.match(protectionPage, /network: openNetworkProtectionModule/);
+  assert.match(protectionPage, /rate: openRateProtectionModule/);
+  assert.match(protectionPage, /page: openPageProtectionModule/);
+  assert.match(protectionPage, /actions\.clearProtectionEntryIntent\?\.\(\)/);
+  assert.match(protectionPage, /if \(guardProfileDraft\(\)\) return undefined;/);
+  assert.match(protectionPage, /BOTSHIELD_PROTECTION_MODAL_ID/);
 });
