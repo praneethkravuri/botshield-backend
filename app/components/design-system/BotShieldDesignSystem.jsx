@@ -1969,6 +1969,74 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-filter-empty { display: grid; gap: 3px; padding: 14px; border: 1px dashed #d7dadd; border-radius: 9px; background: #fafafa; }
         .botshield-protection-filter-empty strong { color: #3b4145; font-size: .8125rem; }
         .botshield-protection-filter-empty span { color: #73797e; font-size: .75rem; }
+        .botshield-protection-modal-body .botshield-visitor-access-list {
+          display: flex;
+          flex-direction: column;
+          margin-top: 4px;
+        }
+        .botshield-visitor-access-record {
+          padding: 14px 0;
+          border-bottom: 1px solid #e4e6e7;
+        }
+        .botshield-visitor-access-record:last-child {
+          border-bottom: 0;
+        }
+        .botshield-visitor-access-record-top {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: start;
+          gap: 10px 12px;
+        }
+        .botshield-visitor-access-record-identity {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+        }
+        .botshield-visitor-access-record-ip {
+          display: block;
+          max-width: 100%;
+          color: #24282b;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          font-size: .8125rem;
+          font-weight: 650;
+          line-height: 1.25rem;
+          word-break: break-all;
+        }
+        .botshield-visitor-access-record-action {
+          flex: 0 0 auto;
+        }
+        .botshield-visitor-access-record-detail {
+          margin: 8px 0 0;
+          color: #62696e;
+          font-size: .75rem;
+          line-height: 1.45;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        .botshield-visitor-access-record-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 14px;
+          margin-top: 6px;
+          color: #747a7f;
+          font-size: .6875rem;
+          line-height: 1.25rem;
+        }
+        .botshield-visitor-access-record-meta span {
+          min-width: 0;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+        @media (max-width: 480px) {
+          .botshield-visitor-access-record-top {
+            grid-template-columns: 1fr;
+          }
+          .botshield-visitor-access-record-action {
+            justify-self: start;
+          }
+        }
         .botshield-protection-save-success { padding: 10px 12px; border: 1px solid #b7d7c2; border-radius: 8px; background: #f2f8f4; color: #285b3a; font-size: .78125rem; font-weight: 620; }
         .botshield-protection-drawer-footer { position: sticky; bottom: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex: 0 0 auto; min-height: 64px; padding: 12px 22px; border-top: 1px solid #dfe2e4; background: #fff; box-shadow: 0 -5px 16px rgba(20,24,27,.045); }
         .botshield-protection-drawer-footer > div { display: flex; align-items: center; gap: 8px; }

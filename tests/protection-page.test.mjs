@@ -148,6 +148,15 @@ test("Visitor access supports real-data search and removal confirmation", () => 
   assert.match(adminSource, /placeholder="IP address, source, or reason"/);
   assert.match(adminSource, /record\.reason/);
   assert.match(adminSource, /record\.source/);
+  assert.match(adminSource, /record\.time/);
+  assert.match(adminSource, /function VisitorAccessRecord/);
+  assert.match(adminSource, /botshield-visitor-access-record/);
+  assert.match(adminSource, /botshield-visitor-access-record-detail/);
+  assert.match(adminSource, /botshield-visitor-access-record-meta/);
+  assert.doesNotMatch(
+    adminSource.slice(adminSource.indexOf("function IpList"), adminSource.indexOf("function getSimulationCount")),
+    /StatusRow/,
+  );
   assert.match(adminSource, /No matching visitors/);
 });
 
@@ -155,5 +164,6 @@ test("Protection drawers and responsive layouts are scoped locally", () => {
   assert.match(designSource, /\/\* Protection control center \*\//);
   assert.match(designSource, /\.botshield-protection-modal-backdrop/);
   assert.match(designSource, /\.botshield-protection-access-grid/);
+  assert.match(designSource, /\.botshield-visitor-access-record-top/);
   assert.match(designSource, /@media \(max-width: 640px\)/);
 });

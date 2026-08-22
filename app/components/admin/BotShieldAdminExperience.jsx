@@ -4379,6 +4379,43 @@ function ProtectionPage({ model, actions }) {
   );
 }
 
+function VisitorAccessRecord({
+  ip,
+  reason,
+  source,
+  time,
+  trusted,
+  onRemove,
+}) {
+  const detail = reason || (trusted
+    ? "Allowed through automated protection after review."
+    : "Stopped before continuing through the storefront.");
+  const showUpdated = Boolean(time && time !== "Unknown");
+
+  return (
+    <article className="botshield-visitor-access-record">
+      <div className="botshield-visitor-access-record-top">
+        <div className="botshield-visitor-access-record-identity">
+          <span className="botshield-visitor-access-record-ip">{ip}</span>
+          <BotShieldStatusBadge status={trusted ? "active" : "blocked"} />
+        </div>
+        <div className="botshield-visitor-access-record-action">
+          <BotShieldActionButton onClick={onRemove} tone="critical">
+            Remove
+          </BotShieldActionButton>
+        </div>
+      </div>
+      <p className="botshield-visitor-access-record-detail">{detail}</p>
+      {source || showUpdated ? (
+        <div className="botshield-visitor-access-record-meta">
+          {source ? <span>Source: {source}</span> : null}
+          {showUpdated ? <span>Updated: {time}</span> : null}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
 function IpList({
   title,
   subtitle,
@@ -4465,37 +4502,26 @@ function IpList({
             <strong>{filteredRows.length}</strong>
             <span>{filteredRows.length === 1 ? "matching visitor" : "matching visitors"}</span>
           </div>
+          <div className="botshield-visitor-access-list">
           {filteredRows.map((row) => {
             const ip = typeof row === "string" ? row : row.ip;
             const record = typeof row === "string" ? {} : row;
             return (
-              <StatusRow
+              <VisitorAccessRecord
+                ip={ip}
                 key={ip}
-                label={ip}
-                detail={
-                  [
-                    record.reason || (trusted
-                      ? "Allowed through automated protection after review."
-                      : "Stopped before continuing through the storefront."),
-                    record.source ? `Source: ${record.source}` : "",
-                    record.time && record.time !== "Unknown" ? `Updated: ${record.time}` : "",
-                  ].filter(Boolean).join(" · ")
-                }
-                status={trusted ? "active" : "blocked"}
-                action={
-                  <BotShieldActionButton
-                    onClick={() => {
-                      setPendingRemoval(ip);
-                      showBotShieldModal(removeModalId);
-                    }}
-                    tone="critical"
-                  >
-                    Remove
-                  </BotShieldActionButton>
-                }
+                onRemove={() => {
+                  setPendingRemoval(ip);
+                  showBotShieldModal(removeModalId);
+                }}
+                reason={record.reason}
+                source={record.source}
+                time={record.time}
+                trusted={trusted}
               />
             );
           })}
+          </div>
           {!filteredRows.length ? (
             <div className="botshield-protection-filter-empty">
               <strong>No matching visitors</strong>
