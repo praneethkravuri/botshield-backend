@@ -24,6 +24,84 @@ const protectionPage = adminSource.slice(
   adminSource.indexOf("function IpList"),
 );
 
+test("Bot Protection and Protection policy are separate module experiences", () => {
+  const openBotProtection = protectionPage.slice(
+    protectionPage.indexOf("const openBotProtectionModule"),
+    protectionPage.indexOf("const openNetworkProtectionModule"),
+  );
+  assert.match(openBotProtection, /createBotProtectionModalState\(\)/);
+  assert.match(protectionPage, /type: "status"[\s\S]*module: BOT_PROTECTION_MODULE/);
+  assert.doesNotMatch(openBotProtection, /openProfileManager\(/);
+
+  const openProfileManagerBlock = protectionPage.slice(
+    protectionPage.indexOf("const openProfileManager"),
+    protectionPage.indexOf("const openStatusManager"),
+  );
+  assert.match(openProfileManagerBlock, /module === BOT_PROTECTION_MODULE \|\| title === "Bot Protection"/);
+  assert.match(openProfileManagerBlock, /openBotProtectionModule\(\)/);
+
+  const profileModal = protectionPage.slice(
+    protectionPage.indexOf("isEditableProtectionProfileModal(protectionModal)"),
+    protectionPage.indexOf("protectionModal?.type === \"blocklist\""),
+  );
+  assert.match(profileModal, /isProtectionPolicyModal\(protectionModal\)/);
+  assert.match(profileModal, /label="Sensitivity"/);
+  assert.match(profileModal, /label="Auto Block"/);
+  assert.match(profileModal, /label="Strict Mode"/);
+  assert.match(profileModal, /Effective enforcement/);
+  assert.match(profileModal, /Detect[\s\S]*Classify[\s\S]*Enforce/);
+  assert.doesNotMatch(profileModal, /title === "Bot Protection"/);
+
+  const rateProfileSection = profileModal.slice(
+    profileModal.indexOf('protectionModal.module === "rate"'),
+  );
+  assert.doesNotMatch(rateProfileSection, /label="Sensitivity"/);
+  assert.doesNotMatch(rateProfileSection, /Effective enforcement/);
+
+  const botStatusSection = protectionPage.slice(
+    protectionPage.indexOf(') : protectionModal.module === BOT_PROTECTION_MODULE ? ('),
+    protectionPage.indexOf("Sensitive storefront paths"),
+  );
+  assert.match(botStatusSection, /Known automation/);
+  assert.doesNotMatch(botStatusSection, /label="Sensitivity"/);
+  assert.match(protectionPage, /buildModuleProtectionActivity/);
+  assert.match(protectionPage, /botProtectionActivity/);
+  assert.match(protectionPage, /getProtectionModalKey\(protectionModal\)/);
+  assert.match(
+    protectionPage,
+    /protectionModal\.type === "profile"[\s\S]*isBotProtectionModal\(protectionModal\)/,
+  );
+});
+
+test("every Bot Protection entry path avoids the editable profile manager", () => {
+  assert.match(protectionPage, /action: openBotProtectionModule/);
+  assert.match(protectionPage, /bot: openBotProtectionModule/);
+  assert.match(
+    protectionPage.slice(
+      protectionPage.indexOf("const openProfileManager"),
+      protectionPage.indexOf("const openStatusManager"),
+    ),
+    /module === BOT_PROTECTION_MODULE \|\| title === "Bot Protection"/,
+  );
+  assert.match(
+    protectionPage.slice(
+      protectionPage.indexOf("const openProfileManager"),
+      protectionPage.indexOf("const openStatusManager"),
+    ),
+    /openBotProtectionModule\(\)/,
+  );
+  assert.match(protectionPage, /pendingTransitionRef\.current = "open-policy"/);
+  assert.match(protectionPage, /title: "Protection policy"/);
+  assert.match(protectionPage, /module: PROTECTION_POLICY_MODULE/);
+  assert.doesNotMatch(
+    protectionPage.slice(
+      protectionPage.indexOf("const openBotProtectionModule"),
+      protectionPage.indexOf("const openNetworkProtectionModule"),
+    ),
+    /type: "profile"/,
+  );
+});
+
 test("Protection remains a control plane with four real modules", () => {
   for (const label of [
     "Bot Protection",
@@ -98,6 +176,8 @@ test("Protection module managers use native modal sizing and actions", () => {
   assert.match(adminSource, /function getProtectionModalSize/);
   assert.match(adminSource, /return "large-100"/);
   assert.match(protectionPage, /openPolicyFromNetwork/);
+  assert.match(protectionPage, /configLabel: "Detection"/);
+  assert.match(protectionPage, /configLabel: "Rate signals"/);
   assert.match(protectionPage, /Review protection policy/);
   assert.match(protectionPage, /Connect storefront/);
   assert.match(designSource, /export function BotShieldNativeModal/);

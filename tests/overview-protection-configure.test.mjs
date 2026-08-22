@@ -30,6 +30,15 @@ test("Overview protection Configure controls deep-link to module managers", () =
   assert.match(overviewSource, /openProtectionModule\?\.\(row\.module\)/);
   assert.match(indexSource, /openProtectionModule: \(module\) =>/);
   assert.match(indexSource, /setProtectionEntryIntent\(module\)/);
+  assert.match(protectionSource, /bot: openBotProtectionModule/);
+  assert.match(protectionSource, /createBotProtectionModalState/);
+  assert.doesNotMatch(
+    protectionSource.slice(
+      protectionSource.indexOf("bot: openBotProtectionModule"),
+      protectionSource.indexOf("network: openNetworkProtectionModule"),
+    ),
+    /openProfileManager/,
+  );
 });
 
 test("Protection page opens existing module managers from entry intent", () => {
