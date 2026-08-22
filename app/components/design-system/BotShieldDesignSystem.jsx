@@ -1631,20 +1631,37 @@ export function BotShieldAppFrame({ children }) {
         .botshield-analytics-summary { border-color: #d9dcde; background: #fbfcfc; }
         .botshield-analytics-detail-button { padding: 5px 7px; border-radius: 6px; transition: color 120ms ease, background-color 120ms ease; }
         .botshield-analytics-detail-button:hover { background: #edf3f8; color: #174b7a; }
-        .botshield-analytics-pagination button:not(:disabled) { padding: 4px 6px; border-radius: 5px; }
-        .botshield-analytics-pagination button:not(:disabled):hover { background: #edf3f8; }
-        @media (prefers-reduced-motion: reduce) {
-          .botshield-analytics-v2 *,
-          .botshield-analytics-v2 *::before,
-          .botshield-analytics-v2 *::after { transition-duration: .01ms !important; }
+        .botshield-analytics-event-modal-body {
+          width: min(680px, calc(100vw - 48px));
+          max-width: 100%;
+          max-height: min(72vh, 760px);
+          box-sizing: border-box;
+          overflow-x: hidden;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          padding: 0 24px 24px;
+          color: #202223;
+          font-family: var(--p-font-family-sans, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+          -webkit-font-smoothing: antialiased;
         }
-        .botshield-analytics-detail-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: flex-start; justify-content: flex-end; width: 100%; height: 100dvh; background: rgba(25, 28, 30, .32); }
-        .botshield-analytics-detail { width: min(448px, 94vw); max-height: 100dvh; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; padding: 20px 24px 24px; background: #fff; box-shadow: -12px 0 30px rgba(0,0,0,.12); color: #202223; font-family: var(--p-font-family-sans, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif); -webkit-font-smoothing: antialiased; }
-        .botshield-analytics-detail > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; }
-        .botshield-analytics-detail h2 { margin: 0; color: #202223; font-size: 1.25rem; font-weight: 650; line-height: 1.5rem; letter-spacing: -.018em; }
-        .botshield-analytics-detail > header p { margin: 4px 0 0; color: #6d7175; font-size: .8125rem; line-height: 1.25rem; font-variant-numeric: tabular-nums; }
-        .botshield-analytics-detail > header button { display: inline-grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; padding: 0; border: 0; border-radius: 8px; background: #f1f2f3; color: #4a4d50; font-family: inherit; font-size: 20px; line-height: 1; cursor: pointer; transition: background 120ms ease, color 120ms ease; }
-        .botshield-analytics-detail > header button:hover { background: #e5e7e9; color: #202223; }
+        .botshield-analytics-event-modal-toolbar {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 4px 0 16px;
+          border-bottom: 1px solid #e1e3e5;
+        }
+        .botshield-analytics-event-modal-toolbar p {
+          margin: 0;
+          color: #6d7175;
+          font-size: .8125rem;
+          line-height: 1.25rem;
+          font-variant-numeric: tabular-nums;
+        }
+        .botshield-analytics-event-modal-content {
+          padding-top: 16px;
+        }
         .botshield-analytics-detail-summary { display: grid; gap: 10px; padding: 16px; border: 1px solid #e1e3e5; border-radius: 10px; background: #f8f9f9; }
         .botshield-analytics-detail-summary > div { display: grid; justify-items: start; gap: 8px; min-width: 0; }
         .botshield-analytics-detail-summary strong { min-width: 0; color: #303336; font-size: .8125rem; font-weight: 600; line-height: 1.25rem; }
@@ -1696,7 +1713,16 @@ export function BotShieldAppFrame({ children }) {
           .botshield-analytics-compact-ranking small { grid-column: 1 / -1; text-align: left; }
           .botshield-analytics-compact-ranking em { grid-column: 1 / -1; text-align: left; }
           .botshield-analytics-pagination { align-items: flex-start; flex-direction: column; }
-          .botshield-analytics-detail { width: min(420px, 100%); padding: 18px; }
+        }
+        .botshield-analytics-pagination button:not(:disabled) { padding: 4px 6px; border-radius: 5px; }
+        .botshield-analytics-pagination button:not(:disabled):hover { background: #edf3f8; }
+        @media (prefers-reduced-motion: reduce) {
+          .botshield-analytics-v2 *,
+          .botshield-analytics-v2 *::before,
+          .botshield-analytics-v2 *::after { transition-duration: .01ms !important; }
+        }
+        @media (max-width: 640px) {
+          .botshield-analytics-event-modal-body { width: min(680px, calc(100vw - 24px)); max-height: min(78vh, 760px); }
           .botshield-analytics-detail-grid { grid-template-columns: 1fr; }
           .botshield-analytics-detail-grid > .is-full { grid-column: auto; }
         }
@@ -5344,6 +5370,7 @@ export function hideBotShieldModal(id) {
 }
 
 export const BOTSHIELD_PROTECTION_MODAL_ID = "botshield-protection-modal";
+export const BOTSHIELD_ANALYTICS_EVENT_MODAL_ID = "botshield-analytics-event-modal";
 
 export function BotShieldNativeModal({
   id,
@@ -5351,6 +5378,7 @@ export function BotShieldNativeModal({
   size = "base",
   open = false,
   padding = "base",
+  bodyClassName = "",
   onAfterHide,
   primaryAction,
   secondaryActions,
@@ -5389,7 +5417,10 @@ export function BotShieldNativeModal({
       size={size}
       onAfterhide={handleAfterHide}
     >
-      <s-box padding={padding} className="botshield-native-modal-body">
+      <s-box
+        padding={padding}
+        className={`botshield-native-modal-body${bodyClassName ? ` ${bodyClassName}` : ""}`}
+      >
         {children}
       </s-box>
       {primaryAction}

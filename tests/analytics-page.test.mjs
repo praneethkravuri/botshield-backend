@@ -85,10 +85,13 @@ test("Analytics supplies deliberate low-data and filtered empty states", () => {
   assert.match(analyticsSource, /No events match these filters\. Clear filters or choose a wider date range/);
 });
 
-test("Event Explorer details render outside the transformed route shell", () => {
-  assert.match(analyticsSource, /createPortal/);
-  assert.match(analyticsSource, /document\.body/);
-  assert.match(analyticsSource, /aria-labelledby="analytics-event-detail-title"/);
+test("Event Explorer details use the native centered modal shell", () => {
+  assert.match(analyticsSource, /BotShieldNativeModal/);
+  assert.match(analyticsSource, /BOTSHIELD_ANALYTICS_EVENT_MODAL_ID/);
+  assert.match(analyticsSource, /open={Boolean\(event\)}/);
+  assert.match(analyticsSource, /botshield-analytics-event-modal-body/);
   assert.match(analyticsSource, /Network classification/);
-  assert.match(analyticsSource, /keyEvent\.key === "Escape"/);
+  assert.match(analyticsSource, /accessibilityLabel="Close event details"/);
+  assert.match(analyticsSource, /setSelectedEvent\(event\)/);
+  assert.doesNotMatch(analyticsSource, /botshield-analytics-detail-backdrop/);
 });

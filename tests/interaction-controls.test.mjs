@@ -47,19 +47,19 @@ test("Overview has no drawer close controls to regress", () => {
   assert.doesNotMatch(overviewSource, /BotShieldConfirmationModal/);
 });
 
-test("Analytics event details close controls respond directly", () => {
+test("Analytics event details use native modal open and close controls", () => {
   const detailsSource = adminSource.slice(
     adminSource.indexOf("function AnalyticsEventDetails"),
     adminSource.indexOf("const FRAUD_REVIEW_FILTERS"),
   );
   assert.match(detailsSource, /function AnalyticsEventDetails/);
   assert.match(analyticsSource, /onClose=\{\(\) => setSelectedEvent\(null\)\}/);
-  assert.match(detailsSource, /if \(keyEvent\.key === "Escape"\) onClose\(\)/);
-  assert.match(
-    detailsSource,
-    /onMouseDown=\{\(mouseEvent\) => \{ if \(mouseEvent\.target === mouseEvent\.currentTarget\) onClose\(\); \}\}/,
-  );
-  assert.match(detailsSource, /aria-label="Close event details"/);
+  assert.match(detailsSource, /BotShieldNativeModal/);
+  assert.match(detailsSource, /BOTSHIELD_ANALYTICS_EVENT_MODAL_ID/);
+  assert.match(detailsSource, /hideBotShieldModal\(BOTSHIELD_ANALYTICS_EVENT_MODAL_ID\)/);
+  assert.match(detailsSource, /onAfterHide={onClose}/);
+  assert.match(detailsSource, /accessibilityLabel="Close event details"/);
+  assert.doesNotMatch(detailsSource, /botshield-analytics-detail-backdrop/);
 });
 
 test("Fraud Orders drawers close without unsaved draft state", () => {
