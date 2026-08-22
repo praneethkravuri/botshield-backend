@@ -117,7 +117,6 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   );
 
   assert.match(source, /heading="Overview"/);
-  assert.match(source, /Monitor storefront protection, activity, and/);
   assert.match(source, /Protected/);
   assert.match(source, /Monitoring/);
   assert.match(source, /Setup Required/);
@@ -154,7 +153,6 @@ test("Polaris dashboard presents a merchant-facing security center", async () =>
   assert.match(source, /filterFraudOrders/);
   assert.match(source, /Fraud Orders setup/);
   assert.match(source, /No risky orders are currently pending fulfillment/);
-  assert.match(source, /Manage protection, alerts, billing, connections, and app settings\./);
   assert.match(source, /botshield-overview-v2 botshield-settings-hub-content/);
   assert.match(source, /botshield-v2-health-dot/);
   assert.match(source, /formatSimulationLabel/);

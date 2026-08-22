@@ -1433,15 +1433,6 @@ function OverviewPage({ model, actions }) {
     <BotShieldNativePage heading="Overview">
       <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
         <s-stack gap="large">
-          <div className="botshield-overview-header">
-            <div>
-              <p className="botshield-overview-subtitle">
-                Monitor storefront protection, activity, and
-                enforcement decisions in one place.
-              </p>
-            </div>
-          </div>
-
           <section
             className={`botshield-v2-status ${protectionState.className}`}
             aria-labelledby="botshield-protection-status-title"
@@ -2203,14 +2194,6 @@ function AnalyticsPage({ model, actions }) {
   return (
     <BotShieldNativePage heading="Analytics">
       <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">
-        <header className="botshield-overview-header">
-          <div>
-            <p className="botshield-overview-subtitle">
-              Review suspicious storefront activity, threat signals, and protection performance.
-            </p>
-          </div>
-        </header>
-
         {model.analyticsRefreshError ? (
           <BotShieldBanner tone="critical" title="Couldn't refresh analytics">
             {model.analyticsRefreshError}
@@ -2697,18 +2680,13 @@ function fraudOrderIsElevated(order) {
 }
 
 function FraudOrdersPageHeader({ onRefresh }) {
+  if (!onRefresh) return null;
+
   return (
     <header className="botshield-overview-header botshield-fraud-header">
-      <div>
-        <p className="botshield-overview-subtitle">
-          Review Shopify orders with elevated risk and the signals associated with them.
-        </p>
-      </div>
-      {onRefresh ? (
-        <BotShieldAsyncButton action={onRefresh} successMessage="Order review refreshed">
-          Refresh
-        </BotShieldAsyncButton>
-      ) : null}
+      <BotShieldAsyncButton action={onRefresh} successMessage="Order review refreshed">
+        Refresh
+      </BotShieldAsyncButton>
     </header>
   );
 }
@@ -3772,14 +3750,6 @@ function ProtectionPage({ model, actions }) {
     return (
       <BotShieldNativePage heading="Protection">
         <BotShieldPageShell className="botshield-protection-content">
-        <div className="botshield-protection-header">
-          <div>
-            <p className="botshield-overview-subtitle">
-              Configure how BotShield detects and responds to suspicious storefront activity.
-            </p>
-          </div>
-        </div>
-
         <section className={`botshield-protection-status ${protectionHealthy ? "is-healthy" : "is-attention"}`}>
           <div className="botshield-protection-status-icon"><OverviewIcon name="shield" centered /></div>
           <div>
@@ -5735,11 +5705,6 @@ function SettingsPage({ model, actions }) {
     <BotShieldNativePage heading="Settings">
       <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
         <header className="botshield-overview-header botshield-settings-hub-header">
-          <div className="botshield-settings-hub-header-copy">
-            <p className="botshield-overview-subtitle">
-              Manage protection, alerts, billing, connections, and app settings.
-            </p>
-          </div>
           <div
             aria-label="BotShield operational status"
             className="botshield-settings-hub-strip"
