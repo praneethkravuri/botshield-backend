@@ -34,8 +34,10 @@ const settingsSource = adminSource.slice(
 
 test("shared modal helpers avoid silent show() no-ops", () => {
   assert.match(designSource, /export function showBotShieldModal/);
+  assert.match(designSource, /export function queueBotShieldModalShow/);
   assert.match(designSource, /export function hideBotShieldModal/);
   assert.match(designSource, /runBotShieldModalCommand/);
+  assert.match(designSource, /if \(!modal\) return false/);
   assert.doesNotMatch(adminSource, /getElementById\([^)]+\)\?\.show/);
 });
 

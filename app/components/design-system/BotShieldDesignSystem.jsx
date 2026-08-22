@@ -5289,21 +5289,27 @@ export function BotShieldInfoModal({
 }
 
 function runBotShieldModalCommand(id, command) {
-  if (typeof document === "undefined" || !id) return;
+  if (typeof document === "undefined" || !id) return false;
   const modal = document.getElementById(id);
-  if (!modal) return;
-  const nativeCommand =
-    command === "--show"
-      ? typeof modal.show === "function"
-        ? modal.show.bind(modal)
-        : null
-      : typeof modal.hide === "function"
-        ? modal.hide.bind(modal)
-        : null;
-  if (nativeCommand) {
-    nativeCommand();
-    return;
+  if (!modal) return false;
+
+  if (command === "--show") {
+    if (typeof modal.showOverlay === "function") {
+      modal.showOverlay();
+      return true;
+    }
+    if (typeof modal.show === "function") {
+      modal.show();
+      return true;
+    }
+  } else if (typeof modal.hideOverlay === "function") {
+    modal.hideOverlay();
+    return true;
+  } else if (typeof modal.hide === "function") {
+    modal.hide();
+    return true;
   }
+
   const trigger = document.createElement("button");
   trigger.type = "button";
   trigger.setAttribute("command", command);
@@ -5314,10 +5320,23 @@ function runBotShieldModalCommand(id, command) {
   document.body.appendChild(trigger);
   trigger.click();
   document.body.removeChild(trigger);
+  return true;
 }
 
 export function showBotShieldModal(id) {
   runBotShieldModalCommand(id, "--show");
+}
+
+export function queueBotShieldModalShow(id, attempts = 16) {
+  if (runBotShieldModalCommand(id, "--show")) {
+    return;
+  }
+  if (attempts <= 0) {
+    return;
+  }
+  requestAnimationFrame(() => {
+    queueBotShieldModalShow(id, attempts - 1);
+  });
 }
 
 export function hideBotShieldModal(id) {
@@ -5338,23 +5357,28 @@ export function BotShieldNativeModal({
   children,
 }) {
   const wasOpenRef = useRef(false);
+  const showRequestRef = useRef(0);
 
   useEffect(() => {
     if (open) {
       wasOpenRef.current = true;
-      showBotShieldModal(id);
-      return undefined;
+      showRequestRef.current += 1;
+      const showRequest = showRequestRef.current;
+      queueBotShieldModalShow(id);
+      return () => {
+        if (showRequestRef.current === showRequest) {
+          showRequestRef.current += 1;
+        }
+      };
     }
     if (wasOpenRef.current) {
+      wasOpenRef.current = false;
       hideBotShieldModal(id);
     }
     return undefined;
   }, [id, open]);
 
   const handleAfterHide = () => {
-    if (!open) {
-      wasOpenRef.current = false;
-    }
     onAfterHide?.();
   };
 

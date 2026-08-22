@@ -21,6 +21,7 @@ import {
   BotShieldTextField,
   BotShieldToggle,
   hideBotShieldModal,
+  queueBotShieldModalShow,
   showBotShieldModal,
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
@@ -3528,7 +3529,7 @@ function ProtectionPage({ model, actions }) {
 
   const resumeProtectionModal = () => {
     if (protectionModal) {
-      showBotShieldModal(BOTSHIELD_PROTECTION_MODAL_ID);
+      queueBotShieldModalShow(BOTSHIELD_PROTECTION_MODAL_ID);
     }
   };
 
@@ -3572,7 +3573,10 @@ function ProtectionPage({ model, actions }) {
         note:
           "This module uses BotShield's active protection profile. Changes below apply to future storefront decisions.",
       });
-      window.setTimeout(() => showBotShieldModal(BOTSHIELD_PROTECTION_MODAL_ID), 0);
+      window.setTimeout(
+        () => queueBotShieldModalShow(BOTSHIELD_PROTECTION_MODAL_ID),
+        0,
+      );
       return;
     }
 
@@ -3884,15 +3888,14 @@ function ProtectionPage({ model, actions }) {
             <article><div className="botshield-protection-access-icon"><OverviewIcon name="visitor" centered /></div><div className="botshield-protection-access-content"><h3>Trusted visitors</h3><p>Visitors allowed to bypass supported BotShield protection checks.</p><div className="botshield-protection-access-count"><strong>{model.whitelist.length}</strong><span>Trusted visitor{model.whitelist.length === 1 ? "" : "s"}</span></div></div><BotShieldActionButton onClick={openTrusted}>Manage trusted visitors</BotShieldActionButton></article>
           </div>
         </section>
-        {protectionModal ? (
-          <BotShieldNativeModal
-            heading={protectionModal.title}
+        <BotShieldNativeModal
+            heading={protectionModal?.title ?? "Protection"}
             id={BOTSHIELD_PROTECTION_MODAL_ID}
             onAfterHide={handleProtectionModalAfterHide}
-            open
-            size={getProtectionModalSize(protectionModal.type)}
+            open={Boolean(protectionModal)}
+            size={getProtectionModalSize(protectionModal?.type)}
             primaryAction={
-              protectionModal.type === "profile" ? (
+              protectionModal?.type === "profile" ? (
                 <s-button
                   slot="primary-action"
                   variant="primary"
@@ -3902,7 +3905,7 @@ function ProtectionPage({ model, actions }) {
                 >
                   Save changes
                 </s-button>
-              ) : protectionModal.type === "status" &&
+              ) : protectionModal?.type === "status" &&
                 protectionModal.module === "network" ? (
                 <s-button
                   slot="primary-action"
@@ -3911,7 +3914,7 @@ function ProtectionPage({ model, actions }) {
                 >
                   Review protection policy
                 </s-button>
-              ) : protectionModal.type === "status" &&
+              ) : protectionModal?.type === "status" &&
                 protectionModal.module === "page" &&
                 !storefrontConnected ? (
                 <s-button
@@ -3924,7 +3927,7 @@ function ProtectionPage({ model, actions }) {
               ) : null
             }
             secondaryActions={
-              protectionModal.type === "profile" ? (
+              protectionModal?.type === "profile" ? (
                 <s-button
                   slot="secondary-actions"
                   disabled={saving}
@@ -3939,10 +3942,12 @@ function ProtectionPage({ model, actions }) {
               )
             }
           >
-            <s-paragraph className="botshield-protection-modal-intro" color="subdued">
-              {protectionModal.text}
-            </s-paragraph>
-            {protectionModal.type === "profile" ? (
+            {protectionModal ? (
+              <s-paragraph className="botshield-protection-modal-intro" color="subdued">
+                {protectionModal.text}
+              </s-paragraph>
+            ) : null}
+            {protectionModal?.type === "profile" ? (
               <>
                 {saveError ? (
                   <BotShieldBanner
@@ -4175,7 +4180,7 @@ function ProtectionPage({ model, actions }) {
                 <BotShieldInlineHelp>{protectionModal.note}</BotShieldInlineHelp>
               </>
             ) : null}
-            {protectionModal.type === "blocklist" ? (
+            {protectionModal?.type === "blocklist" ? (
               <IpList
                 addLabel="Add IP"
                 emptyTitle="No blocked visitors yet."
@@ -4192,7 +4197,7 @@ function ProtectionPage({ model, actions }) {
                 value={blockedIpInput}
               />
             ) : null}
-            {protectionModal.type === "trusted" ? (
+            {protectionModal?.type === "trusted" ? (
               <IpList
                 addLabel="Trust visitor"
                 emptyTitle="No trusted visitors yet."
@@ -4209,7 +4214,7 @@ function ProtectionPage({ model, actions }) {
                 value={trustedIpInput}
               />
             ) : null}
-            {protectionModal.type === "status" ? (
+            {protectionModal?.type === "status" ? (
               <>
                 <section className="botshield-protection-drawer-section">
                   <div className="botshield-protection-drawer-section-label">
@@ -4278,7 +4283,6 @@ function ProtectionPage({ model, actions }) {
               </>
             ) : null}
           </BotShieldNativeModal>
-        ) : null}
         <BotShieldConfirmationModal
           confirmLabel="Discard changes"
           heading="Discard unsaved changes?"

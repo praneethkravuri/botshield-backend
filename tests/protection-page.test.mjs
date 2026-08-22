@@ -179,6 +179,36 @@ test("Protection modal content styles remain scoped without drawer shell CSS", (
   assert.doesNotMatch(designSource, /\.botshield-protection-drawer-footer/);
 });
 
+test("Protection Manage actions mount the native modal before showing it", () => {
+  assert.match(protectionPage, /open={Boolean\(protectionModal\)}/);
+  assert.match(protectionPage, /<BotShieldNativeModal/);
+  assert.doesNotMatch(protectionPage, /\{protectionModal \? \(\s*<BotShieldNativeModal/s);
+  assert.match(designSource, /export function queueBotShieldModalShow/);
+  assert.match(designSource, /queueBotShieldModalShow\(id\)/);
+  assert.match(designSource, /modal\.showOverlay/);
+  for (const opener of [
+    "openBotProtectionModule",
+    "openNetworkProtectionModule",
+    "openRateProtectionModule",
+    "openPageProtectionModule",
+    "openBlocklist",
+    "openTrusted",
+    "openProfileManager",
+  ]) {
+    assert.match(protectionPage, new RegExp(`${opener}`));
+    assert.match(protectionPage, /setProtectionModal\(/);
+  }
+});
+
+test("Protection native modal can reopen after close without remounting the shell", () => {
+  assert.match(protectionPage, /const closeDrawer = \(\) =>/);
+  assert.match(protectionPage, /setProtectionModal\(null\)/);
+  assert.match(protectionPage, /open={Boolean\(protectionModal\)}/);
+  assert.match(protectionPage, /drawerOpenerRef\.current = document\.activeElement/);
+  assert.match(designSource, /wasOpenRef\.current = false/);
+  assert.match(designSource, /hideBotShieldModal\(id\)/);
+});
+
 test("Overview Configure deep links still open Protection module managers", () => {
   assert.match(protectionPage, /bot: openBotProtectionModule/);
   assert.match(protectionPage, /network: openNetworkProtectionModule/);
