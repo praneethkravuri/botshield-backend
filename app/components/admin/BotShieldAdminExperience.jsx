@@ -2436,6 +2436,7 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
       bodyClassName="botshield-analytics-event-modal-body"
       heading="Event details"
       id={BOTSHIELD_ANALYTICS_EVENT_MODAL_ID}
+      modalPadding="none"
       onAfterHide={onClose}
       open={Boolean(event)}
       padding="none"
@@ -2444,7 +2445,7 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
           Close
         </s-button>
       }
-      size="large"
+      size="base"
     >
       {event ? (
         <>
@@ -2456,7 +2457,8 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
               onClick={requestClose}
             />
           </div>
-          <div className="botshield-analytics-event-modal-content">
+          <div className="botshield-analytics-event-modal-scroll">
+            <div className="botshield-analytics-event-modal-content">
             <div className="botshield-analytics-detail-summary">
               <div>
                 <BotShieldStatusBadge
@@ -2580,6 +2582,7 @@ function AnalyticsEventDetails({ actions, event, onClose }) {
                 </BotShieldAsyncButton>
               </div>
             ) : null}
+            </div>
           </div>
         </>
       ) : null}
