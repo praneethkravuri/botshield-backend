@@ -57,17 +57,18 @@ test("Fraud Orders does not claim unsupported production access", () => {
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {
-  assert.match(styles, /\.botshield-fraud-setup-checklist-steps/);
-  assert.match(styles, /\.botshield-fraud-setup-status-badge/);
+  assert.match(styles, /\.botshield-fraud-setup-progress-bar/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
-  assert.match(styles, /\.botshield-fraud-setup-modal-shell/);
-  assert.match(styles, /\.botshield-fraud-setup-modal-intro/);
-  assert.match(page, /size="large"/);
-  assert.match(styles, /grid-template-columns: 24px minmax\(0, 1fr\) 88px/);
-  assert.match(page, /botshield-fraud-setup-modal-intro/);
   assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-setup-modal/);
+  assert.match(page, /size="base"/);
+  assert.match(page, /<s-checkbox/);
+  assert.match(page, /<s-divider/);
+  assert.match(page, /slot="primary-action"/);
+  assert.match(page, /slot="secondary-actions"/);
+  assert.match(page, /botshield-fraud-setup-checklist/);
+  assert.match(page, /botshield-fraud-setup-progress-count/);
 });
 
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
