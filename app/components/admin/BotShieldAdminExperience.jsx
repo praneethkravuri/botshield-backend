@@ -3302,7 +3302,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       modalPadding="none"
       onAfterHide={onClose}
       open
-      size="small-100"
+      size="large"
     >
       <div className="botshield-fraud-setup-modal-shell">
         <p className="botshield-fraud-setup-modal-intro">
@@ -3368,14 +3368,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
                     {step.active ? (
                       <span className="botshield-fraud-setup-step-eyebrow">Current step</span>
                     ) : null}
-                    <div className="botshield-fraud-setup-checklist-topline">
-                      <h4>{step.title}</h4>
-                      <span
-                        className={`botshield-fraud-setup-pill botshield-fraud-setup-pill--${step.status}`}
-                      >
-                        {step.statusLabel}
-                      </span>
-                    </div>
+                    <h4>{step.title}</h4>
                     <p>{step.detail}</p>
                     {step.note ? (
                       <p className="botshield-fraud-setup-note" id="fraud-order-access-note">
@@ -3383,6 +3376,11 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
                       </p>
                     ) : null}
                   </div>
+                  <span
+                    className={`botshield-fraud-setup-pill botshield-fraud-setup-pill--${step.status}`}
+                  >
+                    {step.statusLabel}
+                  </span>
                 </li>
               ))}
             </ol>
