@@ -46,7 +46,7 @@ test("Fraud Orders filters stay safe with zero order data", () => {
   assert.match(page, /No high-risk orders/);
   assert.match(page, /No medium-risk orders/);
   assert.match(page, /No risky orders are currently pending fulfillment/);
-  assert.match(page, /No orders available for review/);
+  assert.match(page, /No orders found/);
   assert.match(page, /disabled=\{loading\}/);
   assert.match(page, /searchDisabled=\{!connected\}/);
   assert.match(page, /onFilterChange=\{handleFilterChange\}/);
@@ -63,17 +63,19 @@ test("Fraud Orders optional scope and permission flow are configured", () => {
   assert.match(page, /\/api\/fraud-order-access/);
   assert.match(page, /declined-all/);
   assert.match(page, /granted-all/);
-  assert.match(indexSource, /loadFraudOrderAccess/);
-  assert.match(indexSource, /refreshFraudOrderAccess: loadFraudOrderAccess/);
+  assert.match(indexSource, /loadFraudOrders/);
+  assert.match(indexSource, /\/api\/fraud-orders/);
+  assert.match(indexSource, /refreshFraudOrders: loadFraudOrders/);
+  assert.match(indexSource, /refreshFraudOrderAccess: refreshFraudOrderConnection/);
   assert.match(indexSource, /fraudOrderAccessConnected,/);
   assert.doesNotMatch(indexSource, /fraudOrderAccessConnected: false/);
 });
 
-test("Fraud Orders setup keeps review queue pending until order loading exists", () => {
-  assert.match(page, /Order loading isn't active yet/);
-  assert.match(page, /statusLabel: orderAccessReady \? "Pending" : "Waiting"/);
+test("Fraud Orders setup keeps review queue ready once order access is connected", () => {
+  assert.match(page, /Risky orders from Shopify appear here for review\./);
+  assert.match(page, /statusLabel: orderAccessReady \? "Ready" : "Waiting"/);
   assert.match(page, /statusLabel: orderAccessReady \? "Connected" : "Required"/);
-  assert.match(page, /status: "waiting"/);
+  assert.match(page, /status: orderAccessReady \? "complete" : "waiting"/);
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {

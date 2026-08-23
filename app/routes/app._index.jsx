@@ -142,6 +142,9 @@ export default function Index() {
   const [storeHealthRefreshError, setStoreHealthRefreshError] = useState("");
   const storeHealthRefreshInFlight = useRef(false);
   const [fraudOrderAccessConnected, setFraudOrderAccessConnected] = useState(false);
+  const [fraudOrders, setFraudOrders] = useState([]);
+  const [fraudOrdersLoading, setFraudOrdersLoading] = useState(false);
+  const [fraudOrdersError, setFraudOrdersError] = useState(null);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [teamNotes, setTeamNotes] = useState({});
   const [trustedTags, setTrustedTags] = useState({});
@@ -870,6 +873,38 @@ export default function Index() {
       setFraudOrderAccessConnected(false);
       recordBackendError("Order access", error);
     }
+  };
+
+  const loadFraudOrders = async () => {
+    setFraudOrdersLoading(true);
+    setFraudOrdersError(null);
+    try {
+      const response = await fetch("/api/fraud-orders", { cache: "no-store" });
+      const data = await response.json();
+      setFraudOrderAccessConnected(Boolean(data.connected));
+
+      if (!data.connected) {
+        setFraudOrders([]);
+        return;
+      }
+
+      setFraudOrders(Array.isArray(data.orders) ? data.orders : []);
+      if (data.error) {
+        setFraudOrdersError(data.error);
+      }
+    } catch (error) {
+      setFraudOrders([]);
+      setFraudOrdersError(
+        toMerchantErrorMessage(error, "Couldn't load Fraud Orders."),
+      );
+    } finally {
+      setFraudOrdersLoading(false);
+    }
+  };
+
+  const refreshFraudOrderConnection = async () => {
+    await loadFraudOrderAccess();
+    await loadFraudOrders();
   };
 
   const loadBackendState = async () => {
@@ -1890,6 +1925,12 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
+    if (page !== "fraud-orders") return undefined;
+    loadFraudOrders();
+    return undefined;
+  }, [page]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (skipIncidentFilterFetch.current) {
         skipIncidentFilterFetch.current = false;
@@ -2645,9 +2686,9 @@ export default function Index() {
     storeHealthRefreshError,
     readinessItems: polarisReadinessItems,
     fraudOrderAccessConnected,
-    fraudOrders: [],
-    fraudOrdersLoading: false,
-    fraudOrdersError: null,
+    fraudOrders,
+    fraudOrdersLoading,
+    fraudOrdersError,
     protectionEntryIntent,
   };
 
@@ -2702,7 +2743,8 @@ export default function Index() {
     },
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
-    refreshFraudOrderAccess: loadFraudOrderAccess,
+    refreshFraudOrderAccess: refreshFraudOrderConnection,
+    refreshFraudOrders: loadFraudOrders,
     refreshAnalytics,
     refreshStoreHealth,
     clearAnalyticsRefreshError: () => setAnalyticsRefreshError(""),

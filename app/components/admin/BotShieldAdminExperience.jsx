@@ -2898,23 +2898,23 @@ const FRAUD_METRIC_FILTERS = {
 const FRAUD_FILTER_EMPTY = {
   "needs-review": {
     title: "No orders currently need review",
-    description: "Orders with elevated risk or Shopify recommendations will appear here when order review is available.",
+    description: "No Shopify orders currently match elevated risk or review recommendations.",
   },
   high: {
     title: "No high-risk orders",
-    description: "High-risk Shopify orders will appear here when order review is available.",
+    description: "No high-risk Shopify orders were returned in the current review window.",
   },
   medium: {
     title: "No medium-risk orders",
-    description: "Medium-risk orders will appear here when order review is available.",
+    description: "No medium-risk Shopify orders were returned in the current review window.",
   },
   "pending-fulfillment": {
     title: "No risky orders are currently pending fulfillment",
-    description: "Risky unfulfilled orders will appear here when order review is available.",
+    description: "No risky unfulfilled orders were returned in the current review window.",
   },
   all: {
-    title: "No orders available for review",
-    description: "Assessed orders will appear here when order review is available.",
+    title: "No orders found",
+    description: "Shopify returned no orders in the current review window.",
   },
 };
 
@@ -2965,6 +2965,15 @@ function getFraudQueueEmptyState({
     return {
       title: "No orders match your filter or search",
       description: "Try a different filter or clear your search to see more orders.",
+      variant: "connected",
+      compact: true,
+    };
+  }
+
+  if (!hasOrders && !trimmedSearch) {
+    return {
+      title: "No orders found",
+      description: "Shopify returned no orders in the current review window.",
       variant: "connected",
       compact: true,
     };
@@ -3321,10 +3330,10 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
       key: "queue",
       title: "Review queue ready",
       detail: orderAccessReady
-        ? "Order loading isn't active yet. Risky orders will appear here once sync is enabled."
+        ? "Risky orders from Shopify appear here for review."
         : "Risky orders will appear here automatically after connection.",
-      status: "waiting",
-      statusLabel: orderAccessReady ? "Pending" : "Waiting",
+      status: orderAccessReady ? "complete" : "waiting",
+      statusLabel: orderAccessReady ? "Ready" : "Waiting",
     },
   ];
   const completedSteps = steps.filter((step) => step.status === "complete").length;
@@ -3418,7 +3427,7 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
       <s-stack gap="small-200">
         <s-paragraph color="subdued">
           {orderAccessReady
-            ? "Order access is connected. Order loading will activate in a future update."
+            ? "Order access is connected. Review Shopify order-risk data below."
             : FRAUD_ORDER_ACCESS_AVAILABLE
               ? "Connect order access so BotShield can read supported Shopify order-risk information."
               : "Order review isn't available yet. Here's what will be required when it launches."}
@@ -3701,6 +3710,10 @@ function FraudOrdersPage({ model, actions }) {
     ? filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone })
     : [];
   const refresh = async () => {
+    if (typeof actions.refreshFraudOrders === "function") {
+      await actions.refreshFraudOrders();
+      return;
+    }
     if (typeof actions.refreshFraudOrderAccess === "function") {
       await actions.refreshFraudOrderAccess();
       return;
