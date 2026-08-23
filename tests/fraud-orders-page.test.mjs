@@ -63,7 +63,9 @@ test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
   assert.match(styles, /\.botshield-fraud-setup-modal-shell/);
-  assert.match(styles, /width: min\(500px, 100%\)/);
+  assert.match(styles, /\.botshield-fraud-setup-modal-intro/);
+  assert.match(page, /size="small-100"/);
+  assert.match(page, /botshield-fraud-setup-modal-intro/);
   assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-setup-modal/);
 });
 

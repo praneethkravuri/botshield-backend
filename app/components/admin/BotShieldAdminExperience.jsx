@@ -3302,23 +3302,12 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       modalPadding="none"
       onAfterHide={onClose}
       open
-      size="base"
+      size="small-100"
     >
       <div className="botshield-fraud-setup-modal-shell">
-        <header className="botshield-fraud-setup-drawer-header">
-          <div>
-            <h2>Fraud Orders setup</h2>
-            <p>See what's required for order review when this feature becomes available.</p>
-          </div>
-          <button
-            aria-label="Close Fraud Orders setup"
-            autoFocus
-            onClick={requestClose}
-            type="button"
-          >
-            ×
-          </button>
-        </header>
+        <p className="botshield-fraud-setup-modal-intro">
+          See what's required for order review when this feature becomes available.
+        </p>
         <div className="botshield-fraud-drawer-body">
           <section
             aria-labelledby="fraud-setup-status-title"
