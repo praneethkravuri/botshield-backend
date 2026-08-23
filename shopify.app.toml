@@ -35,6 +35,7 @@ api_version = "2026-04"
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_app_proxy"
+optional_scopes = [ "read_orders" ]
 
 [app_proxy]
 url = "/proxy/botshield"

@@ -85,6 +85,8 @@ test("Fraud Orders drawers close without unsaved draft state", () => {
   assert.match(setupSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_SETUP_MODAL_ID\)/);
   assert.match(setupSource, /onAfterHide=\{onClose\}/);
   assert.match(setupSource, /slot="secondary-actions"/);
+  assert.match(setupSource, /shopify\.scopes\.request\(\["read_orders"\]\)/);
+  assert.match(setupSource, /shopify\.scopes\.query\(\)/);
   assert.match(setupSource, /onClick=\{requestClose\}[\s\S]*?Close[\s\S]*?<\/BotShieldActionButton>/);
   assert.match(reviewSource, /onClose/);
   assert.match(reviewSource, /event\.key === "Escape"\)/);

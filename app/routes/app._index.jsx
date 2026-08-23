@@ -141,6 +141,7 @@ export default function Index() {
   const [storeHealthRefreshing, setStoreHealthRefreshing] = useState(false);
   const [storeHealthRefreshError, setStoreHealthRefreshError] = useState("");
   const storeHealthRefreshInFlight = useRef(false);
+  const [fraudOrderAccessConnected, setFraudOrderAccessConnected] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [teamNotes, setTeamNotes] = useState({});
   const [trustedTags, setTrustedTags] = useState({});
@@ -857,6 +858,20 @@ export default function Index() {
     );
   };
 
+  const loadFraudOrderAccess = async () => {
+    try {
+      const response = await fetch("/api/fraud-order-access", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Couldn't load order access status.");
+      }
+      const data = await response.json();
+      setFraudOrderAccessConnected(Boolean(data.connected));
+    } catch (error) {
+      setFraudOrderAccessConnected(false);
+      recordBackendError("Order access", error);
+    }
+  };
+
   const loadBackendState = async () => {
     await Promise.all([
       loadScans(),
@@ -869,6 +884,7 @@ export default function Index() {
       loadBillingStatus(),
       loadFinancialImpact(),
       loadOverviewThreatActivity(),
+      loadFraudOrderAccess(),
     ]);
   };
 
@@ -2628,7 +2644,7 @@ export default function Index() {
     storeHealthRefreshing,
     storeHealthRefreshError,
     readinessItems: polarisReadinessItems,
-    fraudOrderAccessConnected: false,
+    fraudOrderAccessConnected,
     fraudOrders: [],
     fraudOrdersLoading: false,
     fraudOrdersError: null,
@@ -2686,6 +2702,7 @@ export default function Index() {
     },
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
+    refreshFraudOrderAccess: loadFraudOrderAccess,
     refreshAnalytics,
     refreshStoreHealth,
     clearAnalyticsRefreshError: () => setAnalyticsRefreshError(""),

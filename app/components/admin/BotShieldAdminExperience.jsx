@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as ReactDOM from "react-dom";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import {
   BotShieldActionButton,
   BotShieldAppFrame,
@@ -3011,7 +3012,7 @@ function filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone
   });
 }
 
-const FRAUD_ORDER_ACCESS_AVAILABLE = false;
+const FRAUD_ORDER_ACCESS_AVAILABLE = true;
 
 function fraudOrderAge(value) {
   if (!value) return "—";
@@ -3288,7 +3289,11 @@ function FraudSetupStepStatus({ status, label }) {
   );
 }
 
-function FraudOrderSetupDrawer({ connected, onClose }) {
+function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
+  const shopify = useAppBridge();
+  const toast = useBotShieldToast();
+  const [connecting, setConnecting] = useState(false);
+
   const requestClose = () => {
     hideBotShieldModal(BOTSHIELD_FRAUD_SETUP_MODAL_ID);
   };
@@ -3305,22 +3310,84 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
     {
       key: "access",
       title: "Connect order access",
-      detail: "Allow BotShield to read supported Shopify order-risk information.",
+      detail: orderAccessReady
+        ? "BotShield can read supported Shopify order-risk information for this store."
+        : "Allow BotShield to read supported Shopify order-risk information.",
       status: orderAccessReady ? "complete" : "required",
-      statusLabel: orderAccessReady ? "Complete" : "Required",
+      statusLabel: orderAccessReady ? "Connected" : "Required",
       active: !orderAccessReady,
     },
     {
       key: "queue",
       title: "Review queue ready",
-      detail: "Risky orders will appear here automatically after connection.",
-      status: orderAccessReady ? "complete" : "waiting",
-      statusLabel: orderAccessReady ? "Ready" : "Waiting",
+      detail: orderAccessReady
+        ? "Order loading isn't active yet. Risky orders will appear here once sync is enabled."
+        : "Risky orders will appear here automatically after connection.",
+      status: "waiting",
+      statusLabel: orderAccessReady ? "Pending" : "Waiting",
     },
   ];
   const completedSteps = steps.filter((step) => step.status === "complete").length;
   const progressPercent = Math.round((completedSteps / steps.length) * 100);
-  const connectDisabled = !FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady;
+  const connectDisabled = !FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady || connecting;
+
+  const handleConnect = async () => {
+    if (connectDisabled) return;
+
+    setConnecting(true);
+    try {
+      const response = await shopify.scopes.request(["read_orders"]);
+
+      if (response?.result === "declined-all") {
+        toast.warning(
+          "Order access wasn't granted. BotShield still needs read_orders to review orders.",
+        );
+        return;
+      }
+
+      if (response?.result !== "granted-all") {
+        toast.warning("Order access wasn't fully granted. Try again when you're ready.");
+        return;
+      }
+
+      const queryResult = await shopify.scopes.query();
+      const granted = Array.isArray(queryResult?.granted) ? queryResult.granted : [];
+      if (!granted.includes("read_orders")) {
+        toast.error("Shopify didn't confirm read_orders access. Try again in a moment.");
+        return;
+      }
+
+      let serverConnected = false;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const data = await safeFetchJson("/api/fraud-order-access");
+        if (data?.connected) {
+          serverConnected = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+
+      if (!serverConnected) {
+        toast.error(
+          "Order access was approved, but BotShield couldn't verify it yet. Refresh and try again.",
+        );
+        return;
+      }
+
+      if (typeof onAccessConnected === "function") {
+        await onAccessConnected();
+      }
+
+      toast.success("Order access connected.");
+      requestClose();
+    } catch (error) {
+      toast.error(
+        toMerchantErrorMessage(error, "Couldn't connect order access. Try again in a moment."),
+      );
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   return (
     <BotShieldNativeModal
@@ -3330,14 +3397,14 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       onAfterHide={onClose}
       open
       primaryAction={
-        FRAUD_ORDER_ACCESS_AVAILABLE ? (
+        FRAUD_ORDER_ACCESS_AVAILABLE && !orderAccessReady ? (
           <BotShieldActionButton
             slot="primary-action"
             variant="primary"
             disabled={connectDisabled}
-            onClick={() => undefined}
+            onClick={handleConnect}
           >
-            Connect order access
+            {connecting ? "Connecting…" : "Connect order access"}
           </BotShieldActionButton>
         ) : null
       }
@@ -3350,7 +3417,11 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
     >
       <s-stack gap="small-200">
         <s-paragraph color="subdued">
-          Order review isn't available yet. Here's what will be required when it launches.
+          {orderAccessReady
+            ? "Order access is connected. Order loading will activate in a future update."
+            : FRAUD_ORDER_ACCESS_AVAILABLE
+              ? "Connect order access so BotShield can read supported Shopify order-risk information."
+              : "Order review isn't available yet. Here's what will be required when it launches."}
         </s-paragraph>
 
         <s-box border="base" borderRadius="base" padding="base" background="base">
@@ -3630,6 +3701,10 @@ function FraudOrdersPage({ model, actions }) {
     ? filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone })
     : [];
   const refresh = async () => {
+    if (typeof actions.refreshFraudOrderAccess === "function") {
+      await actions.refreshFraudOrderAccess();
+      return;
+    }
     if (typeof actions.refresh === "function") await actions.refresh();
   };
   const openSetup = () => setSetupOpen(true);
@@ -3795,7 +3870,11 @@ function FraudOrdersPage({ model, actions }) {
         </BotShieldPageShell>
 
         {setupOpen ? (
-        <FraudOrderSetupDrawer connected={connected} onClose={closeSetup} />
+        <FraudOrderSetupDrawer
+          connected={connected}
+          onAccessConnected={actions.refreshFraudOrderAccess}
+          onClose={closeSetup}
+        />
       ) : null}
 
       {selectedOrder ? (

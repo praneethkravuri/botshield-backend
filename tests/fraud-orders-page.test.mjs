@@ -6,6 +6,10 @@ const page = await readFile(
   new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
   "utf8",
 );
+const indexSource = await readFile(
+  new URL("../app/routes/app._index.jsx", import.meta.url),
+  "utf8",
+);
 const styles = await readFile(
   new URL("../app/components/design-system/BotShieldDesignSystem.jsx", import.meta.url),
   "utf8",
@@ -21,7 +25,6 @@ test("Fraud Orders uses a dedicated disconnected experience", () => {
   assert.match(page, /Orders requiring attention/);
   assert.match(page, /Order review isn't available in this version of BotShield/);
   assert.match(page, /Setup required/);
-  assert.match(page, /Not available yet/);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
@@ -49,11 +52,28 @@ test("Fraud Orders filters stay safe with zero order data", () => {
   assert.match(page, /onFilterChange=\{handleFilterChange\}/);
 });
 
-test("Fraud Orders does not claim unsupported production access", () => {
+test("Fraud Orders optional scope and permission flow are configured", () => {
   assert.match(shopifyConfig, /scopes = "write_app_proxy"/);
-  assert.doesNotMatch(shopifyConfig, /read_orders/);
+  assert.match(shopifyConfig, /optional_scopes = \[ "read_orders" \]/);
+  assert.doesNotMatch(shopifyConfig, /scopes = ".*read_orders/);
   assert.doesNotMatch(page, /Fraud score|100% safe|Fraud confirmed/);
-  assert.match(page, /FRAUD_ORDER_ACCESS_AVAILABLE = false/);
+  assert.match(page, /FRAUD_ORDER_ACCESS_AVAILABLE = true/);
+  assert.match(page, /shopify\.scopes\.request\(\["read_orders"\]\)/);
+  assert.match(page, /shopify\.scopes\.query\(\)/);
+  assert.match(page, /\/api\/fraud-order-access/);
+  assert.match(page, /declined-all/);
+  assert.match(page, /granted-all/);
+  assert.match(indexSource, /loadFraudOrderAccess/);
+  assert.match(indexSource, /refreshFraudOrderAccess: loadFraudOrderAccess/);
+  assert.match(indexSource, /fraudOrderAccessConnected,/);
+  assert.doesNotMatch(indexSource, /fraudOrderAccessConnected: false/);
+});
+
+test("Fraud Orders setup keeps review queue pending until order loading exists", () => {
+  assert.match(page, /Order loading isn't active yet/);
+  assert.match(page, /statusLabel: orderAccessReady \? "Pending" : "Waiting"/);
+  assert.match(page, /statusLabel: orderAccessReady \? "Connected" : "Required"/);
+  assert.match(page, /status: "waiting"/);
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {
@@ -82,7 +102,7 @@ test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /Order risk access required/);
   assert.match(
     page,
-    /Order review isn't available yet\. Here's what will be required when it launches\./,
+    /Connect order access so BotShield can read supported Shopify order-risk information\./,
   );
   assert.match(page, /botshield-fraud-setup-checklist/);
   assert.match(page, /botshield-fraud-setup-progress-count/);
