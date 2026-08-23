@@ -2431,7 +2431,7 @@ export function BotShieldAppFrame({ children }) {
           font-size: 12px;
           line-height: 1.45;
         }
-        .botshield-fraud-inbox-table { min-width: 920px; }
+        .botshield-fraud-inbox-table { min-width: 820px; }
         .botshield-fraud-inbox-order strong {
           display: block;
           color: var(--overview-ink);

@@ -57,16 +57,11 @@ test("mapShopifyOrderNode maps high-risk order fields for the UI", () => {
       createdAt: "2026-08-22T18:08:00Z",
       displayFinancialStatus: "PAID",
       displayFulfillmentStatus: "UNFULFILLED",
-      email: "jordan@example.com",
       totalPriceSet: {
         shopMoney: {
           amount: "486.00",
           currencyCode: "USD",
         },
-      },
-      customer: {
-        displayName: "Jordan Lee",
-        email: "jordan@example.com",
       },
       risk: {
         recommendation: "INVESTIGATE",
@@ -86,8 +81,6 @@ test("mapShopifyOrderNode maps high-risk order fields for the UI", () => {
   );
 
   assert.equal(mapped.name, "#1048");
-  assert.equal(mapped.customer, "Jordan Lee");
-  assert.equal(mapped.email, "jordan@example.com");
   assert.equal(mapped.amount, "$486.00");
   assert.equal(mapped.risk, "high");
   assert.equal(mapped.recommendation, "Investigate");
@@ -100,6 +93,9 @@ test("mapShopifyOrderNode maps high-risk order fields for the UI", () => {
     "https://admin.shopify.com/store/demo-store/orders/1048",
   );
   assert.equal(mapped.assessmentSource, "Shopify order risk assessment");
+  assert.equal("customer" in mapped, false);
+  assert.equal("customerName" in mapped, false);
+  assert.equal("email" in mapped, false);
 });
 
 test("mapShopifyOrderNode handles medium-risk and low-risk orders", () => {
@@ -184,6 +180,37 @@ test("protected customer data GraphQL errors map to merchant-safe responses", ()
   assert.equal(resolved.code, "protected_customer_data");
   assert.equal(resolved.status, 403);
   assert.match(resolved.message, /protected customer data access is approved/);
+});
+
+test("fraud orders GraphQL query excludes Level 2 customer-identifying fields", async () => {
+  const source = await readFile(
+    new URL("../app/lib/fraud-orders.server.js", import.meta.url),
+    "utf8",
+  );
+  const queryMatch = source.match(/const FRAUD_ORDERS_QUERY = `#graphql([\s\S]*?)`;/);
+  assert.ok(queryMatch, "Fraud orders GraphQL query should be defined");
+  const query = queryMatch[1];
+
+  assert.match(query, /\bid\b/);
+  assert.match(query, /\bname\b/);
+  assert.match(query, /\bcreatedAt\b/);
+  assert.match(query, /displayFinancialStatus/);
+  assert.match(query, /displayFulfillmentStatus/);
+  assert.match(query, /totalPriceSet/);
+  assert.match(query, /\brisk\b/);
+  assert.match(query, /recommendation/);
+  assert.match(query, /assessments/);
+  assert.match(query, /riskLevel/);
+  assert.match(query, /provider/);
+  assert.match(query, /facts/);
+
+  assert.doesNotMatch(query, /\bemail\b/);
+  assert.doesNotMatch(query, /\bcustomer\b/);
+  assert.doesNotMatch(query, /displayName/);
+  assert.doesNotMatch(query, /\bphone\b/);
+  assert.doesNotMatch(query, /billingAddress/);
+  assert.doesNotMatch(query, /shippingAddress/);
+  assert.doesNotMatch(query, /mailingAddress/);
 });
 
 test("fraud orders API guards on session scope and uses Admin GraphQL", async () => {

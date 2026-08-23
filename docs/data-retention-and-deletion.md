@@ -10,16 +10,25 @@
 - Email/report delivery status and provider message IDs
 - Cached IP network intelligence
 
-BotShield does not intentionally store customer names, order contents, payment
+BotShield does not intentionally store customer names, customer emails,
+phone numbers, billing or shipping addresses, order contents, payment card
 details, or Shopify customer IDs.
+
+When Fraud Orders is connected, BotShield fetches supported Shopify order and
+fraud/risk information live for display and does not persist that order data.
 
 ## Retention
 
-- Network-intelligence cache: 24 hours
-- Security events and merchant configuration: while installed and until the
-  Shopify shop-redaction process is completed
+- Storefront security events (`BotEvent`): automatically deleted after 30 days
+- Network-intelligence cache (`NetworkIntel`): automatically deleted after
+  the 24-hour `expiresAt` timestamp
+- Merchant settings, blocklists, and whitelists: retained while installed and
+  deleted on Shopify `shop/redact`
 - Valid privacy requests: completed within 30 days unless retention is legally
   required
+
+Automatic deletion runs from the production web service on startup and on a
+recurring schedule via `app/lib/data-retention.server.js`.
 
 ## Webhook behavior
 
@@ -34,4 +43,3 @@ details, or Shopify customer IDs.
 
 Support verifies the store owner before manually deleting store-scoped data.
 Deletion should use the same transaction as `shop/redact`.
-

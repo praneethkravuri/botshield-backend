@@ -29,14 +29,27 @@ test("Fraud Orders uses a dedicated disconnected experience", () => {
 
 test("connected Fraud Orders remains an investigation workflow", () => {
   assert.match(page, /Orders requiring attention/);
-  assert.match(page, /Search orders, customers, or email/);
+  assert.match(page, /Search orders/);
   assert.match(page, /Review →/);
   assert.match(page, /Why this order was flagged/);
   assert.match(page, /Risk assessment/);
   assert.match(page, /Investigation/);
+  assert.match(page, /Open in Shopify/);
   assert.match(page, /event\.key === "Escape"/);
   assert.match(page, /No orders currently need review/);
   assert.match(page, /No orders match your filter or search/);
+});
+
+test("Fraud Orders UI does not surface customer-identifying fields", () => {
+  assert.doesNotMatch(page, /Search orders, customers, or email/);
+  assert.doesNotMatch(page, /order\.customer/);
+  assert.doesNotMatch(page, /order\.customerName/);
+  assert.doesNotMatch(page, /order\.email/);
+  assert.doesNotMatch(page, /"Customer"/);
+  assert.doesNotMatch(page, /<dt>Customer<\/dt>/);
+  assert.doesNotMatch(page, /<dt>Email<\/dt>/);
+  assert.match(page, /order\.name \|\| order\.orderName/);
+  assert.match(page, /botshield-fraud-open-order/);
 });
 
 test("Fraud Orders filters stay safe with zero order data", () => {

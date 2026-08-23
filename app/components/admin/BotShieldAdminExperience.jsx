@@ -3009,9 +3009,12 @@ function filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone
     const text = [
       order.name,
       order.orderName,
-      order.customer,
-      order.customerName,
-      order.email,
+      order.recommendation,
+      order.reason,
+      order.primarySignal,
+      order.financialStatus,
+      order.fulfillmentStatus,
+      ...(Array.isArray(order.signals) ? order.signals : []),
     ]
       .filter(Boolean)
       .join(" ")
@@ -3193,10 +3196,10 @@ function FraudReviewQueueToolbar({
         ))}
       </div>
       <input
-        aria-label="Search orders, customers, or email"
+        aria-label="Search orders"
         disabled={disabled || searchDisabled}
         onChange={(event) => onSearchChange?.(event.target.value)}
-        placeholder="Search orders, customers, or email"
+        placeholder="Search orders"
         type="search"
         value={search}
       />
@@ -3212,7 +3215,6 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
           <tr>
             {[
               "Order",
-              "Customer",
               "Total",
               "Risk",
               "Recommendation",
@@ -3227,15 +3229,14 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
         <tbody>
           {orders.map((order) => {
             const secondarySignal = fraudOrderSecondarySignal(order);
-            const customerName = order.customer || order.customerName;
+            const primarySignal = fraudOrderPrimarySignal(order);
             return (
               <tr key={order.id || order.orderId || order.name}>
                 <td className="botshield-fraud-inbox-order">
                   <strong>{order.name || order.orderName || "Order"}</strong>
-                </td>
-                <td className="botshield-fraud-inbox-customer">
-                  <strong>{customerName || "Unavailable"}</strong>
-                  {order.email ? <small>{order.email}</small> : null}
+                  {primarySignal && primarySignal !== "No signal recorded" ? (
+                    <small>{primarySignal}</small>
+                  ) : null}
                 </td>
                 <td>{order.amount || order.total || "Unavailable"}</td>
                 <td>
@@ -3514,7 +3515,6 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
   if (!order || typeof document === "undefined") return null;
 
   const signals = fraudOrderSignalList(order);
-  const customerName = order.customer || order.customerName;
 
   return ReactDOM.createPortal(
     <div
@@ -3531,7 +3531,6 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
             <p>
               {formatDate(order.createdAt || order.date, "Time unavailable")}
               {order.amount || order.total ? ` · ${order.amount || order.total}` : ""}
-              {customerName ? ` · ${customerName}` : ""}
             </p>
           </div>
           <button aria-label="Close order details" autoFocus onClick={onClose} type="button">
@@ -3587,14 +3586,6 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
                 <dt>Fulfillment</dt>
                 <dd>{order.fulfillmentStatus || "Unavailable"}</dd>
               </div>
-              <div>
-                <dt>Customer</dt>
-                <dd>{customerName || "Unavailable"}</dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{order.email || "Unavailable"}</dd>
-              </div>
             </dl>
           </section>
           <section>
@@ -3606,6 +3597,7 @@ function FraudOrderReviewDrawer({ order, onClose, needsReview, riskLabel, riskTo
             </p>
             <p className="botshield-fraud-drawer-source-note">
               Order risk data comes from Shopify. BotShield does not create Shopify risk assessments.
+              Customer-identifying details are available in Shopify Admin when you open the order.
             </p>
           </section>
         </div>

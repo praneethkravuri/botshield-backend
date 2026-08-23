@@ -18,7 +18,20 @@ export default function TermsPage() {
       <p>
         {publicInfo.appName} provides storefront traffic monitoring, risk
         scoring, blocklist and whitelist controls, browser-based challenge and
-        blocking responses, and related security workflows.
+        blocking responses, incident history, optional Fraud Orders review of
+        supported Shopify order-risk information, and related security
+        workflows.
+      </p>
+      <h2>Data Processing</h2>
+      <p>
+        Your use of {publicInfo.appName} is also governed by the{" "}
+        <a href="/privacy">BotShield Privacy Policy</a>, which describes what
+        information BotShield processes, why it is processed, retention and
+        deletion practices, and how Fraud Orders v1 handles supported Shopify
+        order and risk data without requesting customer name, email, phone,
+        billing address, or shipping address. By installing or using the app,
+        you acknowledge that BotShield will process information as described
+        there to provide the app functionality.
       </p>
       <h2>Security Limitations</h2>
       <p>

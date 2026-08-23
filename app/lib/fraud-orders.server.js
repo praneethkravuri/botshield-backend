@@ -25,16 +25,11 @@ const FRAUD_ORDERS_QUERY = `#graphql
           createdAt
           displayFinancialStatus
           displayFulfillmentStatus
-          email
           totalPriceSet {
             shopMoney {
               amount
               currencyCode
             }
-          }
-          customer {
-            displayName
-            email
           }
           risk {
             recommendation
@@ -154,9 +149,6 @@ export function mapShopifyOrderNode(node, shop) {
   return {
     id: node.id,
     name: node.name || "Order",
-    customer: node.customer?.displayName || null,
-    customerName: node.customer?.displayName || null,
-    email: node.email || node.customer?.email || null,
     amount: formatOrderAmount(money?.amount, money?.currencyCode),
     total: formatOrderAmount(money?.amount, money?.currencyCode),
     risk: mapRiskLevel(primaryAssessment?.riskLevel),

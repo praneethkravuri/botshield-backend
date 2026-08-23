@@ -205,8 +205,6 @@ const previewFraudOrders = [
   {
     id: "preview-order-1",
     name: "#1048",
-    customer: "Jordan Lee",
-    email: "jordan@example.com",
     amount: "$486.00",
     risk: "high",
     recommendation: "Investigate",
@@ -220,8 +218,6 @@ const previewFraudOrders = [
   {
     id: "preview-order-2",
     name: "#1042",
-    customer: "Morgan Patel",
-    email: "morgan@example.com",
     amount: "$284.00",
     risk: "medium",
     recommendation: "Review",
@@ -235,8 +231,6 @@ const previewFraudOrders = [
   {
     id: "preview-order-3",
     name: "#1031",
-    customer: "Alex Rivera",
-    email: "alex@example.com",
     amount: "$56.00",
     risk: "low",
     recommendation: "Accept",

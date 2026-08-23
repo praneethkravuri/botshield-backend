@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequestListener } from "@mjackson/node-fetch-server";
 import { createRequestHandler } from "@react-router/express";
 import prisma from "./app/db.server.js";
+import { startDataRetentionScheduler } from "./app/lib/data-retention.server.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -152,6 +153,7 @@ if (build.fetch) {
 
 const server = app.listen(port, host, () => {
   console.log(`[botshield] listening on http://${host}:${port}`);
+  startDataRetentionScheduler(prisma);
 });
 
 ["SIGTERM", "SIGINT"].forEach((signal) => {
