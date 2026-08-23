@@ -13,6 +13,7 @@ import {
   BotShieldLoadingState,
   BotShieldNativeModal,
   BOTSHIELD_ANALYTICS_EVENT_MODAL_ID,
+  BOTSHIELD_FRAUD_SETUP_MODAL_ID,
   BOTSHIELD_PROTECTION_MODAL_ID,
   BotShieldNativePage,
   BotShieldPageShell,
@@ -3256,20 +3257,9 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
 }
 
 function FraudOrderSetupDrawer({ connected, onClose }) {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
-
-  if (typeof document === "undefined") return null;
+  const requestClose = () => {
+    hideBotShieldModal(BOTSHIELD_FRAUD_SETUP_MODAL_ID);
+  };
 
   const orderAccessReady = connected;
   const steps = [
@@ -3304,26 +3294,28 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
   const progressPercent = Math.round((completedSteps / steps.length) * 100);
   const connectDisabled = !FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady;
 
-  return ReactDOM.createPortal(
-    <div
-      className="botshield-fraud-drawer-backdrop"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+  return (
+    <BotShieldNativeModal
+      bodyClassName="botshield-fraud-setup-modal"
+      heading="Fraud Orders setup"
+      id={BOTSHIELD_FRAUD_SETUP_MODAL_ID}
+      modalPadding="none"
+      onAfterHide={onClose}
+      open
+      size="base"
     >
-      <aside
-        aria-label="Fraud Orders setup"
-        aria-modal="true"
-        className="botshield-fraud-drawer botshield-fraud-drawer--setup"
-        role="dialog"
-      >
+      <div className="botshield-fraud-setup-modal-shell">
         <header className="botshield-fraud-setup-drawer-header">
           <div>
             <h2>Fraud Orders setup</h2>
             <p>See what's required for order review when this feature becomes available.</p>
           </div>
-          <button aria-label="Close Fraud Orders setup" autoFocus onClick={onClose} type="button">
+          <button
+            aria-label="Close Fraud Orders setup"
+            autoFocus
+            onClick={requestClose}
+            type="button"
+          >
             ×
           </button>
         </header>
@@ -3408,7 +3400,7 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
           </section>
         </div>
         <footer className="botshield-fraud-setup-drawer-footer">
-          <BotShieldActionButton onClick={onClose}>Cancel</BotShieldActionButton>
+          <BotShieldActionButton onClick={requestClose}>Cancel</BotShieldActionButton>
           <span
             className="botshield-fraud-setup-connect-wrap"
             title={
@@ -3430,9 +3422,8 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
             </BotShieldActionButton>
           </span>
         </footer>
-      </aside>
-    </div>,
-    document.body,
+      </div>
+    </BotShieldNativeModal>
   );
 }
 

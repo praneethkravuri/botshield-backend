@@ -62,12 +62,15 @@ test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
-  assert.match(styles, /justify-content: center/);
-  assert.match(styles, /\.botshield-fraud-drawer--setup \{ width: min\(500px/);
+  assert.match(styles, /\.botshield-fraud-setup-modal-shell/);
+  assert.match(styles, /width: min\(500px, 100%\)/);
+  assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-setup-modal/);
 });
 
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /function FraudOrderSetupDrawer/);
+  assert.match(page, /BotShieldNativeModal/);
+  assert.match(page, /BOTSHIELD_FRAUD_SETUP_MODAL_ID/);
   assert.match(page, /onSetup=\{openSetup\}/);
   assert.match(page, /Connect order access/);
   assert.match(page, /Cancel/);

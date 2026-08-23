@@ -76,13 +76,18 @@ test("Analytics event details use native modal open and close controls", () => {
 });
 
 test("Fraud Orders drawers close without unsaved draft state", () => {
-  for (const source of [fraudSource.match(/function FraudOrderSetupDrawer[\s\S]*?^}/m)?.[0], fraudSource.match(/function FraudOrderReviewDrawer[\s\S]*?^}/m)?.[0]]) {
-    assert.ok(source);
-    assert.match(source, /onClose/);
-    assert.match(source, /event\.key === "Escape"\)/);
-    assert.match(source, /event\.target === event\.currentTarget\) onClose\(\)/);
-  }
-  assert.match(fraudSource, /<BotShieldActionButton onClick=\{onClose\}>Cancel<\/BotShieldActionButton>/);
+  const setupSource = fraudSource.match(/function FraudOrderSetupDrawer[\s\S]*?^}/m)?.[0];
+  const reviewSource = fraudSource.match(/function FraudOrderReviewDrawer[\s\S]*?^}/m)?.[0];
+  assert.ok(setupSource);
+  assert.ok(reviewSource);
+  assert.match(setupSource, /BotShieldNativeModal/);
+  assert.match(setupSource, /BOTSHIELD_FRAUD_SETUP_MODAL_ID/);
+  assert.match(setupSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_SETUP_MODAL_ID\)/);
+  assert.match(setupSource, /onAfterHide=\{onClose\}/);
+  assert.match(setupSource, /onClick=\{requestClose\}>Cancel<\/BotShieldActionButton>/);
+  assert.match(reviewSource, /onClose/);
+  assert.match(reviewSource, /event\.key === "Escape"\)/);
+  assert.match(reviewSource, /event\.target === event\.currentTarget\) onClose\(\)/);
   assert.match(fraudSource, /<BotShieldActionButton onClick=\{onClose\}>Close<\/BotShieldActionButton>/);
 });
 
