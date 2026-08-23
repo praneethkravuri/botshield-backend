@@ -21,7 +21,7 @@ test("Fraud Orders uses a dedicated disconnected experience", () => {
   assert.match(page, /Orders requiring attention/);
   assert.match(page, /Order review isn't available in this version of BotShield/);
   assert.match(page, /Setup required/);
-  assert.match(page, /Not available in this version of BotShield yet\./);
+  assert.match(page, /Not available yet/);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
@@ -58,14 +58,15 @@ test("Fraud Orders does not claim unsupported production access", () => {
 
 test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-setup-progress-bar/);
+  assert.match(styles, /\.botshield-fraud-setup-step-row/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
   assert.match(styles, /@media \(max-width: 840px\)/);
   assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-setup-modal/);
   assert.match(page, /size="base"/);
-  assert.match(page, /<s-checkbox/);
+  assert.match(page, /type="check"/);
+  assert.match(page, /type="circle-dashed"/);
   assert.match(page, /<s-divider/);
-  assert.match(page, /slot="primary-action"/);
   assert.match(page, /slot="secondary-actions"/);
   assert.match(page, /botshield-fraud-setup-checklist/);
   assert.match(page, /botshield-fraud-setup-progress-count/);
@@ -77,9 +78,12 @@ test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /BOTSHIELD_FRAUD_SETUP_MODAL_ID/);
   assert.match(page, /onSetup=\{openSetup\}/);
   assert.match(page, /Connect order access/);
-  assert.match(page, /Cancel/);
-  assert.match(page, /Order risk isn't connected/);
-  assert.match(page, /See what's required for order review when this feature becomes available\./);
+  assert.match(page, />Close<\/BotShieldActionButton>/);
+  assert.match(page, /Order risk access required/);
+  assert.match(
+    page,
+    /Order review isn't available yet\. Here's what will be required when it launches\./,
+  );
   assert.match(page, /botshield-fraud-setup-checklist/);
   assert.match(page, /botshield-fraud-setup-progress-count/);
   assert.doesNotMatch(page, /Unavailable in this release/);

@@ -2516,7 +2516,7 @@ export function BotShieldAppFrame({ children }) {
           display: block;
         }
         .botshield-fraud-setup-progress-bar {
-          height: 4px;
+          height: 3px;
           overflow: hidden;
           border-radius: 999px;
           background: #e3e5e7;
@@ -2525,11 +2525,20 @@ export function BotShieldAppFrame({ children }) {
           display: block;
           height: 100%;
           border-radius: inherit;
-          background: #29845a;
+          background: #8c9196;
           transition: width 160ms ease;
         }
         .botshield-fraud-setup-progress-count {
           margin: 0;
+        }
+        .botshield-fraud-setup-step-row {
+          align-items: start;
+        }
+        .botshield-fraud-setup-step-status {
+          justify-self: end;
+          margin-top: 1px;
+          text-align: right;
+          white-space: nowrap;
         }
         .botshield-fraud-preview { overflow: hidden; border: 1px solid #dedede; border-radius: 14px; background: #fff; }
         .botshield-fraud-preview-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid #e8e8e8; }

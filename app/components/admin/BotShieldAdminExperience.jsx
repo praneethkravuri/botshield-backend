@@ -3256,14 +3256,36 @@ function FraudOrderInboxTable({ orders, onReview, riskLabel, riskTone }) {
   );
 }
 
-function getFraudSetupStepBadgeTone(status) {
+function getFraudSetupStepStatusLabel(step, orderAccessReady) {
+  if (step.status === "complete") {
+    return step.statusLabel;
+  }
+  if (step.key === "access" && !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE) {
+    return "Not available yet";
+  }
+  return step.statusLabel;
+}
+
+function FraudSetupStepMarker({ status }) {
   if (status === "complete") {
-    return "success";
+    return <s-icon type="check" size="small" color="subdued" aria-hidden="true" />;
   }
-  if (status === "required") {
-    return "warning";
+  return <s-icon type="circle-dashed" size="small" color="subdued" aria-hidden="true" />;
+}
+
+function FraudSetupStepStatus({ status, label }) {
+  if (status === "complete") {
+    return (
+      <s-badge tone="success" className="botshield-fraud-setup-step-status">
+        {label}
+      </s-badge>
+    );
   }
-  return "neutral";
+  return (
+    <s-text color="subdued" className="botshield-fraud-setup-step-status">
+      {label}
+    </s-text>
+  );
 }
 
 function FraudOrderSetupDrawer({ connected, onClose }) {
@@ -3287,10 +3309,6 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       status: orderAccessReady ? "complete" : "required",
       statusLabel: orderAccessReady ? "Complete" : "Required",
       active: !orderAccessReady,
-      note:
-        !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE
-          ? "Not available in this version of BotShield yet."
-          : null,
     },
     {
       key: "queue",
@@ -3312,51 +3330,43 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
       onAfterHide={onClose}
       open
       primaryAction={
-        <BotShieldActionButton
-          slot="primary-action"
-          variant="primary"
-          aria-describedby={
-            !FRAUD_ORDER_ACCESS_AVAILABLE && !orderAccessReady
-              ? "fraud-order-access-note"
-              : undefined
-          }
-          disabled={connectDisabled}
-        >
-          {FRAUD_ORDER_ACCESS_AVAILABLE ? "Connect order access" : "Not available yet"}
-        </BotShieldActionButton>
+        FRAUD_ORDER_ACCESS_AVAILABLE ? (
+          <BotShieldActionButton
+            slot="primary-action"
+            variant="primary"
+            disabled={connectDisabled}
+            onClick={() => undefined}
+          >
+            Connect order access
+          </BotShieldActionButton>
+        ) : null
       }
       secondaryActions={
         <BotShieldActionButton slot="secondary-actions" onClick={requestClose}>
-          Cancel
+          Close
         </BotShieldActionButton>
       }
       size="base"
     >
-      <s-stack gap="base">
+      <s-stack gap="small-200">
         <s-paragraph color="subdued">
-          See what's required for order review when this feature becomes available.
+          Order review isn't available yet. Here's what will be required when it launches.
         </s-paragraph>
 
         <s-box border="base" borderRadius="base" padding="base" background="base">
-          <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
-            <s-stack gap="small-100">
-              <s-text type="strong">
-                {orderAccessReady ? "Order risk connected" : "Order risk isn't connected"}
-              </s-text>
-              <s-paragraph color="subdued">
-                {orderAccessReady
-                  ? "Order review is connected for this store."
-                  : "Order review isn't available in this version of BotShield."}
-              </s-paragraph>
-            </s-stack>
-            <BotShieldStatusBadge
-              label={orderAccessReady ? "Connected" : "Setup required"}
-              status={orderAccessReady ? "active" : "setup_required"}
-            />
-          </s-grid>
+          <s-stack gap="small-100">
+            <s-text type="strong">
+              {orderAccessReady ? "Order risk connected" : "Order risk access required"}
+            </s-text>
+            <s-paragraph color="subdued">
+              {orderAccessReady
+                ? "Order review is connected for this store."
+                : "BotShield will need access to supported Shopify order-risk information."}
+            </s-paragraph>
+          </s-stack>
         </s-box>
 
-        <s-stack gap="small-200">
+        <s-stack gap="small-100">
           <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
             <s-text type="strong">Setup progress</s-text>
             <s-paragraph color="subdued" className="botshield-fraud-setup-progress-count">
@@ -3376,41 +3386,28 @@ function FraudOrderSetupDrawer({ connected, onClose }) {
             borderRadius="base"
             background="base"
             className="botshield-fraud-setup-checklist"
+            padding="none"
           >
             {steps.map((step, index) => (
               <s-box key={step.key}>
                 {index > 0 ? <s-divider /> : null}
-                <s-box
+                <s-grid
+                  alignItems="start"
+                  className="botshield-fraud-setup-step-row"
+                  gap="small"
+                  gridTemplateColumns="auto 1fr auto"
                   padding="small"
-                  background={step.active ? "subdued" : undefined}
-                  borderRadius={step.active ? "base" : undefined}
                 >
+                  <FraudSetupStepMarker status={step.status} />
                   <s-stack gap="small-100">
-                    {step.active ? (
-                      <s-text tone="caution">Current step</s-text>
-                    ) : null}
-                    <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
-                      <s-checkbox
-                        checked={step.status === "complete"}
-                        disabled
-                        label={step.title}
-                      />
-                      <s-badge tone={getFraudSetupStepBadgeTone(step.status)}>
-                        {step.statusLabel}
-                      </s-badge>
-                    </s-grid>
-                    <s-box paddingInlineStart="large">
-                      <s-stack gap="small-100">
-                        <s-paragraph color="subdued">{step.detail}</s-paragraph>
-                        {step.note ? (
-                          <s-paragraph color="subdued" id="fraud-order-access-note">
-                            {step.note}
-                          </s-paragraph>
-                        ) : null}
-                      </s-stack>
-                    </s-box>
+                    <s-text type="strong">{step.title}</s-text>
+                    <s-paragraph color="subdued">{step.detail}</s-paragraph>
                   </s-stack>
-                </s-box>
+                  <FraudSetupStepStatus
+                    label={getFraudSetupStepStatusLabel(step, orderAccessReady)}
+                    status={step.status}
+                  />
+                </s-grid>
               </s-box>
             ))}
           </s-box>

@@ -85,7 +85,7 @@ test("Fraud Orders drawers close without unsaved draft state", () => {
   assert.match(setupSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_SETUP_MODAL_ID\)/);
   assert.match(setupSource, /onAfterHide=\{onClose\}/);
   assert.match(setupSource, /slot="secondary-actions"/);
-  assert.match(setupSource, /onClick=\{requestClose\}[\s\S]*?Cancel[\s\S]*?<\/BotShieldActionButton>/);
+  assert.match(setupSource, /onClick=\{requestClose\}[\s\S]*?Close[\s\S]*?<\/BotShieldActionButton>/);
   assert.match(reviewSource, /onClose/);
   assert.match(reviewSource, /event\.key === "Escape"\)/);
   assert.match(reviewSource, /event\.target === event\.currentTarget\) onClose\(\)/);
