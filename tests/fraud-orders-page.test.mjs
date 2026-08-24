@@ -108,11 +108,15 @@ test("Fraud Orders optional scope and permission flow are configured", () => {
   assert.match(indexSource, /fraudOrdersErrorCode/);
 });
 
-test("Fraud Orders setup keeps review queue ready once order access is connected", () => {
-  assert.match(page, /Risky orders from Shopify appear here for review\./);
-  assert.match(page, /statusLabel: orderAccessReady \? "Ready" : "Waiting"/);
-  assert.match(page, /statusLabel: orderAccessReady \? "Connected" : "Required"/);
-  assert.match(page, /status: orderAccessReady \? "complete" : "waiting"/);
+test("Fraud Orders setup derives readiness from effective Fraud Orders state", () => {
+  assert.match(page, /getFraudOrdersSetupState/);
+  assert.match(page, /errorCode={errorCode}/);
+  assert.match(page, /setupState = getFraudOrdersSetupState/);
+  assert.match(page, /introCopy/);
+  assert.match(page, /summaryTitle/);
+  assert.match(page, /summaryDetail/);
+  assert.doesNotMatch(page, /statusLabel: orderAccessReady \? "Ready" : "Waiting"/);
+  assert.doesNotMatch(page, /Review Shopify order-risk data below/);
 });
 
 test("Fraud Orders styling is scoped and responsive", () => {

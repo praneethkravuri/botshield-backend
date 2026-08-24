@@ -36,6 +36,7 @@ import {
   getEmailStatus,
   getUiStatus,
 } from "../../lib/ui-status";
+import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REASON_COPY = {
@@ -3297,11 +3298,11 @@ function FraudOrderResourceTable({ loading, onReview, orders, riskLabel, riskTon
   );
 }
 
-function getFraudSetupStepStatusLabel(step, orderAccessReady) {
+function getFraudSetupStepStatusLabel(step, setupState) {
   if (step.status === "complete") {
     return step.statusLabel;
   }
-  if (step.key === "access" && !orderAccessReady && !FRAUD_ORDER_ACCESS_AVAILABLE) {
+  if (step.key === "access" && !setupState.orderPermissionConnected && !FRAUD_ORDER_ACCESS_AVAILABLE) {
     return "Not available yet";
   }
   return step.statusLabel;
@@ -3329,7 +3330,7 @@ function FraudSetupStepStatus({ status, label }) {
   );
 }
 
-function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
+function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClose }) {
   const shopify = useAppBridge();
   const toast = useBotShieldToast();
   const [connecting, setConnecting] = useState(false);
@@ -3338,37 +3339,11 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
     hideBotShieldModal(BOTSHIELD_FRAUD_SETUP_MODAL_ID);
   };
 
-  const orderAccessReady = connected;
-  const steps = [
-    {
-      key: "installed",
-      title: "BotShield installed",
-      detail: "Running inside Shopify Admin.",
-      status: "complete",
-      statusLabel: "Complete",
-    },
-    {
-      key: "access",
-      title: "Connect order access",
-      detail: orderAccessReady
-        ? "BotShield can read supported Shopify order-risk information for this store."
-        : "Allow BotShield to read supported Shopify order-risk information.",
-      status: orderAccessReady ? "complete" : "required",
-      statusLabel: orderAccessReady ? "Connected" : "Required",
-      active: !orderAccessReady,
-    },
-    {
-      key: "queue",
-      title: "Review queue ready",
-      detail: orderAccessReady
-        ? "Risky orders from Shopify appear here for review."
-        : "Risky orders will appear here automatically after connection.",
-      status: orderAccessReady ? "complete" : "waiting",
-      statusLabel: orderAccessReady ? "Ready" : "Waiting",
-    },
-  ];
-  const completedSteps = steps.filter((step) => step.status === "complete").length;
-  const progressPercent = Math.round((completedSteps / steps.length) * 100);
+  const setupState = getFraudOrdersSetupState({ connected, errorCode });
+  const { steps, completedSteps, totalSteps, introCopy, summaryTitle, summaryDetail } =
+    setupState;
+  const orderAccessReady = setupState.orderPermissionConnected;
+  const progressPercent = Math.round((completedSteps / totalSteps) * 100);
   const connectDisabled = !FRAUD_ORDER_ACCESS_AVAILABLE || orderAccessReady || connecting;
 
   const handleConnect = async () => {
@@ -3456,22 +3431,12 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
       size="base"
     >
       <s-stack gap="small-200">
-        <s-paragraph color="subdued">
-          {orderAccessReady
-            ? "Order access is connected. Review Shopify order-risk data below."
-            : "Connect order access so BotShield can read supported Shopify order-risk information."}
-        </s-paragraph>
+        <s-paragraph color="subdued">{introCopy}</s-paragraph>
 
         <s-box border="base" borderRadius="base" padding="base" background="base">
           <s-stack gap="small-100">
-            <s-text type="strong">
-              {orderAccessReady ? "Order risk connected" : "Order risk access required"}
-            </s-text>
-            <s-paragraph color="subdued">
-              {orderAccessReady
-                ? "Order review is connected for this store."
-                : "BotShield will need access to supported Shopify order-risk information."}
-            </s-paragraph>
+            <s-text type="strong">{summaryTitle}</s-text>
+            <s-paragraph color="subdued">{summaryDetail}</s-paragraph>
           </s-stack>
         </s-box>
 
@@ -3479,7 +3444,7 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
           <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
             <s-text type="strong">Setup progress</s-text>
             <s-paragraph color="subdued" className="botshield-fraud-setup-progress-count">
-              {completedSteps} of {steps.length} complete
+              {completedSteps} of {totalSteps} complete
             </s-paragraph>
           </s-grid>
           <div
@@ -3513,7 +3478,7 @@ function FraudOrderSetupDrawer({ connected, onAccessConnected, onClose }) {
                     <s-paragraph color="subdued">{step.detail}</s-paragraph>
                   </s-stack>
                   <FraudSetupStepStatus
-                    label={getFraudSetupStepStatusLabel(step, orderAccessReady)}
+                    label={getFraudSetupStepStatusLabel(step, setupState)}
                     status={step.status}
                   />
                 </s-grid>
@@ -3950,6 +3915,7 @@ function FraudOrdersPage({ model, actions }) {
         {setupOpen ? (
           <FraudOrderSetupDrawer
             connected={connected}
+            errorCode={errorCode}
             onAccessConnected={actions.refreshFraudOrderAccess}
             onClose={closeSetup}
           />
