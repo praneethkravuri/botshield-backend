@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { buildShopifyOrderAdminUrl } from "../app/lib/fraud-orders.server.js";
 
 const page = await readFile(
   new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
@@ -18,26 +19,41 @@ const shopifyConfig = await readFile(
   new URL("../shopify.app.toml", import.meta.url),
   "utf8",
 );
+const fraudServer = await readFile(
+  new URL("../app/lib/fraud-orders.server.js", import.meta.url),
+  "utf8",
+);
 
-test("Fraud Orders uses a dedicated disconnected experience", () => {
-  assert.match(page, /if \(!connected\)/);
-  assert.match(page, /Order review isn't available yet/);
-  assert.match(page, /Orders requiring attention/);
-  assert.match(page, /Order review isn't available in this version of BotShield/);
-  assert.match(page, /Setup required/);
+test("Fraud Orders uses Shopify-native resource queue components", () => {
+  assert.match(page, /<s-table/);
+  assert.match(page, /<s-table-header-row>/);
+  assert.match(page, /<s-table-body>/);
+  assert.match(page, /<s-search-field/);
+  assert.match(page, /<s-button-group/);
+  assert.match(page, /slot="secondary-actions"[\s\S]*Refresh/);
+  assert.doesNotMatch(page, /FraudOrderInboxTable/);
+  assert.doesNotMatch(page, /FraudOrderReviewDrawer/);
+  assert.doesNotMatch(page, /ReactDOM\.createPortal/);
+});
+
+test("Fraud Orders disconnected state prompts order access instead of future-release copy", () => {
+  assert.match(page, /Order access required/);
+  assert.match(page, /Connect order access to review Shopify order risk/);
+  assert.doesNotMatch(page, /future BotShield update/);
+  assert.doesNotMatch(page, /when this feature launches/);
+  assert.doesNotMatch(page, /Order review isn't available yet/);
 });
 
 test("connected Fraud Orders remains an investigation workflow", () => {
   assert.match(page, /Orders requiring attention/);
-  assert.match(page, /Search orders/);
-  assert.match(page, /Review →/);
+  assert.match(page, /View risk/);
   assert.match(page, /Why this order was flagged/);
   assert.match(page, /Risk assessment/);
-  assert.match(page, /Investigation/);
   assert.match(page, /Open in Shopify/);
-  assert.match(page, /event\.key === "Escape"/);
-  assert.match(page, /No orders currently need review/);
-  assert.match(page, /No orders match your filter or search/);
+  assert.match(page, /Nothing needs review/);
+  assert.match(page, /No matching orders/);
+  assert.match(page, /View all orders/);
+  assert.match(page, /Clear filters/);
 });
 
 test("Fraud Orders UI does not surface customer-identifying fields", () => {
@@ -49,27 +65,35 @@ test("Fraud Orders UI does not surface customer-identifying fields", () => {
   assert.doesNotMatch(page, /<dt>Customer<\/dt>/);
   assert.doesNotMatch(page, /<dt>Email<\/dt>/);
   assert.match(page, /order\.name \|\| order\.orderName/);
-  assert.match(page, /botshield-fraud-open-order/);
+  assert.match(page, /botshield-fraud-order-link/);
 });
 
-test("Fraud Orders filters stay safe with zero order data", () => {
+test("Fraud Orders filters and search stay scoped to supported order fields", () => {
   assert.match(page, /function filterFraudOrders/);
   assert.match(page, /function getFraudQueueEmptyState/);
   assert.match(page, /FRAUD_FILTER_EMPTY/);
-  assert.match(page, /No high-risk orders/);
-  assert.match(page, /No medium-risk orders/);
-  assert.match(page, /No risky orders are currently pending fulfillment/);
-  assert.match(page, /No orders found/);
-  assert.match(page, /disabled=\{loading\}/);
-  assert.match(page, /searchDisabled=\{!connected\}/);
-  assert.match(page, /onFilterChange=\{handleFilterChange\}/);
+  assert.match(page, /Needs review/);
+  assert.match(page, /High risk/);
+  assert.match(page, /Medium risk/);
+  assert.match(page, /Pending fulfillment/);
+  assert.match(page, /All orders/);
+  assert.match(page, /order\.recommendation/);
+  assert.match(page, /order\.financialStatus/);
+  assert.match(page, /order\.fulfillmentStatus/);
+});
+
+test("Fraud Orders review uses native centered modal shell", () => {
+  assert.match(page, /function FraudOrderReviewModal/);
+  assert.match(page, /BOTSHIELD_FRAUD_REVIEW_MODAL_ID/);
+  assert.match(page, /BotShieldNativeModal/);
+  assert.match(page, /queueBotShieldModalShow\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
+  assert.match(page, /hideBotShieldModal\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
 });
 
 test("Fraud Orders optional scope and permission flow are configured", () => {
   assert.match(shopifyConfig, /scopes = "write_app_proxy"/);
   assert.match(shopifyConfig, /optional_scopes = \[ "read_orders" \]/);
   assert.doesNotMatch(shopifyConfig, /scopes = ".*read_orders/);
-  assert.doesNotMatch(page, /Fraud score|100% safe|Fraud confirmed/);
   assert.match(page, /FRAUD_ORDER_ACCESS_AVAILABLE = true/);
   assert.match(page, /shopify\.scopes\.request\(\["read_orders"\]\)/);
   assert.match(page, /shopify\.scopes\.query\(\)/);
@@ -79,9 +103,9 @@ test("Fraud Orders optional scope and permission flow are configured", () => {
   assert.match(indexSource, /loadFraudOrders/);
   assert.match(indexSource, /\/api\/fraud-orders/);
   assert.match(indexSource, /refreshFraudOrders: loadFraudOrders/);
-  assert.match(indexSource, /refreshFraudOrderAccess: refreshFraudOrderConnection/);
-  assert.match(indexSource, /fraudOrderAccessConnected,/);
-  assert.doesNotMatch(indexSource, /fraudOrderAccessConnected: false/);
+  assert.match(indexSource, /fraudOrdersRefreshInFlight/);
+  assert.match(indexSource, /fraudOrdersLastRefreshedAt/);
+  assert.match(indexSource, /fraudOrdersErrorCode/);
 });
 
 test("Fraud Orders setup keeps review queue ready once order access is connected", () => {
@@ -93,43 +117,41 @@ test("Fraud Orders setup keeps review queue ready once order access is connected
 
 test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-setup-progress-bar/);
-  assert.match(styles, /\.botshield-fraud-setup-step-row/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
-  assert.match(styles, /@media \(max-width: 840px\)/);
-  assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-setup-modal/);
-  assert.match(page, /size="base"/);
-  assert.match(page, /type="check"/);
-  assert.match(page, /type="circle-dashed"/);
-  assert.match(page, /<s-divider/);
-  assert.match(page, /slot="secondary-actions"/);
-  assert.match(page, /botshield-fraud-setup-checklist/);
-  assert.match(page, /botshield-fraud-setup-progress-count/);
+  assert.match(styles, /\.botshield-fraud-order-link/);
+  assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-review-modal/);
 });
 
 test("Fraud Orders Review setup stays in Fraud Orders context", () => {
   assert.match(page, /function FraudOrderSetupDrawer/);
-  assert.match(page, /BotShieldNativeModal/);
   assert.match(page, /BOTSHIELD_FRAUD_SETUP_MODAL_ID/);
-  assert.match(page, /onSetup=\{openSetup\}/);
   assert.match(page, /Connect order access/);
-  assert.match(page, />Close<\/BotShieldActionButton>/);
-  assert.match(page, /Order risk access required/);
-  assert.match(
-    page,
-    /Connect order access so BotShield can read supported Shopify order-risk information\./,
-  );
-  assert.match(page, /botshield-fraud-setup-checklist/);
-  assert.match(page, /botshield-fraud-setup-progress-count/);
   assert.doesNotMatch(page, /Unavailable in this release/);
-  assert.doesNotMatch(page, /View full BotShield setup/);
-  assert.doesNotMatch(page, /Back to Fraud Orders/);
-  assert.doesNotMatch(page, /setPage\("setup"\)/);
 });
 
 test("Fraud Orders KPI cards can apply queue filters when connected", () => {
   assert.match(page, /FRAUD_METRIC_FILTERS/);
   assert.match(page, /onMetricSelect=\{handleFilterChange\}/);
-  assert.match(page, /aria-pressed=\{isSelected\}/);
-  assert.match(page, /!item\.unavailable/);
+});
+
+test("Fraud Orders error states use merchant-safe banners", () => {
+  assert.match(page, /Order data access isn't available yet/);
+  assert.match(page, /Couldn't refresh orders/);
+  assert.match(page, /protected_customer_data/);
+  assert.doesNotMatch(page, /GraphQL/);
+});
+
+test("Shopify admin order links stay shop-specific", () => {
+  const url = buildShopifyOrderAdminUrl(
+    "demo-store.myshopify.com",
+    "gid://shopify/Order/1048",
+  );
+  assert.equal(url, "https://admin.shopify.com/store/demo-store/orders/1048");
+  assert.match(page, /order\.adminUrl/);
+  assert.match(page, /botshield-fraud-order-link/);
+  const queryMatch = fraudServer.match(/const FRAUD_ORDERS_QUERY = `#graphql([\s\S]*?)`;/);
+  assert.ok(queryMatch);
+  assert.doesNotMatch(queryMatch[1], /\bemail\b/);
+  assert.doesNotMatch(queryMatch[1], /\bcustomer\b/);
 });

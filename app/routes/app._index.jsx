@@ -145,6 +145,9 @@ export default function Index() {
   const [fraudOrders, setFraudOrders] = useState([]);
   const [fraudOrdersLoading, setFraudOrdersLoading] = useState(false);
   const [fraudOrdersError, setFraudOrdersError] = useState(null);
+  const [fraudOrdersErrorCode, setFraudOrdersErrorCode] = useState(null);
+  const [fraudOrdersLastRefreshedAt, setFraudOrdersLastRefreshedAt] = useState(null);
+  const fraudOrdersRefreshInFlight = useRef(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [teamNotes, setTeamNotes] = useState({});
   const [trustedTags, setTrustedTags] = useState({});
@@ -876,8 +879,11 @@ export default function Index() {
   };
 
   const loadFraudOrders = async () => {
+    if (fraudOrdersRefreshInFlight.current) return;
+    fraudOrdersRefreshInFlight.current = true;
     setFraudOrdersLoading(true);
     setFraudOrdersError(null);
+    setFraudOrdersErrorCode(null);
     try {
       const response = await fetch("/api/fraud-orders", { cache: "no-store" });
       const data = await response.json();
@@ -891,13 +897,18 @@ export default function Index() {
       setFraudOrders(Array.isArray(data.orders) ? data.orders : []);
       if (data.error) {
         setFraudOrdersError(data.error);
+        setFraudOrdersErrorCode(data.errorCode || null);
+      } else {
+        setFraudOrdersLastRefreshedAt(new Date().toISOString());
       }
     } catch (error) {
       setFraudOrders([]);
       setFraudOrdersError(
-        toMerchantErrorMessage(error, "Couldn't load Fraud Orders."),
+        toMerchantErrorMessage(error, "Couldn't refresh orders."),
       );
+      setFraudOrdersErrorCode("fetch_failed");
     } finally {
+      fraudOrdersRefreshInFlight.current = false;
       setFraudOrdersLoading(false);
     }
   };
@@ -2689,6 +2700,8 @@ export default function Index() {
     fraudOrders,
     fraudOrdersLoading,
     fraudOrdersError,
+    fraudOrdersErrorCode,
+    fraudOrdersLastRefreshedAt,
     protectionEntryIntent,
   };
 

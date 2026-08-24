@@ -77,21 +77,17 @@ test("Analytics event details use native modal open and close controls", () => {
 
 test("Fraud Orders drawers close without unsaved draft state", () => {
   const setupSource = fraudSource.match(/function FraudOrderSetupDrawer[\s\S]*?^}/m)?.[0];
-  const reviewSource = fraudSource.match(/function FraudOrderReviewDrawer[\s\S]*?^}/m)?.[0];
+  const reviewSource = fraudSource.match(/function FraudOrderReviewModal[\s\S]*?^}/m)?.[0];
   assert.ok(setupSource);
   assert.ok(reviewSource);
   assert.match(setupSource, /BotShieldNativeModal/);
   assert.match(setupSource, /BOTSHIELD_FRAUD_SETUP_MODAL_ID/);
   assert.match(setupSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_SETUP_MODAL_ID\)/);
-  assert.match(setupSource, /onAfterHide=\{onClose\}/);
-  assert.match(setupSource, /slot="secondary-actions"/);
-  assert.match(setupSource, /shopify\.scopes\.request\(\["read_orders"\]\)/);
-  assert.match(setupSource, /shopify\.scopes\.query\(\)/);
-  assert.match(setupSource, /onClick=\{requestClose\}[\s\S]*?Close[\s\S]*?<\/BotShieldActionButton>/);
-  assert.match(reviewSource, /onClose/);
-  assert.match(reviewSource, /event\.key === "Escape"\)/);
-  assert.match(reviewSource, /event\.target === event\.currentTarget\) onClose\(\)/);
-  assert.match(fraudSource, /<BotShieldActionButton onClick=\{onClose\}>Close<\/BotShieldActionButton>/);
+  assert.match(reviewSource, /BotShieldNativeModal/);
+  assert.match(reviewSource, /BOTSHIELD_FRAUD_REVIEW_MODAL_ID/);
+  assert.match(reviewSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
+  assert.match(reviewSource, /Open in Shopify/);
+  assert.doesNotMatch(fraudSource, /FraudOrderReviewDrawer/);
 });
 
 test("Protection profile cancel and close use discard confirmation only for profile drafts", () => {

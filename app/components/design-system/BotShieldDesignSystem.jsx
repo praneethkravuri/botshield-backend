@@ -2339,21 +2339,37 @@ export function BotShieldAppFrame({ children }) {
           box-shadow: 0 1px 2px rgba(20, 24, 27, 0.16);
         }
         .botshield-fraud-filter-group button:disabled { cursor: not-allowed; opacity: 0.72; }
-        .botshield-fraud-toolbar input {
+        .botshield-fraud-toolbar s-search-field {
           width: min(280px, 100%);
           flex: 0 1 280px;
-          height: 34px;
-          box-sizing: border-box;
-          border: 1px solid #c7c9cb;
-          border-radius: 8px;
-          background: #fff;
-          color: var(--overview-ink);
-          font-family: inherit;
-          font-size: 0.8125rem;
-          line-height: 1.25rem;
-          padding: 0 10px;
         }
-        .botshield-fraud-toolbar input:disabled { background: #f1f2f3; color: #8c9196; cursor: not-allowed; }
+        .botshield-fraud-filter-group s-button { white-space: nowrap; }
+        .botshield-fraud-table-wrap {
+          width: 100%;
+          overflow-x: auto;
+          scrollbar-gutter: stable;
+        }
+        .botshield-fraud-order-link {
+          color: #005bd3;
+          font-weight: 650;
+          text-decoration: none;
+        }
+        .botshield-fraud-order-link:hover { text-decoration: underline; }
+        .botshield-fraud-order-signal {
+          display: block;
+          margin-top: 2px;
+          color: #616161;
+          font-size: 12px;
+          line-height: 1.35;
+          font-weight: 450;
+        }
+        .botshield-fraud-refresh-note {
+          margin: 0;
+          color: #616161;
+          font-size: 12px;
+          line-height: 1.35;
+        }
+        .botshield-native-modal-body.botshield-fraud-review-modal s-stack { width: 100%; }
         .botshield-fraud-queue-empty {
           display: flex;
           flex-direction: column;
@@ -4286,8 +4302,19 @@ export function BotShieldPageShell({ className = "", children }) {
   );
 }
 
-export function BotShieldNativePage({ heading, children }) {
-  return <s-page heading={heading}>{children}</s-page>;
+export function BotShieldNativePage({
+  heading,
+  children,
+  primaryAction = null,
+  secondaryActions = null,
+}) {
+  return (
+    <s-page heading={heading}>
+      {primaryAction}
+      {secondaryActions}
+      {children}
+    </s-page>
+  );
 }
 
 export function BotShieldPage({
@@ -5011,6 +5038,7 @@ export function hideBotShieldModal(id) {
 export const BOTSHIELD_PROTECTION_MODAL_ID = "botshield-protection-modal";
 export const BOTSHIELD_ANALYTICS_EVENT_MODAL_ID = "botshield-analytics-event-modal";
 export const BOTSHIELD_FRAUD_SETUP_MODAL_ID = "botshield-fraud-setup-modal";
+export const BOTSHIELD_FRAUD_REVIEW_MODAL_ID = "botshield-fraud-review-modal";
 
 export function BotShieldNativeModal({
   id,
