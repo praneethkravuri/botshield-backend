@@ -30,6 +30,13 @@ fraud/risk information live for display and does not persist that order data.
 Automatic deletion runs from the production web service on startup and on a
 recurring schedule via `app/lib/data-retention.server.js`.
 
+## Access logging
+
+Protected-data workflows write safe application audit metadata to production
+logs (`[botshield-access-audit]`) with shop domain, resource category,
+operation, and success/failure. Audit logs do not include order payloads or
+Shopify customer identifiers.
+
 ## Webhook behavior
 
 - `customers/data_request`: acknowledged; normally no customer-linked record

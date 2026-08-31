@@ -1,21 +1,22 @@
 import { authenticate } from "../shopify.server";
+import { logComplianceWebhook } from "../lib/personal-data-access-audit.server.js";
+import { deleteShopScopedData } from "../lib/shop-redact.server.js";
 import db from "../db.server";
 
 export const action = async ({ request }) => {
   const { payload, shop, topic } = await authenticate.webhook(request);
   const shopDomain = shop || payload?.shop_domain;
 
-  console.log(`Received ${topic} webhook for ${shopDomain}`);
+  const result = await deleteShopScopedData(db, shopDomain);
 
-  if (shopDomain) {
-    await db.$transaction([
-      db.session.deleteMany({ where: { shop: shopDomain } }),
-      db.botEvent.deleteMany({ where: { shop: shopDomain } }),
-      db.blockedIP.deleteMany({ where: { shop: shopDomain } }),
-      db.whitelistIP.deleteMany({ where: { shop: shopDomain } }),
-      db.appSetting.deleteMany({ where: { shop: shopDomain } }),
-    ]);
-  }
+  logComplianceWebhook({
+    shop: shopDomain,
+    topic,
+    outcome: result.deleted ? "shop_data_deleted" : "no_shop_domain",
+    detail: result.deleted
+      ? `deleted sessions=${result.counts.sessions} events=${result.counts.botEvents}`
+      : null,
+  });
 
   return new Response();
 };

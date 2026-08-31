@@ -1,5 +1,6 @@
 import db from "../db.server";
 import { hydrateEventGeography } from "../lib/event-geography.server";
+import { logPersonalDataAccess } from "../lib/personal-data-access-audit.server.js";
 import { extractReasonCodes } from "../lib/security-events";
 import { authenticate } from "../shopify.server";
 
@@ -33,5 +34,11 @@ export async function loader({ request }) {
     networkAsn: r.networkAsn ?? null,
     createdAt: r.createdAt,
   }));
+  logPersonalDataAccess({
+    shop: session.shop,
+    resource: "storefront_events",
+    operation: "list",
+    success: true,
+  });
   return Response.json({ scans });
 }

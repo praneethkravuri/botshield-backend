@@ -1,5 +1,6 @@
 import db from "../db.server";
 import { hydrateEventGeography } from "../lib/event-geography.server";
+import { logPersonalDataAccess } from "../lib/personal-data-access-audit.server.js";
 import {
   matchesIncidentFilters,
   serializeSecurityEvent,
@@ -87,6 +88,13 @@ export async function loader({ request }) {
 
   const allEvents = rows.map(serializeSecurityEvent);
   const events = allEvents.filter((event) => matchesIncidentFilters(event, filters));
+
+  logPersonalDataAccess({
+    shop: session.shop,
+    resource: "storefront_events",
+    operation: "incident_list",
+    success: true,
+  });
 
   return Response.json({
     events,

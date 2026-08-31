@@ -36,9 +36,19 @@ export default function PrivacyPage() {
       </p>
       <h2>Sharing</h2>
       <p>
-        We do not sell merchant data. We may share information with service
+        We do not sell personal data. We may share information with service
         providers when needed to host, secure, support, or operate the app, or
         when required by law.
+      </p>
+      <h2>Consent And Customer Rights</h2>
+      <p>
+        Merchants install BotShield through Shopify and authorize the processing
+        described in this policy. Merchants remain responsible for providing any
+        storefront notices or consent mechanisms required for their business.
+        BotShield honors Shopify&apos;s mandatory customer data request, customer
+        redaction, and shop redaction workflows. Because storefront security
+        events are not linked to Shopify customer IDs, customer-specific requests
+        normally produce no matching customer record in BotShield.
       </p>
       <h2>Service Providers</h2>
       <p>
@@ -84,18 +94,22 @@ export default function PrivacyPage() {
       <p>
         BotShield may automatically allow, challenge, or block storefront
         requests based on configured risk rules. Merchants control protection
-        settings, pausing, and trusted-visitor lists. BotShield does not make
-        legal or credit decisions about Shopify customers on a merchant&apos;s
-        behalf.
+        settings, pausing, and trusted-visitor lists. Fraud Orders is a merchant
+        review workspace for supported Shopify order-risk information and does
+        not make legal, credit, or similarly significant automated decisions
+        about customers on a merchant&apos;s behalf.
       </p>
       <h2>Security And International Processing</h2>
       <p>
-        We use access controls, encrypted HTTPS transport, and restricted
-        production credentials. Database storage is provided through
-        Render-managed PostgreSQL, which provides provider-managed encryption
-        in transit and at rest. No internet service can guarantee absolute
-        security. Information may be processed in the United States where our
-        infrastructure providers operate.
+        We use access controls, encrypted HTTPS transport, restricted production
+        credentials, and provider-managed PostgreSQL storage through Render.
+        Render-managed PostgreSQL provides provider-managed encryption in transit
+        and at rest for hosted database storage. BotShield logs access to
+        protected-data workflows using safe metadata such as shop domain,
+        operation category, and success or failure, without writing order
+        payloads or customer identifiers into audit logs. No internet service can
+        guarantee absolute security. Information may be processed in the United
+        States where our infrastructure providers operate.
       </p>
       <h2>Contact</h2>
       <p>

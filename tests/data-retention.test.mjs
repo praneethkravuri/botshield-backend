@@ -124,6 +124,8 @@ test("privacy policy states automatic 30-day BotEvent retention", async () => {
   assert.match(privacy, /automatically deleted after 30 days/);
   assert.match(privacy, /Fraud Orders[\s\S]*does not request customer name/);
   assert.match(privacy, /Data Protection Agreement/);
+  assert.match(privacy, /do not sell personal data/i);
+  assert.match(privacy, /Fraud Orders is a merchant[\s\S]*review workspace/);
 });
 
 test("terms reference the privacy policy as the merchant data-processing agreement", async () => {
@@ -158,8 +160,7 @@ test("mandatory Shopify compliance webhooks are configured and implemented", asy
   assert.match(config, /customers\/redact/);
   assert.match(config, /shop\/redact/);
   assert.match(shopRedact, /authenticate\.webhook\(request\)/);
-  assert.match(shopRedact, /db\.botEvent\.deleteMany/);
-  assert.match(shopRedact, /db\.session\.deleteMany/);
+  assert.match(shopRedact, /deleteShopScopedData/);
   assert.match(customerRedact, /authenticate\.webhook\(request\)/);
   assert.match(customerDataRequest, /authenticate\.webhook\(request\)/);
 });

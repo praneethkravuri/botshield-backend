@@ -1,4 +1,6 @@
 import { hasFraudOrderReadAccess } from "../lib/fraud-order-access.server.js";
+import { logPersonalDataAccess } from "../lib/personal-data-access-audit.server.js";
+import { logSafeError } from "../lib/safe-log.server.js";
 import {
   fetchFraudOrders,
   resolveFraudOrdersMerchantError,
@@ -27,6 +29,14 @@ export async function loader({ request }) {
           ? 502
           : 200;
 
+    logPersonalDataAccess({
+      shop: session.shop,
+      resource: "fraud_orders",
+      operation: "fetch",
+      success: !result.error,
+      errorCode: result.errorCode,
+    });
+
     return Response.json(
       {
         connected: true,
@@ -37,8 +47,18 @@ export async function loader({ request }) {
       { status },
     );
   } catch (error) {
-    console.error("Fraud orders fetch failed", error);
     const merchantError = resolveFraudOrdersMerchantError(error);
+    logPersonalDataAccess({
+      shop: session.shop,
+      resource: "fraud_orders",
+      operation: "fetch",
+      success: false,
+      errorCode: merchantError.code,
+    });
+    logSafeError("Fraud orders fetch failed", error, {
+      errorCode: merchantError.code,
+      shop: session.shop,
+    });
     return Response.json(
       {
         connected: true,

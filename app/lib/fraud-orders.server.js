@@ -220,7 +220,9 @@ export async function fetchFraudOrders(admin, shop) {
 
   if (graphqlError) {
     const merchantError = resolveFraudOrdersMerchantError(new Error(graphqlError));
-    console.error("Fraud orders GraphQL error:", graphqlError);
+    console.error("Fraud orders GraphQL error", {
+      errorCode: merchantError.code,
+    });
     return {
       orders: [],
       error: merchantError.message,

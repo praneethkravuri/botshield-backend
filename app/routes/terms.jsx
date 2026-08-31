@@ -31,7 +31,8 @@ export default function TermsPage() {
         order and risk data without requesting customer name, email, phone,
         billing address, or shipping address. By installing or using the app,
         you acknowledge that BotShield will process information as described
-        there to provide the app functionality.
+        there to provide the app functionality and that BotShield does not sell
+        personal data.
       </p>
       <h2>Security Limitations</h2>
       <p>
