@@ -79,21 +79,31 @@ Automatic deletion runs from production via `app/lib/data-retention.server.js`.
 
 ## Test and production separation
 
+Production continues to use the existing Render-managed PostgreSQL database.
+
+Local development must use a separate local PostgreSQL database only.
+
 Within repository control:
 
 - Production requires validated env vars in `app/shopify.server.js`.
 - `/ui-preview` is blocked in production.
 - UI preview/dev mode can use in-memory session storage when
   `BOTSHIELD_UI_PREVIEW=1` and `NODE_ENV !== production`.
-- Non-production processes refuse Render PostgreSQL unless
-  `BOTSHIELD_ALLOW_PROD_DB=1` is explicitly set
+- Non-production processes refuse Render PostgreSQL with no bypass override
   (`app/lib/database-environment.server.js`).
+- Non-production processes also refuse non-local database hosts, allowing only
+  localhost-style development databases.
+- Local development database setup is documented in
+  `docs/local-development-database.md` with `docker-compose.dev.yml` and
+  `.env.development.example`.
 
-External/manual separation still required:
+Operator/developer requirements:
 
-1. Create a separate development PostgreSQL instance on Render or locally.
-2. Never copy production protected customer data into dev fixtures.
-3. Use preview/mock fraud-order data in UI preview mode only.
+1. Copy `.env.development.example` to `.env` for local work.
+2. Start the local Docker PostgreSQL database with `npm run dev:db:up`.
+3. Run `npm run dev:db:setup` or `npm run setup` against the local database.
+4. Never copy production protected customer data into local development.
+5. Use preview/mock fraud-order data and synthetic test fixtures only.
 
 ## Data loss prevention (DLP)
 
@@ -195,6 +205,7 @@ Shop deletion logic is centralized in `app/lib/shop-redact.server.js`.
 
 ## Related documents
 
+- `docs/local-development-database.md`
 - `docs/data-retention-and-deletion.md`
 - `docs/security-incident-response.md`
 - `docs/manual-launch-actions.md`

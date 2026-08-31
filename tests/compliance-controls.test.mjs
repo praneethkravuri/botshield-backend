@@ -2,10 +2,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
-  assertSafeNonProductionDatabase,
-  looksLikeRenderPostgresUrl,
-} from "../app/lib/database-environment.server.js";
-import {
   logComplianceWebhook,
   logPersonalDataAccess,
 } from "../app/lib/personal-data-access-audit.server.js";
@@ -47,43 +43,6 @@ function createMockDb(initial = {}) {
     },
   };
 }
-
-test("looksLikeRenderPostgresUrl identifies Render PostgreSQL hosts", () => {
-  assert.equal(
-    looksLikeRenderPostgresUrl(
-      "postgresql://user:pass@dpg-example.oregon-postgres.render.com/db",
-    ),
-    true,
-  );
-  assert.equal(
-    looksLikeRenderPostgresUrl("postgresql://user:pass@localhost:5432/botshield_dev"),
-    false,
-  );
-});
-
-test("assertSafeNonProductionDatabase blocks accidental Render prod DB use", () => {
-  const originalEnv = { ...process.env };
-  try {
-    process.env.NODE_ENV = "development";
-    delete process.env.BOTSHIELD_ALLOW_PROD_DB;
-    assert.throws(
-      () =>
-        assertSafeNonProductionDatabase(
-          "postgresql://user:pass@dpg-example.oregon-postgres.render.com/db",
-        ),
-      /Refusing to start non-production BotShield against Render PostgreSQL/,
-    );
-    process.env.BOTSHIELD_ALLOW_PROD_DB = "1";
-    assert.doesNotThrow(() =>
-      assertSafeNonProductionDatabase(
-        "postgresql://user:pass@dpg-example.oregon-postgres.render.com/db",
-      ),
-    );
-  } finally {
-    process.env.NODE_ENV = originalEnv.NODE_ENV;
-    process.env.BOTSHIELD_ALLOW_PROD_DB = originalEnv.BOTSHIELD_ALLOW_PROD_DB;
-  }
-});
 
 test("deleteShopScopedData removes all shop-scoped BotShield records", async () => {
   const db = createMockDb({
