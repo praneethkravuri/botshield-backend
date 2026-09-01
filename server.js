@@ -32,13 +32,6 @@ if (appUrl) {
 }
 
 const buildPath = path.resolve(__dirname, "build/server/index.js");
-const build = await import(pathToFileURL(buildPath).href);
-
-const assetsBuildDirectory = path.resolve(
-  __dirname,
-  build.assetsBuildDirectory || "build/client",
-);
-const publicPath = build.publicPath || "/";
 
 const app = express();
 
@@ -135,32 +128,50 @@ app.get("/health/config", (_req, res) => {
   });
 });
 
-app.use(
-  path.posix.join(publicPath, "assets"),
-  express.static(path.join(assetsBuildDirectory, "assets"), {
-    immutable: true,
-    maxAge: "1y",
-  }),
-);
-app.use(publicPath, express.static(assetsBuildDirectory));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h" }));
-app.use(morgan("tiny"));
-
-if (build.fetch) {
-  app.all("*", createRequestListener(build.fetch));
-} else {
-  app.all(
-    "*",
-    createRequestHandler({
-      build,
-      mode: process.env.NODE_ENV,
-    }),
-  );
-}
 
 const server = app.listen(port, host, () => {
   console.log(`[botshield] listening on http://${host}:${port}`);
+});
+
+async function loadApplicationRoutes() {
+  console.log("[botshield] loading application build");
+  const build = await import(pathToFileURL(buildPath).href);
+  const assetsBuildDirectory = path.resolve(
+    __dirname,
+    build.assetsBuildDirectory || "build/client",
+  );
+  const publicPath = build.publicPath || "/";
+
+  app.use(
+    path.posix.join(publicPath, "assets"),
+    express.static(path.join(assetsBuildDirectory, "assets"), {
+      immutable: true,
+      maxAge: "1y",
+    }),
+  );
+  app.use(publicPath, express.static(assetsBuildDirectory));
+  app.use(morgan("tiny"));
+
+  if (build.fetch) {
+    app.all("*", createRequestListener(build.fetch));
+  } else {
+    app.all(
+      "*",
+      createRequestHandler({
+        build,
+        mode: process.env.NODE_ENV,
+      }),
+    );
+  }
+
   startDataRetentionScheduler(prisma);
+  console.log("[botshield] application routes ready");
+}
+
+loadApplicationRoutes().catch((error) => {
+  console.error("[botshield] failed to load application build", error);
+  process.exit(1);
 });
 
 ["SIGTERM", "SIGINT"].forEach((signal) => {

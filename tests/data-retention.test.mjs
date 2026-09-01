@@ -116,6 +116,20 @@ test("server starts automatic retention enforcement", async () => {
   assert.match(source, /data-retention\.server\.js/);
 });
 
+test("server binds health routes before loading the React Router build", async () => {
+  const source = await readFile(new URL("../server.js", import.meta.url), "utf8");
+  const listenIndex = source.indexOf("app.listen(");
+  const buildImportIndex = source.indexOf(
+    "await import(pathToFileURL(buildPath)",
+  );
+  assert.ok(listenIndex > -1);
+  assert.ok(buildImportIndex > -1);
+  assert.ok(
+    listenIndex < buildImportIndex,
+    "app.listen must run before the React Router build import",
+  );
+});
+
 test("privacy policy states automatic 30-day BotEvent retention", async () => {
   const privacy = await readFile(
     new URL("../app/routes/privacy.jsx", import.meta.url),
