@@ -124,7 +124,7 @@ test("retired raw and legacy pages return merchants to supported screens", async
   assert.doesNotMatch(botLogRoute, /prisma|JSON\.stringify/);
   assert.match(
     billingReturnRoute,
-    /redirect\("\/app\/settings\?section=billing&updated=true"\)/,
+    /buildBillingSettingsRedirectPath\(\{ updated: true \}\)/,
   );
   assert.match(billingRoute, /redirect\(`\/app\/settings\?\$\{params\.toString\(\)\}`\)/);
   assert.match(setupRoute, /redirect\("\/app"\)/);

@@ -1,9 +1,16 @@
 import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { isBillingReturnRequest } from "../lib/billing-return.server";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
+  if (isBillingReturnRequest(request)) {
+    // Billing return performs its own embedded bootstrap + authenticate flow.
+    // eslint-disable-next-line no-undef
+    return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  }
+
   await authenticate.admin(request);
 
   // eslint-disable-next-line no-undef
