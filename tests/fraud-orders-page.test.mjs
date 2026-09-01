@@ -29,7 +29,7 @@ test("Fraud Orders uses Shopify-native resource queue components", () => {
   assert.match(page, /<s-table-header-row>/);
   assert.match(page, /<s-table-body>/);
   assert.match(page, /<s-search-field/);
-  assert.match(page, /<s-button-group/);
+  assert.match(page, /botshield-fraud-filter-group/);
   assert.match(page, /slot="secondary-actions"[\s\S]*Refresh/);
   assert.doesNotMatch(page, /FraudOrderInboxTable/);
   assert.doesNotMatch(page, /FraudOrderReviewDrawer/);
@@ -44,16 +44,31 @@ test("Fraud Orders disconnected state prompts order access instead of future-rel
   assert.doesNotMatch(page, /Order review isn't available yet/);
 });
 
-test("connected Fraud Orders remains an investigation workflow", () => {
-  assert.match(page, /Orders requiring attention/);
-  assert.match(page, /View risk/);
+test("connected Fraud Orders remains an in-app investigation workflow", () => {
+  assert.match(page, /Review queue/);
+  assert.match(page, />\s*Review\s*</);
+  assert.match(page, /Order investigation/);
   assert.match(page, /Why this order was flagged/);
   assert.match(page, /Risk assessment/);
-  assert.match(page, /Open in Shopify/);
-  assert.match(page, /Nothing needs review/);
+  assert.match(page, /Order context/);
+  assert.match(page, /Review guidance/);
+  assert.match(page, /Close review/);
+  assert.match(page, /View order in Shopify/);
+  assert.match(page, /No orders require review/);
   assert.match(page, /No matching orders/);
   assert.match(page, /View all orders/);
   assert.match(page, /Clear filters/);
+  assert.match(page, /function fraudOrderReviewGuidance/);
+  assert.doesNotMatch(page, /Open in Shopify/);
+  assert.doesNotMatch(page, /View risk/);
+});
+
+test("Fraud Orders keeps merchants inside BotShield during normal review", () => {
+  assert.match(page, /botshield-fraud-table-order/);
+  assert.match(page, /onClick=\{\(\) => onReview\(order\)\}/);
+  assert.doesNotMatch(page, /botshield-fraud-order-link/);
+  assert.match(page, /variant="tertiary"[\s\S]*View order in Shopify/);
+  assert.match(page, /slot="primary-action"[\s\S]*Close review/);
 });
 
 test("Fraud Orders UI does not surface customer-identifying fields", () => {
@@ -65,7 +80,6 @@ test("Fraud Orders UI does not surface customer-identifying fields", () => {
   assert.doesNotMatch(page, /<dt>Customer<\/dt>/);
   assert.doesNotMatch(page, /<dt>Email<\/dt>/);
   assert.match(page, /order\.name \|\| order\.orderName/);
-  assert.match(page, /botshield-fraud-order-link/);
 });
 
 test("Fraud Orders filters and search stay scoped to supported order fields", () => {
@@ -88,6 +102,7 @@ test("Fraud Orders review uses native centered modal shell", () => {
   assert.match(page, /BotShieldNativeModal/);
   assert.match(page, /queueBotShieldModalShow\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
   assert.match(page, /hideBotShieldModal\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
+  assert.match(page, /size="large"/);
 });
 
 test("Fraud Orders optional scope and permission flow are configured", () => {
@@ -123,7 +138,8 @@ test("Fraud Orders styling is scoped and responsive", () => {
   assert.match(styles, /\.botshield-fraud-setup-progress-bar/);
   assert.match(styles, /\.botshield-fraud-snapshot/);
   assert.match(styles, /\.botshield-fraud-review-hero/);
-  assert.match(styles, /\.botshield-fraud-order-link/);
+  assert.match(styles, /\.botshield-fraud-investigation/);
+  assert.match(styles, /\.botshield-fraud-table-order/);
   assert.match(styles, /\.botshield-native-modal-body\.botshield-fraud-review-modal/);
 });
 
@@ -146,14 +162,22 @@ test("Fraud Orders error states use merchant-safe banners", () => {
   assert.doesNotMatch(page, /GraphQL/);
 });
 
-test("Shopify admin order links stay shop-specific", () => {
+test("Fraud Orders review guidance reflects Shopify recommendations only", () => {
+  assert.match(page, /Shopify recommends reviewing this order before fulfillment/);
+  assert.match(page, /Shopify recommends cancelling this order based on its risk assessment/);
+  assert.match(page, /does not currently indicate that this order requires additional review/);
+  assert.match(page, /Shopify has not issued a review recommendation for this order yet/);
+  assert.match(page, /This guidance reflects Shopify's current recommendation/);
+});
+
+test("Shopify admin order links stay shop-specific and optional", () => {
   const url = buildShopifyOrderAdminUrl(
     "demo-store.myshopify.com",
     "gid://shopify/Order/1048",
   );
   assert.equal(url, "https://admin.shopify.com/store/demo-store/orders/1048");
   assert.match(page, /order\.adminUrl/);
-  assert.match(page, /botshield-fraud-order-link/);
+  assert.match(page, /View order in Shopify/);
   const queryMatch = fraudServer.match(/const FRAUD_ORDERS_QUERY = `#graphql([\s\S]*?)`;/);
   assert.ok(queryMatch);
   assert.doesNotMatch(queryMatch[1], /\bemail\b/);
