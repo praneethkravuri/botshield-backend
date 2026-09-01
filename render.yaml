@@ -51,7 +51,7 @@ services:
       - key: BILLING_PLAN_NAME
         value: BotShield Basic
       - key: BILLING_MONTHLY_PRICE
-        value: "14.99"
+        value: "29"
       - key: BILLING_TRIAL_DAYS
         value: "7"
       - key: BILLING_ENFORCEMENT_ENABLED

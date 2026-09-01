@@ -24,6 +24,7 @@ import {
   useBotShieldToast,
 } from "./design-system/BotShieldDesignSystem";
 import { safeFetchJson } from "../lib/safe-fetch";
+import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 import {
   getBillingStatusModel,
   getEmailStatus,
@@ -1653,7 +1654,7 @@ function BillingPage({ model, actions }) {
       <BotShieldCommandCard
         eyebrow="BotShield subscription"
         title={model.billingStatus?.planName || "BotShield Basic"}
-        description={`$${Number(model.billingStatus?.monthlyPrice || 14.99).toFixed(2)} per month after a ${Number(model.billingStatus?.trialDays || 7)}-day trial. Managed securely through Shopify.`}
+        description={`$${Number(model.billingStatus?.monthlyPrice || BOTSHIELD_BASIC_MONTHLY_PRICE).toFixed(2)} per month after a ${Number(model.billingStatus?.trialDays || 7)}-day trial. Managed securely through Shopify.`}
         status={status.technicalStatus}
         primaryAction={
           model.billingStatus?.pricingUrl && !model.billingStatus?.active ? (

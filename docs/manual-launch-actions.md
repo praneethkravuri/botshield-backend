@@ -36,7 +36,7 @@ These steps cannot be completed safely by application code.
 ## Shopify Partner Dashboard
 
 1. Select Shopify App Pricing.
-2. Create BotShield Basic at $14.99 USD/month with a 7-day trial and confirm
+2. Create BotShield Basic at $29 USD/month with a 7-day trial and confirm
    its plan handle is `basic`.
 3. Create the private $0 reviewer/test plan.
 4. Set welcome link to `/app/billing-return`.

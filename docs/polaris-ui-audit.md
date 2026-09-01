@@ -158,7 +158,7 @@ model and action layer.
 - Diagnostic and simulation events remain separately labeled.
 - The UI describes theme-embed/JavaScript enforcement limitations and does not
   claim edge-WAF protection.
-- Billing copy uses BotShield Basic, $14.99/month, and a 7-day trial.
+- Billing copy uses BotShield Basic, $29/month, and a 7-day trial.
 
 ## Known legacy debt
 

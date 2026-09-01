@@ -3,6 +3,7 @@ import process from "node:process";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { redirect } from "react-router";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
+import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 
 export function loader() {
   return process.env.NODE_ENV === "production" ? redirect("/app") : null;
@@ -148,7 +149,7 @@ function getPreviewBillingStatus() {
     configured: true,
     active: true,
     planName: "BotShield Basic",
-    monthlyPrice: 14.99,
+    monthlyPrice: BOTSHIELD_BASIC_MONTHLY_PRICE,
     trialDays: 7,
     enforcementEnabled: false,
     pricingUrl: "https://admin.shopify.com/store/preview/charges/botshield/pricing_plans",

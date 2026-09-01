@@ -1,3 +1,7 @@
+export const BOTSHIELD_BASIC_MONTHLY_PRICE = 29;
+export const BOTSHIELD_BASIC_TRIAL_DAYS = 7;
+export const BOTSHIELD_BASIC_PLAN_NAME = "BotShield Basic";
+
 function asDate(value) {
   if (!value) return null;
   const date = new Date(value);

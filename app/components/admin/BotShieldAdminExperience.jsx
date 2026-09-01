@@ -37,6 +37,7 @@ import {
   getUiStatus,
 } from "../../lib/ui-status";
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
+import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REASON_COPY = {
@@ -5536,7 +5537,7 @@ function getSettingsBillingView(billingStatus = {}) {
     String(billingStatus.planName || "").trim() || "BotShield Basic";
   const monthlyPrice = Number.isFinite(Number(billingStatus.monthlyPrice))
     ? Number(billingStatus.monthlyPrice)
-    : 14.99;
+    : BOTSHIELD_BASIC_MONTHLY_PRICE;
   const trialDays = Number.isFinite(Number(billingStatus.trialDays))
     ? Number(billingStatus.trialDays)
     : 7;

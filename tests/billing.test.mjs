@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 
 import {
+  BOTSHIELD_BASIC_MONTHLY_PRICE,
   createUnavailableBillingState,
   deriveBillingState,
 } from "../app/lib/billing-state.js";
@@ -27,7 +29,7 @@ function subscription(overrides = {}) {
           __typename: "FlatRatePrice",
           active: true,
           currency: "USD",
-          amount: "14.99",
+          amount: "29.00",
         },
       },
     ],
@@ -199,7 +201,7 @@ test("unknown active plan handle is rejected safely", () => {
             __typename: "FlatRatePrice",
             active: true,
             currency: "USD",
-            amount: "14.99",
+            amount: "29.00",
           },
         },
       ],
@@ -226,4 +228,21 @@ test("redirect handle cannot override authoritative Partner API handle", () => {
   assert.equal(state.active, false);
   assert.equal(state.status, "invalid_plan");
   assert.match(state.error, /did not match/);
+});
+
+test("Basic plan monthly price defaults to $29 USD", async () => {
+  assert.equal(BOTSHIELD_BASIC_MONTHLY_PRICE, 29);
+
+  const billingServer = await readFile(
+    new URL("../app/lib/billing.server.js", import.meta.url),
+    "utf8",
+  );
+  const renderConfig = await readFile(
+    new URL("../render.yaml", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(billingServer, /BOTSHIELD_BASIC_MONTHLY_PRICE/);
+  assert.match(renderConfig, /BILLING_MONTHLY_PRICE[\s\S]*value: "29"/);
+  assert.doesNotMatch(billingServer, /14\.99/);
 });

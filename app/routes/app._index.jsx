@@ -5,6 +5,7 @@ import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperien
 import { toMerchantErrorMessage } from "../lib/merchant-error-message";
 import { safeFetchJson } from "../lib/safe-fetch";
 import { readThemeAppEmbedStatus } from "../lib/theme-extension-status.client";
+import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -2371,7 +2372,7 @@ export default function Index() {
         ? billingStatus.subscription?.name || "paid Shopify plan"
         : billingStatus?.configured
           ? `${billingStatus.planName || "BotShield Basic"} at $${Number(
-              billingStatus.monthlyPrice || 14.99,
+              billingStatus.monthlyPrice || BOTSHIELD_BASIC_MONTHLY_PRICE,
             ).toFixed(2)}/month awaiting approval`
           : "configure Shopify App Pricing",
       actionKey: "billing",

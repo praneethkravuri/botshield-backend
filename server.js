@@ -7,6 +7,11 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequestListener } from "@mjackson/node-fetch-server";
 import { createRequestHandler } from "@react-router/express";
 import prisma from "./app/db.server.js";
+import {
+  BOTSHIELD_BASIC_MONTHLY_PRICE,
+  BOTSHIELD_BASIC_PLAN_NAME,
+  BOTSHIELD_BASIC_TRIAL_DAYS,
+} from "./app/lib/billing-state.js";
 import { startDataRetentionScheduler } from "./app/lib/data-retention.server.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,11 +114,13 @@ app.get("/health/config", (_req, res) => {
     shopifyPublicPlanHandle:
       process.env.SHOPIFY_PUBLIC_PLAN_HANDLE?.trim() || "basic",
     billingPlanName:
-      process.env.BILLING_PLAN_NAME?.trim() || "BotShield Basic",
+      process.env.BILLING_PLAN_NAME?.trim() || BOTSHIELD_BASIC_PLAN_NAME,
     billingMonthlyPrice: Number(
-      process.env.BILLING_MONTHLY_PRICE || 14.99,
+      process.env.BILLING_MONTHLY_PRICE || BOTSHIELD_BASIC_MONTHLY_PRICE,
     ),
-    billingTrialDays: Number(process.env.BILLING_TRIAL_DAYS || 7),
+    billingTrialDays: Number(
+      process.env.BILLING_TRIAL_DAYS || BOTSHIELD_BASIC_TRIAL_DAYS,
+    ),
     shopifyPartnerBillingConfigured: Boolean(
       process.env.SHOPIFY_PARTNER_ORG_ID?.trim() &&
         process.env.SHOPIFY_PARTNER_ACCESS_TOKEN?.trim() &&

@@ -101,9 +101,15 @@ test("Polaris experience uses current BotShield Basic pricing", async () => {
     ),
     "utf8",
   );
+  const billingState = await readFile(
+    new URL("../app/lib/billing-state.js", import.meta.url),
+    "utf8",
+  );
 
-  assert.match(source, /14\.99/);
+  assert.match(billingState, /BOTSHIELD_BASIC_MONTHLY_PRICE = 29/);
+  assert.match(source, /BOTSHIELD_BASIC_MONTHLY_PRICE/);
   assert.match(source, /billingStatus\.trialDays\)[\s\S]*?: 7/);
+  assert.doesNotMatch(source, /\$14\.99|14\.99/);
   assert.doesNotMatch(source, /\$30|30\/month|BotShield Pro\b/);
 });
 

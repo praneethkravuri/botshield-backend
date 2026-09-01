@@ -1,5 +1,8 @@
 import db from "../db.server";
 import {
+  BOTSHIELD_BASIC_MONTHLY_PRICE,
+  BOTSHIELD_BASIC_PLAN_NAME,
+  BOTSHIELD_BASIC_TRIAL_DAYS,
   createUnavailableBillingState,
   deriveBillingState,
 } from "./billing-state";
@@ -59,9 +62,11 @@ export function getBillingConfiguration(shop) {
       process.env.BILLING_ENFORCEMENT_ENABLED,
     ),
     planName:
-      process.env.BILLING_PLAN_NAME?.trim() || "BotShield Basic",
-    monthlyPrice: Number(process.env.BILLING_MONTHLY_PRICE || 14.99),
-    trialDays: Number(process.env.BILLING_TRIAL_DAYS || 7),
+      process.env.BILLING_PLAN_NAME?.trim() || BOTSHIELD_BASIC_PLAN_NAME,
+    monthlyPrice: Number(
+      process.env.BILLING_MONTHLY_PRICE || BOTSHIELD_BASIC_MONTHLY_PRICE,
+    ),
+    trialDays: Number(process.env.BILLING_TRIAL_DAYS || BOTSHIELD_BASIC_TRIAL_DAYS),
     pricingUrl:
       appHandle && storeHandle
         ? `https://admin.shopify.com/store/${storeHandle}/charges/${appHandle}/pricing_plans`
