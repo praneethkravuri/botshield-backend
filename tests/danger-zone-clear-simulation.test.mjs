@@ -183,7 +183,7 @@ test("Successful clear shows success toast, refreshes state, and clears stale si
 
   assert.ok(confirmHandler);
   assert.match(confirmHandler, /safeFetchJson\("\/api\/clear-test-data"/);
-  assert.match(confirmHandler, /await actions\.refresh\(\)/);
+  assert.match(confirmHandler, /await actions\.refresh\?\.\(\{ throwOnError: true \}\)/);
   assert.match(confirmHandler, /setSimulationResults\(null\)/);
   assert.match(confirmHandler, /toast\.success\("Simulation data cleared"\)/);
 });

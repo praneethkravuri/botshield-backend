@@ -274,7 +274,7 @@ test("danger zone reset UI requires RESET confirmation and refreshes state on su
   assert.match(adminSource, /confirmationText="RESET"/);
   assert.match(adminSource, /safeFetchJson\("\/api\/reset-shop-data"/);
   assert.match(adminSource, /toast\.success\("BotShield data reset"\)/);
-  assert.match(adminSource, /await actions\.refresh\(\)/);
+  assert.match(adminSource, /await actions\.refresh\?\.\(\{ throwOnError: true \}\)/);
   assert.match(designSource, /disabled=\{!confirmed \|\| loading\}/);
   assert.match(designSource, /if \(!confirmed \|\| loading\) return;/);
 });

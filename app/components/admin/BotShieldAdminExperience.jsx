@@ -6054,7 +6054,7 @@ function SettingsPage({ model, actions }) {
     const refreshAfterReturn = async () => {
       try {
         setBillingRefreshError("");
-        await actions.refreshBilling?.();
+        await actions.refreshBilling?.({ throwOnError: true });
         if (!cancelled) {
           toast.success("Billing status refreshed");
         }
@@ -6412,7 +6412,8 @@ function SettingsPage({ model, actions }) {
                   : "Refresh after returning from Shopify plan approval."}
               </p>
               <BotShieldAsyncButton
-                action={actions.refreshBilling}
+                action={() => actions.refreshBilling?.({ throwOnError: true })}
+                errorMessage="Couldn't refresh billing status. Try again."
                 icon="refresh"
                 successMessage="Billing refreshed"
               >
@@ -6518,7 +6519,7 @@ function SettingsPage({ model, actions }) {
                   <BotShieldAsyncButton
                     action={async () => {
                       await safeFetchJson("/api/alerts/test", { method: "POST" });
-                      await actions.refreshSettings();
+                      await actions.refreshSettings?.({ throwOnError: true });
                     }}
                     disabled={
                       dirty ||
@@ -6526,6 +6527,7 @@ function SettingsPage({ model, actions }) {
                       !model.emailProviderConfigured ||
                       !alertEmailValid
                     }
+                    errorMessage="Couldn't send the test email. Try again."
                     successMessage="Test email sent"
                     title={testEmailDisabledReason || undefined}
                   >
@@ -6602,7 +6604,7 @@ function SettingsPage({ model, actions }) {
                 <BotShieldAsyncButton
                   action={async () => {
                     await safeFetchJson("/api/weekly-report", { method: "POST" });
-                    await actions.refreshSettings();
+                    await actions.refreshSettings?.({ throwOnError: true });
                   }}
                   disabled={
                     dirty ||
@@ -6610,6 +6612,7 @@ function SettingsPage({ model, actions }) {
                     !model.emailProviderConfigured ||
                     !alertEmailValid
                   }
+                  errorMessage="Couldn't send the weekly report. Try again."
                   successMessage="Weekly report sent"
                   title={reportDisabledReason || undefined}
                 >
@@ -6979,7 +6982,7 @@ function SettingsPage({ model, actions }) {
             setDiagnosticsError("");
             try {
               await safeFetchJson("/api/clear-test-data", { method: "POST" });
-              await actions.refresh();
+              await actions.refresh?.({ throwOnError: true });
               setSimulationResults(null);
               toast.success("Simulation data cleared");
             } catch (error) {
@@ -7009,7 +7012,7 @@ function SettingsPage({ model, actions }) {
             setResetError("");
             try {
               await safeFetchJson("/api/reset-shop-data", { method: "POST" });
-              await actions.refresh();
+              await actions.refresh?.({ throwOnError: true });
               setSimulationResults(null);
               setDiagnosticResults(null);
               toast.success("BotShield data reset");
