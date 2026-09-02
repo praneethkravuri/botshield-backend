@@ -1,5 +1,9 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  buildSimulationResultFields,
+  getSimulationResultSummary,
+} from "../../lib/simulation-result.js";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import {
   BotShieldActionButton,
@@ -5824,6 +5828,37 @@ function SettingsHubDiagnosticResults({ diagnostic }) {
   );
 }
 
+function SettingsHubSimulationResults({ result }) {
+  const fields = buildSimulationResultFields(result);
+  if (!fields.length) return null;
+
+  return (
+    <div
+      aria-live="polite"
+      className="botshield-settings-hub-diagnostic-results is-simulation"
+      role="region"
+    >
+      <div className="botshield-settings-hub-diagnostic-summary">
+        <SettingsHubStatusPill label="Simulation test" tone="monitor" />
+        <span className="botshield-settings-hub-diagnostic-ran-at">
+          {getSimulationResultSummary(result)}
+          {result?.createdAt ? ` · ${formatDate(result.createdAt)}` : ""}
+        </span>
+      </div>
+      <ul className="botshield-settings-hub-diagnostic-checks">
+        {fields.map((field) => (
+          <li className="botshield-settings-hub-diagnostic-check" key={field.id}>
+            <div className="botshield-settings-hub-diagnostic-check-copy">
+              <strong>{field.label}</strong>
+              <p>{field.value}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SettingsHubRow({
   title,
   description,
@@ -5902,6 +5937,8 @@ function SettingsPage({ model, actions }) {
   const [diagnosticsError, setDiagnosticsError] = useState("");
   const [diagnosticResults, setDiagnosticResults] = useState(null);
   const [diagnosticRequestError, setDiagnosticRequestError] = useState("");
+  const [simulationResults, setSimulationResults] = useState(null);
+  const [simulationRequestError, setSimulationRequestError] = useState("");
 
   useEffect(() => {
     setDraft({
@@ -6754,9 +6791,20 @@ function SettingsPage({ model, actions }) {
             control={
               <BotShieldAsyncButton
                 action={async () => {
-                  await actions.runSimulation();
+                  setSimulationRequestError("");
+                  return actions.runSimulation();
                 }}
                 disabled={model.protectionPaused}
+                errorMessage="Simulation scan could not be completed."
+                onSuccess={(result) => {
+                  setSimulationResults(result || null);
+                }}
+                onError={() => {
+                  setSimulationResults(null);
+                  setSimulationRequestError(
+                    "Simulation scan could not be completed. Check your connection and try again.",
+                  );
+                }}
                 successMessage="Simulation recorded"
                 title={
                   model.protectionPaused
@@ -6772,6 +6820,14 @@ function SettingsPage({ model, actions }) {
             title="Simulation scan"
             variant="diagnostic"
           />
+          {simulationRequestError ? (
+            <p className="botshield-settings-hub-note is-error" role="alert">
+              {simulationRequestError}
+            </p>
+          ) : null}
+          {simulationResults ? (
+            <SettingsHubSimulationResults result={simulationResults} />
+          ) : null}
           <SettingsHubRow
             control={
               <BotShieldActionButton loading={model.syncing} onClick={actions.refresh}>

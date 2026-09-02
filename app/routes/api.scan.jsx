@@ -203,6 +203,7 @@ export async function action({ request }) {
     reasonCodes: result.reasonCodes,
     summary: result.summary,
     settings,
+    source,
     createdAt: createdEvent.createdAt,
     simulation: true,
     enforcementApplied: false,

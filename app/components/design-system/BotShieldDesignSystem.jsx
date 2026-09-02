@@ -3351,11 +3351,13 @@ export function BotShieldAppFrame({ children }) {
           font-size: 13px;
           line-height: 1.35;
         }
-        .botshield-settings-hub-diagnostic-check-copy p {
-          margin: 2px 0 0;
-          color: var(--overview-muted);
-          font-size: 12px;
-          line-height: 1.4;
+        .botshield-settings-hub-diagnostic-results.is-simulation {
+          border-color: #d5dbe1;
+          background: #f6f7f8;
+        }
+        .botshield-settings-hub-diagnostic-results.is-simulation
+          .botshield-settings-hub-diagnostic-check {
+          grid-template-columns: minmax(0, 1fr);
         }
         .botshield-settings-hub-row-icon .botshield-v2-icon {
           width: 28px;
