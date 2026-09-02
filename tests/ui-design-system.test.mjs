@@ -475,7 +475,7 @@ test("supported pages use Shopify native page chrome", async () => {
 
   assert.match(designSource, /export function BotShieldNativePage/);
   assert.match(designSource, /botshield-native-page-fallback/);
-  assert.match(designSource, /<s-page heading=\{heading\}>/);
+  assert.match(designSource, /BotShieldPolarisPage heading=\{heading\}/);
   assert.doesNotMatch(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
   assert.match(hookSource, /export function BotShieldPageLoadingBridge/);
   assert.match(hookSource, /return null;/);

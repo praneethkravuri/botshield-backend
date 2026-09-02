@@ -181,7 +181,7 @@ test("Protection module managers use native modal sizing and actions", () => {
   assert.match(protectionPage, /Review protection policy/);
   assert.match(protectionPage, /Connect storefront/);
   assert.match(designSource, /export function BotShieldNativeModal/);
-  assert.match(designSource, /<s-modal/);
+  assert.match(designSource, /BotShieldModalShell/);
 });
 
 test("Protection V2.1 exposes only real detection and enforcement capabilities", () => {

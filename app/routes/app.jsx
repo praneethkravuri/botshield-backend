@@ -20,6 +20,7 @@ export const loader = async ({ request }) => {
       apiKey: process.env.SHOPIFY_API_KEY || "",
       initialAdminPage: resolveInitialAdminPage(url.pathname, url.search),
       initialSettingsSection: resolveInitialSettingsSection(url.search),
+      renderAnchorMs: Date.now(),
     };
   }
 
@@ -30,6 +31,7 @@ export const loader = async ({ request }) => {
     apiKey: process.env.SHOPIFY_API_KEY || "",
     initialAdminPage: resolveInitialAdminPage(url.pathname, url.search),
     initialSettingsSection: resolveInitialSettingsSection(url.search),
+    renderAnchorMs: Date.now(),
   };
 };
 

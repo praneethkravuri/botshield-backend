@@ -77,7 +77,7 @@ test("BotShieldAsyncButton keeps SSR and first-client render on native HTML wrap
 test("BotShieldAsyncButton preserves loading and error behavior after mount", () => {
   assert.match(asyncButtonSource, /loading={asyncAction\.loading}/);
   assert.match(asyncButtonSource, /onClick={asyncAction\.run}/);
-  assert.match(asyncButtonSource, /<s-text tone="critical" role="alert">/);
+  assert.match(asyncButtonSource, /<BotShieldText tone="critical" role="alert">/);
 });
 
 test("Settings diagnostics defers BotShieldAsyncButton Polaris wrappers on SSR", () => {
@@ -101,8 +101,8 @@ test("App Bridge save bar and loading bridges defer browser detection until afte
 
 test("Settings hub section initializes from loader-provided SSR state", () => {
   assert.match(settingsSource, /model\.initialSettingsSection/);
-  assert.match(settingsSource, /BotShieldHydrationSafeRelativeTime/);
-  assert.match(adminSource, /BotShieldHydrationSafeStack/);
+  assert.match(settingsSource, /BotShieldHydrationRelativeTime/);
+  assert.match(adminSource, /BotShieldStack/);
   assert.match(adminSource, /formatHydrationStableDateTime/);
   assert.doesNotMatch(settingsSource, /useState\(readSettingsHubSection\)/);
 });

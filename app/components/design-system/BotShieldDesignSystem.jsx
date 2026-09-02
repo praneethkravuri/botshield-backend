@@ -12,6 +12,26 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
 import {
+  BotShieldBadge,
+  BotShieldBannerShell,
+  BotShieldBox,
+  BotShieldButtonGroup,
+  BotShieldGrid,
+  BotShieldHeading,
+  BotShieldHydrationMount,
+  BotShieldIcon,
+  BotShieldModalShell,
+  BotShieldParagraph,
+  BotShieldPolarisButton,
+  BotShieldPolarisPage,
+  BotShieldSelect as BotShieldHydrationSelect,
+  BotShieldSpinner,
+  BotShieldStack,
+  BotShieldSwitch as BotShieldHydrationSwitch,
+  BotShieldText,
+  BotShieldTextField as BotShieldHydrationTextField,
+} from "./BotShieldHydrationPolaris.jsx";
+import {
   BotShieldLoadingBridge,
   BotShieldSaveBarBridge,
 } from "../../hooks/use-botshield-save-bar";
@@ -108,6 +128,34 @@ export function BotShieldAppFrame({ children }) {
           background: var(--botshield-bg);
           padding-bottom: 48px;
           color: var(--botshield-text);
+        }
+        .botshield-polaris-fallback-stack,
+        .botshield-polaris-fallback-grid,
+        .botshield-polaris-fallback-box,
+        .botshield-polaris-fallback-page {
+          display: block;
+          min-width: 0;
+        }
+        .botshield-polaris-fallback-text,
+        .botshield-polaris-fallback-paragraph,
+        .botshield-polaris-fallback-heading,
+        .botshield-polaris-fallback-badge {
+          display: inline;
+        }
+        .botshield-polaris-fallback-icon,
+        .botshield-polaris-fallback-spinner {
+          display: inline-block;
+          min-width: 1em;
+          min-height: 1em;
+        }
+        .botshield-polaris-fallback-field {
+          display: block;
+        }
+        .botshield-polaris-fallback-input,
+        .botshield-polaris-fallback-select {
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
         }
         .botshield-page {
           box-sizing: border-box;
@@ -4773,11 +4821,11 @@ export function BotShieldNativePage({
   }
 
   return (
-    <s-page heading={heading}>
+    <BotShieldPolarisPage heading={heading}>
       {primaryAction}
       {secondaryActions}
       {children}
-    </s-page>
+    </BotShieldPolarisPage>
   );
 }
 
@@ -4791,9 +4839,9 @@ export function BotShieldPage({
   children,
 }) {
   return (
-    <s-page heading={title}>
-      <s-stack gap="large">
-        <s-stack
+    <BotShieldPolarisPage heading={title}>
+      <BotShieldStack gap="large">
+        <BotShieldStack
           direction="inline"
           gap="base"
           justifyContent="space-between"
@@ -4805,26 +4853,26 @@ export function BotShieldPage({
             badge={badge}
           />
           {primaryAction || secondaryActions ? (
-            <s-stack direction="inline" gap="small">
+            <BotShieldStack direction="inline" gap="small">
               {secondaryActions}
               {primaryAction}
-            </s-stack>
+            </BotShieldStack>
           ) : null}
-        </s-stack>
+        </BotShieldStack>
         {banner}
         {children}
-      </s-stack>
-    </s-page>
+      </BotShieldStack>
+    </BotShieldPolarisPage>
   );
 }
 
 export function BotShieldPageHeader({ subtitle, badge }) {
   if (!subtitle && !badge) return null;
   return (
-    <s-stack direction="inline" gap="base" alignItems="center">
-      {subtitle ? <s-paragraph color="subdued">{subtitle}</s-paragraph> : null}
+    <BotShieldStack direction="inline" gap="base" alignItems="center">
+      {subtitle ? <BotShieldParagraph color="subdued">{subtitle}</BotShieldParagraph> : null}
       {badge}
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
@@ -4844,79 +4892,79 @@ export function BotShieldCard({
     <div
       className={`botshield-surface${raised ? " botshield-surface--raised" : ""}${accent ? " botshield-surface--accent" : ""}`}
     >
-      <s-stack gap="base">
+      <BotShieldStack gap="base">
         {title || subtitle || badge || actions ? (
-          <s-stack
+          <BotShieldStack
             direction="inline"
             gap="base"
             justifyContent="space-between"
             alignItems="start"
           >
-            <s-stack gap="small-200">
-              {title ? <s-heading>{title}</s-heading> : null}
+            <BotShieldStack gap="small-200">
+              {title ? <BotShieldHeading>{title}</BotShieldHeading> : null}
               {subtitle ? (
-                <s-paragraph color="subdued">{subtitle}</s-paragraph>
+                <BotShieldParagraph color="subdued">{subtitle}</BotShieldParagraph>
               ) : null}
-            </s-stack>
-            <s-stack direction="inline" gap="small">
+            </BotShieldStack>
+            <BotShieldStack direction="inline" gap="small">
               {badge}
               {actions}
-            </s-stack>
-          </s-stack>
+            </BotShieldStack>
+          </BotShieldStack>
         ) : null}
         {error ? (
           <BotShieldBanner tone="critical">{error}</BotShieldBanner>
         ) : null}
         {loading ? <BotShieldLoadingState /> : empty || children}
-      </s-stack>
+      </BotShieldStack>
     </div>
   );
 }
 
 export function BotShieldSection({ title, description, action, children }) {
   return (
-    <s-stack gap="base">
-      <s-stack
+    <BotShieldStack gap="base">
+      <BotShieldStack
         direction="inline"
         gap="base"
         justifyContent="space-between"
         alignItems="center"
       >
-        <s-stack gap="small-200">
-          <s-heading>{title}</s-heading>
+        <BotShieldStack gap="small-200">
+          <BotShieldHeading>{title}</BotShieldHeading>
           {description ? (
-            <s-paragraph color="subdued">{description}</s-paragraph>
+            <BotShieldParagraph color="subdued">{description}</BotShieldParagraph>
           ) : null}
-        </s-stack>
+        </BotShieldStack>
         {action}
-      </s-stack>
+      </BotShieldStack>
       {children}
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
 export function BotShieldMetricCard({ label, value, detail, status, loading }) {
   return (
-    <s-box
+    <BotShieldBox
       background="base"
       border="base"
       borderRadius="large"
       padding="base"
       minBlockSize="120px"
     >
-      <s-stack gap="small">
-        <s-text color="subdued">{label}</s-text>
+      <BotShieldStack gap="small">
+        <BotShieldText color="subdued">{label}</BotShieldText>
         {loading ? (
-          <s-spinner accessibilityLabel={`Loading ${label}`} />
+          <BotShieldSpinner accessibilityLabel={`Loading ${label}`} />
         ) : (
-          <s-heading>{value}</s-heading>
+          <BotShieldHeading>{value}</BotShieldHeading>
         )}
-        <s-stack direction="inline" gap="small" alignItems="center">
+        <BotShieldStack direction="inline" gap="small" alignItems="center">
           {status ? <BotShieldStatusBadge status={status} /> : null}
-          {detail ? <s-text color="subdued">{detail}</s-text> : null}
-        </s-stack>
-      </s-stack>
-    </s-box>
+          {detail ? <BotShieldText color="subdued">{detail}</BotShieldText> : null}
+        </BotShieldStack>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -4931,19 +4979,19 @@ export function BotShieldCommandCard({
   children,
 }) {
   return (
-    <s-box background="base" border="base" borderRadius="large" padding="large">
-      <s-stack gap="large">
-        <s-stack
+    <BotShieldBox background="base" border="base" borderRadius="large" padding="large">
+      <BotShieldStack gap="large">
+        <BotShieldStack
           direction="inline"
           gap="large"
           justifyContent="space-between"
           alignItems="start"
         >
-          <s-stack gap="small">
+          <BotShieldStack gap="small">
             {eyebrow ? (
-              <s-text color="subdued" type="strong">
+              <BotShieldText color="subdued" type="strong">
                 {eyebrow}
-              </s-text>
+              </BotShieldText>
             ) : null}
             <div
               style={{
@@ -4956,56 +5004,56 @@ export function BotShieldCommandCard({
               {title}
             </div>
             {description ? (
-              <s-paragraph color="subdued">{description}</s-paragraph>
+              <BotShieldParagraph color="subdued">{description}</BotShieldParagraph>
             ) : null}
-          </s-stack>
+          </BotShieldStack>
           {status ? (
             <BotShieldStatusBadge status={status} label={statusLabel} />
           ) : null}
-        </s-stack>
+        </BotShieldStack>
         {children}
         {primaryAction || secondaryAction ? (
-          <s-stack direction="inline" gap="small">
+          <BotShieldStack direction="inline" gap="small">
             {primaryAction}
             {secondaryAction}
-          </s-stack>
+          </BotShieldStack>
         ) : null}
-      </s-stack>
-    </s-box>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
 export function BotShieldSignalCard({ label, value, detail, status, action }) {
   return (
-    <s-box
+    <BotShieldBox
       background="base"
       border="base"
       borderRadius="large"
       padding="base"
       minBlockSize="132px"
     >
-      <s-stack gap="base">
-        <s-stack
+      <BotShieldStack gap="base">
+        <BotShieldStack
           direction="inline"
           gap="small"
           justifyContent="space-between"
           alignItems="center"
         >
-          <s-text color="subdued">{label}</s-text>
+          <BotShieldText color="subdued">{label}</BotShieldText>
           {status ? <BotShieldStatusBadge status={status} /> : null}
-        </s-stack>
-        <s-text type="strong">{value}</s-text>
-        <s-stack
+        </BotShieldStack>
+        <BotShieldText type="strong">{value}</BotShieldText>
+        <BotShieldStack
           direction="inline"
           gap="small"
           justifyContent="space-between"
           alignItems="end"
         >
-          <s-text color="subdued">{detail}</s-text>
+          <BotShieldText color="subdued">{detail}</BotShieldText>
           {action}
-        </s-stack>
-      </s-stack>
-    </s-box>
+        </BotShieldStack>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -5017,19 +5065,19 @@ export function BotShieldOutcomeMetric({
   loading,
 }) {
   return (
-    <s-box padding="base">
-      <s-stack gap="small">
-        <s-stack
+    <BotShieldBox padding="base">
+      <BotShieldStack gap="small">
+        <BotShieldStack
           direction="inline"
           gap="small"
           justifyContent="space-between"
           alignItems="center"
         >
-          <s-text color="subdued">{label}</s-text>
+          <BotShieldText color="subdued">{label}</BotShieldText>
           {status ? <BotShieldStatusBadge status={status} /> : null}
-        </s-stack>
+        </BotShieldStack>
         {loading ? (
-          <s-spinner accessibilityLabel={`Loading ${label}`} />
+          <BotShieldSpinner accessibilityLabel={`Loading ${label}`} />
         ) : (
           <div
             style={{
@@ -5042,34 +5090,34 @@ export function BotShieldOutcomeMetric({
             {value}
           </div>
         )}
-        <s-text color="subdued">{detail}</s-text>
-      </s-stack>
-    </s-box>
+        <BotShieldText color="subdued">{detail}</BotShieldText>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
 export function BotShieldStatusRow({ label, value, detail, status, action }) {
   return (
-    <s-box paddingBlock="base" borderBlockEnd="base">
-      <s-stack
+    <BotShieldBox paddingBlock="base" borderBlockEnd="base">
+      <BotShieldStack
         direction="inline"
         gap="base"
         justifyContent="space-between"
         alignItems="center"
       >
-        <s-stack gap="small-200">
-          <s-stack direction="inline" gap="small" alignItems="center">
-            <s-text type="strong">{label}</s-text>
+        <BotShieldStack gap="small-200">
+          <BotShieldStack direction="inline" gap="small" alignItems="center">
+            <BotShieldText type="strong">{label}</BotShieldText>
             <BotShieldStatusBadge status={status} />
-          </s-stack>
-          <s-text color="subdued">{detail}</s-text>
-        </s-stack>
-        <s-stack direction="inline" gap="base" alignItems="center">
-          <s-text type="strong">{value}</s-text>
+          </BotShieldStack>
+          <BotShieldText color="subdued">{detail}</BotShieldText>
+        </BotShieldStack>
+        <BotShieldStack direction="inline" gap="base" alignItems="center">
+          <BotShieldText type="strong">{value}</BotShieldText>
           {action}
-        </s-stack>
-      </s-stack>
-    </s-box>
+        </BotShieldStack>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -5081,36 +5129,36 @@ export function BotShieldChecklistItem({
   action,
 }) {
   return (
-    <s-box paddingBlock="base" borderBlockEnd="base">
-      <s-stack
+    <BotShieldBox paddingBlock="base" borderBlockEnd="base">
+      <BotShieldStack
         direction="inline"
         gap="base"
         justifyContent="space-between"
         alignItems="center"
       >
-        <s-stack direction="inline" gap="base" alignItems="center">
-          <s-box
+        <BotShieldStack direction="inline" gap="base" alignItems="center">
+          <BotShieldBox
             background={complete ? "success-subdued" : "subdued"}
             borderRadius="full"
             padding="small"
             minInlineSize="36px"
           >
-            <s-text type="strong">{complete ? "✓" : index}</s-text>
-          </s-box>
-          <s-stack gap="small-200">
-            <s-text type="strong">{label}</s-text>
-            <s-text color="subdued">{detail}</s-text>
-          </s-stack>
-        </s-stack>
-        <s-stack direction="inline" gap="small" alignItems="center">
+            <BotShieldText type="strong">{complete ? "✓" : index}</BotShieldText>
+          </BotShieldBox>
+          <BotShieldStack gap="small-200">
+            <BotShieldText type="strong">{label}</BotShieldText>
+            <BotShieldText color="subdued">{detail}</BotShieldText>
+          </BotShieldStack>
+        </BotShieldStack>
+        <BotShieldStack direction="inline" gap="small" alignItems="center">
           <BotShieldStatusBadge
             status={complete ? "active" : "setup_required"}
             label={complete ? "Ready" : "Action needed"}
           />
           {action}
-        </s-stack>
-      </s-stack>
-    </s-box>
+        </BotShieldStack>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -5127,7 +5175,7 @@ export function BotShieldStatusBadge({ status, label, tone }) {
     );
   }
 
-  return <s-badge tone={tone || model.tone}>{text}</s-badge>;
+  return <BotShieldBadge tone={tone || model.tone}>{text}</BotShieldBadge>;
 }
 
 export function BotShieldActionButton({
@@ -5247,97 +5295,38 @@ export function BotShieldAsyncButton({
   }
 
   return (
-    <s-stack gap="small-200">
+    <BotShieldStack gap="small-200">
       {button}
       {asyncAction.error ? (
-        <s-text tone="critical" role="alert">
+        <BotShieldText tone="critical" role="alert">
           {asyncAction.error}
-        </s-text>
+        </BotShieldText>
       ) : null}
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
 export function BotShieldBanner({ tone = "info", title, children, action }) {
   return (
-    <s-banner tone={tone} heading={title}>
-      <s-stack gap="base">
-        {children ? <s-paragraph>{children}</s-paragraph> : null}
-        {action ? <s-stack direction="inline">{action}</s-stack> : null}
-      </s-stack>
-    </s-banner>
+    <BotShieldBannerShell tone={tone} heading={title}>
+      <BotShieldStack gap="base">
+        {children ? <BotShieldParagraph>{children}</BotShieldParagraph> : null}
+        {action ? <BotShieldStack direction="inline">{action}</BotShieldStack> : null}
+      </BotShieldStack>
+    </BotShieldBannerShell>
   );
 }
 
-export function BotShieldTextField({
-  label,
-  value,
-  onChange,
-  error,
-  details,
-  disabled,
-  type = "text",
-  placeholder,
-  autocomplete = "off",
-}) {
-  return (
-    <s-text-field
-      label={label}
-      value={value}
-      error={error || ""}
-      details={details || ""}
-      disabled={disabled}
-      type={type}
-      placeholder={placeholder}
-      autocomplete={autocomplete}
-      onInput={(event) => onChange?.(event.currentTarget.value)}
-    />
-  );
+export function BotShieldTextField(props) {
+  return <BotShieldHydrationTextField {...props} />;
 }
 
-export function BotShieldSelect({
-  label,
-  value,
-  onChange,
-  options,
-  details,
-  disabled,
-}) {
-  return (
-    <s-select
-      label={label}
-      value={value}
-      details={details || ""}
-      disabled={disabled}
-      onChange={(event) => onChange?.(event.currentTarget.value)}
-    >
-      {options.map((option) => (
-        <s-option key={option.value} value={option.value}>
-          {option.label}
-        </s-option>
-      ))}
-    </s-select>
-  );
+export function BotShieldSelect(props) {
+  return <BotShieldHydrationSelect {...props} />;
 }
 
-export function BotShieldToggle({
-  label,
-  details,
-  checked,
-  onChange,
-  disabled,
-  error,
-}) {
-  return (
-    <s-switch
-      label={label}
-      details={details || ""}
-      checked={checked}
-      disabled={disabled}
-      error={error || ""}
-      onChange={(event) => onChange?.(event.currentTarget.checked)}
-    />
-  );
+export function BotShieldToggle(props) {
+  return <BotShieldHydrationSwitch {...props} />;
 }
 
 export function BotShieldSaveState({
@@ -5349,9 +5338,10 @@ export function BotShieldSaveState({
   error,
   enabled = true,
 }) {
-  const isPreviewRoute =
-    typeof window !== "undefined" &&
-    window.location.pathname.startsWith("/ui-preview");
+  const [isPreviewRoute, setIsPreviewRoute] = useState(false);
+  useEffect(() => {
+    setIsPreviewRoute(window.location.pathname.startsWith("/ui-preview"));
+  }, []);
   const shouldUseSaveBar = enabled && Boolean(id);
   const showSaveBar = shouldUseSaveBar && dirty;
 
@@ -5376,37 +5366,37 @@ export function BotShieldSaveState({
         />
         <BotShieldLoadingBridge active={Boolean(saving) && !isPreviewRoute} />
         {saveBar}
-        <s-box
+        <BotShieldBox
           background="subdued"
           border="base"
           borderRadius="large"
           padding="base"
         >
-          <s-stack
+          <BotShieldStack
             direction="inline"
             gap="base"
             justifyContent="space-between"
             alignItems="center"
           >
-            <s-stack gap="small-200">
-              <s-text type="strong">
+            <BotShieldStack gap="small-200">
+              <BotShieldText type="strong">
                 {error ? "Changes not saved" : "Unsaved changes"}
-              </s-text>
-              <s-text color="subdued">
+              </BotShieldText>
+              <BotShieldText color="subdued">
                 {error ||
                   "Preview fallback save bar. In Shopify Admin this appears in the native App Bridge save bar."}
-              </s-text>
-            </s-stack>
-            <s-button-group>
-              <s-button variant="secondary" disabled={saving} onClick={onDiscard}>
+              </BotShieldText>
+            </BotShieldStack>
+            <BotShieldButtonGroup>
+              <BotShieldPolarisButton variant="secondary" disabled={saving} onClick={onDiscard}>
                 Discard
-              </s-button>
-              <s-button variant="primary" loading={saving} onClick={onSave}>
+              </BotShieldPolarisButton>
+              <BotShieldPolarisButton variant="primary" loading={saving} onClick={onSave}>
                 Save
-              </s-button>
-            </s-button-group>
-          </s-stack>
-        </s-box>
+              </BotShieldPolarisButton>
+            </BotShieldButtonGroup>
+          </BotShieldStack>
+        </BotShieldBox>
       </>
     );
   }
@@ -5426,66 +5416,66 @@ export function BotShieldSaveState({
 
 export function BotShieldEmptyState({ title, description, action }) {
   return (
-    <s-box
+    <BotShieldBox
       background="subdued"
       borderRadius="large"
       padding="large"
       minBlockSize="160px"
     >
-      <s-stack gap="base" alignItems="center" justifyContent="center">
-        <s-icon type="empty" tone="neutral" size="large" />
-        <s-heading>{title}</s-heading>
-        <s-paragraph color="subdued">{description}</s-paragraph>
+      <BotShieldStack gap="base" alignItems="center" justifyContent="center">
+        <BotShieldIcon type="empty" tone="neutral" size="large" />
+        <BotShieldHeading>{title}</BotShieldHeading>
+        <BotShieldParagraph color="subdued">{description}</BotShieldParagraph>
         {action}
-      </s-stack>
-    </s-box>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
 export function BotShieldLoadingState({ label = "Loading BotShield" }) {
   return (
-    <s-box padding="large" minBlockSize="120px">
-      <s-stack gap="base" alignItems="center" justifyContent="center">
-        <s-spinner accessibilityLabel={label} size="large" />
-        <s-text color="subdued">{label}</s-text>
-      </s-stack>
-    </s-box>
+    <BotShieldBox padding="large" minBlockSize="120px">
+      <BotShieldStack gap="base" alignItems="center" justifyContent="center">
+        <BotShieldSpinner accessibilityLabel={label} size="large" />
+        <BotShieldText color="subdued">{label}</BotShieldText>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
 export function BotShieldInlineHelp({ children }) {
   return (
-    <s-box background="subdued" borderRadius="base" padding="base">
-      <s-stack direction="inline" gap="small" alignItems="start">
-        <s-icon type="info" tone="info" />
-        <s-text color="subdued">{children}</s-text>
-      </s-stack>
-    </s-box>
+    <BotShieldBox background="subdued" borderRadius="base" padding="base">
+      <BotShieldStack direction="inline" gap="small" alignItems="start">
+        <BotShieldIcon type="info" tone="info" />
+        <BotShieldText color="subdued">{children}</BotShieldText>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
 export function BotShieldDangerZone({ title, description, action }) {
   return (
-    <s-box
+    <BotShieldBox
       background="base"
       border="base"
       borderColor="strong"
       borderRadius="large"
       padding="base"
     >
-      <s-stack
+      <BotShieldStack
         direction="inline"
         gap="base"
         justifyContent="space-between"
         alignItems="center"
       >
-        <s-stack gap="small-200">
-          <s-heading>{title}</s-heading>
-          <s-paragraph color="subdued">{description}</s-paragraph>
-        </s-stack>
+        <BotShieldStack gap="small-200">
+          <BotShieldHeading>{title}</BotShieldHeading>
+          <BotShieldParagraph color="subdued">{description}</BotShieldParagraph>
+        </BotShieldStack>
         {action}
-      </s-stack>
-    </s-box>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -5495,15 +5485,18 @@ export function BotShieldInfoModal({
   children,
   closeLabel = "Close",
 }) {
+  const mounted = useBotShieldClientMount();
+  if (!mounted) return null;
+
   return (
-    <s-modal id={id} heading={heading}>
-      <s-box padding="base">
-        <s-paragraph>{children}</s-paragraph>
-      </s-box>
-      <s-button slot="primary-action" commandFor={id} command="--hide">
+    <BotShieldModalShell id={id} heading={heading}>
+      <BotShieldBox padding="base">
+        <BotShieldParagraph>{children}</BotShieldParagraph>
+      </BotShieldBox>
+      <BotShieldPolarisButton slot="primary-action" commandFor={id} command="--hide">
         {closeLabel}
-      </s-button>
-    </s-modal>
+      </BotShieldPolarisButton>
+    </BotShieldModalShell>
   );
 }
 
@@ -5580,6 +5573,7 @@ export function BotShieldNativeModal({
   secondaryActions,
   children,
 }) {
+  const mounted = useBotShieldClientMount();
   const wasOpenRef = useRef(false);
   const showRequestRef = useRef(0);
 
@@ -5606,23 +5600,25 @@ export function BotShieldNativeModal({
     onAfterHide?.();
   };
 
+  if (!mounted) return null;
+
   return (
-    <s-modal
+    <BotShieldModalShell
       id={id}
       heading={heading}
       size={size}
       {...(modalPadding ? { padding: modalPadding } : {})}
       onAfterhide={handleAfterHide}
     >
-      <s-box
+      <BotShieldBox
         padding={padding}
         className={`botshield-native-modal-body${bodyClassName ? ` ${bodyClassName}` : ""}`}
       >
         {children}
-      </s-box>
+      </BotShieldBox>
       {primaryAction}
       {secondaryActions}
-    </s-modal>
+    </BotShieldModalShell>
   );
 }
 
@@ -5637,6 +5633,7 @@ export function BotShieldConfirmationModal({
   size = "small-100",
   tone = "critical",
 }) {
+  const mounted = useBotShieldClientMount();
   const handleConfirm = async () => {
     await onConfirm?.();
     hideBotShieldModal(id);
@@ -5647,12 +5644,14 @@ export function BotShieldConfirmationModal({
     hideBotShieldModal(id);
   };
 
+  if (!mounted) return null;
+
   return (
-    <s-modal id={id} heading={heading} size={size}>
-      <s-box padding="base">
-        <s-paragraph>{children}</s-paragraph>
-      </s-box>
-      <s-button
+    <BotShieldModalShell id={id} heading={heading} size={size}>
+      <BotShieldBox padding="base">
+        <BotShieldParagraph>{children}</BotShieldParagraph>
+      </BotShieldBox>
+      <BotShieldPolarisButton
         slot="primary-action"
         variant="primary"
         tone={tone}
@@ -5660,11 +5659,11 @@ export function BotShieldConfirmationModal({
         onClick={handleConfirm}
       >
         {confirmLabel}
-      </s-button>
-      <s-button slot="secondary-actions" onClick={handleDismiss}>
+      </BotShieldPolarisButton>
+      <BotShieldPolarisButton slot="secondary-actions" onClick={handleDismiss}>
         Cancel
-      </s-button>
-    </s-modal>
+      </BotShieldPolarisButton>
+    </BotShieldModalShell>
   );
 }
 
@@ -5681,6 +5680,7 @@ export function BotShieldTypedConfirmationModal({
   size = "small-100",
   tone = "critical",
 }) {
+  const mounted = useBotShieldClientMount();
   const [confirmationInput, setConfirmationInput] = useState("");
   const confirmed = confirmationInput.trim() === confirmationText;
 
@@ -5701,10 +5701,12 @@ export function BotShieldTypedConfirmationModal({
     hideBotShieldModal(id);
   };
 
+  if (!mounted) return null;
+
   return (
-    <s-modal id={id} heading={heading} size={size}>
-      <s-box padding="base">
-        <s-stack gap="base">
+    <BotShieldModalShell id={id} heading={heading} size={size}>
+      <BotShieldBox padding="base">
+        <BotShieldStack gap="base">
           {children}
           <BotShieldTextField
             autocomplete="off"
@@ -5712,9 +5714,9 @@ export function BotShieldTypedConfirmationModal({
             onChange={setConfirmationInput}
             value={confirmationInput}
           />
-        </s-stack>
-      </s-box>
-      <s-button
+        </BotShieldStack>
+      </BotShieldBox>
+      <BotShieldPolarisButton
         slot="primary-action"
         variant="primary"
         tone={tone}
@@ -5723,10 +5725,10 @@ export function BotShieldTypedConfirmationModal({
         onClick={handleConfirm}
       >
         {confirmLabel}
-      </s-button>
-      <s-button slot="secondary-actions" onClick={handleDismiss}>
+      </BotShieldPolarisButton>
+      <BotShieldPolarisButton slot="secondary-actions" onClick={handleDismiss}>
         Cancel
-      </s-button>
-    </s-modal>
+      </BotShieldPolarisButton>
+    </BotShieldModalShell>
   );
 }

@@ -2684,6 +2684,7 @@ export default function Index() {
   const polarisModel = {
     page,
     initialSettingsSection: appRouteData.initialSettingsSection ?? "general",
+    renderAnchorMs: appRouteData.renderAnchorMs ?? 0,
     protectionStatus,
     protectionPaused,
     protectionReady,

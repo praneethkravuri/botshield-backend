@@ -5,13 +5,37 @@ import {
   getSimulationResultSummary,
 } from "../../lib/simulation-result.js";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
+import {
+  BotShieldHydrationRelativeTime,
+  useHydrationStableNow,
+} from "../../lib/hydration-safe-ui.jsx";
 import {
   formatHydrationStableDateTime,
   formatHydrationStableNumber,
   HYDRATION_STABLE_LOCALE,
   HYDRATION_STABLE_TIME_ZONE,
 } from "../../lib/hydration-safe-format.js";
+import {
+  BotShieldBadge,
+  BotShieldBox,
+  BotShieldButtonGroup,
+  BotShieldDivider,
+  BotShieldGrid,
+  BotShieldHeading,
+  BotShieldIcon,
+  BotShieldModalShell,
+  BotShieldParagraph,
+  BotShieldPolarisButton,
+  BotShieldSearchField,
+  BotShieldStack,
+  BotShieldTable,
+  BotShieldTableBody,
+  BotShieldTableCell,
+  BotShieldTableHeader,
+  BotShieldTableHeaderRow,
+  BotShieldTableRow,
+  BotShieldText,
+} from "../design-system/BotShieldHydrationPolaris.jsx";
 import {
   BotShieldActionButton,
   BotShieldAppFrame,
@@ -211,11 +235,12 @@ function getRiskLabel(risk) {
   return "Low risk";
 }
 
-function inRecentDays(value, days, offsetDays = 0) {
+function inRecentDays(value, days, offsetDays = 0, nowMs = 0) {
   if (!value) return false;
   const timestamp = new Date(value).getTime();
   if (Number.isNaN(timestamp)) return false;
-  const end = Date.now() - offsetDays * 24 * 60 * 60 * 1000;
+  const anchor = Number(nowMs) || 0;
+  const end = anchor - offsetDays * 24 * 60 * 60 * 1000;
   const start = end - days * 24 * 60 * 60 * 1000;
   return timestamp >= start && timestamp < end;
 }
@@ -262,7 +287,7 @@ function Screen({ title, subtitle, actions, children, maxWidth = "base" }) {
           </div>
           {actions}
         </div>
-        <s-stack gap="large">{children}</s-stack>
+        <BotShieldStack gap="large">{children}</BotShieldStack>
       </BotShieldPageShell>
     </BotShieldNativePage>
   );
@@ -281,14 +306,14 @@ function Metric({ label, value, detail, status }) {
             : "neutral";
   return (
     <div className={`botshield-metric botshield-metric--${tone}`}>
-      <s-stack gap="small">
-        <s-text color="subdued">{label}</s-text>
+      <BotShieldStack gap="small">
+        <BotShieldText color="subdued">{label}</BotShieldText>
         <div className="botshield-metric-value">{value}</div>
-        <s-stack direction="inline" gap="small" alignItems="center">
+        <BotShieldStack direction="inline" gap="small" alignItems="center">
           {status ? <BotShieldStatusBadge status={status} /> : null}
-          <s-text color="subdued">{detail}</s-text>
-        </s-stack>
-      </s-stack>
+          <BotShieldText color="subdued">{detail}</BotShieldText>
+        </BotShieldStack>
+      </BotShieldStack>
     </div>
   );
 }
@@ -351,40 +376,40 @@ function ProtectionStatusCard({ model, actions }) {
         </BotShieldActionButton>
       }
     >
-      <s-stack gap="large">
-        <s-stack gap="small">
+      <BotShieldStack gap="large">
+        <BotShieldStack gap="small">
           <div className="botshield-status-value">{executiveStatus.label}</div>
-          <s-paragraph color="subdued">{executiveStatus.detail}</s-paragraph>
-        </s-stack>
-        <s-grid
+          <BotShieldParagraph color="subdued">{executiveStatus.detail}</BotShieldParagraph>
+        </BotShieldStack>
+        <BotShieldGrid
           gridTemplateColumns="repeat(auto-fit, minmax(140px, 1fr))"
           gap="base"
         >
-          <s-stack gap="small-200">
-            <s-text color="subdued">Response mode</s-text>
-            <s-text type="strong">{responseMode.label}</s-text>
-          </s-stack>
-          <s-stack gap="small-200">
-            <s-text color="subdued">Protection profile</s-text>
-            <s-text type="strong">{profile}</s-text>
-          </s-stack>
-          <s-stack gap="small-200">
-            <s-text color="subdued">Sensitivity</s-text>
-            <s-text type="strong">
+          <BotShieldStack gap="small-200">
+            <BotShieldText color="subdued">Response mode</BotShieldText>
+            <BotShieldText type="strong">{responseMode.label}</BotShieldText>
+          </BotShieldStack>
+          <BotShieldStack gap="small-200">
+            <BotShieldText color="subdued">Protection profile</BotShieldText>
+            <BotShieldText type="strong">{profile}</BotShieldText>
+          </BotShieldStack>
+          <BotShieldStack gap="small-200">
+            <BotShieldText color="subdued">Sensitivity</BotShieldText>
+            <BotShieldText type="strong">
               {model.strictMode ? "Strict Mode" : model.blockLevel}
-            </s-text>
-          </s-stack>
-          <s-stack gap="small-200">
-            <s-text color="subdued">Last storefront event</s-text>
-            <s-text type="strong">
+            </BotShieldText>
+          </BotShieldStack>
+          <BotShieldStack gap="small-200">
+            <BotShieldText color="subdued">Last storefront event</BotShieldText>
+            <BotShieldText type="strong">
               {formatDate(
                 model.protectionStatus.lastStorefrontDecisionAt,
                 "Waiting for traffic",
               )}
-            </s-text>
-          </s-stack>
-        </s-grid>
-      </s-stack>
+            </BotShieldText>
+          </BotShieldStack>
+        </BotShieldGrid>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -396,7 +421,7 @@ function QuickActionsCard({ model, actions }) {
       title="Quick Actions"
       subtitle="The most common setup and review actions."
     >
-      <s-stack gap="base">
+      <BotShieldStack gap="base">
         <BotShieldActionButton
           variant={!storefrontConnected ? "primary" : "secondary"}
           onClick={actions.openThemeEditor}
@@ -412,7 +437,7 @@ function QuickActionsCard({ model, actions }) {
         <BotShieldActionButton onClick={() => actions.setPage("analytics")}>
           View activity
         </BotShieldActionButton>
-      </s-stack>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -422,14 +447,14 @@ function OutcomeCard({ label, value, description, status }) {
     <div
       className={`botshield-outcome-card botshield-outcome-card--${status || "neutral"}`}
     >
-      <s-stack gap="base">
-        <s-stack direction="inline" gap="small" justifyContent="space-between">
+      <BotShieldStack gap="base">
+        <BotShieldStack direction="inline" gap="small" justifyContent="space-between">
           <div className="botshield-card-label">{label}</div>
           {status ? <BotShieldStatusBadge status={status} /> : null}
-        </s-stack>
+        </BotShieldStack>
         <div className="botshield-outcome-value">{value}</div>
-        <s-text color="subdued">{description}</s-text>
-      </s-stack>
+        <BotShieldText color="subdued">{description}</BotShieldText>
+      </BotShieldStack>
     </div>
   );
 }
@@ -437,23 +462,23 @@ function OutcomeCard({ label, value, description, status }) {
 function HelpStrip({ model, actions }) {
   return (
     <BotShieldCard>
-      <s-stack
+      <BotShieldStack
         direction="inline"
         gap="base"
         alignItems="center"
         justifyContent="space-between"
       >
-        <s-stack direction="inline" gap="base" alignItems="center">
+        <BotShieldStack direction="inline" gap="base" alignItems="center">
           <span className="botshield-rule-icon">ⓘ</span>
-          <s-text>
+          <BotShieldText>
             Not sure which setup fits your store? Start with Balanced mode and
             adjust rules after reviewing real storefront activity.
-          </s-text>
-        </s-stack>
+          </BotShieldText>
+        </BotShieldStack>
         <BotShieldActionButton onClick={() => runNextSetupAction(model, actions)}>
           Get help
         </BotShieldActionButton>
-      </s-stack>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -470,7 +495,7 @@ function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
         : "Balanced";
 
   return (
-    <s-grid
+    <BotShieldGrid
       gridTemplateColumns="minmax(0, 1.25fr) minmax(280px, 0.75fr)"
       gap="large"
     >
@@ -485,36 +510,36 @@ function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
         }
         accent
       >
-        <s-stack gap="large">
+        <BotShieldStack gap="large">
           <div className="botshield-status-value">{executiveStatus.label}</div>
-          <s-paragraph color="subdued">{executiveStatus.detail}</s-paragraph>
-          <s-grid
+          <BotShieldParagraph color="subdued">{executiveStatus.detail}</BotShieldParagraph>
+          <BotShieldGrid
             gridTemplateColumns="repeat(auto-fit, minmax(145px, 1fr))"
             gap="base"
           >
-            <s-stack gap="small-200">
-              <s-text color="subdued">Protection profile</s-text>
-              <s-text type="strong">{selectedMode}</s-text>
-            </s-stack>
-            <s-stack gap="small-200">
-              <s-text color="subdued">Response mode</s-text>
-              <s-text type="strong">{responseMode.label}</s-text>
-            </s-stack>
-            <s-stack gap="small-200">
-              <s-text color="subdued">Sensitivity</s-text>
-              <s-text type="strong">
+            <BotShieldStack gap="small-200">
+              <BotShieldText color="subdued">Protection profile</BotShieldText>
+              <BotShieldText type="strong">{selectedMode}</BotShieldText>
+            </BotShieldStack>
+            <BotShieldStack gap="small-200">
+              <BotShieldText color="subdued">Response mode</BotShieldText>
+              <BotShieldText type="strong">{responseMode.label}</BotShieldText>
+            </BotShieldStack>
+            <BotShieldStack gap="small-200">
+              <BotShieldText color="subdued">Sensitivity</BotShieldText>
+              <BotShieldText type="strong">
                 {draft.strictMode ? "Strict Mode" : draft.blockLevel}
-              </s-text>
-            </s-stack>
-          </s-grid>
-        </s-stack>
+              </BotShieldText>
+            </BotShieldStack>
+          </BotShieldGrid>
+        </BotShieldStack>
       </BotShieldCard>
 
       <BotShieldCard
         title="Recommended next step"
         subtitle="Keep setup simple while the store gathers real activity."
       >
-        <s-stack gap="base">
+        <BotShieldStack gap="base">
           <StatusRow
             label="Start with Balanced"
             detail="Balanced blocks suspicious behavior while reducing false positives."
@@ -546,9 +571,9 @@ function ProtectionPolicySummary({ model, draft, setDraft, actions }) {
               </BotShieldActionButton>
             }
           />
-        </s-stack>
+        </BotShieldStack>
       </BotShieldCard>
-    </s-grid>
+    </BotShieldGrid>
   );
 }
 
@@ -567,7 +592,7 @@ function StoreHealthCard({ model, actions }) {
       subtitle="Finish setup so BotShield can protect your storefront."
       accent
     >
-      <s-stack>
+      <BotShieldStack>
         <StatusRow
           label="Theme Embed"
           detail={
@@ -651,7 +676,7 @@ function StoreHealthCard({ model, actions }) {
             ) : null
           }
         />
-      </s-stack>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -755,10 +780,10 @@ function SetupProgressCard({ model, actions }) {
       title="Setup Progress"
       subtitle={`${complete} of ${items.length} completed`}
     >
-      <s-stack>
+      <BotShieldStack>
         {items.map((item) => (
           <div className="botshield-checklist-row" key={item.label}>
-            <s-stack direction="inline" gap="base" alignItems="start">
+            <BotShieldStack direction="inline" gap="base" alignItems="start">
               <span
                 className={`botshield-check-icon${
                   item.complete ? " botshield-check-icon--complete" : ""
@@ -766,12 +791,12 @@ function SetupProgressCard({ model, actions }) {
               >
                 {item.complete ? "Done" : "Next"}
               </span>
-              <s-stack gap="small-200">
-                <s-text type="strong">{item.label}</s-text>
-                <s-text color="subdued">{item.detail}</s-text>
-              </s-stack>
-            </s-stack>
-            <s-stack direction="inline" gap="small" alignItems="center">
+              <BotShieldStack gap="small-200">
+                <BotShieldText type="strong">{item.label}</BotShieldText>
+                <BotShieldText color="subdued">{item.detail}</BotShieldText>
+              </BotShieldStack>
+            </BotShieldStack>
+            <BotShieldStack direction="inline" gap="small" alignItems="center">
               <BotShieldStatusBadge
                 status={item.complete ? "active" : "setup_required"}
                 label={item.complete ? "Ready" : "Action needed"}
@@ -781,10 +806,10 @@ function SetupProgressCard({ model, actions }) {
                   {item.actionLabel}
                 </BotShieldActionButton>
               ) : null}
-            </s-stack>
+            </BotShieldStack>
           </div>
         ))}
-      </s-stack>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -835,10 +860,10 @@ function GettingStartedCard({ model, actions }) {
         />
       }
     >
-      <s-stack gap="large">
-        <s-stack direction="inline" gap="base" alignItems="center">
-          <s-text>{`You've done ${complete} of ${steps.length} steps`}</s-text>
-          <s-box inlineSize="100%">
+      <BotShieldStack gap="large">
+        <BotShieldStack direction="inline" gap="base" alignItems="center">
+          <BotShieldText>{`You've done ${complete} of ${steps.length} steps`}</BotShieldText>
+          <BotShieldBox inlineSize="100%">
             <div className="botshield-progress-track">
               <div
                 className="botshield-progress-fill"
@@ -847,11 +872,11 @@ function GettingStartedCard({ model, actions }) {
                 }}
               />
             </div>
-          </s-box>
-        </s-stack>
+          </BotShieldBox>
+        </BotShieldStack>
         {steps.map((step) => (
           <div className="botshield-checklist-row" key={step.label}>
-            <s-stack direction="inline" gap="base" alignItems="start">
+            <BotShieldStack direction="inline" gap="base" alignItems="start">
               <span
                 className={`botshield-check-icon${
                   step.complete ? " botshield-check-icon--complete" : ""
@@ -859,11 +884,11 @@ function GettingStartedCard({ model, actions }) {
               >
                 {step.complete ? "Done" : "Next"}
               </span>
-              <s-stack gap="small-200">
-                <s-text type="strong">{step.label}</s-text>
-                <s-text color="subdued">{step.detail}</s-text>
-              </s-stack>
-            </s-stack>
+              <BotShieldStack gap="small-200">
+                <BotShieldText type="strong">{step.label}</BotShieldText>
+                <BotShieldText color="subdued">{step.detail}</BotShieldText>
+              </BotShieldStack>
+            </BotShieldStack>
             {!step.complete ? (
               <BotShieldActionButton onClick={step.action}>
                 {step.actionLabel}
@@ -873,7 +898,7 @@ function GettingStartedCard({ model, actions }) {
             )}
           </div>
         ))}
-      </s-stack>
+      </BotShieldStack>
     </BotShieldCard>
   );
 }
@@ -902,21 +927,21 @@ function RuleSummaryCard({
 
   return (
     <div className="botshield-rule-card">
-      <s-stack gap="large">
-        <s-stack direction="inline" gap="base" justifyContent="space-between">
+      <BotShieldStack gap="large">
+        <BotShieldStack direction="inline" gap="base" justifyContent="space-between">
           <span className="botshield-rule-icon">{cleanIcon}</span>
           {count !== undefined ? (
             <span className="botshield-rule-count">{count}</span>
           ) : (
             <BotShieldStatusBadge status={status} />
           )}
-        </s-stack>
-        <s-stack gap="small">
-          <s-heading>{title}</s-heading>
-          <s-text color="subdued">{description}</s-text>
-        </s-stack>
-        {action ? <s-box paddingBlockStart="base">{action}</s-box> : null}
-      </s-stack>
+        </BotShieldStack>
+        <BotShieldStack gap="small">
+          <BotShieldHeading>{title}</BotShieldHeading>
+          <BotShieldText color="subdued">{description}</BotShieldText>
+        </BotShieldStack>
+        {action ? <BotShieldBox paddingBlockStart="base">{action}</BotShieldBox> : null}
+      </BotShieldStack>
     </div>
   );
 }
@@ -931,15 +956,15 @@ function ProtectionModeCard({ title, description, selected, onSelect }) {
       type="button"
       onClick={onSelect}
     >
-      <s-stack gap="small">
-        <s-stack direction="inline" justifyContent="space-between" gap="base">
-          <s-text type="strong">{title}</s-text>
+      <BotShieldStack gap="small">
+        <BotShieldStack direction="inline" justifyContent="space-between" gap="base">
+          <BotShieldText type="strong">{title}</BotShieldText>
           {selected ? (
             <BotShieldStatusBadge status="active" label="Selected" />
           ) : null}
-        </s-stack>
-        <s-text color="subdued">{description}</s-text>
-      </s-stack>
+        </BotShieldStack>
+        <BotShieldText color="subdued">{description}</BotShieldText>
+      </BotShieldStack>
     </button>
   );
 }
@@ -967,8 +992,8 @@ function SupportChannelsCard() {
   ];
 
   return (
-    <s-stack gap="large">
-      <s-heading>Support Channels</s-heading>
+    <BotShieldStack gap="large">
+      <BotShieldHeading>Support Channels</BotShieldHeading>
       <BotShieldCard>
         <div className="botshield-support-grid">
           {channels.map((channel) => (
@@ -977,11 +1002,11 @@ function SupportChannelsCard() {
               href={channel.href}
               key={channel.title}
             >
-              <s-stack gap="base" alignItems="center">
-                <s-text>{channel.icon}</s-text>
-                <s-text type="strong">{channel.title}</s-text>
-                <s-text color="subdued">{channel.detail}</s-text>
-              </s-stack>
+              <BotShieldStack gap="base" alignItems="center">
+                <BotShieldText>{channel.icon}</BotShieldText>
+                <BotShieldText type="strong">{channel.title}</BotShieldText>
+                <BotShieldText color="subdued">{channel.detail}</BotShieldText>
+              </BotShieldStack>
             </a>
           ))}
         </div>
@@ -990,73 +1015,73 @@ function SupportChannelsCard() {
         title="Need help?"
         subtitle="Get help with setup, incident review, or false positives. Email support@botshieldapp.com."
         actions={
-          <s-stack direction="inline" gap="small">
+          <BotShieldStack direction="inline" gap="small">
             <BotShieldActionButton href="/support">
               Open support
             </BotShieldActionButton>
             <BotShieldActionButton href="mailto:support@botshieldapp.com">
               Send email
             </BotShieldActionButton>
-          </s-stack>
+          </BotShieldStack>
         }
       />
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
 function InsightList({ items, emptyMessage }) {
   if (!items.length) {
-    return <s-text color="subdued">{emptyMessage}</s-text>;
+    return <BotShieldText color="subdued">{emptyMessage}</BotShieldText>;
   }
   const highestCount = Math.max(...items.map((item) => item.count), 1);
   return (
-    <s-stack>
+    <BotShieldStack>
       {items.map((item) => (
-        <s-box key={item.label} paddingBlock="base" borderBlockEnd="base">
-          <s-stack gap="small">
-            <s-stack
+        <BotShieldBox key={item.label} paddingBlock="base" borderBlockEnd="base">
+          <BotShieldStack gap="small">
+            <BotShieldStack
               direction="inline"
               gap="base"
               justifyContent="space-between"
               alignItems="center"
             >
-              <s-text type="strong">{item.label}</s-text>
-              <s-text color="subdued">{item.count}</s-text>
-            </s-stack>
-            <s-box background="subdued" borderRadius="full" minBlockSize="4px">
-              <s-box
+              <BotShieldText type="strong">{item.label}</BotShieldText>
+              <BotShieldText color="subdued">{item.count}</BotShieldText>
+            </BotShieldStack>
+            <BotShieldBox background="subdued" borderRadius="full" minBlockSize="4px">
+              <BotShieldBox
                 background="strong"
                 borderRadius="full"
                 minBlockSize="4px"
                 inlineSize={`${Math.max(8, Math.round((item.count / highestCount) * 100))}%`}
               />
-            </s-box>
-          </s-stack>
-        </s-box>
+            </BotShieldBox>
+          </BotShieldStack>
+        </BotShieldBox>
       ))}
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
 function StatusRow({ label, detail, status, action }) {
   return (
-    <s-box paddingBlock="base" borderBlockEnd="base">
-      <s-stack
+    <BotShieldBox paddingBlock="base" borderBlockEnd="base">
+      <BotShieldStack
         direction="inline"
         gap="base"
         justifyContent="space-between"
         alignItems="center"
       >
-        <s-stack gap="small-200">
-          <s-text type="strong">{label}</s-text>
-          <s-text color="subdued">{detail}</s-text>
-        </s-stack>
-        <s-stack direction="inline" gap="small" alignItems="center">
+        <BotShieldStack gap="small-200">
+          <BotShieldText type="strong">{label}</BotShieldText>
+          <BotShieldText color="subdued">{detail}</BotShieldText>
+        </BotShieldStack>
+        <BotShieldStack direction="inline" gap="small" alignItems="center">
           <BotShieldStatusBadge status={status} />
           {action}
-        </s-stack>
-      </s-stack>
-    </s-box>
+        </BotShieldStack>
+      </BotShieldStack>
+    </BotShieldBox>
   );
 }
 
@@ -1072,11 +1097,12 @@ function OverviewBadge({ children, muted = false }) {
   );
 }
 
-function buildOverviewThreatSeries(events, periodDays = 30) {
+function buildOverviewThreatSeries(events, periodDays = 30, anchorMs = 0) {
+  const anchor = Number(anchorMs) || 0;
   const days = Array.from({ length: periodDays }, (_, index) => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (periodDays - 1 - index));
+    const date = new Date(anchor);
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() - (periodDays - 1 - index));
     return {
       key: date.toISOString().slice(0, 10),
       label: date.toLocaleDateString(HYDRATION_STABLE_LOCALE, {
@@ -1165,9 +1191,9 @@ const RATE_PROTECTION_REASON_CODES = [
   "PATH_SCANNING",
 ];
 
-function getRecentStorefrontEvents(storefrontScans, periodDays = 30) {
+function getRecentStorefrontEvents(storefrontScans, periodDays = 30, nowMs = 0) {
   return (storefrontScans || []).filter((event) =>
-    inRecentDays(event.createdAt, periodDays),
+    inRecentDays(event.createdAt, periodDays, 0, nowMs),
   );
 }
 
@@ -1176,8 +1202,8 @@ function eventMatchesReasonCodes(event, reasonCodes) {
   return reasonCodes.some((code) => codes.includes(code));
 }
 
-function buildModuleProtectionActivity(storefrontScans, reasonCodes, periodDays = 30) {
-  const recentEvents = getRecentStorefrontEvents(storefrontScans, periodDays);
+function buildModuleProtectionActivity(storefrontScans, reasonCodes, periodDays = 30, nowMs = 0) {
+  const recentEvents = getRecentStorefrontEvents(storefrontScans, periodDays, nowMs);
   const matchedEvents = recentEvents.filter((event) =>
     eventMatchesReasonCodes(event, reasonCodes),
   );
@@ -1195,43 +1221,6 @@ function buildModuleProtectionActivity(storefrontScans, reasonCodes, periodDays 
   };
 }
 
-function formatRelativeTime(value) {
-  if (!value) return "No decisions recorded";
-  const timestamp = new Date(value).getTime();
-  if (Number.isNaN(timestamp)) return "Time unavailable";
-  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (elapsedMinutes < 1) return "Just now";
-  if (elapsedMinutes < 60) return `${elapsedMinutes}m ago`;
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  if (elapsedHours < 24) return `${elapsedHours}h ago`;
-  return `${Math.floor(elapsedHours / 24)}d ago`;
-}
-
-function BotShieldHydrationSafeRelativeTime({ value, emptyLabel = "No decisions recorded" }) {
-  const mounted = useBotShieldClientMount();
-  if (!value) return emptyLabel;
-  if (!mounted) return "Recent activity";
-  return formatRelativeTime(value);
-}
-
-function BotShieldHydrationSafeStack({ gap, children, className = "" }) {
-  const mounted = useBotShieldClientMount();
-  if (!mounted) {
-    return (
-      <div
-        className={`botshield-hydration-safe-stack${className ? ` ${className}` : ""}`.trim()}
-      >
-        {children}
-      </div>
-    );
-  }
-  return (
-    <s-stack gap={gap} className={className || undefined}>
-      {children}
-    </s-stack>
-  );
-}
-
 function formatCurrencyMinor(amountMinor, currencyCode) {
   if (!Number.isSafeInteger(Number(amountMinor)) || !currencyCode) return null;
   try {
@@ -1246,7 +1235,6 @@ function formatCurrencyMinor(amountMinor, currencyCode) {
 }
 
 function OverviewIcon({ name, centered = false }) {
-  const mounted = useBotShieldClientMount();
   const icons = {
     activity: "chart-line",
     shield: "shield-check-mark",
@@ -1265,14 +1253,12 @@ function OverviewIcon({ name, centered = false }) {
       aria-hidden="true"
       style={centered ? { display: "grid", placeItems: "center" } : undefined}
     >
-      {mounted ? (
-        <s-icon
-          type={icons[name] || icons.shield}
-          size="small"
-          color="subdued"
-          style={centered ? { display: "block", margin: "auto" } : undefined}
-        />
-      ) : null}
+      <BotShieldIcon
+        type={icons[name] || icons.shield}
+        size="small"
+        color="subdued"
+        style={centered ? { display: "block", margin: "auto" } : undefined}
+      />
     </span>
   );
 }
@@ -1302,6 +1288,7 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
 
 function OverviewPage({ model, actions }) {
   const toast = useBotShieldToast();
+  const now = useHydrationStableNow(model.renderAnchorMs);
   const [threatPeriod, setThreatPeriod] = useState(30);
   const handleRefreshStoreHealth = async () => {
     const result = await actions.refreshStoreHealth?.();
@@ -1397,7 +1384,7 @@ function OverviewPage({ model, actions }) {
     : [];
   const threatSeriesSource = storedThreatSeries.length
     ? storedThreatSeries
-    : buildOverviewThreatSeries(model.storefrontScans || [], 90);
+    : buildOverviewThreatSeries(model.storefrontScans || [], 90, now);
   const threatSeries = threatSeriesSource.slice(-threatPeriod);
   const activeThreatDays = threatSeries.filter(
     (day) => day.allowed || day.challenged || day.blocked,
@@ -1536,7 +1523,7 @@ function OverviewPage({ model, actions }) {
   return (
     <BotShieldNativePage heading="Overview">
       <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
-        <BotShieldHydrationSafeStack gap="large">
+        <BotShieldStack gap="large">
           <section
             className={`botshield-v2-status ${protectionState.className}`}
             aria-labelledby="botshield-protection-status-title"
@@ -1613,7 +1600,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="clock" />
                 <span>Last decision</span>
-                <strong><i className={`botshield-v2-health-dot ${lastStorefrontDecisionAt ? "is-info" : "is-muted"}`} /><BotShieldHydrationSafeRelativeTime value={lastStorefrontDecisionAt} /></strong>
+                <strong><i className={`botshield-v2-health-dot ${lastStorefrontDecisionAt ? "is-info" : "is-muted"}`} /><BotShieldHydrationRelativeTime value={lastStorefrontDecisionAt} /></strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="shield" />
@@ -1641,7 +1628,7 @@ function OverviewPage({ model, actions }) {
                     centered
                   />
                   <div>
-                    <strong>{item.value.toLocaleString()}</strong>
+                    <strong>{formatHydrationStableNumber(item.value)}</strong>
                     <span>{item.label}</span>
                     <small>{item.detail}</small>
                   </div>
@@ -1666,7 +1653,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-value-content">
                 <div className="botshield-v2-value-total">
                   <strong>{protectedValue}</strong>
-                  <span>{Number(financialImpact.qualifyingOrderCount || 0).toLocaleString()} verified order outcome{Number(financialImpact.qualifyingOrderCount) === 1 ? "" : "s"}</span>
+                  <span>{formatHydrationStableNumber(Number(financialImpact.qualifyingOrderCount || 0))} verified order outcome{Number(financialImpact.qualifyingOrderCount) === 1 ? "" : "s"}</span>
                 </div>
                 <div className="botshield-v2-value-chart" role="img" aria-label={`Estimated value protected over the last ${financialImpact.periodDays || 30} days`}>
                   {financialImpact.series.map((point) => (
@@ -1746,8 +1733,8 @@ function OverviewPage({ model, actions }) {
                   data-density={activeThreatDays <= 3 ? "sparse" : activeThreatDays <= 12 ? "medium" : "dense"}
                 >
                   <div className="botshield-v2-chart-scale" aria-hidden="true">
-                    <span>{chartMaximum.toLocaleString()}</span>
-                    <span>{Math.round(chartMaximum / 2).toLocaleString()}</span>
+                    <span>{formatHydrationStableNumber(chartMaximum)}</span>
+                    <span>{formatHydrationStableNumber(Math.round(chartMaximum / 2))}</span>
                     <span>0</span>
                   </div>
                   <div className="botshield-v2-chart-bars">
@@ -1796,7 +1783,7 @@ function OverviewPage({ model, actions }) {
                     Verify connection
                   </BotShieldActionButton>
                   {lastStorefrontDecisionAt ? (
-                    <small>Last decision received <BotShieldHydrationSafeRelativeTime value={lastStorefrontDecisionAt} /></small>
+                    <small>Last decision received <BotShieldHydrationRelativeTime value={lastStorefrontDecisionAt} /></small>
                   ) : null}
                 </div>
               )}
@@ -1822,7 +1809,7 @@ function OverviewPage({ model, actions }) {
                       <div className="botshield-v2-top-signal">
                         <span>Top threat signal</span>
                         <strong>{topThreatSignal.label}</strong>
-                        <small>{topThreatSignal.count.toLocaleString()} event{topThreatSignal.count === 1 ? "" : "s"} this period</small>
+                        <small>{formatHydrationStableNumber(topThreatSignal.count)} event{topThreatSignal.count === 1 ? "" : "s"} this period</small>
                       </div>
                     ) : null}
                     {threatComposition.map((item) => (
@@ -1833,7 +1820,7 @@ function OverviewPage({ model, actions }) {
                             style={{ width: `${(item.count / largestCompositionCount) * 100}%` }}
                           />
                         </div>
-                        <strong>{item.count.toLocaleString()}</strong>
+                        <strong>{formatHydrationStableNumber(item.count)}</strong>
                         <small
                           title="Percentage of suspicious events containing this signal. Categories can overlap."
                           aria-label={`${suspiciousEvents.length ? Math.round((item.count / suspiciousEvents.length) * 100) : 0}% of suspicious events contained this signal; categories can overlap`}
@@ -1933,7 +1920,7 @@ function OverviewPage({ model, actions }) {
                       ].map(([label, value]) => (
                         <div key={label}>
                           <strong style={{ display: "block", fontSize: "15px" }}>
-                            {Number(value).toLocaleString()}
+                            {formatHydrationStableNumber(Number(value))}
                           </strong>
                           <span style={{ color: "#6d7175", fontSize: "10px" }}>{label}</span>
                         </div>
@@ -1942,7 +1929,7 @@ function OverviewPage({ model, actions }) {
                     <div style={{ marginTop: "12px", color: "#6d7175", fontSize: "10px" }}>
                       Last suspicious event{" "}
                       <strong style={{ color: "#202223", fontSize: "11px" }}>
-                        <BotShieldHydrationSafeRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" />
+                        <BotShieldHydrationRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" />
                       </strong>
                     </div>
                   </>
@@ -2060,7 +2047,7 @@ function OverviewPage({ model, actions }) {
               </div>
             </section>
           </div>
-        </BotShieldHydrationSafeStack>
+        </BotShieldStack>
       </BotShieldPageShell>
     </BotShieldNativePage>
   );
@@ -2112,7 +2099,8 @@ function AnalyticsPage({ model, actions }) {
   const [page, setPage] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const pageSize = 25;
-  const periodStart = Date.now() - periodDays * 24 * 60 * 60 * 1000;
+  const now = useHydrationStableNow(model.renderAnchorMs);
+  const periodStart = now - periodDays * 24 * 60 * 60 * 1000;
   const periodEvents = (model.storefrontScans || []).filter((event) => {
     const timestamp = new Date(event.createdAt).getTime();
     return Number.isFinite(timestamp) && timestamp >= periodStart;
@@ -2234,10 +2222,10 @@ function AnalyticsPage({ model, actions }) {
   const bucketCount = periodDays === 1 ? 24 : Math.min(periodDays, 30);
   const bucketDuration = (periodDays * 24 * 60 * 60 * 1000) / bucketCount;
   const activityBuckets = Array.from({ length: bucketCount }, (_, index) => {
-    const bucketStart = new Date(Date.now() - (bucketCount - index) * bucketDuration);
+    const bucketStart = new Date(now - (bucketCount - index) * bucketDuration);
     const bucketEnd = new Date(bucketStart.getTime() + bucketDuration);
     const events = suspiciousEvents.filter((event) => {
-      const age = Date.now() - new Date(event.createdAt).getTime();
+      const age = now - new Date(event.createdAt).getTime();
       return age >= (bucketCount - index - 1) * bucketDuration && age < (bucketCount - index) * bucketDuration;
     });
     return {
@@ -2255,7 +2243,7 @@ function AnalyticsPage({ model, actions }) {
     null,
   );
   const peakBucketStart = peakActivityBucket
-    ? new Date(Date.now() - (bucketCount - peakActivityBucket.index) * bucketDuration)
+    ? new Date(now - (bucketCount - peakActivityBucket.index) * bucketDuration)
     : null;
   const peakBucketEnd = peakActivityBucket
     ? new Date(peakBucketStart.getTime() + bucketDuration)
@@ -2339,7 +2327,7 @@ function AnalyticsPage({ model, actions }) {
             </div>
           </div>
           <div className="botshield-analytics-filter-context" aria-live="polite">
-            <span>{filteredEvents.length.toLocaleString()} event{filteredEvents.length === 1 ? "" : "s"}</span>
+            <span>{formatHydrationStableNumber(filteredEvents.length)} event{filteredEvents.length === 1 ? "" : "s"}</span>
             <span aria-hidden="true">·</span>
             <span>{ANALYTICS_PERIODS.find((period) => period.days === periodDays)?.label}</span>
             <span aria-hidden="true">·</span>
@@ -2357,11 +2345,11 @@ function AnalyticsPage({ model, actions }) {
         <div className="botshield-analytics-section-label">Threat intelligence</div>
         <div className="botshield-analytics-split botshield-analytics-split--primary">
           <AnalyticsPanel title="Threat signal analysis" subtitle="Understand which detection signals are driving suspicious storefront activity.">
-            {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => { const interventionRate = analyticsPercent(row.blocked + row.challenged, row.count); return <div className="botshield-analytics-ranked-row" key={row.label}><div className="botshield-analytics-ranked-copy"><strong>{row.label}</strong><span>{row.count.toLocaleString()} event{row.count === 1 ? "" : "s"} · {analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><div className="botshield-analytics-ranked-measure"><AnalyticsBar maximum={signalMaximum} value={row.count} /><span>{interventionRate}% intervention</span></div></div>; })}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
+            {signalRows.length ? <div className="botshield-analytics-ranked">{signalRows.map((row) => { const interventionRate = analyticsPercent(row.blocked + row.challenged, row.count); return <div className="botshield-analytics-ranked-row" key={row.label}><div className="botshield-analytics-ranked-copy"><strong>{row.label}</strong><span>{formatHydrationStableNumber(row.count)} event{row.count === 1 ? "" : "s"} · {analyticsPercent(row.count, suspiciousEvents.length)}% of suspicious events</span></div><div className="botshield-analytics-ranked-measure"><AnalyticsBar maximum={signalMaximum} value={row.count} /><span>{interventionRate}% intervention</span></div></div>; })}</div> : <AnalyticsEmpty text="No suspicious threat signals were detected during this period." />}
             {signalRows.length ? <p className="botshield-analytics-footnote">Events can include multiple signals, so signal percentages may total more than 100%.</p> : null}
           </AnalyticsPanel>
           <AnalyticsPanel title="Risk distribution" subtitle="Distribution of storefront activity by assessed risk level.">
-            {filteredEvents.length ? <><div className="botshield-analytics-risk-total"><strong>{filteredEvents.length.toLocaleString()}</strong><span>analyzed event{filteredEvents.length === 1 ? "" : "s"}</span></div><div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div></> : <AnalyticsEmpty text="No risk activity is available for this period." />}
+            {filteredEvents.length ? <><div className="botshield-analytics-risk-total"><strong>{formatHydrationStableNumber(filteredEvents.length)}</strong><span>analyzed event{filteredEvents.length === 1 ? "" : "s"}</span></div><div className="botshield-analytics-risk-list">{riskRows.map((row) => <div className="botshield-analytics-risk-row" key={row.risk}><span className={`botshield-analytics-risk-dot is-${row.risk}`} /><strong>{getRiskLabel(row.risk)}</strong><AnalyticsBar maximum={riskMaximum} tone={row.risk} value={row.count} /><b>{row.count}</b><span>{analyticsPercent(row.count, filteredEvents.length)}%</span></div>)}</div></> : <AnalyticsEmpty text="No risk activity is available for this period." />}
           </AnalyticsPanel>
         </div>
 
@@ -2372,12 +2360,12 @@ function AnalyticsPage({ model, actions }) {
 
         <div className="botshield-analytics-section-label">Behavior</div>
         <AnalyticsPanel title="Activity patterns" subtitle="See when suspicious storefront activity is most concentrated.">
-          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong><BotShieldHydrationSafeRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" /></strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity recorded for this period. Try a wider date range or clear filters." />}
+          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{formatHydrationStableNumber(suspiciousEvents.length)}</strong></div><div><span>Last suspicious event</span><strong><BotShieldHydrationRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" /></strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity recorded for this period. Try a wider date range or clear filters." />}
         </AnalyticsPanel>
 
         <><div className="botshield-analytics-section-label">Paths and network sources</div><div className="botshield-analytics-split"><AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity.">{pathRows.length ? <AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No targeted storefront paths were recorded during this period." />}</AnalyticsPanel><AnalyticsPanel title="Network sources" subtitle="Network types recorded for suspicious storefront events.">{attackOriginRows.length ? <AnalyticsCompactRanking rows={attackOriginRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No reliable network origin data was recorded during this period." />}</AnalyticsPanel></div></>
 
-        <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers.">{visitorRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td><BotShieldHydrationSafeRelativeTime value={row.lastSeen} emptyLabel="No activity" /></td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No recurring suspicious visitors matched this period and filter selection." />}</AnalyticsPanel></>
+        <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers.">{visitorRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td><BotShieldHydrationRelativeTime value={row.lastSeen} emptyLabel="No activity" /></td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No recurring suspicious visitors matched this period and filter selection." />}</AnalyticsPanel></>
 
         <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that appear together in recorded events.">{combinationRows.length ? <div className="botshield-analytics-combinations">{combinationRows.map((row) => <div className="botshield-analytics-combination" key={row.label}><div className="botshield-analytics-combination-signals">{row.label.split(" + ").map((signal, index) => <span key={signal}>{index ? <b aria-hidden="true">+</b> : null}<strong>{signal}</strong></span>)}</div><dl><div><dt>Events</dt><dd>{row.count}</dd></div><div><dt>Share</dt><dd>{analyticsPercent(row.count, suspiciousEvents.length)}%</dd></div><div><dt>Intervention</dt><dd>{analyticsPercent(row.interventions, row.count)}%</dd></div></dl></div>)}</div> : <AnalyticsEmpty text="No multi-signal event combinations were recorded during this period." />}</AnalyticsPanel>
 
@@ -2387,7 +2375,7 @@ function AnalyticsPage({ model, actions }) {
 
         <div className="botshield-analytics-section-label">Investigation</div>
         <AnalyticsPanel title="Event explorer" subtitle="Filter and review the storefront events behind these metrics.">
-          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Reasons</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{filteredEvents.length.toLocaleString()} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
+          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Reasons</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{formatHydrationStableNumber(filteredEvents.length)} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
         </AnalyticsPanel>
 
         <AnalyticsEventDetails
@@ -2412,7 +2400,7 @@ function maskAnalyticsVisitor(value) {
 }
 
 function AnalyticsKpi({ label, value, detail, compact = false }) {
-  return <div className={`botshield-analytics-kpi${compact ? " is-compact" : ""}`}><span>{label}</span><strong>{typeof value === "number" ? value.toLocaleString() : value}</strong><small>{detail}</small></div>;
+  return <div className={`botshield-analytics-kpi${compact ? " is-compact" : ""}`}><span>{label}</span><strong>{typeof value === "number" ? formatHydrationStableNumber(value) : value}</strong><small>{detail}</small></div>;
 }
 
 function AnalyticsPanel({ title, subtitle, children }) {
@@ -2577,19 +2565,19 @@ function getAnalyticsAccessStateBadgeStatus(state) {
 
 function AnalyticsEventDetailField({ label, children }) {
   return (
-    <s-stack gap="small-100">
-      <s-text color="subdued">{label}</s-text>
+    <BotShieldStack gap="small-100">
+      <BotShieldText color="subdued">{label}</BotShieldText>
       {children}
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
 function AnalyticsEventDetailSection({ title, children }) {
   return (
-    <s-stack gap="small">
-      <s-text color="subdued">{title}</s-text>
-      <s-stack gap="base">{children}</s-stack>
-    </s-stack>
+    <BotShieldStack gap="small">
+      <BotShieldText color="subdued">{title}</BotShieldText>
+      <BotShieldStack gap="base">{children}</BotShieldStack>
+    </BotShieldStack>
   );
 }
 
@@ -2707,35 +2695,35 @@ function AnalyticsEventDetails({
         onAfterHide={onClose}
         open={Boolean(event)}
         secondaryActions={
-          <s-button slot="secondary-actions" onClick={requestClose}>
+          <BotShieldPolarisButton slot="secondary-actions" onClick={requestClose}>
             Close
-          </s-button>
+          </BotShieldPolarisButton>
         }
         size="base"
       >
         {event ? (
-          <s-stack gap="base">
-            <s-paragraph color="subdued">
+          <BotShieldStack gap="base">
+            <BotShieldParagraph color="subdued">
               {formatAnalyticsDetailTimestamp(event.createdAt)}
-            </s-paragraph>
+            </BotShieldParagraph>
 
-            <s-box background="subdued" borderRadius="base" padding="base">
-              <s-stack gap="small">
-                <s-stack direction="inline" gap="small" alignItems="center">
+            <BotShieldBox background="subdued" borderRadius="base" padding="base">
+              <BotShieldStack gap="small">
+                <BotShieldStack direction="inline" gap="small" alignItems="center">
                   <BotShieldStatusBadge
                     label={getOutcomeLabel(event.actionTaken)}
                     status={event.actionTaken}
                   />
-                  <s-text type="strong">
+                  <BotShieldText type="strong">
                     {getRiskLabel(event.threatLevel)} · {signalLabel}
-                  </s-text>
-                </s-stack>
-                <s-paragraph color="subdued">{decisionContext}</s-paragraph>
-              </s-stack>
-            </s-box>
+                  </BotShieldText>
+                </BotShieldStack>
+                <BotShieldParagraph color="subdued">{decisionContext}</BotShieldParagraph>
+              </BotShieldStack>
+            </BotShieldBox>
 
             <AnalyticsEventDetailSection title="Detection">
-              <s-grid
+              <BotShieldGrid
                 gridTemplateColumns="repeat(2, minmax(0, 1fr))"
                 gap="base"
               >
@@ -2751,39 +2739,39 @@ function AnalyticsEventDetails({
                     status={event.actionTaken}
                   />
                 </AnalyticsEventDetailField>
-              </s-grid>
+              </BotShieldGrid>
               <AnalyticsEventDetailField label="Threat signal">
-                <s-text type="strong">{signalLabel}</s-text>
+                <BotShieldText type="strong">{signalLabel}</BotShieldText>
               </AnalyticsEventDetailField>
-              <s-box
+              <BotShieldBox
                 background="subdued"
                 border="base"
                 borderRadius="base"
                 padding="base"
               >
                 <AnalyticsEventDetailField label="Detection reason">
-                  <s-text>{reason}</s-text>
+                  <BotShieldText>{reason}</BotShieldText>
                 </AnalyticsEventDetailField>
-              </s-box>
+              </BotShieldBox>
             </AnalyticsEventDetailSection>
 
             <AnalyticsEventDetailSection title="Request">
-              <s-grid
+              <BotShieldGrid
                 gridTemplateColumns="repeat(2, minmax(0, 1fr))"
                 gap="base"
               >
                 <AnalyticsEventDetailField label="Page / path">
-                  <s-text type="strong">{event.pathVisited || "/"}</s-text>
+                  <BotShieldText type="strong">{event.pathVisited || "/"}</BotShieldText>
                 </AnalyticsEventDetailField>
                 <AnalyticsEventDetailField label="Time">
-                  <s-text type="strong">
+                  <BotShieldText type="strong">
                     {formatAnalyticsDetailTimestamp(event.createdAt)}
-                  </s-text>
+                  </BotShieldText>
                 </AnalyticsEventDetailField>
-              </s-grid>
+              </BotShieldGrid>
               {event.id ? (
                 <AnalyticsEventDetailField label="Event reference">
-                  <s-text
+                  <BotShieldText
                     title={String(event.id)}
                     type="strong"
                     style={{
@@ -2797,50 +2785,50 @@ function AnalyticsEventDetails({
                     }}
                   >
                     {String(event.id)}
-                  </s-text>
-                  <s-text color="subdued">
+                  </BotShieldText>
+                  <BotShieldText color="subdued">
                     Use this reference when reviewing the event or contacting
                     support.
-                  </s-text>
+                  </BotShieldText>
                 </AnalyticsEventDetailField>
               ) : null}
             </AnalyticsEventDetailSection>
 
             {hasVisitorDetails ? (
               <AnalyticsEventDetailSection title="Visitor">
-                <s-grid
+                <BotShieldGrid
                   gridTemplateColumns="repeat(2, minmax(0, 1fr))"
                   gap="base"
                 >
                   {event.ipAddress ? (
                     <AnalyticsEventDetailField label="Visitor">
-                      <s-text type="strong">
+                      <BotShieldText type="strong">
                         {maskAnalyticsVisitor(event.ipAddress)}
-                      </s-text>
+                      </BotShieldText>
                     </AnalyticsEventDetailField>
                   ) : null}
                   {networkClassification ? (
                     <AnalyticsEventDetailField label="Network classification">
-                      <s-text type="strong">{networkClassification}</s-text>
+                      <BotShieldText type="strong">{networkClassification}</BotShieldText>
                     </AnalyticsEventDetailField>
                   ) : null}
                   {event.networkCountry ? (
                     <AnalyticsEventDetailField label="Recorded location">
-                      <s-text type="strong">
+                      <BotShieldText type="strong">
                         {[event.networkCity, event.networkCountry]
                           .filter(Boolean)
                           .join(", ")}
-                      </s-text>
+                      </BotShieldText>
                     </AnalyticsEventDetailField>
                   ) : null}
                   {event.networkOrg || event.networkProvider ? (
                     <AnalyticsEventDetailField label="Network">
-                      <s-text type="strong">
+                      <BotShieldText type="strong">
                         {event.networkOrg || event.networkProvider}
-                      </s-text>
+                      </BotShieldText>
                     </AnalyticsEventDetailField>
                   ) : null}
-                </s-grid>
+                </BotShieldGrid>
               </AnalyticsEventDetailSection>
             ) : null}
 
@@ -2853,7 +2841,7 @@ function AnalyticsEventDetails({
                       status={getAnalyticsAccessStateBadgeStatus(accessState)}
                     />
                   </AnalyticsEventDetailField>
-                  <s-stack direction="inline" gap="small">
+                  <BotShieldStack direction="inline" gap="small">
                     {accessState === "normal" ? (
                       <>
                         <BotShieldActionButton
@@ -2892,7 +2880,7 @@ function AnalyticsEventDetails({
                         Remove from trusted
                       </BotShieldActionButton>
                     ) : null}
-                  </s-stack>
+                  </BotShieldStack>
                 </>
               ) : (
                 <BotShieldBanner
@@ -2904,7 +2892,7 @@ function AnalyticsEventDetails({
                 </BotShieldBanner>
               )}
             </AnalyticsEventDetailSection>
-          </s-stack>
+          </BotShieldStack>
         ) : null}
       </BotShieldNativeModal>
 
@@ -3105,18 +3093,6 @@ function filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone
 
 const FRAUD_ORDER_ACCESS_AVAILABLE = true;
 
-function fraudOrderAge(value) {
-  if (!value) return "—";
-  const timestamp = new Date(value).getTime();
-  if (Number.isNaN(timestamp)) return "—";
-  const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
-  if (elapsedMinutes < 1) return "Just now";
-  if (elapsedMinutes < 60) return `${elapsedMinutes}m`;
-  const elapsedHours = Math.floor(elapsedMinutes / 60);
-  if (elapsedHours < 24) return `${elapsedHours}h`;
-  return `${Math.floor(elapsedHours / 24)}d`;
-}
-
 function fraudOrderSignalList(order) {
   const signals = [];
   const primary = order.reason || order.primarySignal;
@@ -3289,7 +3265,7 @@ function FraudReviewQueueToolbar({
         ))}
       </div>
       <div className="botshield-fraud-search-wrap">
-        <s-search-field
+        <BotShieldSearchField
           disabled={disabled || searchDisabled}
           label="Search orders"
           labelAccessibilityVisibility="exclusive"
@@ -3317,25 +3293,25 @@ function FraudOrderResourceTable({ loading, onReview, orders, riskLabel, riskTon
 
   return (
     <div className="botshield-fraud-table-wrap">
-      <s-table loading={loading} variant="auto">
-        <s-table-header-row>
+      <BotShieldTable loading={loading} variant="auto">
+        <BotShieldTableHeaderRow>
           {FRAUD_ORDER_TABLE_HEADINGS.map((heading, index) => (
-            <s-table-header
+            <BotShieldTableHeader
               key={heading}
               listSlot={index === 0 ? "primary" : index === 1 ? "secondary" : "labeled"}
             >
               {heading}
-            </s-table-header>
+            </BotShieldTableHeader>
           ))}
-        </s-table-header-row>
-        <s-table-body>
+        </BotShieldTableHeaderRow>
+        <BotShieldTableBody>
           {orders.map((order) => {
             const tone = fraudOrderRiskBadgeTone(riskTone(order));
             const recommendationTone = fraudOrderRecommendationBadgeTone(order.recommendation);
             const orderLabel = order.name || order.orderName || "Order";
             return (
-              <s-table-row key={order.id || order.orderId || order.name}>
-                <s-table-cell>
+              <BotShieldTableRow key={order.id || order.orderId || order.name}>
+                <BotShieldTableCell>
                   <button
                     className="botshield-fraud-table-order"
                     onClick={() => onReview(order)}
@@ -3343,31 +3319,31 @@ function FraudOrderResourceTable({ loading, onReview, orders, riskLabel, riskTon
                   >
                     {orderLabel}
                   </button>
-                </s-table-cell>
-                <s-table-cell>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
                   <span className="botshield-fraud-table-value">
                     {fraudOrderDisplayValue(order.amount || order.total, "Unavailable")}
                   </span>
-                </s-table-cell>
-                <s-table-cell>
-                  <s-badge tone={tone}>{riskLabel(order)}</s-badge>
-                </s-table-cell>
-                <s-table-cell>
-                  <s-badge tone={recommendationTone}>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
+                  <BotShieldBadge tone={tone}>{riskLabel(order)}</BotShieldBadge>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
+                  <BotShieldBadge tone={recommendationTone}>
                     {fraudOrderDisplayValue(order.recommendation, "Pending")}
-                  </s-badge>
-                </s-table-cell>
-                <s-table-cell>
+                  </BotShieldBadge>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
                   <span className="botshield-fraud-table-value">
                     {fraudOrderDisplayValue(order.fulfillmentStatus, "Unavailable")}
                   </span>
-                </s-table-cell>
-                <s-table-cell>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
                   <span className="botshield-fraud-table-value">
                     {formatDate(order.createdAt || order.date, "Unavailable")}
                   </span>
-                </s-table-cell>
-                <s-table-cell>
+                </BotShieldTableCell>
+                <BotShieldTableCell>
                   <button
                     className="botshield-fraud-review-link"
                     onClick={() => onReview(order)}
@@ -3375,12 +3351,12 @@ function FraudOrderResourceTable({ loading, onReview, orders, riskLabel, riskTon
                   >
                     Review
                   </button>
-                </s-table-cell>
-              </s-table-row>
+                </BotShieldTableCell>
+              </BotShieldTableRow>
             );
           })}
-        </s-table-body>
-      </s-table>
+        </BotShieldTableBody>
+      </BotShieldTable>
     </div>
   );
 }
@@ -3397,23 +3373,23 @@ function getFraudSetupStepStatusLabel(step, setupState) {
 
 function FraudSetupStepMarker({ status }) {
   if (status === "complete") {
-    return <s-icon type="check" size="small" color="subdued" aria-hidden="true" />;
+    return <BotShieldIcon type="check" size="small" color="subdued" aria-hidden="true" />;
   }
-  return <s-icon type="circle-dashed" size="small" color="subdued" aria-hidden="true" />;
+  return <BotShieldIcon type="circle-dashed" size="small" color="subdued" aria-hidden="true" />;
 }
 
 function FraudSetupStepStatus({ status, label }) {
   if (status === "complete") {
     return (
-      <s-badge tone="success" className="botshield-fraud-setup-step-status">
+      <BotShieldBadge tone="success" className="botshield-fraud-setup-step-status">
         {label}
-      </s-badge>
+      </BotShieldBadge>
     );
   }
   return (
-    <s-text color="subdued" className="botshield-fraud-setup-step-status">
+    <BotShieldText color="subdued" className="botshield-fraud-setup-step-status">
       {label}
-    </s-text>
+    </BotShieldText>
   );
 }
 
@@ -3517,23 +3493,23 @@ function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClos
       }
       size="base"
     >
-      <s-stack gap="small-200">
-        <s-paragraph color="subdued">{introCopy}</s-paragraph>
+      <BotShieldStack gap="small-200">
+        <BotShieldParagraph color="subdued">{introCopy}</BotShieldParagraph>
 
-        <s-box border="base" borderRadius="base" padding="base" background="base">
-          <s-stack gap="small-100">
-            <s-text type="strong">{summaryTitle}</s-text>
-            <s-paragraph color="subdued">{summaryDetail}</s-paragraph>
-          </s-stack>
-        </s-box>
+        <BotShieldBox border="base" borderRadius="base" padding="base" background="base">
+          <BotShieldStack gap="small-100">
+            <BotShieldText type="strong">{summaryTitle}</BotShieldText>
+            <BotShieldParagraph color="subdued">{summaryDetail}</BotShieldParagraph>
+          </BotShieldStack>
+        </BotShieldBox>
 
-        <s-stack gap="small-100">
-          <s-grid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
-            <s-text type="strong">Setup progress</s-text>
-            <s-paragraph color="subdued" className="botshield-fraud-setup-progress-count">
+        <BotShieldStack gap="small-100">
+          <BotShieldGrid gridTemplateColumns="1fr auto" gap="base" alignItems="center">
+            <BotShieldText type="strong">Setup progress</BotShieldText>
+            <BotShieldParagraph color="subdued" className="botshield-fraud-setup-progress-count">
               {completedSteps} of {totalSteps} complete
-            </s-paragraph>
-          </s-grid>
+            </BotShieldParagraph>
+          </BotShieldGrid>
           <div
             aria-hidden="true"
             className="botshield-fraud-setup-progress-bar"
@@ -3541,7 +3517,7 @@ function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClos
           >
             <span style={{ width: `${progressPercent}%` }} />
           </div>
-          <s-box
+          <BotShieldBox
             aria-label="Setup progress"
             border="base"
             borderRadius="base"
@@ -3550,9 +3526,9 @@ function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClos
             padding="none"
           >
             {steps.map((step, index) => (
-              <s-box key={step.key}>
-                {index > 0 ? <s-divider /> : null}
-                <s-grid
+              <BotShieldBox key={step.key}>
+                {index > 0 ? <BotShieldDivider /> : null}
+                <BotShieldGrid
                   alignItems="start"
                   className="botshield-fraud-setup-step-row"
                   gap="small"
@@ -3560,20 +3536,20 @@ function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClos
                   padding="small"
                 >
                   <FraudSetupStepMarker status={step.status} />
-                  <s-stack gap="small-100">
-                    <s-text type="strong">{step.title}</s-text>
-                    <s-paragraph color="subdued">{step.detail}</s-paragraph>
-                  </s-stack>
+                  <BotShieldStack gap="small-100">
+                    <BotShieldText type="strong">{step.title}</BotShieldText>
+                    <BotShieldParagraph color="subdued">{step.detail}</BotShieldParagraph>
+                  </BotShieldStack>
                   <FraudSetupStepStatus
                     label={getFraudSetupStepStatusLabel(step, setupState)}
                     status={step.status}
                   />
-                </s-grid>
-              </s-box>
+                </BotShieldGrid>
+              </BotShieldBox>
             ))}
-          </s-box>
-        </s-stack>
-      </s-stack>
+          </BotShieldBox>
+        </BotShieldStack>
+      </BotShieldStack>
     </BotShieldNativeModal>
   );
 }
@@ -3623,10 +3599,10 @@ function FraudOrderReviewModal({ order, onClose, needsReview, riskLabel, riskTon
             <div className="botshield-fraud-investigation-title-row">
               <h3>{orderLabel}</h3>
               <div className="botshield-fraud-investigation-badges">
-                <s-badge tone={tone}>{riskLabel(order)}</s-badge>
-                <s-badge tone="neutral">
+                <BotShieldBadge tone={tone}>{riskLabel(order)}</BotShieldBadge>
+                <BotShieldBadge tone="neutral">
                   {fraudOrderDisplayValue(order.fulfillmentStatus, "Fulfillment unavailable")}
-                </s-badge>
+                </BotShieldBadge>
               </div>
             </div>
             <p className="botshield-fraud-investigation-meta">
@@ -3992,9 +3968,9 @@ function FraudOrdersPage({ model, actions }) {
       heading="Fraud Orders"
       secondaryActions={
         connected ? (
-          <s-button disabled={loading} onClick={refresh} slot="secondary-actions">
+          <BotShieldPolarisButton disabled={loading} onClick={refresh} slot="secondary-actions">
             Refresh
-          </s-button>
+          </BotShieldPolarisButton>
         ) : null
       }
     >
@@ -4024,7 +4000,7 @@ function FraudOrdersPage({ model, actions }) {
                       {" "}
                       <span className="botshield-fraud-refresh-note">
                         Updated{" "}
-                        <BotShieldHydrationSafeRelativeTime
+                        <BotShieldHydrationRelativeTime
                           emptyLabel="recently"
                           value={model.fraudOrdersLastRefreshedAt}
                         />
@@ -4104,6 +4080,7 @@ function getProtectionModalKey(modal) {
 
 function ProtectionPage({ model, actions }) {
   const toast = useBotShieldToast();
+  const now = useHydrationStableNow(model.renderAnchorMs);
   const [protectionModal, setProtectionModal] = useState(null);
   const [blockedIpInput, setBlockedIpInput] = useState("");
   const [trustedIpInput, setTrustedIpInput] = useState("");
@@ -4456,10 +4433,14 @@ function ProtectionPage({ model, actions }) {
   const botProtectionActivity = buildModuleProtectionActivity(
     model.storefrontScans,
     BOT_DETECTION_REASON_CODES,
+    30,
+    now,
   );
   const rateProtectionActivity = buildModuleProtectionActivity(
     model.storefrontScans,
     RATE_PROTECTION_REASON_CODES,
+    30,
+    now,
   );
   const moduleVerifiedActivity =
     protectionModal?.module === "rate"
@@ -4592,7 +4573,7 @@ function ProtectionPage({ model, actions }) {
             size={getProtectionModalSize(protectionModal?.type)}
             primaryAction={
               isEditableProtectionProfileModal(protectionModal) ? (
-                <s-button
+                <BotShieldPolarisButton
                   slot="primary-action"
                   variant="primary"
                   loading={saving}
@@ -4600,49 +4581,49 @@ function ProtectionPage({ model, actions }) {
                   onClick={save}
                 >
                   Save changes
-                </s-button>
+                </BotShieldPolarisButton>
               ) : protectionModal?.type === "status" &&
                 (protectionModal.module === "network" ||
                   protectionModal.module === BOT_PROTECTION_MODULE) ? (
-                <s-button
+                <BotShieldPolarisButton
                   slot="primary-action"
                   variant="primary"
                   onClick={openPolicyFromNetwork}
                 >
                   Review protection policy
-                </s-button>
+                </BotShieldPolarisButton>
               ) : protectionModal?.type === "status" &&
                 protectionModal.module === "page" &&
                 !storefrontConnected ? (
-                <s-button
+                <BotShieldPolarisButton
                   slot="primary-action"
                   variant="primary"
                   onClick={actions.openThemeEditor}
                 >
                   Connect storefront
-                </s-button>
+                </BotShieldPolarisButton>
               ) : null
             }
             secondaryActions={
               isEditableProtectionProfileModal(protectionModal) ? (
-                <s-button
+                <BotShieldPolarisButton
                   slot="secondary-actions"
                   disabled={saving}
                   onClick={requestClose}
                 >
                   Cancel
-                </s-button>
+                </BotShieldPolarisButton>
               ) : (
-                <s-button slot="secondary-actions" onClick={requestClose}>
+                <BotShieldPolarisButton slot="secondary-actions" onClick={requestClose}>
                   Close
-                </s-button>
+                </BotShieldPolarisButton>
               )
             }
           >
             {protectionModal ? (
-              <s-paragraph className="botshield-protection-modal-intro" color="subdued">
+              <BotShieldParagraph className="botshield-protection-modal-intro" color="subdued">
                 {protectionModal.text}
-              </s-paragraph>
+              </BotShieldParagraph>
             ) : null}
             {isEditableProtectionProfileModal(protectionModal) ? (
               <>
@@ -5100,15 +5081,15 @@ function ProtectionPage({ model, actions }) {
         actions={actions}
       />
       <HelpStrip model={model} actions={actions} />
-      <s-grid gridTemplateColumns="1fr" gap="large">
-        <s-stack gap="small">
-          <s-heading>Protection mode</s-heading>
-          <s-paragraph color="subdued">
+      <BotShieldGrid gridTemplateColumns="1fr" gap="large">
+        <BotShieldStack gap="small">
+          <BotShieldHeading>Protection mode</BotShieldHeading>
+          <BotShieldParagraph color="subdued">
             Start with a recommended profile, then fine-tune sensitivity if needed.
-          </s-paragraph>
-        </s-stack>
+          </BotShieldParagraph>
+        </BotShieldStack>
         <BotShieldCard>
-          <s-grid
+          <BotShieldGrid
             gridTemplateColumns="repeat(auto-fit, minmax(190px, 1fr))"
             gap="base"
           >
@@ -5159,20 +5140,20 @@ function ProtectionPage({ model, actions }) {
                 }))
               }
             />
-          </s-grid>
+          </BotShieldGrid>
         </BotShieldCard>
 
-        <s-grid
+        <BotShieldGrid
           gridTemplateColumns="minmax(220px, 1fr) minmax(0, 2fr)"
           gap="large"
         >
-          <s-stack gap="small">
-            <s-heading>Automated response</s-heading>
-            <s-paragraph color="subdued">
+          <BotShieldStack gap="small">
+            <BotShieldHeading>Automated response</BotShieldHeading>
+            <BotShieldParagraph color="subdued">
               Temporarily pause blocking while reviewing a possible false
               positive. Event collection continues.
-            </s-paragraph>
-          </s-stack>
+            </BotShieldParagraph>
+          </BotShieldStack>
           <BotShieldCard
             title={
               model.protectionPaused
@@ -5213,16 +5194,16 @@ function ProtectionPage({ model, actions }) {
               )
             }
           />
-        </s-grid>
+        </BotShieldGrid>
 
-        <s-stack gap="small">
-          <s-heading>Active protections</s-heading>
-          <s-paragraph color="subdued">
+        <BotShieldStack gap="small">
+          <BotShieldHeading>Active protections</BotShieldHeading>
+          <BotShieldParagraph color="subdued">
             Storefront signals BotShield uses today to evaluate visitor risk.
-          </s-paragraph>
-        </s-stack>
+          </BotShieldParagraph>
+        </BotShieldStack>
         <BotShieldCard>
-          <s-grid
+          <BotShieldGrid
             gridTemplateColumns="repeat(auto-fit, minmax(220px, 1fr))"
             gap="base"
           >
@@ -5288,24 +5269,24 @@ function ProtectionPage({ model, actions }) {
               count="Configured"
               description="Stopped visitors are redirected to BotShield's app-proxy blocked page."
             />
-          </s-grid>
-          <s-box paddingBlockStart="base">
+          </BotShieldGrid>
+          <BotShieldBox paddingBlockStart="base">
             <BotShieldInlineHelp>
               BotShield protects JavaScript-enabled storefront visits through the
               theme app embed and Shopify app proxy.
             </BotShieldInlineHelp>
-          </s-box>
+          </BotShieldBox>
         </BotShieldCard>
 
-        <s-stack gap="small">
-          <s-heading>Detection sensitivity</s-heading>
-          <s-paragraph color="subdued">
+        <BotShieldStack gap="small">
+          <BotShieldHeading>Detection sensitivity</BotShieldHeading>
+          <BotShieldParagraph color="subdued">
             Fine-tune how much suspicious behavior is required before BotShield
             responds.
-          </s-paragraph>
-        </s-stack>
+          </BotShieldParagraph>
+        </BotShieldStack>
         <BotShieldCard>
-          <s-stack gap="large">
+          <BotShieldStack gap="large">
             <BotShieldSelect
               label="Sensitivity"
               value={draft.blockLevel}
@@ -5344,40 +5325,40 @@ function ProtectionPage({ model, actions }) {
               false-positive risk. High responds to more suspicious automation.
               Strict Mode applies the strongest profile.
             </BotShieldInlineHelp>
-          </s-stack>
+          </BotShieldStack>
         </BotShieldCard>
 
-        <s-stack gap="small">
-          <s-heading>Network / Proxy Protection</s-heading>
-          <s-paragraph color="subdued">
+        <BotShieldStack gap="small">
+          <BotShieldHeading>Network / Proxy Protection</BotShieldHeading>
+          <BotShieldParagraph color="subdued">
             Use enriched network data to explain suspicious storefront activity.
-          </s-paragraph>
-        </s-stack>
+          </BotShieldParagraph>
+        </BotShieldStack>
         <BotShieldCard
           badge={<BotShieldStatusBadge status="active" label="Enabled" />}
         >
-          <s-stack gap="base">
-            <s-text>
+          <BotShieldStack gap="base">
+            <BotShieldText>
               VPN, proxy, datacenter, hosting provider, and ASN signals
               contribute to real storefront risk scores.
-            </s-text>
+            </BotShieldText>
             <BotShieldInlineHelp>
               Network / Proxy Protection signals are approximate and do not identify a
               visitor’s exact physical location.
             </BotShieldInlineHelp>
-          </s-stack>
+          </BotShieldStack>
         </BotShieldCard>
 
-        <s-stack gap="small">
-          <s-heading>Diagnostics</s-heading>
-          <s-paragraph color="subdued">
+        <BotShieldStack gap="small">
+          <BotShieldHeading>Diagnostics</BotShieldHeading>
+          <BotShieldParagraph color="subdued">
             Test the decision engine without adding data to real storefront
             protection metrics.
-          </s-paragraph>
-        </s-stack>
+          </BotShieldParagraph>
+        </BotShieldStack>
         <BotShieldCard>
-          <s-stack gap="base">
-            <s-stack direction="inline" gap="small">
+          <BotShieldStack gap="base">
+            <BotShieldStack direction="inline" gap="small">
               <BotShieldAsyncButton
                 action={actions.runDiagnostic}
                 successMessage="Diagnostic completed"
@@ -5391,13 +5372,13 @@ function ProtectionPage({ model, actions }) {
               >
                 Record simulation
               </BotShieldAsyncButton>
-            </s-stack>
-            <s-text color="subdued">
+            </BotShieldStack>
+            <BotShieldText color="subdued">
               Latest result: {model.result} · Last run: {model.lastScanTime}
-            </s-text>
-          </s-stack>
+            </BotShieldText>
+          </BotShieldStack>
         </BotShieldCard>
-      </s-grid>
+      </BotShieldGrid>
     </Screen>
   );
 }
@@ -5478,13 +5459,13 @@ function IpList({
     : rows;
 
   return (
-    <s-stack className="botshield-ip-list" gap="large">
-      <s-stack gap="small">
-        <s-heading>{title}</s-heading>
-        <s-paragraph color="subdued">{subtitle}</s-paragraph>
-      </s-stack>
-      <s-grid gridTemplateColumns="minmax(0, 1fr) auto" gap="base">
-        <s-box>
+    <BotShieldStack className="botshield-ip-list" gap="large">
+      <BotShieldStack gap="small">
+        <BotShieldHeading>{title}</BotShieldHeading>
+        <BotShieldParagraph color="subdued">{subtitle}</BotShieldParagraph>
+      </BotShieldStack>
+      <BotShieldGrid gridTemplateColumns="minmax(0, 1fr) auto" gap="base">
+        <BotShieldBox>
           <BotShieldTextField
             label="IP address"
             value={value}
@@ -5498,8 +5479,8 @@ function IpList({
                   : ""
             }
           />
-        </s-box>
-        <s-stack alignItems="end" justifyContent="end">
+        </BotShieldBox>
+        <BotShieldStack alignItems="end" justifyContent="end">
           <BotShieldAsyncButton
             action={onAdd}
             successMessage={`${title} updated`}
@@ -5508,10 +5489,10 @@ function IpList({
           >
             {addLabel}
           </BotShieldAsyncButton>
-        </s-stack>
-      </s-grid>
+        </BotShieldStack>
+      </BotShieldGrid>
       {rows.length ? (
-        <s-stack>
+        <BotShieldStack>
           <BotShieldTextField
             label={`Search ${trusted ? "trusted visitors" : "blocked visitors"}`}
             value={filterValue}
@@ -5545,7 +5526,7 @@ function IpList({
               <span>Try a different IP address, source, or reason.</span>
             </div>
           ) : null}
-        </s-stack>
+        </BotShieldStack>
       ) : (
         <BotShieldEmptyState
           title={emptyTitle}
@@ -5556,7 +5537,7 @@ function IpList({
         Changes to the {listLabel} are saved immediately and apply to future
         storefront decisions.
       </BotShieldInlineHelp>
-    </s-stack>
+    </BotShieldStack>
   );
 }
 
@@ -5569,7 +5550,7 @@ function getSimulationCount(model) {
 function formatSimulationLabel(model) {
   const count = getSimulationCount(model);
   if (count <= 0) return "No simulated activity";
-  return `${count.toLocaleString()} simulated event${count === 1 ? "" : "s"}`;
+  return `${formatHydrationStableNumber(count)} simulated event${count === 1 ? "" : "s"}`;
 }
 
 function formatRecordedActivityLabel(model) {
@@ -5577,7 +5558,7 @@ function formatRecordedActivityLabel(model) {
     ? model.storefrontScans.length
     : 0;
   if (count <= 0) return "No storefront events recorded";
-  return `${count.toLocaleString()} storefront event${count === 1 ? "" : "s"} recorded`;
+  return `${formatHydrationStableNumber(count)} storefront event${count === 1 ? "" : "s"} recorded`;
 }
 
 const BOTSHIELD_PUBLIC_PLAN_FEATURES = [
@@ -5591,14 +5572,15 @@ const BOTSHIELD_PUBLIC_PLAN_FEATURES = [
   "Storefront analytics",
 ];
 
-function getTrialDaysRemaining(trialEndsAt) {
+function getTrialDaysRemaining(trialEndsAt, nowMs = 0) {
   if (!trialEndsAt) return null;
   const end = new Date(trialEndsAt).getTime();
   if (Number.isNaN(end)) return null;
-  return Math.max(0, Math.ceil((end - Date.now()) / (24 * 60 * 60 * 1000)));
+  const anchor = nowMs || 0;
+  return Math.max(0, Math.ceil((end - anchor) / (24 * 60 * 60 * 1000)));
 }
 
-function getSettingsBillingView(billingStatus = {}) {
+function getSettingsBillingView(billingStatus = {}, renderAnchorMs = 0) {
   const configuredPlanName =
     String(billingStatus.planName || "").trim() || "BotShield Basic";
   const monthlyPrice = Number.isFinite(Number(billingStatus.monthlyPrice))
@@ -5610,7 +5592,10 @@ function getSettingsBillingView(billingStatus = {}) {
   const subscription = billingStatus.subscription || null;
   const active = Boolean(billingStatus.active);
   const statusModel = getBillingStatusModel(billingStatus);
-  const trialRemaining = getTrialDaysRemaining(subscription?.trialEndsAt);
+  const trialRemaining = getTrialDaysRemaining(
+    subscription?.trialEndsAt,
+    renderAnchorMs,
+  );
   const isTestPlan = Boolean(
     subscription?.test || subscription?.isTest || billingStatus.test,
   );
@@ -5742,7 +5727,6 @@ function getSettingsOperationalStrip(model) {
 }
 
 function SettingsHubIcon({ name }) {
-  const mounted = useBotShieldClientMount();
   const icons = {
     general: "gauge",
     billing: "page",
@@ -5766,12 +5750,9 @@ function SettingsHubIcon({ name }) {
     connection: "globe-lines",
     email: "connect",
   };
-  if (!mounted) {
-    return <span aria-hidden="true" className="botshield-v2-icon" />;
-  }
   return (
     <span className="botshield-v2-icon" aria-hidden="true">
-      <s-icon type={icons[name] || "gauge"} size="small" color="subdued" />
+      <BotShieldIcon type={icons[name] || "gauge"} size="small" color="subdued" />
     </span>
   );
 }
@@ -6166,7 +6147,7 @@ function SettingsPage({ model, actions }) {
   const lastReportDetail = model.lastWeeklyReportStatus
     ? formatDeliveryDetail(model.lastWeeklyReportStatus, model.lastWeeklyReportAt)
     : "No weekly report delivery recorded yet";
-  const billing = getSettingsBillingView(model.billingStatus || {});
+  const billing = getSettingsBillingView(model.billingStatus || {}, model.renderAnchorMs);
   const alertEmailValid = EMAIL_PATTERN.test(draft.alertEmail);
   const operationalStrip = getSettingsOperationalStrip(model);
   const simulationLabel = formatSimulationLabel(model);
@@ -6396,7 +6377,7 @@ function SettingsPage({ model, actions }) {
                           aria-hidden="true"
                           className="botshield-settings-hub-plan-check"
                         >
-                          <s-icon type="check" size="small" />
+                          <BotShieldIcon type="check" size="small" />
                         </span>
                         <span>{feature}</span>
                       </li>
@@ -6855,7 +6836,7 @@ function SettingsPage({ model, actions }) {
               model.protectionStatus?.lastStorefrontDecisionAt ? (
                 <>
                   Last decision{" "}
-                  <BotShieldHydrationSafeRelativeTime
+                  <BotShieldHydrationRelativeTime
                     value={model.protectionStatus.lastStorefrontDecisionAt}
                   />
                 </>
@@ -7086,17 +7067,17 @@ function SettingsPage({ model, actions }) {
             }
           }}
         >
-          <s-paragraph>
+          <BotShieldParagraph>
             This permanently erases BotShield data for this store, including recorded
             security activity, analytics history, blocked and trusted visitors,
             simulation data, and custom BotShield settings. BotShield will return to
             its default state.
-          </s-paragraph>
-          <s-paragraph>
+          </BotShieldParagraph>
+          <BotShieldParagraph>
             Your Shopify store data, Shopify orders and customers, app installation, and
             billing will not be deleted.
-          </s-paragraph>
-          <s-paragraph>This action cannot be undone.</s-paragraph>
+          </BotShieldParagraph>
+          <BotShieldParagraph>This action cannot be undone.</BotShieldParagraph>
         </BotShieldTypedConfirmationModal>
       </section>
     );

@@ -25,10 +25,10 @@ const fraudServer = await readFile(
 );
 
 test("Fraud Orders uses Shopify-native resource queue components", () => {
-  assert.match(page, /<s-table/);
-  assert.match(page, /<s-table-header-row>/);
-  assert.match(page, /<s-table-body>/);
-  assert.match(page, /<s-search-field/);
+  assert.match(page, /BotShieldTable/);
+  assert.match(page, /BotShieldTableHeaderRow/);
+  assert.match(page, /BotShieldTableBody/);
+  assert.match(page, /BotShieldSearchField/);
   assert.match(page, /botshield-fraud-filter-group/);
   assert.match(page, /slot="secondary-actions"[\s\S]*Refresh/);
   assert.doesNotMatch(page, /FraudOrderInboxTable/);
