@@ -127,6 +127,8 @@ test("Settings destructive confirmation uses native modal command pattern", () =
   assert.match(settingsSource, /commandFor="botshield-clear-simulation-modal"/);
   assert.match(settingsSource, /id="botshield-clear-simulation-modal"/);
   assert.match(settingsSource, /CLEAR_SIMULATION_DATA_DESCRIPTION/);
+  assert.match(settingsSource, /RESET_BOTSHIELD_DATA_DESCRIPTION/);
+  assert.match(settingsSource, /commandFor="botshield-reset-data-modal"/);
   assert.match(
     settingsSource,
     /onDiscard=\{\(\) =>\s*setDraft\(\{/,

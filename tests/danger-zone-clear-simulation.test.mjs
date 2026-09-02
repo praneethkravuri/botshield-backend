@@ -7,7 +7,7 @@ import {
 } from "../app/lib/clear-test-data.server.js";
 
 const CLEAR_SIMULATION_COPY =
-  "Permanently delete all simulation and test activity from BotShield. Live storefront activity, protection settings, blocklists, and trusted visitors will remain unchanged.";
+  "Delete simulation and test activity from BotShield. Live storefront activity and your protection settings, blocked visitors, and trusted visitors are not affected.";
 
 function createMockDb(initialEvents = []) {
   const botEvents = [...initialEvents];
@@ -136,7 +136,7 @@ test("Danger zone clear simulation requires confirmation before POST", async () 
     dangerSection,
     /Clear simulation data[\s\S]{0,200}safeFetchJson\("\/api\/clear-test-data"/,
   );
-  assert.match(adminSource, /heading="Clear simulation data\?"/);
+  assert.match(adminSource, /heading=\{CLEAR_SIMULATION_CONFIRMATION_HEADING\}/);
   assert.match(adminSource, /confirmLabel="Clear simulation data"/);
   assert.match(designSource, /await onConfirm\?\.\(\)/);
   assert.match(designSource, /Cancel/);

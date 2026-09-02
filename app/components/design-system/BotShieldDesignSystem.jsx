@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
@@ -5575,6 +5576,69 @@ export function BotShieldConfirmationModal({
         variant="primary"
         tone={tone}
         loading={loading}
+        onClick={handleConfirm}
+      >
+        {confirmLabel}
+      </s-button>
+      <s-button slot="secondary-actions" onClick={handleDismiss}>
+        Cancel
+      </s-button>
+    </s-modal>
+  );
+}
+
+export function BotShieldTypedConfirmationModal({
+  id,
+  heading,
+  children,
+  confirmLabel,
+  confirmationText = "RESET",
+  confirmationPrompt = "To confirm, type RESET below.",
+  onConfirm,
+  onDismiss,
+  loading,
+  size = "small-100",
+  tone = "critical",
+}) {
+  const [confirmationInput, setConfirmationInput] = useState("");
+  const confirmed = confirmationInput.trim() === confirmationText;
+
+  const resetConfirmationInput = () => {
+    setConfirmationInput("");
+  };
+
+  const handleConfirm = async () => {
+    if (!confirmed || loading) return;
+    await onConfirm?.();
+    resetConfirmationInput();
+    hideBotShieldModal(id);
+  };
+
+  const handleDismiss = () => {
+    resetConfirmationInput();
+    onDismiss?.();
+    hideBotShieldModal(id);
+  };
+
+  return (
+    <s-modal id={id} heading={heading} size={size}>
+      <s-box padding="base">
+        <s-stack gap="base">
+          {children}
+          <BotShieldTextField
+            autocomplete="off"
+            label={confirmationPrompt}
+            onChange={setConfirmationInput}
+            value={confirmationInput}
+          />
+        </s-stack>
+      </s-box>
+      <s-button
+        slot="primary-action"
+        variant="primary"
+        tone={tone}
+        loading={loading}
+        disabled={!confirmed || loading}
         onClick={handleConfirm}
       >
         {confirmLabel}

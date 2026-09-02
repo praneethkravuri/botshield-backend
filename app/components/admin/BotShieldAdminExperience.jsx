@@ -16,6 +16,7 @@ import {
   BotShieldInlineHelp,
   BotShieldLoadingState,
   BotShieldNativeModal,
+  BotShieldTypedConfirmationModal,
   BOTSHIELD_ANALYTICS_EVENT_MODAL_ID,
   BOTSHIELD_FRAUD_REVIEW_MODAL_ID,
   BOTSHIELD_FRAUD_SETUP_MODAL_ID,
@@ -45,7 +46,13 @@ import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
 
 const CLEAR_SIMULATION_DATA_DESCRIPTION =
-  "Permanently delete all simulation and test activity from BotShield. Live storefront activity, protection settings, blocklists, and trusted visitors will remain unchanged.";
+  "Delete simulation and test activity from BotShield. Live storefront activity and your protection settings, blocked visitors, and trusted visitors are not affected.";
+const CLEAR_SIMULATION_CONFIRMATION_HEADING =
+  "Delete all simulation and test activity from this store?";
+const CLEAR_SIMULATION_CONFIRMATION_BODY =
+  "Live storefront activity and configuration will remain unchanged.";
+const RESET_BOTSHIELD_DATA_DESCRIPTION =
+  "Permanently erase this store's BotShield activity, security history, visitor lists, and custom protection settings, then restore BotShield to its default state. Your Shopify store data, app installation, and billing are not deleted.";
 const REASON_COPY = {
   RATE_PATTERN: "Repeated visitor activity detected",
   SUSPICIOUS_USER_AGENT: "Automated browser behavior detected",
@@ -5993,6 +6000,8 @@ function readSettingsHubSection() {
 function SettingsPage({ model, actions }) {
   const toast = useBotShieldToast();
   const [clearingSimulation, setClearingSimulation] = useState(false);
+  const [resettingBotShield, setResettingBotShield] = useState(false);
+  const [resetError, setResetError] = useState("");
   const [activeSection, setActiveSection] = useState(readSettingsHubSection);
   const [draft, setDraft] = useState({
     alertEmail: model.alertEmail,
@@ -6938,9 +6947,25 @@ function SettingsPage({ model, actions }) {
             Clear simulation data
           </BotShieldActionButton>
         </div>
+        <div className="botshield-settings-hub-danger">
+          <div className="botshield-settings-hub-danger-icon">
+            <SettingsHubIcon name="warning" />
+          </div>
+          <div className="botshield-settings-hub-danger-copy">
+            <h3>Reset BotShield data</h3>
+            <p>{RESET_BOTSHIELD_DATA_DESCRIPTION}</p>
+          </div>
+          <BotShieldActionButton
+            command="--show"
+            commandFor="botshield-reset-data-modal"
+            tone="critical"
+          >
+            Reset BotShield data
+          </BotShieldActionButton>
+        </div>
         <BotShieldConfirmationModal
           confirmLabel="Clear simulation data"
-          heading="Clear simulation data?"
+          heading={CLEAR_SIMULATION_CONFIRMATION_HEADING}
           id="botshield-clear-simulation-modal"
           loading={clearingSimulation}
           onConfirm={async () => {
@@ -6964,8 +6989,49 @@ function SettingsPage({ model, actions }) {
             }
           }}
         >
-          {CLEAR_SIMULATION_DATA_DESCRIPTION}
+          {CLEAR_SIMULATION_CONFIRMATION_BODY}
         </BotShieldConfirmationModal>
+        <BotShieldTypedConfirmationModal
+          confirmLabel="Reset BotShield data"
+          confirmationPrompt="To confirm, type RESET below."
+          confirmationText="RESET"
+          heading="Reset all BotShield data?"
+          id="botshield-reset-data-modal"
+          loading={resettingBotShield}
+          onConfirm={async () => {
+            setResettingBotShield(true);
+            setResetError("");
+            try {
+              await safeFetchJson("/api/reset-shop-data", { method: "POST" });
+              await actions.refresh();
+              setSimulationResults(null);
+              setDiagnosticResults(null);
+              toast.success("BotShield data reset");
+            } catch (error) {
+              const message = toMerchantErrorMessage(
+                error,
+                "Couldn't reset BotShield data",
+              );
+              setResetError(message);
+              toast.error(message);
+              throw error;
+            } finally {
+              setResettingBotShield(false);
+            }
+          }}
+        >
+          <s-paragraph>
+            This permanently erases BotShield data for this store, including recorded
+            security activity, analytics history, blocked and trusted visitors,
+            simulation data, and custom BotShield settings. BotShield will return to
+            its default state.
+          </s-paragraph>
+          <s-paragraph>
+            Your Shopify store data, Shopify orders and customers, app installation, and
+            billing will not be deleted.
+          </s-paragraph>
+          <s-paragraph>This action cannot be undone.</s-paragraph>
+        </BotShieldTypedConfirmationModal>
       </section>
     );
   };
@@ -7021,6 +7087,11 @@ function SettingsPage({ model, actions }) {
             {billingRefreshError && activeSection === "billing" ? (
               <BotShieldBanner tone="critical" title="Billing status unavailable">
                 {billingRefreshError}
+              </BotShieldBanner>
+            ) : null}
+            {resetError && activeSection === "danger" ? (
+              <BotShieldBanner tone="critical" title="Couldn't reset BotShield data">
+                {resetError}
               </BotShieldBanner>
             ) : null}
             {diagnosticsError && activeSection === "danger" ? (
