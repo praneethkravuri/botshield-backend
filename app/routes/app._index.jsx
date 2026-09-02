@@ -604,7 +604,7 @@ export default function Index() {
     }
   };
 
-  const loadSettings = async () => {
+  const loadSettings = async ({ throwOnError = false } = {}) => {
     try {
       const res = await fetch("/api/settings");
       if (!res.ok) throw new Error("Settings could not be loaded.");
@@ -643,6 +643,7 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to load settings", err);
       recordBackendError("Settings", err);
+      if (throwOnError) throw err;
     }
   };
 
@@ -697,7 +698,7 @@ export default function Index() {
     }
   };
 
-  const loadBillingStatus = async () => {
+  const loadBillingStatus = async ({ throwOnError = false } = {}) => {
     try {
       const response = await fetch("/api/billing-status");
       if (!response.ok) throw new Error("Billing status could not be loaded.");
@@ -706,10 +707,11 @@ export default function Index() {
     } catch (error) {
       console.error("Failed to load billing status", error);
       recordBackendError("Billing", error);
+      if (throwOnError) throw error;
     }
   };
 
-  const loadBlocklist = async () => {
+  const loadBlocklist = async ({ throwOnError = false } = {}) => {
     try {
       const res = await fetch("/api/blocklist");
       if (!res.ok) throw new Error("Blocklist could not be loaded.");
@@ -730,10 +732,11 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to load blocklist", err);
       recordBackendError("Blocklist", err);
+      if (throwOnError) throw err;
     }
   };
 
-  const loadWhitelist = async () => {
+  const loadWhitelist = async ({ throwOnError = false } = {}) => {
     try {
       const res = await fetch("/api/whitelist");
       if (!res.ok) throw new Error("Trusted visitors could not be loaded.");
@@ -742,10 +745,14 @@ export default function Index() {
     } catch (err) {
       console.error("Failed to load whitelist", err);
       recordBackendError("Trusted visitors", err);
+      if (throwOnError) throw err;
     }
   };
 
-  const loadIncidents = async (filters = incidentFilters) => {
+  const loadIncidents = async (
+    filters = incidentFilters,
+    { throwOnError = false } = {},
+  ) => {
     const requestId = ++incidentRequestId.current;
     setIncidentLoading(true);
     try {
@@ -778,12 +785,13 @@ export default function Index() {
       if (requestId !== incidentRequestId.current) return;
       console.error("Failed to load incidents", error);
       recordBackendError("Incident timeline", error);
+      if (throwOnError) throw error;
     } finally {
       if (requestId === incidentRequestId.current) setIncidentLoading(false);
     }
   };
 
-  const loadFinancialImpact = async () => {
+  const loadFinancialImpact = async ({ throwOnError = false } = {}) => {
     try {
       const response = await fetch("/api/financial-impact");
       const data = await response.json().catch(() => ({}));
@@ -801,6 +809,7 @@ export default function Index() {
     } catch (error) {
       console.error("Failed to load financial impact", error);
       recordBackendError("Financial impact", error);
+      if (throwOnError) throw error;
     }
   };
 
@@ -865,7 +874,7 @@ export default function Index() {
     );
   };
 
-  const loadFraudOrderAccess = async () => {
+  const loadFraudOrderAccess = async ({ throwOnError = false } = {}) => {
     try {
       const response = await fetch("/api/fraud-order-access", { cache: "no-store" });
       if (!response.ok) {
@@ -876,6 +885,7 @@ export default function Index() {
     } catch (error) {
       setFraudOrderAccessConnected(false);
       recordBackendError("Order access", error);
+      if (throwOnError) throw error;
     }
   };
 
@@ -919,32 +929,36 @@ export default function Index() {
     await loadFraudOrders();
   };
 
-  const loadBackendState = async () => {
+  const loadBackendState = async ({ throwOnError = false } = {}) => {
     await Promise.all([
-      loadScans(),
-      loadSettings(),
-      loadBlocklist(),
-      loadWhitelist(),
-      loadProtectionStatus(),
-      loadThemeExtensionStatus(),
-      loadIncidents(),
-      loadBillingStatus(),
-      loadFinancialImpact(),
-      loadOverviewThreatActivity(),
-      loadFraudOrderAccess(),
+      loadScans({ throwOnError }),
+      loadSettings({ throwOnError }),
+      loadBlocklist({ throwOnError }),
+      loadWhitelist({ throwOnError }),
+      loadProtectionStatus({ throwOnError }),
+      loadThemeExtensionStatus({ throwOnError }),
+      loadIncidents(incidentFilters, { throwOnError }),
+      loadBillingStatus({ throwOnError }),
+      loadFinancialImpact({ throwOnError }),
+      loadOverviewThreatActivity({ throwOnError }),
+      loadFraudOrderAccess({ throwOnError }),
     ]);
   };
 
-  const refreshBackendState = async () => {
+  const refreshBackendState = async ({ throwOnError = false } = {}) => {
     setSyncing(true);
     setBackendErrors([]);
     try {
-      await loadBackendState();
+      await loadBackendState({ throwOnError });
       setLastSyncedAt(new Date().toLocaleTimeString());
+    } catch (error) {
+      if (throwOnError) throw error;
     } finally {
       setSyncing(false);
     }
   };
+
+  const refreshApplicationStatus = () => refreshBackendState({ throwOnError: true });
 
   const refreshAnalytics = async () => {
     if (analyticsRefreshInFlight.current) return;
@@ -2757,6 +2771,7 @@ export default function Index() {
     },
     clearProtectionEntryIntent: () => setProtectionEntryIntent(null),
     refresh: refreshBackendState,
+    refreshApplicationStatus,
     refreshFraudOrderAccess: refreshFraudOrderConnection,
     refreshFraudOrders: loadFraudOrders,
     refreshAnalytics,

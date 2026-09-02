@@ -6897,9 +6897,13 @@ function SettingsPage({ model, actions }) {
           ) : null}
           <SettingsHubRow
             control={
-              <BotShieldActionButton loading={model.syncing} onClick={actions.refresh}>
+              <BotShieldAsyncButton
+                action={actions.refreshApplicationStatus}
+                errorMessage="Couldn't refresh application status. Try again."
+                successMessage="Application status refreshed"
+              >
                 Refresh status
-              </BotShieldActionButton>
+              </BotShieldAsyncButton>
             }
             description="Reload settings, protection status, and recent activity."
             title="Refresh application data"
