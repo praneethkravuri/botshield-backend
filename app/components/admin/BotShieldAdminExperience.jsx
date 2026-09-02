@@ -5694,7 +5694,11 @@ function SettingsHubIcon({ name }) {
     lock: "shield-check-mark",
     warning: "shield-pending",
     diagnostic: "gauge",
-    privacyRow: "shield-check-mark",
+    privacyRetention: "clock",
+    privacyDataUse: "database",
+    privacyPolicy: "shield-check-mark",
+    privacyTerms: "page",
+    privacyDeletion: "delete",
     connection: "globe-lines",
     email: "connect",
   };
@@ -6548,7 +6552,7 @@ function SettingsPage({ model, actions }) {
               </SettingsHubFixedAction>
             }
             description="Storefront security events are removed automatically after 30 days while BotShield remains installed."
-            icon="privacyRow"
+            icon="privacyRetention"
             title="Data retention"
             variant="action"
           />
@@ -6559,7 +6563,7 @@ function SettingsPage({ model, actions }) {
               </SettingsHubFixedAction>
             }
             description="Fraud Orders uses supported Shopify order and order-risk fields only. Customer contact and address fields are not requested."
-            icon="privacyRow"
+            icon="privacyDataUse"
             title="Shopify data use"
             variant="action"
           />
@@ -6570,7 +6574,7 @@ function SettingsPage({ model, actions }) {
               </SettingsHubFixedAction>
             }
             description="What BotShield processes, why it is used, and how merchant and storefront data is protected."
-            icon="privacyRow"
+            icon="privacyPolicy"
             title="Privacy policy"
             variant="action"
           />
@@ -6581,7 +6585,7 @@ function SettingsPage({ model, actions }) {
               </SettingsHubFixedAction>
             }
             description="Terms governing installation, use, billing, and merchant responsibilities."
-            icon="privacyRow"
+            icon="privacyTerms"
             title="Terms of service"
             variant="action"
           />
@@ -6594,7 +6598,7 @@ function SettingsPage({ model, actions }) {
               </SettingsHubFixedAction>
             }
             description="Uninstall removes app sessions immediately. Remaining shop data is deleted when Shopify sends shop redaction."
-            icon="privacyRow"
+            icon="privacyDeletion"
             title="Data deletion / uninstall"
             variant="action"
           />
