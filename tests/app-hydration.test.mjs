@@ -61,13 +61,18 @@ test("app loader exposes a stable SSR render anchor timestamp", () => {
   assert.match(appIndexSource, /renderAnchorMs:\s*appRouteData\.renderAnchorMs/);
 });
 
-test("shared Polaris primitives render Shopify web components during SSR", () => {
+test("shared Polaris wrappers use HTML layout hosts and leaf web components", () => {
   assert.doesNotMatch(polarisSource, /useBotShieldClientMount/);
   assert.doesNotMatch(polarisSource, /botshield-polaris-fallback-stack/);
-  assert.match(polarisSource, /createPolarisComponent\("s-stack"\)/);
-  assert.match(polarisSource, /BotShieldPolarisPage/);
+  assert.match(polarisSource, /createLayoutHost\("stack"\)/);
+  assert.match(polarisSource, /botshield-native-page/);
   assert.match(polarisSource, /BotShieldSearchField/);
-  assert.match(polarisSource, /BotShieldTable/);
+  assert.match(polarisSource, /createPolarisComponent\("s-button"\)/);
+});
+
+test("embedded app route defers polaris and uses BotShield provider", () => {
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider/);
+  assert.doesNotMatch(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
 });
 
 test("hydration-safe relative time uses a stable placeholder before mount", () => {

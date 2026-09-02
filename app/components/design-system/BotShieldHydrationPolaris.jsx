@@ -1,31 +1,112 @@
 /* eslint-disable react/prop-types */
 import { createElement } from "react";
 
+const POLARIS_ONLY_PROPS = new Set([
+  "gap",
+  "direction",
+  "alignItems",
+  "justifyContent",
+  "gridTemplateColumns",
+  "background",
+  "border",
+  "borderColor",
+  "borderRadius",
+  "padding",
+  "paddingBlock",
+  "paddingBlockStart",
+  "paddingBlockEnd",
+  "paddingInline",
+  "minBlockSize",
+  "minInlineSize",
+  "inlineSize",
+  "blockSize",
+  "borderBlockEnd",
+  "tone",
+  "type",
+  "size",
+  "color",
+  "loading",
+  "variant",
+  "icon",
+  "accessibilityLabel",
+  "slot",
+  "commandFor",
+  "command",
+  "heading",
+  "details",
+  "checked",
+  "autocomplete",
+  "onInput",
+  "label",
+  "error",
+  "placeholder",
+  "disabled",
+  "href",
+  "target",
+  "onChange",
+  "onClick",
+  "onAfterhide",
+  "value",
+  "role",
+]);
+
+function stripPolarisProps(props) {
+  const next = { ...props };
+  for (const key of POLARIS_ONLY_PROPS) {
+    delete next[key];
+  }
+  return next;
+}
+
+function joinClassNames(...values) {
+  return values.filter(Boolean).join(" ") || undefined;
+}
+
 function createPolarisComponent(tag) {
   return function BotShieldPolarisComponent({ children, className, ...props }) {
     return createElement(tag, { ...props, className }, children);
   };
 }
 
-export const BotShieldStack = createPolarisComponent("s-stack");
+/**
+ * Layout hosts render as plain HTML so React keeps ownership of mixed child trees.
+ * polaris.js mutates s-stack/s-box/s-grid internals when it upgrades custom
+ * elements, which breaks hydration and later reconciliation.
+ */
+function createLayoutHost(layoutKind) {
+  return function BotShieldLayoutHost({ children, className, ...props }) {
+    return createElement(
+      "div",
+      {
+        ...stripPolarisProps(props),
+        className: joinClassNames(`botshield-layout-${layoutKind}`, className),
+        "data-botshield-layout": layoutKind,
+      },
+      children,
+    );
+  };
+}
+
+export const BotShieldStack = createLayoutHost("stack");
+export const BotShieldBox = createLayoutHost("box");
+export const BotShieldGrid = createLayoutHost("grid");
+export const BotShieldButtonGroup = createLayoutHost("button-group");
+export const BotShieldTable = createLayoutHost("table");
+export const BotShieldTableHeaderRow = createLayoutHost("table-header-row");
+export const BotShieldTableHeader = createLayoutHost("table-header");
+export const BotShieldTableBody = createLayoutHost("table-body");
+export const BotShieldTableRow = createLayoutHost("table-row");
+export const BotShieldTableCell = createLayoutHost("table-cell");
+export const BotShieldBannerShell = createLayoutHost("banner");
+
 export const BotShieldText = createPolarisComponent("s-text");
 export const BotShieldParagraph = createPolarisComponent("s-paragraph");
 export const BotShieldHeading = createPolarisComponent("s-heading");
-export const BotShieldGrid = createPolarisComponent("s-grid");
-export const BotShieldBox = createPolarisComponent("s-box");
 export const BotShieldIcon = createPolarisComponent("s-icon");
 export const BotShieldSpinner = createPolarisComponent("s-spinner");
 export const BotShieldBadge = createPolarisComponent("s-badge");
-export const BotShieldBannerShell = createPolarisComponent("s-banner");
 export const BotShieldModalShell = createPolarisComponent("s-modal");
-export const BotShieldButtonGroup = createPolarisComponent("s-button-group");
 export const BotShieldPolarisButton = createPolarisComponent("s-button");
-export const BotShieldTable = createPolarisComponent("s-table");
-export const BotShieldTableHeaderRow = createPolarisComponent("s-table-header-row");
-export const BotShieldTableHeader = createPolarisComponent("s-table-header");
-export const BotShieldTableBody = createPolarisComponent("s-table-body");
-export const BotShieldTableRow = createPolarisComponent("s-table-row");
-export const BotShieldTableCell = createPolarisComponent("s-table-cell");
 export const BotShieldDivider = createPolarisComponent("s-divider");
 
 export function BotShieldSearchField({
@@ -117,10 +198,16 @@ export function BotShieldSwitch({
   );
 }
 
-export function BotShieldHydrationMount({ children }) {
-  return children;
-}
-
 export function BotShieldPolarisPage({ heading, children, ...props }) {
-  return createElement("s-page", { heading, ...props }, children);
+  return createElement(
+    "div",
+    {
+      ...stripPolarisProps(props),
+      className: joinClassNames("botshield-native-page", props.className),
+      "data-page-heading": heading || undefined,
+      role: "region",
+      "aria-label": heading || "BotShield",
+    },
+    children,
+  );
 }

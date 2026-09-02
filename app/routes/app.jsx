@@ -1,7 +1,6 @@
-import { Outlet, useLoaderData, useRouteError, useNavigate } from "react-router";
-import { useEffect } from "react";
+import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import BotShieldEmbeddedAppProvider from "../components/BotShieldEmbeddedAppProvider";
 import BotShieldAppNavigation from "../components/BotShieldAppNavigation";
 import {
   resolveInitialAdminPage,
@@ -37,27 +36,12 @@ export const loader = async ({ request }) => {
 
 export default function App() {
   const { apiKey } = useLoaderData();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleNavigate = (event) => {
-      const target = event.target;
-      const href =
-        target instanceof HTMLElement ? target.getAttribute("href") : null;
-      if (href) {
-        navigate(href);
-      }
-    };
-
-    document.addEventListener("shopify:navigate", handleNavigate);
-    return () => document.removeEventListener("shopify:navigate", handleNavigate);
-  }, [navigate]);
 
   return (
-    <AppProvider embedded apiKey={apiKey}>
+    <BotShieldEmbeddedAppProvider apiKey={apiKey}>
       <BotShieldAppNavigation />
       <Outlet />
-    </AppProvider>
+    </BotShieldEmbeddedAppProvider>
   );
 }
 

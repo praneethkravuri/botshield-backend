@@ -128,33 +128,19 @@ export function BotShieldAppFrame({ children }) {
           padding-bottom: 48px;
           color: var(--botshield-text);
         }
-        .botshield-polaris-fallback-stack,
-        .botshield-polaris-fallback-grid,
-        .botshield-polaris-fallback-box,
-        .botshield-polaris-fallback-page {
+        .botshield-layout-stack,
+        .botshield-layout-box,
+        .botshield-layout-grid,
+        .botshield-layout-button-group,
+        .botshield-layout-table,
+        .botshield-layout-table-header-row,
+        .botshield-layout-table-header,
+        .botshield-layout-table-body,
+        .botshield-layout-table-row,
+        .botshield-layout-table-cell,
+        .botshield-layout-banner {
           display: block;
           min-width: 0;
-        }
-        .botshield-polaris-fallback-text,
-        .botshield-polaris-fallback-paragraph,
-        .botshield-polaris-fallback-heading,
-        .botshield-polaris-fallback-badge {
-          display: inline;
-        }
-        .botshield-polaris-fallback-icon,
-        .botshield-polaris-fallback-spinner {
-          display: inline-block;
-          min-width: 1em;
-          min-height: 1em;
-        }
-        .botshield-polaris-fallback-field {
-          display: block;
-        }
-        .botshield-polaris-fallback-input,
-        .botshield-polaris-fallback-select {
-          display: block;
-          width: 100%;
-          box-sizing: border-box;
         }
         .botshield-page {
           box-sizing: border-box;
@@ -172,7 +158,7 @@ export function BotShieldAppFrame({ children }) {
           min-height: 100vh;
           box-sizing: border-box;
         }
-        .botshield-route-shell s-page {
+        .botshield-route-shell .botshield-native-page {
           display: block;
           width: 100%;
           min-width: 0;
