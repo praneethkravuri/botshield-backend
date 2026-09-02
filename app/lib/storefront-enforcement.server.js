@@ -6,7 +6,6 @@ import {
   normalizeIpAddress,
 } from "./bot-detection.server";
 import { refreshBillingStatusIfStale } from "./billing.server";
-import { recordStorefrontHeartbeat } from "./bot-control.server";
 import {
   sendIncidentEmail,
   shouldSendIncidentAlert,
@@ -374,8 +373,21 @@ export async function evaluateStorefrontRequest(request, shop) {
       },
       update: { value: receivedAt.toISOString() },
     }),
+    db.appSetting.upsert({
+      where: {
+        shop_key: {
+          shop: normalizedShop,
+          key: "lastStorefrontHeartbeatAt",
+        },
+      },
+      create: {
+        shop: normalizedShop,
+        key: "lastStorefrontHeartbeatAt",
+        value: receivedAt.toISOString(),
+      },
+      update: { value: receivedAt.toISOString() },
+    }),
   ]);
-  await recordStorefrontHeartbeat(normalizedShop, receivedAt);
 
   const alertDecision = shouldSendIncidentAlert({
     settings,

@@ -5,7 +5,9 @@ import {
   normalizeIpAddress,
 } from "./bot-detection.server";
 import { getEmailProviderStatus } from "./email.server.js";
-
+import {
+  getStorefrontReportingFreshness,
+} from "./storefront-reporting.server.js";
 function toBooleanString(value, fallback = false) {
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "string") {
@@ -236,10 +238,11 @@ export async function getProtectionStatus(shop) {
   const metadataMap = new Map(metadata.map((row) => [row.key, row.value]));
   const lastHeartbeatAt = metadataMap.get("lastStorefrontHeartbeatAt") || null;
   const lastDecisionAt = metadataMap.get("lastStorefrontDecisionAt") || null;
-  const heartbeatAge = lastHeartbeatAt
-    ? Date.now() - new Date(lastHeartbeatAt).getTime()
-    : Number.POSITIVE_INFINITY;
-  const storefrontReportingActive = heartbeatAge <= 15 * 60 * 1000;
+  const reportingFreshness = getStorefrontReportingFreshness(
+    lastHeartbeatAt,
+    lastDecisionAt,
+  );
+  const storefrontReportingActive = reportingFreshness.active;
   const protectionPaused =
     Boolean(settings.protectionPausedUntil) &&
     new Date(settings.protectionPausedUntil).getTime() > Date.now();
@@ -255,6 +258,7 @@ export async function getProtectionStatus(shop) {
     storefrontReportingActive,
     lastStorefrontHeartbeatAt: lastHeartbeatAt,
     lastStorefrontDecisionAt: lastDecisionAt,
+    lastStorefrontReportingAt: reportingFreshness.lastReportingAt,
     protectionActive: !protectionPaused && billingAllowsProtection,
     protectionPaused,
     protectionPausedUntil: settings.protectionPausedUntil,

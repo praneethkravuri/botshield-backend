@@ -56,18 +56,21 @@ test("failed individual diagnostic checks are not presented as passed", () => {
 test("storefront reporting check distinguishes live, stale, and missing activity", () => {
   const live = buildStorefrontReportingCheck({ storefrontReportingActive: true });
   assert.equal(live.status, DIAGNOSTIC_CHECK_STATUS.PASSED);
+  assert.match(live.detail, /live storefront activity within the last 15 minutes/);
 
   const stale = buildStorefrontReportingCheck({
     storefrontReportingActive: false,
     lastStorefrontDecisionAt: "2026-09-01T12:00:00.000Z",
   });
   assert.equal(stale.status, DIAGNOSTIC_CHECK_STATUS.NEEDS_ATTENTION);
+  assert.match(stale.detail, /nothing new has been reported in the last 15 minutes/);
 
   const missing = buildStorefrontReportingCheck({
     storefrontReportingActive: false,
     lastStorefrontDecisionAt: null,
   });
   assert.equal(missing.status, DIAGNOSTIC_CHECK_STATUS.NEEDS_ATTENTION);
+  assert.match(missing.detail, /No live storefront activity has been recorded yet/);
 });
 
 test("email alert readiness reflects real merchant settings", () => {

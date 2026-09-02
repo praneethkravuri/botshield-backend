@@ -114,6 +114,10 @@ export function buildProtectionActiveCheck(protectionStatus) {
   );
 }
 
+import {
+  STOREFRONT_REPORTING_FRESH_MS,
+} from "./storefront-reporting.server.js";
+
 export function buildStorefrontReportingCheck(protectionStatus) {
   if (!protectionStatus) {
     return makeCheck(
@@ -124,12 +128,14 @@ export function buildStorefrontReportingCheck(protectionStatus) {
     );
   }
 
+  const freshMinutes = Math.round(STOREFRONT_REPORTING_FRESH_MS / (60 * 1000));
+
   if (protectionStatus.storefrontReportingActive) {
     return makeCheck(
       "storefront_reporting",
       "Storefront reporting",
       DIAGNOSTIC_CHECK_STATUS.PASSED,
-      "BotShield received a storefront heartbeat within the last 15 minutes.",
+      `BotShield recorded live storefront activity within the last ${freshMinutes} minutes.`,
     );
   }
 
@@ -138,7 +144,7 @@ export function buildStorefrontReportingCheck(protectionStatus) {
       "storefront_reporting",
       "Storefront reporting",
       DIAGNOSTIC_CHECK_STATUS.NEEDS_ATTENTION,
-      "Storefront activity was recorded previously, but no recent heartbeat was detected.",
+      `Storefront activity was recorded previously, but nothing new has been reported in the last ${freshMinutes} minutes.`,
     );
   }
 
@@ -146,7 +152,7 @@ export function buildStorefrontReportingCheck(protectionStatus) {
     "storefront_reporting",
     "Storefront reporting",
     DIAGNOSTIC_CHECK_STATUS.NEEDS_ATTENTION,
-    "No storefront activity has been recorded yet. Enable the theme app embed and visit your storefront.",
+    "No live storefront activity has been recorded yet. Enable the theme app embed and visit your storefront.",
   );
 }
 
