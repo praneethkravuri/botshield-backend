@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  buildSimulationResultFields,
+  buildSimulationResultPresentation,
   getSimulationResultSummary,
 } from "../../lib/simulation-result.js";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -5829,32 +5829,99 @@ function SettingsHubDiagnosticResults({ diagnostic }) {
 }
 
 function SettingsHubSimulationResults({ result }) {
-  const fields = buildSimulationResultFields(result);
-  if (!fields.length) return null;
+  const presentation = buildSimulationResultPresentation(result);
+  if (!presentation) return null;
+
+  const showSignals =
+    presentation.signals.chips.length > 0 || presentation.signals.narrative;
 
   return (
     <div
       aria-live="polite"
-      className="botshield-settings-hub-diagnostic-results is-simulation"
+      className="botshield-settings-hub-simulation-results"
       role="region"
     >
-      <div className="botshield-settings-hub-diagnostic-summary">
+      <div className="botshield-settings-hub-simulation-header">
         <SettingsHubStatusPill label="Simulation test" tone="monitor" />
-        <span className="botshield-settings-hub-diagnostic-ran-at">
-          {getSimulationResultSummary(result)}
-          {result?.createdAt ? ` · ${formatDate(result.createdAt)}` : ""}
-        </span>
+        <div className="botshield-settings-hub-simulation-header-copy">
+          <strong>{presentation.summary}</strong>
+          {presentation.recordedAtLabel ? (
+            <span>{presentation.recordedAtLabel}</span>
+          ) : null}
+        </div>
       </div>
-      <ul className="botshield-settings-hub-diagnostic-checks">
-        {fields.map((field) => (
-          <li className="botshield-settings-hub-diagnostic-check" key={field.id}>
-            <div className="botshield-settings-hub-diagnostic-check-copy">
-              <strong>{field.label}</strong>
-              <p>{field.value}</p>
+
+      {presentation.primary.length ? (
+        <div className="botshield-settings-hub-simulation-primary">
+          {presentation.primary.map((item) => (
+            <div className="botshield-settings-hub-simulation-primary-item" key={item.id}>
+              <span className="botshield-settings-hub-simulation-label">{item.label}</span>
+              {item.badgeStatus ? (
+                <BotShieldStatusBadge
+                  label={item.value}
+                  status={item.badgeStatus}
+                />
+              ) : (
+                <strong className="botshield-settings-hub-simulation-value">
+                  {item.value}
+                </strong>
+              )}
             </div>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      ) : null}
+
+      {showSignals ? (
+        <section className="botshield-settings-hub-simulation-section">
+          <h4>Detection signals</h4>
+          {presentation.signals.chips.length ? (
+            <div className="botshield-settings-hub-simulation-chips">
+              {presentation.signals.chips.map((chip) => (
+                <span className="botshield-settings-hub-simulation-chip" key={chip.code}>
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {presentation.signals.narrative ? (
+            <p className="botshield-settings-hub-simulation-narrative">
+              {presentation.signals.narrative}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {presentation.metadata.length ? (
+        <section className="botshield-settings-hub-simulation-section is-meta">
+          <h4>Test details</h4>
+          <dl className="botshield-settings-hub-simulation-meta">
+            {presentation.metadata.map((item) => (
+              <div className="botshield-settings-hub-simulation-meta-row" key={item.id}>
+                <dt>{item.label}</dt>
+                <dd title={item.exactValue || undefined}>{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ) : null}
+
+      {presentation.isolation.message ? (
+        <footer className="botshield-settings-hub-simulation-isolation">
+          <div className="botshield-settings-hub-simulation-isolation-status">
+            {presentation.isolation.enforcement ? (
+              <span>
+                <strong>Live enforcement:</strong> {presentation.isolation.enforcement}
+              </span>
+            ) : null}
+            {presentation.isolation.metrics ? (
+              <span>
+                <strong>Live metrics:</strong> {presentation.isolation.metrics}
+              </span>
+            ) : null}
+          </div>
+          <p>{presentation.isolation.message}</p>
+        </footer>
+      ) : null}
     </div>
   );
 }
