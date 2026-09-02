@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useMatches, useNavigate } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 import { toMerchantErrorMessage } from "../lib/merchant-error-message";
 import { safeFetchJson } from "../lib/safe-fetch";
 import { readThemeAppEmbedStatus } from "../lib/theme-extension-status.client";
+import {
+  buildThemeEditorDeepLink,
+  THEME_EMBED_CONNECTION_STATE,
+} from "../lib/theme-extension-status.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,6 +45,9 @@ function isPreviousWeek(dateInput, baseDate) {
 export default function Index() {
   const location = useLocation();
   const navigate = useNavigate();
+  const matches = useMatches();
+  const shopifyApiKey =
+    matches.find((match) => match.data?.apiKey)?.data?.apiKey || "";
   const [page, setPage] = useState("dashboard");
   const [protectionEntryIntent, setProtectionEntryIntent] = useState(null);
 
@@ -124,7 +131,8 @@ export default function Index() {
     shop: "",
     appInstalled: true,
     themeAppEmbedActive: false,
-    themeAppEmbedStatus: "available",
+    themeAppEmbedConnectionState: THEME_EMBED_CONNECTION_STATE.UNAVAILABLE,
+    themeAppEmbedStatus: "unavailable",
     storefrontReportingActive: false,
     lastStorefrontHeartbeatAt: null,
     lastStorefrontDecisionAt: null,
@@ -657,6 +665,7 @@ export default function Index() {
         ...previous,
         ...status,
         themeAppEmbedActive: previous.themeAppEmbedActive,
+        themeAppEmbedConnectionState: previous.themeAppEmbedConnectionState,
         themeAppEmbedStatus: previous.themeAppEmbedStatus,
       }));
       setPauseUntil(status.protectionPausedUntil || null);
@@ -671,13 +680,9 @@ export default function Index() {
   const loadThemeExtensionStatus = async ({ throwOnError = false } = {}) => {
     try {
       const embedStatus = await readThemeAppEmbedStatus();
-      if (!embedStatus) {
-        throw new Error("Theme app embed status could not be read.");
-      }
       setProtectionStatus((previous) => ({
         ...previous,
-        themeAppEmbedActive: embedStatus.themeAppEmbedActive,
-        themeAppEmbedStatus: embedStatus.themeAppEmbedStatus,
+        ...embedStatus,
       }));
     } catch (err) {
       console.error("Failed to load theme extension status", err);
@@ -1283,11 +1288,17 @@ export default function Index() {
           !protectionStatus.themeAppEmbedActive &&
           protectionStatus.shop
         ) {
-          window.open(
-            `https://${protectionStatus.shop}/admin/themes/current/editor?context=apps&activateAppId=d4fd10812566b17d9d99ed95e0978ada/botshield-theme-embed`,
-            "_blank",
-            "noopener,noreferrer",
+          const themeEditorUrl = buildThemeEditorDeepLink(
+            protectionStatus.shop,
+            shopifyApiKey,
           );
+          if (!themeEditorUrl) {
+            triggerAlert(
+              "The Shopify app key is not available yet. Refresh BotShield and try again.",
+            );
+            break;
+          }
+          window.open(themeEditorUrl, "_blank", "noopener,noreferrer");
           triggerAlert(
             "Shopify theme app embeds opened. Enable BotShield and click Save.",
           );
@@ -2653,11 +2664,17 @@ export default function Index() {
       );
       return;
     }
-    window.open(
-      `https://${protectionStatus.shop}/admin/themes/current/editor?context=apps&activateAppId=d4fd10812566b17d9d99ed95e0978ada/botshield-theme-embed`,
-      "_blank",
-      "noopener,noreferrer",
+    const themeEditorUrl = buildThemeEditorDeepLink(
+      protectionStatus.shop,
+      shopifyApiKey,
     );
+    if (!themeEditorUrl) {
+      triggerAlert(
+        "The Shopify app key is not available yet. Refresh BotShield and try again.",
+      );
+      return;
+    }
+    window.open(themeEditorUrl, "_blank", "noopener,noreferrer");
   };
 
   const polarisModel = {

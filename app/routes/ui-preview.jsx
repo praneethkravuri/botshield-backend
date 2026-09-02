@@ -362,6 +362,7 @@ export default function UiPreview() {
       protectionStatus: {
         appInstalled: true,
         themeAppEmbedActive: true,
+        themeAppEmbedConnectionState: "active",
         themeAppEmbedStatus: "active",
         storefrontReportingActive: true,
         protectionActive: true,

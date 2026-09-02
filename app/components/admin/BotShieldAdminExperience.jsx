@@ -44,6 +44,7 @@ import {
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
+import { getThemeEmbedConnectionView } from "../../lib/theme-extension-status.js";
 
 const CLEAR_SIMULATION_DATA_DESCRIPTION =
   "Delete simulation and test activity from BotShield. Live storefront activity and your protection settings, blocked visitors, and trusted visitors are not affected.";
@@ -215,7 +216,7 @@ function inRecentDays(value, days, offsetDays = 0) {
 }
 
 function hasStorefrontConnection(model) {
-  return Boolean(model?.protectionStatus?.themeAppEmbedActive);
+  return getThemeEmbedConnectionView(model?.protectionStatus).connected;
 }
 
 function hasStorefrontTraffic(model) {
@@ -5657,7 +5658,7 @@ function getSettingsBillingTrialLabel(billing) {
 
 function getSettingsOperationalStrip(model) {
   const responseMode = getResponseMode(model);
-  const storefrontConnected = hasStorefrontConnection(model);
+  const themeEmbedConnection = getThemeEmbedConnectionView(model.protectionStatus);
   const receivingTraffic = Boolean(model.protectionStatus?.storefrontReportingActive);
   const alertsEnabled = Boolean(
     model.emailAlerts && model.emailProviderConfigured && model.alertEmail,
@@ -5675,8 +5676,13 @@ function getSettingsOperationalStrip(model) {
     },
     {
       label: "Storefront",
-      value: storefrontConnected ? "Connected" : "Setup required",
-      tone: storefrontConnected ? "healthy" : "warning",
+      value: themeEmbedConnection.label,
+      tone:
+        themeEmbedConnection.tone === "healthy"
+          ? "healthy"
+          : themeEmbedConnection.tone === "neutral"
+            ? "neutral"
+            : "warning",
     },
     {
       label: "Traffic",
@@ -6625,6 +6631,10 @@ function SettingsPage({ model, actions }) {
     }
 
     if (activeSection === "connections") {
+      const themeEmbedConnection = getThemeEmbedConnectionView(
+        model.protectionStatus,
+      );
+
       return (
         <SettingsHubSection
           description="Integration health for supported BotShield services."
@@ -6647,15 +6657,11 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubStatusPill
-                label={storefrontConnected ? "Connected" : "Setup required"}
-                tone={storefrontConnected ? "healthy" : "monitor"}
+                label={themeEmbedConnection.label}
+                tone={themeEmbedConnection.tone}
               />
             }
-            description={
-              storefrontConnected
-                ? "Theme app embed is active and BotShield can evaluate storefront traffic."
-                : "Enable the theme app embed to start recording storefront activity."
-            }
+            description={themeEmbedConnection.description}
             icon="connection"
             title="Storefront theme embed"
             variant="connection"
@@ -6675,7 +6681,7 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <BotShieldActionButton
-                disabled={!storefrontConnected && !model.protectionStatus?.shop}
+                disabled={!model.protectionStatus?.shop}
                 onClick={actions.openThemeEditor}
               >
                 {storefrontConnected ? "Open theme editor" : "Connect storefront"}

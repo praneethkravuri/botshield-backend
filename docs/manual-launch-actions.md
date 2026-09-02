@@ -35,23 +35,27 @@ These steps cannot be completed safely by application code.
 
 ## Shopify Partner Dashboard
 
-1. Select Shopify App Pricing.
-2. Create BotShield Basic at $29 USD/month with a 7-day trial and confirm
+1. Deploy the BotShield theme app extension to the production app with
+   `shopify app deploy` so Shopify registers the `botshield-embed` app embed.
+2. After deploy, open a development store Theme Editor, confirm BotShield appears
+   under App embeds, enable it on the published theme, and save.
+3. Select Shopify App Pricing.
+4. Create BotShield Basic at $29 USD/month with a 7-day trial and confirm
    its plan handle is `basic`.
-3. Create the private $0 reviewer/test plan.
-4. Set welcome link to `/app/billing-return`.
-5. Create a Partner API client with `Manage apps` access.
-6. Set `SHOPIFY_PARTNER_ORG_ID` to the organization ID from the Partner
+5. Create the private $0 reviewer/test plan.
+6. Set welcome link to `/app/billing-return`.
+7. Create a Partner API client with `Manage apps` access.
+8. Set `SHOPIFY_PARTNER_ORG_ID` to the organization ID from the Partner
    Dashboard URL.
-7. Set `SHOPIFY_PARTNER_ACCESS_TOKEN` to the Partner API client token.
-8. Set `SHOPIFY_PARTNER_APP_ID` to BotShield's
+9. Set `SHOPIFY_PARTNER_ACCESS_TOKEN` to the Partner API client token.
+10. Set `SHOPIFY_PARTNER_APP_ID` to BotShield's
    `gid://shopify/App/...` identifier.
-9. Set `SHOPIFY_APP_HANDLE` to the listing/app handle and
+11. Set `SHOPIFY_APP_HANDLE` to the listing/app handle and
    `SHOPIFY_TEST_PLAN_HANDLE` to the private test plan handle.
-10. Verify the test plan appears and approval returns to BotShield.
-11. Verify `/api/billing-status` shows an active test subscription.
-12. Cancel the test plan and verify BotShield reports billing inactive before
+12. Verify the test plan appears and approval returns to BotShield.
+13. Verify `/api/billing-status` shows an active test subscription.
+14. Cancel the test plan and verify BotShield reports billing inactive before
     enabling enforcement.
-13. Only then set `BILLING_ENFORCEMENT_ENABLED=true`.
-14. Add listing copy, legal URLs, support email, screenshots, and reviewer
-   instructions.
+15. Only then set `BILLING_ENFORCEMENT_ENABLED=true`.
+16. Add listing copy, legal URLs, support email, screenshots, and reviewer
+    instructions.
