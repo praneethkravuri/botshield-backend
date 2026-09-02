@@ -5747,6 +5747,19 @@ function SettingsHubFixedAction({ children }) {
   return <div className="botshield-settings-hub-fixed-action">{children}</div>;
 }
 
+function SettingsHubLegalLink({ href, children }) {
+  return (
+    <a
+      className="botshield-settings-hub-legal-link"
+      href={href}
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      {children}
+    </a>
+  );
+}
+
 function SettingsHubFixedValue({ children }) {
   return (
     <div className="botshield-settings-hub-fixed-value">
@@ -6529,9 +6542,9 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubFixedAction>
-                <BotShieldActionButton href="/data-retention" target="_blank">
+                <SettingsHubLegalLink href="/data-retention">
                   View retention details
-                </BotShieldActionButton>
+                </SettingsHubLegalLink>
               </SettingsHubFixedAction>
             }
             description="Storefront security events are removed automatically after 30 days while BotShield remains installed."
@@ -6542,9 +6555,7 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubFixedAction>
-                <BotShieldActionButton href="/data-use" target="_blank">
-                  View data use
-                </BotShieldActionButton>
+                <SettingsHubLegalLink href="/data-use">View data use</SettingsHubLegalLink>
               </SettingsHubFixedAction>
             }
             description="Fraud Orders uses supported Shopify order and order-risk fields only. Customer contact and address fields are not requested."
@@ -6555,9 +6566,7 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubFixedAction>
-                <BotShieldActionButton href="/privacy" target="_blank">
-                  View privacy policy
-                </BotShieldActionButton>
+                <SettingsHubLegalLink href="/privacy">View privacy policy</SettingsHubLegalLink>
               </SettingsHubFixedAction>
             }
             description="What BotShield processes, why it is used, and how merchant and storefront data is protected."
@@ -6568,9 +6577,7 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubFixedAction>
-                <BotShieldActionButton href="/terms" target="_blank">
-                  View terms
-                </BotShieldActionButton>
+                <SettingsHubLegalLink href="/terms">View terms</SettingsHubLegalLink>
               </SettingsHubFixedAction>
             }
             description="Terms governing installation, use, billing, and merchant responsibilities."
@@ -6581,9 +6588,9 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <SettingsHubFixedAction>
-                <BotShieldActionButton href="/data-deletion" target="_blank">
+                <SettingsHubLegalLink href="/data-deletion">
                   View deletion details
-                </BotShieldActionButton>
+                </SettingsHubLegalLink>
               </SettingsHubFixedAction>
             }
             description="Uninstall removes app sessions immediately. Remaining shop data is deleted when Shopify sends shop redaction."

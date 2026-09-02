@@ -55,7 +55,9 @@ test("public legal shell exposes premium navigation, metadata, and footer", asyn
     "utf8",
   );
 
-  assert.match(shell, /public-legal-brand-mark/);
+  assert.match(shell, /usePublicLegalScrollSpy/);
+  assert.match(shell, /public-legal-skip-link/);
+  assert.match(shell, /Trust &amp; Legal/);
   assert.match(shell, /public-legal-nav-link/);
   assert.match(shell, /public-legal-toc/);
   assert.match(shell, /lastUpdatedDate/);
@@ -69,7 +71,8 @@ test("public legal shell exposes premium navigation, metadata, and footer", asyn
   assert.match(publicInfo, /dataRetentionUrl: "\/data-retention"/);
   assert.match(publicInfo, /dataDeletionUrl: "\/data-deletion"/);
   assert.match(publicInfo, /lastUpdatedDate:/);
-  assert.match(css, /public-legal-fact/);
+  assert.match(css, /public-legal-data-grid/);
+  assert.match(css, /scroll-margin-top/);
   assert.match(css, /focus-visible/);
 });
 
@@ -100,7 +103,8 @@ test("settings data and privacy hub uses a fixed action column and valid routes"
   assert.match(privacySection, /SettingsHubFixedValue/);
   assert.match(privacySection, /SettingsHubFixedAction/);
   assert.match(designSystem, /botshield-settings-hub-group\.is-privacy/);
-  assert.match(designSystem, /botshield-settings-hub-fixed-action/);
+  assert.match(privacySection, /SettingsHubLegalLink/);
+  assert.match(designSystem, /botshield-settings-hub-legal-link/);
   assert.match(privacySection, /href="\/data-retention"/);
   assert.match(privacySection, /href="\/data-use"/);
   assert.match(privacySection, /href="\/privacy"/);
@@ -159,6 +163,7 @@ test("data-use, retention, and deletion pages stay aligned with implemented beha
   assert.match(dataUse, /does not create Shopify/i);
   assert.match(dataUse, /merchant-configured alert email/i);
   assert.match(dataRetention, /deleted after[\s\S]*\{BOT_EVENT_RETENTION_DAYS\}[\s\S]*days/);
+  assert.match(dataRetention, /PublicLegalDataGrid/);
   assert.match(dataRetention, /NETWORK_INTEL_CACHE_HOURS/);
   assert.match(dataDeletion, /shop\/redact/);
   assert.match(dataDeletion, /does not[\s\S]*promise instantaneous[\s\S]*deletion/i);

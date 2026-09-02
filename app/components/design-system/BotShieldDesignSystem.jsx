@@ -3416,9 +3416,36 @@ export function BotShieldAppFrame({ children }) {
           display: block;
           width: 100%;
         }
-        .botshield-settings-hub-fixed-action s-button {
-          display: block;
+        .botshield-settings-hub-legal-link {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          box-sizing: border-box;
           width: 100%;
+          min-height: 36px;
+          padding: 0 14px;
+          border: 1px solid #c9cccf;
+          border-radius: 8px;
+          background: #ffffff;
+          color: var(--overview-ink);
+          font-size: 13px;
+          font-weight: 650;
+          line-height: 1.2;
+          text-align: center;
+          text-decoration: none;
+          cursor: pointer;
+          transition:
+            background-color 120ms ease,
+            border-color 120ms ease,
+            box-shadow 120ms ease;
+        }
+        .botshield-settings-hub-legal-link:hover {
+          background: #fafbfb;
+          border-color: #babfc4;
+        }
+        .botshield-settings-hub-legal-link:focus-visible {
+          outline: 2px solid var(--overview-ink);
+          outline-offset: 2px;
         }
         .botshield-settings-hub-fixed-value {
           display: flex;

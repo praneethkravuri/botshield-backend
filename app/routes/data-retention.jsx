@@ -1,5 +1,6 @@
 import { BOT_EVENT_RETENTION_DAYS, NETWORK_INTEL_CACHE_HOURS } from "../config/data-retention.js";
 import {
+  PublicLegalDataGrid,
   PublicLegalFact,
   PublicLegalRelatedLinks,
   PublicLegalSection,
@@ -31,6 +32,35 @@ export default function DataRetentionPage() {
         where supported and retains other shop-scoped records while the app remains
         installed unless a valid deletion workflow applies.
       </p>
+
+      <PublicLegalDataGrid
+        rows={[
+          {
+            label: "Storefront security events",
+            value: `${BOT_EVENT_RETENTION_DAYS} days, then automatic deletion while installed`,
+          },
+          {
+            label: "Network intelligence cache",
+            value: `${NETWORK_INTEL_CACHE_HOURS} hours, then automatic deletion`,
+          },
+          {
+            label: "Merchant configuration and lists",
+            value: "While installed; deleted on Shopify shop redaction",
+          },
+          {
+            label: "Fraud Orders display data",
+            value: "Not persisted; fetched live from Shopify",
+          },
+          {
+            label: "Simulation data",
+            value: "Until cleared by the merchant in-app",
+          },
+          {
+            label: "App sessions",
+            value: "While needed; removed on uninstall",
+          },
+        ]}
+      />
 
       <PublicLegalSection id="storefront-events" title="Storefront Security Events">
         <p>
