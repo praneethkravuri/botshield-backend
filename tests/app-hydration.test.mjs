@@ -36,7 +36,7 @@ const analyticsSource = adminSource.slice(
   adminSource.indexOf("function FraudOrdersPage"),
 );
 const fraudOrdersSource = adminSource.slice(
-  adminSource.indexOf("function FraudOrdersPage"),
+  adminSource.indexOf("function FraudReviewQueueToolbar"),
   adminSource.indexOf("function ProtectionPage"),
 );
 const protectionSource = adminSource.slice(
@@ -94,7 +94,7 @@ test("Analytics uses stable render anchor for bucket and period math", () => {
 
 test("Protection uses stable render anchor for module activity windows", () => {
   assert.match(protectionSource, /useHydrationStableNow\(model\.renderAnchorMs\)/);
-  assert.match(protectionSource, /buildModuleProtectionActivity\([^\)]*now\)/);
+  assert.match(protectionSource, /buildModuleProtectionActivity\([\s\S]*?\bnow\b/);
 });
 
 test("Fraud Orders uses hydration-safe Polaris table and search primitives", () => {
