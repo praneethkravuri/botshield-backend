@@ -61,18 +61,20 @@ test("app loader exposes a stable SSR render anchor timestamp", () => {
   assert.match(appIndexSource, /renderAnchorMs:\s*appRouteData\.renderAnchorMs/);
 });
 
-test("shared Polaris wrappers use HTML layout hosts and leaf web components", () => {
+test("shared Polaris wrappers use HTML layout and leaf hosts", () => {
   assert.doesNotMatch(polarisSource, /useBotShieldClientMount/);
   assert.doesNotMatch(polarisSource, /botshield-polaris-fallback-stack/);
   assert.match(polarisSource, /createLayoutHost\("stack"\)/);
   assert.match(polarisSource, /botshield-native-page/);
   assert.match(polarisSource, /BotShieldSearchField/);
-  assert.match(polarisSource, /createPolarisComponent\("s-button"\)/);
+  assert.match(polarisSource, /createLeafHost\("button"/);
+  assert.doesNotMatch(polarisSource, /createPolarisComponent\("s-button"\)/);
 });
 
-test("embedded app route defers polaris and uses BotShield provider", () => {
-  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider/);
-  assert.doesNotMatch(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
+test("embedded app route uses official Shopify AppProvider", async () => {
+  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
+  assert.match(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
+  assert.doesNotMatch(appRouteSource, /BotShieldEmbeddedAppProvider/);
 });
 
 test("hydration-safe relative time uses a stable placeholder before mount", () => {
@@ -107,12 +109,13 @@ test("Protection uses stable render anchor for module activity windows", () => {
   assert.match(protectionSource, /buildModuleProtectionActivity\([\s\S]*?\bnow\b/);
 });
 
-test("embedded app nav renders Shopify s-app-nav with rel=home on /app", () => {
+test("embedded app nav renders after hydration to avoid polaris pre-upgrade mismatch", () => {
+  assert.match(navSource, /setHydrated\(true\)/);
+  assert.match(navSource, /if \(!hydrated\)/);
+  assert.match(navSource, /return null;/);
   assert.match(navSource, /<s-app-nav>/);
   assert.match(navSource, /rel:\s*"home"/);
   assert.match(navSource, /href:\s*"\/app"/);
-  assert.doesNotMatch(navSource, /useBotShieldClientMount/);
-  assert.doesNotMatch(navSource, /botshield-app-nav-fallback/);
 });
 
 test("Fraud Orders uses hydration-safe Polaris table and search primitives", () => {

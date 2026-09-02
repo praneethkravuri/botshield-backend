@@ -5157,7 +5157,7 @@ export function BotShieldActionButton({
   const isDisabled = disabled || loading;
 
   return (
-    <s-button
+    <BotShieldPolarisButton
       id={id}
       variant={variant}
       tone={tone}
@@ -5173,7 +5173,7 @@ export function BotShieldActionButton({
       onClick={onClick}
     >
       {children}
-    </s-button>
+    </BotShieldPolarisButton>
   );
 }
 

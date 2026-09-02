@@ -1,6 +1,6 @@
 import { Outlet, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import BotShieldEmbeddedAppProvider from "../components/BotShieldEmbeddedAppProvider";
+import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import BotShieldAppNavigation from "../components/BotShieldAppNavigation";
 import {
   resolveInitialAdminPage,
@@ -38,10 +38,10 @@ export default function App() {
   const { apiKey } = useLoaderData();
 
   return (
-    <BotShieldEmbeddedAppProvider apiKey={apiKey}>
+    <AppProvider embedded apiKey={apiKey}>
       <BotShieldAppNavigation />
       <Outlet />
-    </BotShieldEmbeddedAppProvider>
+    </AppProvider>
   );
 }
 

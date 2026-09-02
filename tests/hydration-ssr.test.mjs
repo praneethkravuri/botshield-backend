@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 
 function registerPolarisUpgrade(window) {
@@ -103,21 +104,93 @@ test("layout div hosts keep direct child structure under polaris mutation", () =
   );
 });
 
-test("embedded app provider defers polaris.js until after mount", async () => {
-  const providerSource = await readFile(
-    new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
-    "utf8",
-  );
-  const appRouteSource = await readFile(
-    new URL("../app/routes/app.jsx", import.meta.url),
-    "utf8",
-  );
+test("overview HTML leaf hosts survive polaris-like pre-hydration DOM mutation", () => {
+  function OverviewSnippet() {
+    return React.createElement(
+      "div",
+      {
+        className: "botshield-layout-stack",
+        "data-botshield-layout": "stack",
+      },
+      React.createElement(
+        "section",
+        { className: "botshield-v2-status" },
+        React.createElement("h2", null, "Protection is active"),
+        React.createElement(
+          "span",
+          {
+            className: "botshield-polaris-badge",
+            "data-botshield-polaris-leaf": "badge",
+          },
+          "Active",
+        ),
+      ),
+      React.createElement(
+        "button",
+        {
+          className: "botshield-polaris-button",
+          "data-botshield-polaris-leaf": "button",
+          "data-variant": "primary",
+          type: "button",
+        },
+        "Manage protection",
+      ),
+    );
+  }
 
-  assert.doesNotMatch(providerSource, /shopifycloud\/polaris\.js" \/>/);
-  assert.match(providerSource, /document\.createElement\("script"\)/);
-  assert.match(providerSource, /POLARIS_SCRIPT_SRC/);
-  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider/);
-  assert.doesNotMatch(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
+  const tree = React.createElement(OverviewSnippet);
+  const serverHtml = renderToString(tree);
+  assert.match(serverHtml, /botshield-polaris-button/);
+  assert.doesNotMatch(serverHtml, /<s-button/);
+
+  const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
+    url: "https://example.test/app",
+  });
+  const container = dom.window.document.createElement("div");
+  container.innerHTML = serverHtml;
+  dom.window.document.body.appendChild(container);
+  upgradePolarisHosts(dom.window.document);
+
+  const messages = [];
+  const originalError = console.error;
+  console.error = (...args) => {
+    messages.push(
+      args
+        .map((arg) => (typeof arg === "string" ? arg : arg?.message || String(arg)))
+        .join(" "),
+    );
+  };
+
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  process.env.NODE_ENV = "development";
+  try {
+    hydrateRoot(container, tree);
+  } finally {
+    console.error = originalError;
+  }
+
+  const hits = messages.filter((message) =>
+    /hydration|did not match|Expected server HTML|418|423|425/i.test(message),
+  );
+  assert.equal(hits.length, 0, hits.join(" | "));
+});
+
+test("official AppProvider injects polaris.js and app shell avoids SSR leaf polaris tags", async () => {
+  const appProviderSource = await readFile(
+    new URL(
+      "../node_modules/@shopify/shopify-app-react-router/dist/esm/react/components/AppProvider/AppProvider.mjs",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const polarisSource = await readFile(
+    new URL("../app/components/design-system/BotShieldHydrationPolaris.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(appProviderSource, /shopifycloud\/polaris\.js/);
+  assert.match(polarisSource, /createLeafHost\("button"/);
+  assert.match(polarisSource, /createLeafHost\("badge"/);
 });
 
 test("shared layout wrappers render HTML hosts instead of polaris container tags", async () => {
@@ -129,6 +202,6 @@ test("shared layout wrappers render HTML hosts instead of polaris container tags
   assert.match(polarisSource, /createLayoutHost\("stack"\)/);
   assert.match(polarisSource, /botshield-native-page/);
   assert.doesNotMatch(polarisSource, /createPolarisComponent\("s-stack"\)/);
-  assert.match(polarisSource, /createPolarisComponent\("s-button"\)/);
-  assert.match(polarisSource, /createPolarisComponent\("s-badge"\)/);
+  assert.match(polarisSource, /createLeafHost\("button"/);
+  assert.match(polarisSource, /createLeafHost\("badge"/);
 });
