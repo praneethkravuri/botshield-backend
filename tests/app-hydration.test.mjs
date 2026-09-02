@@ -26,6 +26,10 @@ const appIndexSource = await readFile(
   new URL("../app/routes/app._index.jsx", import.meta.url),
   "utf8",
 );
+const navSource = await readFile(
+  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
+  "utf8",
+);
 
 const overviewSource = adminSource.slice(
   adminSource.indexOf("function OverviewPage"),
@@ -57,9 +61,10 @@ test("app loader exposes a stable SSR render anchor timestamp", () => {
   assert.match(appIndexSource, /renderAnchorMs:\s*appRouteData\.renderAnchorMs/);
 });
 
-test("shared hydration polaris primitives defer web components until mount", () => {
-  assert.match(polarisSource, /useBotShieldClientMount/);
-  assert.match(polarisSource, /botshield-polaris-fallback-stack/);
+test("shared Polaris primitives render Shopify web components during SSR", () => {
+  assert.doesNotMatch(polarisSource, /useBotShieldClientMount/);
+  assert.doesNotMatch(polarisSource, /botshield-polaris-fallback-stack/);
+  assert.match(polarisSource, /createPolarisComponent\("s-stack"\)/);
   assert.match(polarisSource, /BotShieldPolarisPage/);
   assert.match(polarisSource, /BotShieldSearchField/);
   assert.match(polarisSource, /BotShieldTable/);
@@ -71,7 +76,7 @@ test("hydration-safe relative time uses a stable placeholder before mount", () =
   assert.match(hydrationUiSource, /useHydrationStableNow/);
 });
 
-test("merchant admin shell does not render raw Shopify Polaris web components", () => {
+test("merchant admin shell routes Polaris markup through shared wrappers", () => {
   assert.doesNotMatch(adminSource, /<s-[a-z-]+/);
   assert.match(adminSource, /BotShieldStack/);
   assert.match(adminSource, /BotShieldHydrationRelativeTime/);
@@ -95,6 +100,14 @@ test("Analytics uses stable render anchor for bucket and period math", () => {
 test("Protection uses stable render anchor for module activity windows", () => {
   assert.match(protectionSource, /useHydrationStableNow\(model\.renderAnchorMs\)/);
   assert.match(protectionSource, /buildModuleProtectionActivity\([\s\S]*?\bnow\b/);
+});
+
+test("embedded app nav renders Shopify s-app-nav with rel=home on /app", () => {
+  assert.match(navSource, /<s-app-nav>/);
+  assert.match(navSource, /rel:\s*"home"/);
+  assert.match(navSource, /href:\s*"\/app"/);
+  assert.doesNotMatch(navSource, /useBotShieldClientMount/);
+  assert.doesNotMatch(navSource, /botshield-app-nav-fallback/);
 });
 
 test("Fraud Orders uses hydration-safe Polaris table and search primitives", () => {

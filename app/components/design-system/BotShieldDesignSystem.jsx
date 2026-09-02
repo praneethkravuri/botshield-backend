@@ -18,7 +18,6 @@ import {
   BotShieldButtonGroup,
   BotShieldGrid,
   BotShieldHeading,
-  BotShieldHydrationMount,
   BotShieldIcon,
   BotShieldModalShell,
   BotShieldParagraph,
@@ -4805,21 +4804,6 @@ export function BotShieldNativePage({
   primaryAction = null,
   secondaryActions = null,
 }) {
-  const mounted = useBotShieldClientMount();
-
-  if (!mounted) {
-    return (
-      <section
-        aria-label={heading || "BotShield"}
-        className="botshield-native-page-fallback"
-      >
-        {primaryAction}
-        {secondaryActions}
-        {children}
-      </section>
-    );
-  }
-
   return (
     <BotShieldPolarisPage heading={heading}>
       {primaryAction}
@@ -5164,17 +5148,7 @@ export function BotShieldChecklistItem({
 
 export function BotShieldStatusBadge({ status, label, tone }) {
   const model = getUiStatus(status);
-  const mounted = useBotShieldClientMount();
   const text = label || model.label;
-
-  if (!mounted) {
-    return (
-      <span className={`botshield-status-badge-fallback is-${tone || model.tone}`}>
-        {text}
-      </span>
-    );
-  }
-
   return <BotShieldBadge tone={tone || model.tone}>{text}</BotShieldBadge>;
 }
 
@@ -5194,39 +5168,7 @@ export function BotShieldActionButton({
   command,
   id,
 }) {
-  const mounted = useBotShieldClientMount();
   const isDisabled = disabled || loading;
-
-  if (!mounted) {
-    if (href) {
-      return (
-        <a
-          aria-disabled={isDisabled ? "true" : undefined}
-          aria-label={accessibilityLabel}
-          className="botshield-action-button-fallback"
-          href={isDisabled ? undefined : href}
-          id={id}
-          onClick={isDisabled ? undefined : onClick}
-          target={target}
-        >
-          {children}
-        </a>
-      );
-    }
-
-    return (
-      <button
-        aria-label={accessibilityLabel}
-        className="botshield-action-button-fallback"
-        disabled={isDisabled}
-        id={id}
-        onClick={onClick}
-        type="button"
-      >
-        {children}
-      </button>
-    );
-  }
 
   return (
     <s-button
@@ -5259,7 +5201,6 @@ export function BotShieldAsyncButton({
   disabled,
   ...buttonProps
 }) {
-  const mounted = useBotShieldClientMount();
   const toast = useBotShieldToast();
   const asyncAction = useBotShieldAction({
     action,
@@ -5270,33 +5211,16 @@ export function BotShieldAsyncButton({
     onError,
   });
 
-  const button = (
-    <BotShieldActionButton
-      {...buttonProps}
-      loading={asyncAction.loading}
-      disabled={disabled}
-      onClick={asyncAction.run}
-    >
-      {children}
-    </BotShieldActionButton>
-  );
-
-  if (!mounted) {
-    return (
-      <div className="botshield-async-button-fallback">
-        {button}
-        {asyncAction.error ? (
-          <span className="botshield-async-button-error" role="alert">
-            {asyncAction.error}
-          </span>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <BotShieldStack gap="small-200">
-      {button}
+      <BotShieldActionButton
+        {...buttonProps}
+        loading={asyncAction.loading}
+        disabled={disabled}
+        onClick={asyncAction.run}
+      >
+        {children}
+      </BotShieldActionButton>
       {asyncAction.error ? (
         <BotShieldText tone="critical" role="alert">
           {asyncAction.error}
