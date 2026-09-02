@@ -5542,7 +5542,7 @@ const BOTSHIELD_PUBLIC_PLAN_FEATURES = [
   "Page Protection",
   "IP blocklist",
   "Trusted visitors",
-  "Fraud order review (coming soon)",
+  "Fraud order review",
   "Storefront analytics",
 ];
 
