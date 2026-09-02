@@ -3312,6 +3312,51 @@ export function BotShieldAppFrame({ children }) {
         .botshield-settings-hub-row.is-diagnostic {
           border-left: 4px solid var(--overview-ink);
         }
+        .botshield-settings-hub-diagnostic-results {
+          margin: 0 16px 14px;
+          padding: 12px 14px;
+          border: 1px solid #e1e3e5;
+          border-radius: 12px;
+          background: #fafbfb;
+        }
+        .botshield-settings-hub-diagnostic-summary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+        }
+        .botshield-settings-hub-diagnostic-ran-at {
+          color: var(--overview-muted);
+          font-size: 12px;
+          line-height: 1.35;
+        }
+        .botshield-settings-hub-diagnostic-checks {
+          display: grid;
+          gap: 10px;
+          margin: 0;
+          padding: 0;
+          list-style: none;
+        }
+        .botshield-settings-hub-diagnostic-check {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          gap: 10px 12px;
+          align-items: start;
+        }
+        .botshield-settings-hub-diagnostic-check-copy strong {
+          display: block;
+          color: var(--overview-text);
+          font-size: 13px;
+          line-height: 1.35;
+        }
+        .botshield-settings-hub-diagnostic-check-copy p {
+          margin: 2px 0 0;
+          color: var(--overview-muted);
+          font-size: 12px;
+          line-height: 1.4;
+        }
         .botshield-settings-hub-row-icon .botshield-v2-icon {
           width: 28px;
           height: 28px;

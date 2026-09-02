@@ -5772,6 +5772,58 @@ function SettingsHubFixedValue({ children }) {
   );
 }
 
+function getDiagnosticCheckTone(status) {
+  if (status === "passed") return "healthy";
+  if (status === "needs_attention") return "warning";
+  return "monitor";
+}
+
+function getDiagnosticCheckLabel(status) {
+  if (status === "passed") return "Passed";
+  if (status === "needs_attention") return "Needs attention";
+  return "Unavailable";
+}
+
+function SettingsHubDiagnosticResults({ diagnostic }) {
+  if (!diagnostic?.checks?.length) return null;
+
+  const summaryTone =
+    diagnostic.overallStatus === "passed"
+      ? "healthy"
+      : diagnostic.overallStatus === "needs_attention"
+        ? "warning"
+        : "monitor";
+
+  return (
+    <div
+      aria-live="polite"
+      className="botshield-settings-hub-diagnostic-results"
+      role="region"
+    >
+      <div className="botshield-settings-hub-diagnostic-summary">
+        <SettingsHubStatusPill label={diagnostic.overallLabel} tone={summaryTone} />
+        <span className="botshield-settings-hub-diagnostic-ran-at">
+          Ran {formatDate(diagnostic.ranAt)}
+        </span>
+      </div>
+      <ul className="botshield-settings-hub-diagnostic-checks">
+        {diagnostic.checks.map((check) => (
+          <li className="botshield-settings-hub-diagnostic-check" key={check.id}>
+            <SettingsHubStatusPill
+              label={getDiagnosticCheckLabel(check.status)}
+              tone={getDiagnosticCheckTone(check.status)}
+            />
+            <div className="botshield-settings-hub-diagnostic-check-copy">
+              <strong>{check.name}</strong>
+              {check.detail ? <p>{check.detail}</p> : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SettingsHubRow({
   title,
   description,
@@ -5848,6 +5900,8 @@ function SettingsPage({ model, actions }) {
   const [saveError, setSaveError] = useState("");
   const [billingRefreshError, setBillingRefreshError] = useState("");
   const [diagnosticsError, setDiagnosticsError] = useState("");
+  const [diagnosticResults, setDiagnosticResults] = useState(null);
+  const [diagnosticRequestError, setDiagnosticRequestError] = useState("");
 
   useEffect(() => {
     setDraft({
@@ -6653,9 +6707,32 @@ function SettingsPage({ model, actions }) {
             control={
               <BotShieldAsyncButton
                 action={async () => {
-                  await actions.runDiagnostic();
+                  setDiagnosticRequestError("");
+                  return actions.runDiagnostic();
                 }}
-                successMessage="Diagnostic completed"
+                errorMessage="Diagnostic scan could not be completed."
+                onSuccess={(result) => {
+                  setDiagnosticResults(result || null);
+                  const message =
+                    result?.overallStatus === "passed"
+                      ? "All diagnostic checks passed"
+                      : result?.overallStatus === "needs_attention"
+                        ? result.overallLabel || "Some diagnostic checks need attention"
+                        : result?.overallLabel || "Diagnostic could not be completed";
+                  if (result?.overallStatus === "passed") {
+                    toast.success(message);
+                  } else if (result?.overallStatus === "needs_attention") {
+                    toast.warning(message);
+                  } else if (result) {
+                    toast.error(message);
+                  }
+                }}
+                onError={() => {
+                  setDiagnosticResults(null);
+                  setDiagnosticRequestError(
+                    "Diagnostic scan could not be completed. Check your connection and try again.",
+                  );
+                }}
               >
                 Run diagnostic scan
               </BotShieldAsyncButton>
@@ -6665,6 +6742,14 @@ function SettingsPage({ model, actions }) {
             title="Diagnostic scan"
             variant="diagnostic"
           />
+          {diagnosticRequestError ? (
+            <p className="botshield-settings-hub-note is-error" role="alert">
+              {diagnosticRequestError}
+            </p>
+          ) : null}
+          {diagnosticResults ? (
+            <SettingsHubDiagnosticResults diagnostic={diagnosticResults} />
+          ) : null}
           <SettingsHubRow
             control={
               <BotShieldAsyncButton

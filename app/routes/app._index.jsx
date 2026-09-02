@@ -2779,12 +2779,9 @@ export default function Index() {
     resumeProtection: () =>
       persistProtectionSettings({ protectionPausedUntil: null }),
     runDiagnostic: async () => {
-      const data = await runLiveScanRequest();
-      const actionLabel = data.action ?? data.actionTaken ?? "unknown";
-      setResult(`Diagnostic: ${data.threatLevel} risk, ${actionLabel}`);
-      setLastScanTime(new Date().toLocaleTimeString());
-      await refreshBackendState();
-      return data;
+      const data = await safeFetchJson("/api/diagnostic", { method: "POST" });
+      await Promise.all([loadProtectionStatus(), loadSettings()]);
+      return data.diagnostic;
     },
     runSimulation: async () => {
       const risks = ["low", "medium", "high"];
