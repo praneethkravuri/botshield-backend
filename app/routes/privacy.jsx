@@ -1,123 +1,219 @@
+import {
+  PublicLegalFact,
+  PublicLegalRelatedLinks,
+  PublicLegalSection,
+} from "../components/public/PublicLegalContent";
 import { PublicLegalShell, PublicSupportEmailLink } from "../components/public/PublicLegalShell";
 import { publicInfo } from "../config/public-info";
+
+const sections = [
+  { id: "information-collected", label: "Information collected" },
+  { id: "how-we-use", label: "How we use information" },
+  { id: "merchant-contacts", label: "Merchant contacts" },
+  { id: "sharing", label: "Sharing" },
+  { id: "retention-deletion", label: "Retention and deletion" },
+  { id: "fraud-orders", label: "Fraud Orders" },
+  { id: "customer-rights", label: "Customer rights" },
+  { id: "data-protection", label: "Data protection agreement" },
+  { id: "service-providers", label: "Service providers" },
+  { id: "automated-decisions", label: "Automated decisions" },
+  { id: "security", label: "Security" },
+  { id: "contact", label: "Contact" },
+];
 
 export const meta = () => [{ title: `Privacy Policy | ${publicInfo.appName}` }];
 
 export default function PrivacyPage() {
   return (
-    <PublicLegalShell title="Privacy Policy">
-      <p>
-        {publicInfo.appName} provides storefront security, traffic analysis,
-        threat detection, and merchant-managed protection tools for Shopify
-        stores. This Privacy Policy explains what information BotShield
-        processes, why it is used, how it is retained, and the choices
-        available to merchants.
-      </p>
-      <h2>Information We Collect</h2>
-      <p>
-        We may process Shopify store domain details, app installation records,
-        app configuration, scan records, IP addresses, paths, user-agent
-        strings, referrer data, network intelligence such as ASN or
-        hosting-provider classification, and related threat evidence. When a
-        merchant connects Fraud Orders, BotShield may process supported Shopify
-        order and fraud/risk information such as order identifiers, order
-        totals, payment and fulfillment status, and Shopify risk assessments.
-        BotShield&apos;s v1 Fraud Orders integration does not request customer
-        name, customer email, phone, billing address, or shipping address. We
-        do not intentionally collect payment card data or account passwords.
-      </p>
-      <h2>How We Use Information</h2>
-      <p>
-        We use information to provide and operate {publicInfo.appName}, detect
-        suspicious or abusive traffic behavior, present supported Shopify order
-        risk information in Fraud Orders, store merchant configuration and
-        scan history, improve reliability, and provide support.
-      </p>
-      <h2>Sharing</h2>
-      <p>
-        We do not sell personal data. We may share information with service
-        providers when needed to host, secure, support, or operate the app, or
-        when required by law.
-      </p>
-      <h2>Consent And Customer Rights</h2>
-      <p>
-        Merchants install BotShield through Shopify and authorize the processing
-        described in this policy. Merchants remain responsible for providing any
-        storefront notices or consent mechanisms required for their business.
-        BotShield honors Shopify&apos;s mandatory customer data request,
-        customer redaction, and shop redaction workflows. Because storefront
-        security events are not linked to Shopify customer IDs, customer-specific
-        requests normally produce no matching customer record in BotShield.
-      </p>
-      <h2>Service Providers</h2>
-      <p>
-        Data is processed using infrastructure and service providers that may
-        include Shopify, Render, PostgreSQL hosting, Resend for merchant email
-        delivery, and an IP-network intelligence provider. These providers
-        process information only to operate BotShield.
-      </p>
-      <h2>Retention And Deletion</h2>
-      <p>
-        Storefront security events, including IP addresses and request evidence,
-        are automatically deleted after 30 days while the app remains installed.
-        After uninstall or a valid deletion request, remaining shop-scoped data
-        is deleted through Shopify&apos;s mandatory shop-redaction webhook,
-        normally within 30 days unless a longer period is legally required.
-        Fraud Orders order and risk data is fetched live from Shopify and is not
-        stored by BotShield. Merchant settings, blocklists, whitelists, notes,
-        and tags are deleted when Shopify sends the shop-redaction webhook.
-        Cached network-intelligence records are automatically deleted after 24
-        hours. See our{" "}
-        <a href={publicInfo.dataRetentionUrl}>Data retention</a> and{" "}
-        <a href={publicInfo.dataDeletionUrl}>Data deletion</a> pages for more
-        detail.
-      </p>
-      <h2>Data Protection Agreement</h2>
-      <p>
-        By installing {publicInfo.appName}, merchants authorize BotShield to
-        process the information described in this policy solely to provide the
-        app&apos;s security, monitoring, and Fraud Orders functionality.
-        BotShield processes personal data only for those stated purposes, does
-        not sell merchant or customer personal data, and limits Fraud Orders v1
-        to supported Shopify order and risk fields without requesting customer
-        name, email, phone, billing address, or shipping address. Merchants
-        remain responsible for providing any required notices to their
-        customers and for configuring protection settings appropriately for
-        their store.
-      </p>
-      <h2>Privacy Requests</h2>
-      <p>
-        BotShield implements Shopify&apos;s mandatory customer data request,
-        customer redaction, and shop redaction webhooks. Storefront security
-        events are not linked to Shopify customer IDs, so customer-specific
-        requests normally produce no matching customer record. Shop redaction
-        deletes remaining shop-scoped BotShield data for that store.
-      </p>
-      <h2>Automated Decisions</h2>
-      <p>
-        BotShield may automatically allow, challenge, or block storefront
-        requests based on configured risk rules. Merchants control protection
-        settings, pausing, and trusted-visitor lists. Fraud Orders is a merchant
-        review workspace for supported Shopify order-risk information and does
-        not make legal, credit, or similarly significant automated decisions
-        about customers on a merchant&apos;s behalf.
-      </p>
-      <h2>Security And International Processing</h2>
-      <p>
-        We use access controls, encrypted HTTPS transport, restricted production
-        credentials, and provider-managed PostgreSQL storage through Render.
-        Render-managed PostgreSQL provides provider-managed encryption in transit
-        and at rest for hosted database storage. BotShield logs access to
-        protected-data workflows using safe metadata such as shop domain,
-        operation category, and success or failure, without writing order
-        payloads or customer identifiers into audit logs. No internet service can
-        guarantee absolute security. Information may be processed in the United
-        States where our infrastructure providers operate.
-      </p>
-      <h2>Contact</h2>
-      <p>
-        Privacy questions can be sent to <PublicSupportEmailLink />.
-      </p>
+    <PublicLegalShell
+      title="Privacy Policy"
+      summary="How BotShield processes merchant, storefront, and supported Shopify data for security, analytics, alerts, and optional Fraud Orders review."
+      sections={sections}
+    >
+      <PublicLegalSection id="information-collected" title="Information We Collect">
+        <p>
+          BotShield provides storefront security, traffic analysis, threat detection,
+          and merchant-managed protection tools for Shopify stores. Depending on how
+          you use the app, we may process:
+        </p>
+        <h3>Store and app information</h3>
+        <ul>
+          <li>Shopify store domain and shop identifiers</li>
+          <li>App installation and authentication records for the embedded Shopify admin app</li>
+          <li>Merchant configuration such as protection settings, alert preferences, blocklists, trusted visitor lists, and related shop-scoped settings</li>
+          <li>Billing and subscription status metadata needed to show plan state inside the app</li>
+        </ul>
+        <h3>Storefront security events</h3>
+        <p>
+          When the BotShield theme app embed is enabled, compatible storefront browsers
+          may send request context that BotShield records as storefront security events.
+          Depending on the event, this may include:
+        </p>
+        <ul>
+          <li>IP address, user agent, visited path, and request timing signals</li>
+          <li>Risk scores, decision outcomes, reason codes, and related threat evidence generated by BotShield</li>
+          <li>Network intelligence such as ASN, hosting-provider classification, country or city metadata, and VPN, proxy, or datacenter indicators</li>
+        </ul>
+        <h3>Fraud Orders</h3>
+        <p>
+          When a merchant enables Fraud Orders and Shopify grants the required access,
+          BotShield may process supported Shopify order and order-risk information such
+          as order identifiers, order name, creation time, order total, payment and
+          fulfillment status, Shopify risk recommendation, risk level, assessment
+          provider title, and supported assessment fact descriptions.
+        </p>
+        <PublicLegalFact title="Fraud Orders field limits">
+          <p>
+            BotShield does not request customer name, customer email, phone, billing
+            address, or shipping address through Fraud Orders. BotShield does not
+            intentionally collect payment card data or account passwords.
+          </p>
+        </PublicLegalFact>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="how-we-use" title="How We Use Information">
+        <p>
+          We use information to provide and operate {publicInfo.appName}, detect
+          suspicious or abusive traffic behavior, present supported Shopify order-risk
+          information in Fraud Orders, maintain merchant configuration and storefront
+          security event history, deliver alerts and weekly reports, improve
+          reliability, and provide support.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="merchant-contacts" title="Merchant And Notification Contact Information">
+        <p>
+          When merchants enable email alerts or weekly reports, BotShield stores and
+          uses the merchant-configured alert email address to send notifications and
+          may retain delivery status metadata associated with those messages.
+        </p>
+        <PublicLegalFact title="Merchant email is not customer email">
+          <p>
+            The merchant alert email used for BotShield notifications is separate
+            from customer contact information. Fraud Orders does not request customer
+            email addresses from Shopify.
+          </p>
+        </PublicLegalFact>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="sharing" title="Sharing">
+        <p>
+          We do not sell personal data. We may share information with service
+          providers when needed to host, secure, support, or operate the app, or when
+          required by law.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="retention-deletion" title="Retention And Deletion">
+        <p>
+          Retention periods vary by data category. Storefront security events are
+          automatically deleted after 30 days while the app remains installed.
+          Cached network-intelligence records expire after 24 hours. Merchant
+          configuration, blocklists, trusted visitor lists, billing status metadata,
+          and related shop-scoped records are retained while the app remains
+          installed.
+        </p>
+        <p>
+          When a merchant uninstalls BotShield, stored Shopify app sessions for that
+          store are removed. Other shop-scoped application data is deleted when
+          Shopify sends the mandatory shop redaction webhook, which Shopify controls
+          in timing. Fraud Orders order and risk information is fetched live from
+          Shopify for display and is not stored by BotShield as Shopify order records.
+        </p>
+        <p>
+          See our <a href={publicInfo.dataRetentionUrl}>Data retention</a> and{" "}
+          <a href={publicInfo.dataDeletionUrl}>Data deletion</a> pages for category-level
+          detail.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="fraud-orders" title="Fraud Orders And Shopify Order-Risk Information">
+        <p>
+          Shopify provides order-risk information for eligible orders. BotShield
+          presents that supported information in a merchant review workspace. BotShield
+          does not create Shopify&apos;s fraud or risk assessments.
+        </p>
+        <p>
+          Supported Fraud Orders data is fetched live from Shopify and is not persisted
+          as Shopify order records inside BotShield&apos;s database.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="customer-rights" title="Consent And Customer Rights">
+        <p>
+          Merchants install BotShield through Shopify and authorize the processing
+          described in this policy. Merchants remain responsible for providing any
+          storefront notices or consent mechanisms required for their business.
+        </p>
+        <p>
+          BotShield honors Shopify&apos;s mandatory customer data request, customer
+          redaction, and shop redaction workflows. Storefront security events are not
+          linked to Shopify customer IDs, so customer-specific requests normally
+          produce no matching customer record in BotShield.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="data-protection" title="Data Protection Agreement">
+        <p>
+          By installing {publicInfo.appName}, merchants authorize BotShield to process
+          the information described in this policy solely to provide the app&apos;s
+          security, monitoring, and Fraud Orders functionality. BotShield processes
+          personal data only for those stated purposes, does not sell merchant or
+          customer personal data, and limits Fraud Orders to supported Shopify order
+          and risk fields without requesting customer name, email, phone, billing
+          address, or shipping address. Merchants remain responsible for providing any
+          required notices to their customers and for configuring protection settings
+          appropriately for their store.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="service-providers" title="Service Providers">
+        <p>
+          Data is processed using infrastructure and service providers that may include
+          Shopify, Render, PostgreSQL hosting, Resend for merchant email delivery, and
+          an IP network-intelligence provider. These providers process information only
+          to operate BotShield.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="automated-decisions" title="Automated Decisions">
+        <p>
+          BotShield may automatically allow, challenge, or block storefront requests
+          based on configured risk rules. Merchants control protection settings,
+          pausing, and trusted-visitor lists. Fraud Orders is a merchant review
+          workspace for supported Shopify order-risk information and does not make
+          legal, credit, or similarly significant automated decisions about customers
+          on a merchant&apos;s behalf.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="security" title="Security And International Processing">
+        <p>
+          We use access controls, encrypted HTTPS transport, and provider-managed
+          PostgreSQL storage through Render. BotShield logs access to protected-data
+          workflows using safe metadata such as shop domain, operation category, and
+          success or failure, without writing order payloads or customer identifiers
+          into audit logs. No internet service can guarantee absolute security.
+          Information may be processed in the United States where our infrastructure
+          providers operate.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalSection id="contact" title="Contact">
+        <p>
+          Privacy questions can be sent to <PublicSupportEmailLink />.
+        </p>
+      </PublicLegalSection>
+
+      <PublicLegalRelatedLinks
+        links={[
+          { href: publicInfo.dataUseUrl, label: "Data use" },
+          { href: publicInfo.dataRetentionUrl, label: "Data retention" },
+          { href: publicInfo.dataDeletionUrl, label: "Data deletion" },
+          { href: publicInfo.termsUrl, label: "Terms of service" },
+          { href: publicInfo.supportUrl, label: "Support" },
+        ]}
+      />
     </PublicLegalShell>
   );
 }

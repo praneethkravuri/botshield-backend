@@ -3395,7 +3395,38 @@ export function BotShieldAppFrame({ children }) {
           font-size: 13px;
           font-weight: 650;
           line-height: 1.3;
-          white-space: nowrap;
+          text-align: center;
+        }
+        .botshield-settings-hub-group.is-privacy .botshield-settings-hub-row.has-icon {
+          grid-template-columns: 28px minmax(0, 1fr) 204px;
+          align-items: center;
+          min-height: 72px;
+          padding: 14px 16px;
+        }
+        .botshield-settings-hub-group.is-privacy .botshield-settings-hub-row-copy p {
+          max-width: 56ch;
+        }
+        .botshield-settings-hub-group.is-privacy .botshield-settings-hub-row-control {
+          width: 204px;
+          min-width: 204px;
+          max-width: 204px;
+          justify-content: center;
+        }
+        .botshield-settings-hub-fixed-action {
+          display: block;
+          width: 100%;
+        }
+        .botshield-settings-hub-fixed-action s-button {
+          display: block;
+          width: 100%;
+        }
+        .botshield-settings-hub-fixed-value {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          min-height: 36px;
+          padding: 0 8px;
         }
         .botshield-settings-hub-meta {
           display: flex;
@@ -3740,6 +3771,25 @@ export function BotShieldAppFrame({ children }) {
           }
           .botshield-settings-hub-row-control {
             justify-content: flex-start;
+          }
+          .botshield-settings-hub-group.is-privacy .botshield-settings-hub-row.has-icon {
+            grid-template-columns: 28px minmax(0, 1fr);
+          }
+          .botshield-settings-hub-group.is-privacy .botshield-settings-hub-row-control {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            justify-content: stretch;
+          }
+          .botshield-settings-hub-fixed-value {
+            justify-content: flex-start;
+            min-height: 0;
+            padding: 0;
+            text-align: left;
+          }
+          .botshield-settings-hub-group.is-privacy .botshield-settings-hub-value {
+            text-align: left;
+            white-space: normal;
           }
           .botshield-settings-hub-subscription-grid {
             grid-template-columns: 1fr;

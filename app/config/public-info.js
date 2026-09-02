@@ -10,4 +10,5 @@ export const publicInfo = {
   dataRetentionUrl: "/data-retention",
   dataDeletionUrl: "/data-deletion",
   effectiveDate: "June 20, 2026",
+  lastUpdatedDate: "September 1, 2026",
 };

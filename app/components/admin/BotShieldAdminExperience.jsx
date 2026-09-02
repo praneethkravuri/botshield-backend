@@ -5743,6 +5743,18 @@ function SettingsHubStatusPill({ label, tone = "neutral" }) {
   );
 }
 
+function SettingsHubFixedAction({ children }) {
+  return <div className="botshield-settings-hub-fixed-action">{children}</div>;
+}
+
+function SettingsHubFixedValue({ children }) {
+  return (
+    <div className="botshield-settings-hub-fixed-value">
+      <span className="botshield-settings-hub-value">{children}</span>
+    </div>
+  );
+}
+
 function SettingsHubRow({
   title,
   description,
@@ -6501,76 +6513,80 @@ function SettingsPage({ model, actions }) {
           title="Data handling"
         >
           <SettingsHubRow
-            control={
-              <span className="botshield-settings-hub-value">
-                {recordedActivityLabel}
-              </span>
-            }
-            description="BotShield records the storefront security and protection activity needed for analytics, alerts, investigation, and enforcement."
+            control={<SettingsHubFixedValue>{recordedActivityLabel}</SettingsHubFixedValue>}
+            description="Storefront security and protection activity recorded for analytics, alerts, investigation, and enforcement."
             icon="activity"
             title="Recorded activity"
             variant="info"
           />
           <SettingsHubRow
-            control={
-              <span className="botshield-settings-hub-value">{simulationLabel}</span>
-            }
-            description="Simulation and test activity stays separate from real storefront metrics and reports."
+            control={<SettingsHubFixedValue>{simulationLabel}</SettingsHubFixedValue>}
+            description="Simulation and test activity stays separate from live storefront metrics and reports."
             icon="diagnostic"
             title="Simulation data"
             variant="info"
           />
           <SettingsHubRow
             control={
-              <BotShieldActionButton href="/data-retention" target="_blank">
-                View retention details
-              </BotShieldActionButton>
+              <SettingsHubFixedAction>
+                <BotShieldActionButton href="/data-retention" target="_blank">
+                  View retention details
+                </BotShieldActionButton>
+              </SettingsHubFixedAction>
             }
-            description="Storefront security events are automatically deleted after 30 days while the app remains installed."
+            description="Storefront security events are removed automatically after 30 days while BotShield remains installed."
             icon="privacyRow"
             title="Data retention"
             variant="action"
           />
           <SettingsHubRow
             control={
-              <BotShieldActionButton href="/data-use" target="_blank">
-                View data use
-              </BotShieldActionButton>
+              <SettingsHubFixedAction>
+                <BotShieldActionButton href="/data-use" target="_blank">
+                  View data use
+                </BotShieldActionButton>
+              </SettingsHubFixedAction>
             }
-            description="When Fraud Orders is enabled, BotShield uses the minimum supported Shopify order and order-risk information needed for review. v1 does not request customer name, email, phone, billing address, or shipping address."
+            description="Fraud Orders uses supported Shopify order and order-risk fields only. Customer contact and address fields are not requested."
             icon="privacyRow"
             title="Shopify data use"
             variant="action"
           />
           <SettingsHubRow
             control={
-              <BotShieldActionButton href="/privacy" target="_blank">
-                View privacy policy
-              </BotShieldActionButton>
+              <SettingsHubFixedAction>
+                <BotShieldActionButton href="/privacy" target="_blank">
+                  View privacy policy
+                </BotShieldActionButton>
+              </SettingsHubFixedAction>
             }
-            description="Learn what information BotShield processes, why it is used, and how it is protected."
+            description="What BotShield processes, why it is used, and how merchant and storefront data is protected."
             icon="privacyRow"
             title="Privacy policy"
             variant="action"
           />
           <SettingsHubRow
             control={
-              <BotShieldActionButton href="/terms" target="_blank">
-                View terms
-              </BotShieldActionButton>
+              <SettingsHubFixedAction>
+                <BotShieldActionButton href="/terms" target="_blank">
+                  View terms
+                </BotShieldActionButton>
+              </SettingsHubFixedAction>
             }
-            description="Review the terms that govern installation, use, billing, and merchant responsibilities for BotShield."
+            description="Terms governing installation, use, billing, and merchant responsibilities."
             icon="privacyRow"
             title="Terms of service"
             variant="action"
           />
           <SettingsHubRow
             control={
-              <BotShieldActionButton href="/data-deletion" target="_blank">
-                View deletion details
-              </BotShieldActionButton>
+              <SettingsHubFixedAction>
+                <BotShieldActionButton href="/data-deletion" target="_blank">
+                  View deletion details
+                </BotShieldActionButton>
+              </SettingsHubFixedAction>
             }
-            description="Uninstall and Shopify shop-redaction workflows remove remaining shop-scoped BotShield data when those requests are received."
+            description="Uninstall removes app sessions immediately. Remaining shop data is deleted when Shopify sends shop redaction."
             icon="privacyRow"
             title="Data deletion / uninstall"
             variant="action"

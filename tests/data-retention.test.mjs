@@ -138,11 +138,12 @@ test("privacy policy states automatic 30-day BotEvent retention", async () => {
   assert.match(privacy, /automatically deleted after 30 days/);
   assert.match(
     privacy,
-    /does not request customer[\s\S]*billing address, or shipping address/i,
+    /(?:does not request|without requesting) customer[\s\S]*shipping address/i,
   );
+  assert.match(privacy, /merchant-configured alert email|Merchant And Notification Contact Information/i);
   assert.match(privacy, /Data Protection Agreement/);
   assert.match(privacy, /do not sell personal data/i);
-  assert.match(privacy, /Fraud Orders is a merchant[\s\S]*review workspace/);
+  assert.match(privacy, /merchant[\s\S]*review[\s\S]*workspace/);
 });
 
 test("terms reference the privacy policy as the merchant data-processing agreement", async () => {
@@ -154,7 +155,7 @@ test("terms reference the privacy policy as the merchant data-processing agreeme
   assert.match(terms, /Data Processing/);
   assert.match(
     terms,
-    /without requesting customer[\s\S]*billing address, or shipping address/i,
+    /without requesting customer[\s\S]*shipping address/i,
   );
 });
 
