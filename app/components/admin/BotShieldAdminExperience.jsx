@@ -7,6 +7,12 @@ import {
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
 import {
+  formatHydrationStableDateTime,
+  formatHydrationStableNumber,
+  HYDRATION_STABLE_LOCALE,
+  HYDRATION_STABLE_TIME_ZONE,
+} from "../../lib/hydration-safe-format.js";
+import {
   BotShieldActionButton,
   BotShieldAppFrame,
   BotShieldAsyncButton,
@@ -105,9 +111,7 @@ function getProtectionProfile(model) {
 }
 
 function formatDate(value, fallback = "Not yet") {
-  if (!value) return fallback;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleString();
+  return formatHydrationStableDateTime(value, fallback);
 }
 
 function formatDeliveryDetail(status, timestamp, fallback) {
@@ -1075,7 +1079,11 @@ function buildOverviewThreatSeries(events, periodDays = 30) {
     date.setDate(date.getDate() - (periodDays - 1 - index));
     return {
       key: date.toISOString().slice(0, 10),
-      label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      label: date.toLocaleDateString(HYDRATION_STABLE_LOCALE, {
+        timeZone: HYDRATION_STABLE_TIME_ZONE,
+        month: "short",
+        day: "numeric",
+      }),
       allowed: 0,
       challenged: 0,
       blocked: 0,
@@ -1206,10 +1214,28 @@ function BotShieldHydrationSafeRelativeTime({ value, emptyLabel = "No decisions 
   return formatRelativeTime(value);
 }
 
+function BotShieldHydrationSafeStack({ gap, children, className = "" }) {
+  const mounted = useBotShieldClientMount();
+  if (!mounted) {
+    return (
+      <div
+        className={`botshield-hydration-safe-stack${className ? ` ${className}` : ""}`.trim()}
+      >
+        {children}
+      </div>
+    );
+  }
+  return (
+    <s-stack gap={gap} className={className || undefined}>
+      {children}
+    </s-stack>
+  );
+}
+
 function formatCurrencyMinor(amountMinor, currencyCode) {
   if (!Number.isSafeInteger(Number(amountMinor)) || !currencyCode) return null;
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(HYDRATION_STABLE_LOCALE, {
       style: "currency",
       currency: currencyCode,
       maximumFractionDigits: 2,
@@ -1220,6 +1246,7 @@ function formatCurrencyMinor(amountMinor, currencyCode) {
 }
 
 function OverviewIcon({ name, centered = false }) {
+  const mounted = useBotShieldClientMount();
   const icons = {
     activity: "chart-line",
     shield: "shield-check-mark",
@@ -1238,12 +1265,14 @@ function OverviewIcon({ name, centered = false }) {
       aria-hidden="true"
       style={centered ? { display: "grid", placeItems: "center" } : undefined}
     >
-      <s-icon
-        type={icons[name] || icons.shield}
-        size="small"
-        color="subdued"
-        style={centered ? { display: "block", margin: "auto" } : undefined}
-      />
+      {mounted ? (
+        <s-icon
+          type={icons[name] || icons.shield}
+          size="small"
+          color="subdued"
+          style={centered ? { display: "block", margin: "auto" } : undefined}
+        />
+      ) : null}
     </span>
   );
 }
@@ -1251,7 +1280,7 @@ function OverviewIcon({ name, centered = false }) {
 function OverviewMetricCard({ label, value, detail, loading, icon }) {
   const numericValue = Number(value);
   const displayValue = Number.isFinite(numericValue)
-    ? numericValue.toLocaleString()
+    ? formatHydrationStableNumber(numericValue)
     : "\u2014";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
@@ -1356,7 +1385,8 @@ function OverviewPage({ model, actions }) {
   const storedThreatSeries = Array.isArray(model.overviewThreatActivity?.days)
     ? model.overviewThreatActivity.days.map((day) => ({
         key: day.date,
-        label: new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, {
+        label: new Date(`${day.date}T00:00:00`).toLocaleDateString(HYDRATION_STABLE_LOCALE, {
+          timeZone: HYDRATION_STABLE_TIME_ZONE,
           month: "short",
           day: "numeric",
         }),
@@ -1506,7 +1536,7 @@ function OverviewPage({ model, actions }) {
   return (
     <BotShieldNativePage heading="Overview">
       <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
-        <s-stack gap="large">
+        <BotShieldHydrationSafeStack gap="large">
           <section
             className={`botshield-v2-status ${protectionState.className}`}
             aria-labelledby="botshield-protection-status-title"
@@ -1583,7 +1613,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="clock" />
                 <span>Last decision</span>
-                <strong><i className={`botshield-v2-health-dot ${lastStorefrontDecisionAt ? "is-info" : "is-muted"}`} />{formatRelativeTime(lastStorefrontDecisionAt)}</strong>
+                <strong><i className={`botshield-v2-health-dot ${lastStorefrontDecisionAt ? "is-info" : "is-muted"}`} /><BotShieldHydrationSafeRelativeTime value={lastStorefrontDecisionAt} /></strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="shield" />
@@ -1766,7 +1796,7 @@ function OverviewPage({ model, actions }) {
                     Verify connection
                   </BotShieldActionButton>
                   {lastStorefrontDecisionAt ? (
-                    <small>Last decision received {formatRelativeTime(lastStorefrontDecisionAt)}</small>
+                    <small>Last decision received <BotShieldHydrationSafeRelativeTime value={lastStorefrontDecisionAt} /></small>
                   ) : null}
                 </div>
               )}
@@ -1912,7 +1942,7 @@ function OverviewPage({ model, actions }) {
                     <div style={{ marginTop: "12px", color: "#6d7175", fontSize: "10px" }}>
                       Last suspicious event{" "}
                       <strong style={{ color: "#202223", fontSize: "11px" }}>
-                        {formatRelativeTime(lastSuspiciousEvent?.createdAt)}
+                        <BotShieldHydrationSafeRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" />
                       </strong>
                     </div>
                   </>
@@ -2030,7 +2060,7 @@ function OverviewPage({ model, actions }) {
               </div>
             </section>
           </div>
-        </s-stack>
+        </BotShieldHydrationSafeStack>
       </BotShieldPageShell>
     </BotShieldNativePage>
   );
@@ -2231,9 +2261,7 @@ function AnalyticsPage({ model, actions }) {
     ? new Date(peakBucketStart.getTime() + bucketDuration)
     : null;
   const peakActivityLabel = peakBucketStart && peakBucketEnd
-    ? periodDays === 1
-      ? `${peakBucketStart.toLocaleTimeString([], { hour: "numeric" })}–${peakBucketEnd.toLocaleTimeString([], { hour: "numeric" })}`
-      : peakBucketStart.toLocaleDateString([], { month: "short", day: "numeric" })
+    ? formatAnalyticsBucketLabel(peakBucketStart, peakBucketEnd, periodDays)
     : "—";
   const lastSuspiciousEvent = suspiciousEvents
     .slice()
@@ -2344,12 +2372,12 @@ function AnalyticsPage({ model, actions }) {
 
         <div className="botshield-analytics-section-label">Behavior</div>
         <AnalyticsPanel title="Activity patterns" subtitle="See when suspicious storefront activity is most concentrated.">
-          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong>{formatRelativeTime(lastSuspiciousEvent?.createdAt)}</strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity recorded for this period. Try a wider date range or clear filters." />}
+          {suspiciousEvents.length ? <div className={`botshield-analytics-activity${activeActivityBuckets.length <= 2 ? " is-sparse" : ""}`}><div className="botshield-analytics-activity-facts"><div><span>Peak suspicious activity</span><strong>{peakActivityLabel}</strong></div><div><span>Suspicious events</span><strong>{suspiciousEvents.length.toLocaleString()}</strong></div><div><span>Last suspicious event</span><strong><BotShieldHydrationSafeRelativeTime value={lastSuspiciousEvent?.createdAt} emptyLabel="No recent events" /></strong></div></div><div className="botshield-analytics-histogram" role="img" aria-label={`Suspicious activity distribution across ${bucketCount} time buckets`}>{activityBuckets.map((bucket) => <span className={bucket.index === peakActivityBucket?.index ? "is-peak" : ""} key={bucket.index} title={`${bucket.label}\nSuspicious events: ${bucket.count}\nBlocked: ${bucket.blocked}\nChallenged: ${bucket.challenged}`}><i style={{ height: `${bucket.count ? Math.max(7, (bucket.count / activityMaximum) * 100) : 0}%` }} /></span>)}</div><div className="botshield-analytics-axis" aria-hidden="true"><span>{activityBuckets[0]?.label}</span><span>{activityBuckets.at(-1)?.label}</span></div></div> : <AnalyticsEmpty text="No suspicious activity recorded for this period. Try a wider date range or clear filters." />}
         </AnalyticsPanel>
 
         <><div className="botshield-analytics-section-label">Paths and network sources</div><div className="botshield-analytics-split"><AnalyticsPanel title="Most targeted storefront areas" subtitle="Storefront paths receiving the most suspicious activity.">{pathRows.length ? <AnalyticsCompactRanking rows={pathRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No targeted storefront paths were recorded during this period." />}</AnalyticsPanel><AnalyticsPanel title="Network sources" subtitle="Network types recorded for suspicious storefront events.">{attackOriginRows.length ? <AnalyticsCompactRanking rows={attackOriginRows} total={suspiciousEvents.length} /> : <AnalyticsEmpty text="No reliable network origin data was recorded during this period." />}</AnalyticsPanel></div></>
 
-        <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers.">{visitorRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td>{formatRelativeTime(row.lastSeen)}</td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No recurring suspicious visitors matched this period and filter selection." />}</AnalyticsPanel></>
+        <><div className="botshield-analytics-section-label">Visitor intelligence</div><AnalyticsPanel title="Recurring suspicious visitors" subtitle="Analyze recurring and high-risk visitor behavior using masked visitor identifiers.">{visitorRows.length ? <div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-visitor-table"><thead><tr><th>Visitor</th><th>Events</th><th>Primary signal</th><th>Risk</th><th>Outcome</th><th>Last seen</th></tr></thead><tbody>{visitorRows.map((row) => <tr className={row.count > 1 ? "is-recurring" : ""} key={row.ipAddress}><th><span className="botshield-analytics-visitor-id">{row.masked}</span>{row.count > 1 ? <span className="botshield-analytics-repeat">Repeat</span> : null}</th><td>{row.count}</td><td>{row.signal}</td><td><BotShieldStatusBadge status={row.risk} label={getRiskLabel(row.risk)} /></td><td>{row.outcome}</td><td><BotShieldHydrationSafeRelativeTime value={row.lastSeen} emptyLabel="No activity" /></td></tr>)}</tbody></table></div> : <AnalyticsEmpty text="No recurring suspicious visitors matched this period and filter selection." />}</AnalyticsPanel></>
 
         <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that appear together in recorded events.">{combinationRows.length ? <div className="botshield-analytics-combinations">{combinationRows.map((row) => <div className="botshield-analytics-combination" key={row.label}><div className="botshield-analytics-combination-signals">{row.label.split(" + ").map((signal, index) => <span key={signal}>{index ? <b aria-hidden="true">+</b> : null}<strong>{signal}</strong></span>)}</div><dl><div><dt>Events</dt><dd>{row.count}</dd></div><div><dt>Share</dt><dd>{analyticsPercent(row.count, suspiciousEvents.length)}%</dd></div><div><dt>Intervention</dt><dd>{analyticsPercent(row.interventions, row.count)}%</dd></div></dl></div>)}</div> : <AnalyticsEmpty text="No multi-signal event combinations were recorded during this period." />}</AnalyticsPanel>
 
@@ -2405,9 +2433,7 @@ function formatAnalyticsPath(value) {
 }
 
 function formatAnalyticsTimestamp(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleString([], {
+  return formatHydrationStableDateTime(value, "—", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -2418,12 +2444,14 @@ function formatAnalyticsTimestamp(value) {
 function formatAnalyticsDetailTimestamp(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  const dateLabel = date.toLocaleDateString([], {
+  const dateLabel = date.toLocaleDateString(HYDRATION_STABLE_LOCALE, {
+    timeZone: HYDRATION_STABLE_TIME_ZONE,
     month: "short",
     day: "numeric",
     year: "numeric",
   });
-  const timeLabel = date.toLocaleTimeString([], {
+  const timeLabel = date.toLocaleTimeString(HYDRATION_STABLE_LOCALE, {
+    timeZone: HYDRATION_STABLE_TIME_ZONE,
     hour: "numeric",
     minute: "2-digit",
   });
@@ -2432,9 +2460,19 @@ function formatAnalyticsDetailTimestamp(value) {
 
 function formatAnalyticsBucketLabel(start, end, periodDays) {
   if (periodDays === 1) {
-    return `${start.toLocaleTimeString([], { hour: "numeric" })}–${end.toLocaleTimeString([], { hour: "numeric" })}`;
+    return `${start.toLocaleTimeString(HYDRATION_STABLE_LOCALE, {
+      timeZone: HYDRATION_STABLE_TIME_ZONE,
+      hour: "numeric",
+    })}–${end.toLocaleTimeString(HYDRATION_STABLE_LOCALE, {
+      timeZone: HYDRATION_STABLE_TIME_ZONE,
+      hour: "numeric",
+    })}`;
   }
-  return start.toLocaleDateString([], { month: "short", day: "numeric" });
+  return start.toLocaleDateString(HYDRATION_STABLE_LOCALE, {
+    timeZone: HYDRATION_STABLE_TIME_ZONE,
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function getAnalyticsAttackOrigin(event) {
@@ -3144,13 +3182,6 @@ function fraudOrderDisplayValue(value, fallback = "Not provided") {
   return text || fallback;
 }
 
-function formatFraudRefreshLabel(value) {
-  if (!value) return null;
-  const label = formatRelativeTime(value);
-  if (label === "Just now") return "Updated just now";
-  return `Updated ${label}`;
-}
-
 function FraudOrderStatusStrip({ onSetup }) {
   return (
     <BotShieldBanner
@@ -3744,7 +3775,6 @@ function FraudOrdersPage({ model, actions }) {
   const loading = Boolean(model.fraudOrdersLoading);
   const error = model.fraudOrdersError || null;
   const errorCode = model.fraudOrdersErrorCode || null;
-  const refreshLabel = formatFraudRefreshLabel(model.fraudOrdersLastRefreshedAt);
   const riskKey = (order) => String(order?.risk || order?.riskLevel || "pending").toLowerCase();
   const needsReview = (order) => {
     if (!order) return false;
@@ -3989,10 +4019,16 @@ function FraudOrdersPage({ model, actions }) {
               ) : (
                 <p>
                   Triage recent Shopify orders by risk level and recommendation before fulfillment.
-                  {refreshLabel ? (
+                  {model.fraudOrdersLastRefreshedAt ? (
                     <>
                       {" "}
-                      <span className="botshield-fraud-refresh-note">{refreshLabel}</span>
+                      <span className="botshield-fraud-refresh-note">
+                        Updated{" "}
+                        <BotShieldHydrationSafeRelativeTime
+                          emptyLabel="recently"
+                          value={model.fraudOrdersLastRefreshedAt}
+                        />
+                      </span>
                     </>
                   ) : null}
                 </p>

@@ -102,6 +102,8 @@ test("App Bridge save bar and loading bridges defer browser detection until afte
 test("Settings hub section initializes from loader-provided SSR state", () => {
   assert.match(settingsSource, /model\.initialSettingsSection/);
   assert.match(settingsSource, /BotShieldHydrationSafeRelativeTime/);
+  assert.match(adminSource, /BotShieldHydrationSafeStack/);
+  assert.match(adminSource, /formatHydrationStableDateTime/);
   assert.doesNotMatch(settingsSource, /useState\(readSettingsHubSection\)/);
 });
 

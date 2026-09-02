@@ -5,6 +5,10 @@ name = "BotShield"
 application_url = "https://botshield-backend.onrender.com"
 embedded = true
 
+[access.admin]
+direct_api_mode = "online"
+embedded_app_direct_api_access = true
+
 [build]
 automatically_update_urls_on_dev = false
 include_config_on_deploy = true

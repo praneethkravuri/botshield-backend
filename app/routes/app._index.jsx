@@ -10,6 +10,7 @@ import {
   THEME_EMBED_CONNECTION_STATE,
 } from "../lib/theme-extension-status.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
+import { formatHydrationStableDateTime } from "../lib/hydration-safe-format.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,9 +19,7 @@ function getAppRouteData(matches) {
 }
 
 function formatDateForPolaris(value) {
-  if (!value) return "not yet";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "not yet" : date.toLocaleString();
+  return formatHydrationStableDateTime(value, "not yet");
 }
 
 function getWeekStart(dateInput) {

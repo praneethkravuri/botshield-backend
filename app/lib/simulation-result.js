@@ -1,3 +1,5 @@
+import { formatHydrationStableDateTime } from "./hydration-safe-format.js";
+
 const REASON_CODE_CHIP_LABELS = {
   KNOWN_BOT_USER_AGENT: "Known bot user agent",
   SUSPICIOUS_USER_AGENT: "Suspicious user agent",
@@ -65,11 +67,10 @@ export function formatReasonCodeChip(code) {
     .join(" ");
 }
 
+
 export function formatSimulationRecordedAt(value) {
   if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleString(undefined, {
+  return formatHydrationStableDateTime(value, "", {
     month: "short",
     day: "numeric",
     year: "numeric",
