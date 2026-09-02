@@ -14,6 +14,14 @@ const adminSource = await readFile(
   new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
   "utf8",
 );
+const appNavSource = await readFile(
+  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
+  "utf8",
+);
+const appRouteSource = await readFile(
+  new URL("../app/routes/app.jsx", import.meta.url),
+  "utf8",
+);
 
 const settingsSource = adminSource.slice(
   adminSource.indexOf("function SettingsPage"),
@@ -30,23 +38,33 @@ test("toast provider keeps a stable SSR and first-client render tree", () => {
   );
 });
 
+test("Shopify web component shells defer upgrade until after client mount", () => {
+  assert.match(designSource, /function BotShieldNativePage/);
+  assert.match(designSource, /botshield-native-page-fallback/);
+  assert.match(designSource, /function BotShieldActionButton/);
+  assert.match(designSource, /botshield-action-button-fallback/);
+  assert.match(designSource, /function BotShieldStatusBadge/);
+  assert.match(designSource, /botshield-status-badge-fallback/);
+  assert.match(appNavSource, /botshield-app-nav-fallback/);
+  assert.match(appNavSource, /useBotShieldClientMount/);
+  assert.doesNotMatch(appRouteSource, /<s-app-nav>/);
+});
+
 test("App Bridge save bar and loading bridges defer browser detection until after mount", () => {
   assert.match(saveBarSource, /function SaveBarBridgeSlot/);
   assert.match(saveBarSource, /function LoadingBridgeSlot/);
   assert.match(saveBarSource, /const \[clientReady, setClientReady\] = useState\(false\)/);
   assert.match(saveBarSource, /return createElement\(SaveBarBridgeSlot, props\)/);
   assert.match(saveBarSource, /return createElement\(LoadingBridgeSlot, \{ active \}\)/);
-  assert.doesNotMatch(
-    saveBarSource,
-    /export function BotShieldSaveBarBridge[\s\S]*?if \(!isAppBridgeEnvironment\(\)\) \{\s*return null;/,
-  );
 });
 
-test("Settings hub section state syncs from URL after mount instead of during render", () => {
-  assert.match(settingsSource, /const \[activeSection, setActiveSection\] = useState\("general"\)/);
-  assert.match(settingsSource, /setActiveSection\(readSettingsHubSection\(\)\)/);
-  assert.doesNotMatch(
-    settingsSource,
-    /useState\(readSettingsHubSection\)/,
-  );
+test("Settings hub section initializes from loader-provided SSR state", () => {
+  assert.match(settingsSource, /model\.initialSettingsSection/);
+  assert.match(settingsSource, /BotShieldHydrationSafeRelativeTime/);
+  assert.doesNotMatch(settingsSource, /useState\(readSettingsHubSection\)/);
+});
+
+test("embedded app registers Shopify navigate handling for s-link compatibility", () => {
+  assert.match(appRouteSource, /shopify:navigate/);
+  assert.match(appRouteSource, /document\.addEventListener\("shopify:navigate"/);
 });

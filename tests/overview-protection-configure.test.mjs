@@ -11,7 +11,7 @@ const adminSource = fs.readFileSync(
   "utf8",
 );
 const appNavSource = fs.readFileSync(
-  new URL("../app/routes/app.jsx", import.meta.url),
+  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
   "utf8",
 );
 const overviewSource = adminSource.slice(
@@ -51,7 +51,8 @@ test("Protection page opens existing module managers from entry intent", () => {
 });
 
 test("Direct Protection navigation does not auto-open module managers", () => {
-  assert.match(appNavSource, /<s-link href="\/app\/protection-rules">Protection<\/s-link>/);
+  assert.match(appNavSource, /href: "\/app\/protection-rules"/);
+  assert.match(appNavSource, /label: "Protection"/);
   assert.doesNotMatch(appNavSource, /protectionEntryIntent/);
   const locationSyncSource = indexSource.slice(
     indexSource.indexOf("const requestedView = new URLSearchParams(location.search).get(\"view\");"),

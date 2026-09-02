@@ -75,7 +75,7 @@ test("every enabled admin action button has a real handler or destination", asyn
 
 test("active navigation exposes the five supported BotShield pages", async () => {
   const shell = await readFile(
-    new URL("../app/routes/app.jsx", import.meta.url),
+    new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
     "utf8",
   );
   const fraudRoute = await readFile(
@@ -84,10 +84,10 @@ test("active navigation exposes the five supported BotShield pages", async () =>
   );
 
   assert.match(shell, /Overview/);
-  assert.match(shell, /href="\/app"/);
+  assert.match(shell, /href: "\/app"/);
   assert.doesNotMatch(shell, /rel="home"/);
-  assert.match(shell, />Fraud Orders</);
-  assert.match(shell, /href="\/app\/fraud-orders"/);
+  assert.match(shell, /label: "Fraud Orders"/);
+  assert.match(shell, /href: "\/app\/fraud-orders"/);
   assert.match(fraudRoute, /export \{ default \} from "\.\/app\._index"/);
 });
 

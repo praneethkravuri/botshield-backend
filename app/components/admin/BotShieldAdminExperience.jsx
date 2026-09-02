@@ -5,6 +5,7 @@ import {
   getSimulationResultSummary,
 } from "../../lib/simulation-result.js";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
 import {
   BotShieldActionButton,
   BotShieldAppFrame,
@@ -1196,6 +1197,13 @@ function formatRelativeTime(value) {
   const elapsedHours = Math.floor(elapsedMinutes / 60);
   if (elapsedHours < 24) return `${elapsedHours}h ago`;
   return `${Math.floor(elapsedHours / 24)}d ago`;
+}
+
+function BotShieldHydrationSafeRelativeTime({ value, emptyLabel = "No decisions recorded" }) {
+  const mounted = useBotShieldClientMount();
+  if (!value) return emptyLabel;
+  if (!mounted) return "Recent activity";
+  return formatRelativeTime(value);
 }
 
 function formatCurrencyMinor(amountMinor, currencyCode) {
@@ -5698,6 +5706,7 @@ function getSettingsOperationalStrip(model) {
 }
 
 function SettingsHubIcon({ name }) {
+  const mounted = useBotShieldClientMount();
   const icons = {
     general: "gauge",
     billing: "page",
@@ -5721,6 +5730,9 @@ function SettingsHubIcon({ name }) {
     connection: "globe-lines",
     email: "connect",
   };
+  if (!mounted) {
+    return <span aria-hidden="true" className="botshield-v2-icon" />;
+  }
   return (
     <span className="botshield-v2-icon" aria-hidden="true">
       <s-icon type={icons[name] || "gauge"} size="small" color="subdued" />
@@ -6008,7 +6020,9 @@ function SettingsPage({ model, actions }) {
   const [clearingSimulation, setClearingSimulation] = useState(false);
   const [resettingBotShield, setResettingBotShield] = useState(false);
   const [resetError, setResetError] = useState("");
-  const [activeSection, setActiveSection] = useState("general");
+  const [activeSection, setActiveSection] = useState(
+    model.initialSettingsSection ?? "general",
+  );
   const [draft, setDraft] = useState({
     alertEmail: model.alertEmail,
     emailAlerts: model.emailAlerts,
@@ -6039,7 +6053,6 @@ function SettingsPage({ model, actions }) {
   ]);
 
   useEffect(() => {
-    setActiveSection(readSettingsHubSection());
     const syncSectionFromUrl = () => setActiveSection(readSettingsHubSection());
     window.addEventListener("popstate", syncSectionFromUrl);
     return () => window.removeEventListener("popstate", syncSectionFromUrl);
@@ -6803,9 +6816,16 @@ function SettingsPage({ model, actions }) {
               />
             }
             description={
-              model.protectionStatus?.lastStorefrontDecisionAt
-                ? `Last decision ${formatRelativeTime(model.protectionStatus.lastStorefrontDecisionAt)}`
-                : "No recorded storefront decisions yet."
+              model.protectionStatus?.lastStorefrontDecisionAt ? (
+                <>
+                  Last decision{" "}
+                  <BotShieldHydrationSafeRelativeTime
+                    value={model.protectionStatus.lastStorefrontDecisionAt}
+                  />
+                </>
+              ) : (
+                "No recorded storefront decisions yet."
+              )
             }
             icon="activity"
             title="Storefront activity"

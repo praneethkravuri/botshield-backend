@@ -13,6 +13,10 @@ import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function getAppRouteData(matches) {
+  return matches.find((match) => match.id === "routes/app")?.data || {};
+}
+
 function formatDateForPolaris(value) {
   if (!value) return "not yet";
   const date = new Date(value);
@@ -46,9 +50,10 @@ export default function Index() {
   const location = useLocation();
   const navigate = useNavigate();
   const matches = useMatches();
+  const appRouteData = getAppRouteData(matches);
   const shopifyApiKey =
     matches.find((match) => match.data?.apiKey)?.data?.apiKey || "";
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(appRouteData.initialAdminPage ?? "dashboard");
   const [protectionEntryIntent, setProtectionEntryIntent] = useState(null);
 
   const [threatLevel, setThreatLevel] = useState("low");
@@ -2679,6 +2684,7 @@ export default function Index() {
 
   const polarisModel = {
     page,
+    initialSettingsSection: appRouteData.initialSettingsSection ?? "general",
     protectionStatus,
     protectionPaused,
     protectionReady,

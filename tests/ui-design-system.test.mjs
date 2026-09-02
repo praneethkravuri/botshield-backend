@@ -278,20 +278,20 @@ test("Setup checklist stays on supported pages with contextual actions", async (
 
 test("new app shell keeps a simplified Shopify-native app navigation", async () => {
   const source = await readFile(
-    new URL("../app/routes/app.jsx", import.meta.url),
+    new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, />Analytics</);
-  assert.match(source, />Protection</);
-  assert.match(source, /Overview/);
-  assert.match(source, />Fraud Orders</);
-  assert.match(source, />Settings</);
-  assert.match(source, /href="\/app"/);
-  assert.match(source, /href="\/app\/analytics"/);
-  assert.match(source, /href="\/app\/protection-rules"/);
-  assert.match(source, /href="\/app\/fraud-orders"/);
-  assert.match(source, /href="\/app\/settings"/);
+  assert.match(source, /label: "Analytics"/);
+  assert.match(source, /label: "Protection"/);
+  assert.match(source, /label: "Overview"/);
+  assert.match(source, /label: "Fraud Orders"/);
+  assert.match(source, /label: "Settings"/);
+  assert.match(source, /href: "\/app"/);
+  assert.match(source, /href: "\/app\/analytics"/);
+  assert.match(source, /href: "\/app\/protection-rules"/);
+  assert.match(source, /href: "\/app\/fraud-orders"/);
+  assert.match(source, /href: "\/app\/settings"/);
   assert.doesNotMatch(source, /rel="home"/);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Visitors</);
@@ -474,6 +474,7 @@ test("supported pages use Shopify native page chrome", async () => {
   );
 
   assert.match(designSource, /export function BotShieldNativePage/);
+  assert.match(designSource, /botshield-native-page-fallback/);
   assert.match(designSource, /<s-page heading=\{heading\}>/);
   assert.doesNotMatch(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
   assert.match(hookSource, /export function BotShieldPageLoadingBridge/);

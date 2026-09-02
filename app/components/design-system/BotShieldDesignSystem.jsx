@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
+import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
 import {
   BotShieldLoadingBridge,
   BotShieldSaveBarBridge,
@@ -4756,6 +4757,21 @@ export function BotShieldNativePage({
   primaryAction = null,
   secondaryActions = null,
 }) {
+  const mounted = useBotShieldClientMount();
+
+  if (!mounted) {
+    return (
+      <section
+        aria-label={heading || "BotShield"}
+        className="botshield-native-page-fallback"
+      >
+        {primaryAction}
+        {secondaryActions}
+        {children}
+      </section>
+    );
+  }
+
   return (
     <s-page heading={heading}>
       {primaryAction}
@@ -5100,7 +5116,18 @@ export function BotShieldChecklistItem({
 
 export function BotShieldStatusBadge({ status, label, tone }) {
   const model = getUiStatus(status);
-  return <s-badge tone={tone || model.tone}>{label || model.label}</s-badge>;
+  const mounted = useBotShieldClientMount();
+  const text = label || model.label;
+
+  if (!mounted) {
+    return (
+      <span className={`botshield-status-badge-fallback is-${tone || model.tone}`}>
+        {text}
+      </span>
+    );
+  }
+
+  return <s-badge tone={tone || model.tone}>{text}</s-badge>;
 }
 
 export function BotShieldActionButton({
@@ -5119,13 +5146,47 @@ export function BotShieldActionButton({
   command,
   id,
 }) {
+  const mounted = useBotShieldClientMount();
+  const isDisabled = disabled || loading;
+
+  if (!mounted) {
+    if (href) {
+      return (
+        <a
+          aria-disabled={isDisabled ? "true" : undefined}
+          aria-label={accessibilityLabel}
+          className="botshield-action-button-fallback"
+          href={isDisabled ? undefined : href}
+          id={id}
+          onClick={isDisabled ? undefined : onClick}
+          target={target}
+        >
+          {children}
+        </a>
+      );
+    }
+
+    return (
+      <button
+        aria-label={accessibilityLabel}
+        className="botshield-action-button-fallback"
+        disabled={isDisabled}
+        id={id}
+        onClick={onClick}
+        type="button"
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
     <s-button
       id={id}
       variant={variant}
       tone={tone}
       loading={loading}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       icon={icon}
       accessibilityLabel={accessibilityLabel}
       href={href}
