@@ -1,4 +1,5 @@
 import db from "../db.server";
+import { clearShopTestData } from "../lib/clear-test-data.server";
 import { authenticate } from "../shopify.server";
 
 export async function action({ request }) {
@@ -8,12 +9,6 @@ export async function action({ request }) {
     return new Response(null, { status: 405 });
   }
 
-  const result = await db.botEvent.deleteMany({
-    where: {
-      shop: session.shop,
-      source: { not: "storefront-proxy" },
-    },
-  });
-
-  return Response.json({ ok: true, deleted: result.count });
+  const result = await clearShopTestData(db, session.shop);
+  return Response.json(result);
 }

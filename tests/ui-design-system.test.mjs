@@ -377,15 +377,20 @@ test("dashboard totals use exact 30-day storefront counts", async () => {
 });
 
 test("clearing simulation data preserves real storefront and merchant data", async () => {
-  const source = await readFile(
+  const libSource = await readFile(
+    new URL("../app/lib/clear-test-data.server.js", import.meta.url),
+    "utf8",
+  );
+  const routeSource = await readFile(
     new URL("../app/routes/api.clear-test-data.jsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /source: \{ not: "storefront-proxy" \}/);
-  assert.doesNotMatch(source, /blockedIP\.deleteMany/);
-  assert.doesNotMatch(source, /whitelistIP\.deleteMany/);
-  assert.doesNotMatch(source, /appSetting\.deleteMany/);
+  assert.match(libSource, /source: \{ not: "storefront-proxy" \}/);
+  assert.match(routeSource, /clearShopTestData\(db, session\.shop\)/);
+  assert.doesNotMatch(libSource, /blockedIP\.deleteMany/);
+  assert.doesNotMatch(libSource, /whitelistIP\.deleteMany/);
+  assert.doesNotMatch(libSource, /appSetting\.deleteMany/);
 });
 
 test("save bar uses App Bridge ui-save-bar with preview fallback", async () => {

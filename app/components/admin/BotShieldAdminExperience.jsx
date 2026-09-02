@@ -43,7 +43,8 @@ import {
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CLEAR_SIMULATION_DATA_DESCRIPTION =
+  "Permanently delete all simulation and test activity from BotShield. Live storefront activity, protection settings, blocklists, and trusted visitors will remain unchanged.";
 const REASON_COPY = {
   RATE_PATTERN: "Repeated visitor activity detected",
   SUSPICIOUS_USER_AGENT: "Automated browser behavior detected",
@@ -6926,10 +6927,7 @@ function SettingsPage({ model, actions }) {
           </div>
           <div className="botshield-settings-hub-danger-copy">
             <h3>Clear simulation data</h3>
-            <p>
-              Remove test events from analytics. Real storefront traffic, settings, blocklists, and
-              trusted visitors are not deleted.
-            </p>
+            <p>{CLEAR_SIMULATION_DATA_DESCRIPTION}</p>
           </div>
           <BotShieldActionButton
             command="--show"
@@ -6950,19 +6948,22 @@ function SettingsPage({ model, actions }) {
             try {
               await safeFetchJson("/api/clear-test-data", { method: "POST" });
               await actions.refresh();
+              setSimulationResults(null);
               toast.success("Simulation data cleared");
             } catch (error) {
-              setDiagnosticsError(
-                toMerchantErrorMessage(error, "Couldn't clear simulation data"),
+              const message = toMerchantErrorMessage(
+                error,
+                "Couldn't clear simulation data",
               );
+              setDiagnosticsError(message);
+              toast.error(message);
               throw error;
             } finally {
               setClearingSimulation(false);
             }
           }}
         >
-          Remove test events from analytics. Real storefront traffic, settings, blocklists, and
-          trusted visitors are not deleted.
+          {CLEAR_SIMULATION_DATA_DESCRIPTION}
         </BotShieldConfirmationModal>
       </section>
     );
@@ -7022,7 +7023,7 @@ function SettingsPage({ model, actions }) {
               </BotShieldBanner>
             ) : null}
             {diagnosticsError && activeSection === "danger" ? (
-              <BotShieldBanner tone="critical" title="Diagnostics action failed">
+              <BotShieldBanner tone="critical" title="Couldn't clear simulation data">
                 {diagnosticsError}
               </BotShieldBanner>
             ) : null}

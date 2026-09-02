@@ -123,8 +123,8 @@ test("simulation backend stores dashboard-simulation bot events and excludes liv
     new URL("../app/routes/api.scan.jsx", import.meta.url),
     "utf8",
   );
-  const clearRoute = await readFile(
-    new URL("../app/routes/api.clear-test-data.jsx", import.meta.url),
+  const clearLib = await readFile(
+    new URL("../app/lib/clear-test-data.server.js", import.meta.url),
     "utf8",
   );
   const enforcementSource = await readFile(
@@ -138,7 +138,7 @@ test("simulation backend stores dashboard-simulation bot events and excludes liv
   assert.match(scanRoute, /source,/);
   assert.doesNotMatch(scanRoute, /lastStorefrontDecisionAt/);
   assert.doesNotMatch(enforcementSource, /dashboard-simulation/);
-  assert.match(clearRoute, /source: \{ not: "storefront-proxy" \}/);
+  assert.match(clearLib, /source: \{ not: "storefront-proxy" \}/);
 });
 
 test("simulation count in Data & privacy uses simulated scan records", async () => {
