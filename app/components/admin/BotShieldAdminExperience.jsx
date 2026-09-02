@@ -6008,7 +6008,7 @@ function SettingsPage({ model, actions }) {
   const [clearingSimulation, setClearingSimulation] = useState(false);
   const [resettingBotShield, setResettingBotShield] = useState(false);
   const [resetError, setResetError] = useState("");
-  const [activeSection, setActiveSection] = useState(readSettingsHubSection);
+  const [activeSection, setActiveSection] = useState("general");
   const [draft, setDraft] = useState({
     alertEmail: model.alertEmail,
     emailAlerts: model.emailAlerts,
@@ -6039,6 +6039,7 @@ function SettingsPage({ model, actions }) {
   ]);
 
   useEffect(() => {
+    setActiveSection(readSettingsHubSection());
     const syncSectionFromUrl = () => setActiveSection(readSettingsHubSection());
     window.addEventListener("popstate", syncSectionFromUrl);
     return () => window.removeEventListener("popstate", syncSectionFromUrl);

@@ -1,4 +1,4 @@
-import { createElement, useEffect } from "react";
+import { createElement, useEffect, useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
 function isPreviewRoute() {
@@ -84,18 +84,40 @@ function LoadingBridgeInner({ active }) {
   return null;
 }
 
-export function BotShieldSaveBarBridge(props) {
-  if (!isAppBridgeEnvironment()) {
+function SaveBarBridgeSlot(props) {
+  const [clientReady, setClientReady] = useState(false);
+
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
+
+  if (!clientReady || !isAppBridgeEnvironment()) {
     return null;
   }
+
   return createElement(SaveBarBridgeInner, props);
 }
 
-export function BotShieldLoadingBridge({ active }) {
-  if (!isAppBridgeEnvironment()) {
+function LoadingBridgeSlot({ active }) {
+  const [clientReady, setClientReady] = useState(false);
+
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
+
+  if (!clientReady || !isAppBridgeEnvironment()) {
     return null;
   }
+
   return createElement(LoadingBridgeInner, { active });
+}
+
+export function BotShieldSaveBarBridge(props) {
+  return createElement(SaveBarBridgeSlot, props);
+}
+
+export function BotShieldLoadingBridge({ active }) {
+  return createElement(LoadingBridgeSlot, { active });
 }
 
 export function BotShieldPageLoadingBridge() {

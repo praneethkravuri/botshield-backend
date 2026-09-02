@@ -25,11 +25,13 @@ const defaultToastValue = {
 const ToastContext = createContext(defaultToastValue);
 
 export function BotShieldToastProvider({ children }) {
-  const isPreviewRoute =
-    typeof window !== "undefined" &&
-    window.location.pathname.startsWith("/ui-preview");
+  const [useAppBridgeToast, setUseAppBridgeToast] = useState(false);
 
-  if (typeof window === "undefined" || isPreviewRoute) {
+  useEffect(() => {
+    setUseAppBridgeToast(!window.location.pathname.startsWith("/ui-preview"));
+  }, []);
+
+  if (!useAppBridgeToast) {
     return (
       <ToastContext.Provider value={defaultToastValue}>{children}</ToastContext.Provider>
     );
