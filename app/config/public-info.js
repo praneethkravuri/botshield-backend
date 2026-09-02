@@ -6,5 +6,8 @@ export const publicInfo = {
   supportUrl: "/support",
   privacyUrl: "/privacy",
   termsUrl: "/terms",
+  dataUseUrl: "/data-use",
+  dataRetentionUrl: "/data-retention",
+  dataDeletionUrl: "/data-deletion",
   effectiveDate: "June 20, 2026",
 };

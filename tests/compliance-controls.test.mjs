@@ -184,6 +184,7 @@ test("privacy and security docs support truthful PCD disclosures", async () => {
     "utf8",
   );
 
+  assert.doesNotMatch(privacy, /JavaScript-based/i);
   assert.match(privacy, /do not sell personal data/i);
   assert.match(privacy, /Fraud Orders is a merchant[\s\S]*review workspace/);
   assert.match(practices, /not.*sell personal data/i);

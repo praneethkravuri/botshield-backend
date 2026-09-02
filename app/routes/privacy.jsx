@@ -1,31 +1,30 @@
-import { PublicPage } from "../components/PublicPage";
+import { PublicLegalShell, PublicSupportEmailLink } from "../components/public/PublicLegalShell";
 import { publicInfo } from "../config/public-info";
 
 export const meta = () => [{ title: `Privacy Policy | ${publicInfo.appName}` }];
 
 export default function PrivacyPage() {
   return (
-    <PublicPage title="Privacy Policy">
+    <PublicLegalShell title="Privacy Policy">
       <p>
-        Effective date: {publicInfo.effectiveDate}
-      </p>
-      <p>
-        {publicInfo.appName} provides JavaScript-based storefront traffic
-        monitoring, risk scoring, challenge and blocking responses, incident
-        history, and merchant-managed security controls.
+        {publicInfo.appName} provides storefront security, traffic analysis,
+        threat detection, and merchant-managed protection tools for Shopify
+        stores. This Privacy Policy explains what information BotShield
+        processes, why it is used, how it is retained, and the choices
+        available to merchants.
       </p>
       <h2>Information We Collect</h2>
       <p>
         We may process Shopify store domain details, app installation records,
-        app configuration, scan records, IP addresses, paths, user-agent strings,
-        referrer data, network intelligence such as ASN or hosting-provider
-        classification, and related threat evidence. When a merchant connects
-        Fraud Orders, BotShield may process supported Shopify order and
-        fraud/risk information such as order identifiers, order totals, payment
-        and fulfillment status, and Shopify risk assessments. BotShield's v1
-        Fraud Orders integration does not request customer name, customer email,
-        phone, billing address, or shipping address. We do not intentionally
-        collect payment card data or account passwords.
+        app configuration, scan records, IP addresses, paths, user-agent
+        strings, referrer data, network intelligence such as ASN or
+        hosting-provider classification, and related threat evidence. When a
+        merchant connects Fraud Orders, BotShield may process supported Shopify
+        order and fraud/risk information such as order identifiers, order
+        totals, payment and fulfillment status, and Shopify risk assessments.
+        BotShield&apos;s v1 Fraud Orders integration does not request customer
+        name, customer email, phone, billing address, or shipping address. We
+        do not intentionally collect payment card data or account passwords.
       </p>
       <h2>How We Use Information</h2>
       <p>
@@ -45,10 +44,10 @@ export default function PrivacyPage() {
         Merchants install BotShield through Shopify and authorize the processing
         described in this policy. Merchants remain responsible for providing any
         storefront notices or consent mechanisms required for their business.
-        BotShield honors Shopify&apos;s mandatory customer data request, customer
-        redaction, and shop redaction workflows. Because storefront security
-        events are not linked to Shopify customer IDs, customer-specific requests
-        normally produce no matching customer record in BotShield.
+        BotShield honors Shopify&apos;s mandatory customer data request,
+        customer redaction, and shop redaction workflows. Because storefront
+        security events are not linked to Shopify customer IDs, customer-specific
+        requests normally produce no matching customer record in BotShield.
       </p>
       <h2>Service Providers</h2>
       <p>
@@ -62,21 +61,25 @@ export default function PrivacyPage() {
         Storefront security events, including IP addresses and request evidence,
         are automatically deleted after 30 days while the app remains installed.
         After uninstall or a valid deletion request, remaining shop-scoped data
-        is deleted through Shopify&apos;s mandatory shop-redaction webhook, normally
-        within 30 days unless a longer period is legally required. Fraud Orders
-        order and risk data is fetched live from Shopify and is not stored by
-        BotShield. Merchant settings, blocklists, whitelists, notes, and tags
-        are deleted when Shopify sends the shop-redaction webhook. Cached
-        network-intelligence records are automatically deleted after 24 hours.
+        is deleted through Shopify&apos;s mandatory shop-redaction webhook,
+        normally within 30 days unless a longer period is legally required.
+        Fraud Orders order and risk data is fetched live from Shopify and is not
+        stored by BotShield. Merchant settings, blocklists, whitelists, notes,
+        and tags are deleted when Shopify sends the shop-redaction webhook.
+        Cached network-intelligence records are automatically deleted after 24
+        hours. See our{" "}
+        <a href={publicInfo.dataRetentionUrl}>Data retention</a> and{" "}
+        <a href={publicInfo.dataDeletionUrl}>Data deletion</a> pages for more
+        detail.
       </p>
       <h2>Data Protection Agreement</h2>
       <p>
         By installing {publicInfo.appName}, merchants authorize BotShield to
         process the information described in this policy solely to provide the
-        app&apos;s security, monitoring, and Fraud Orders functionality. BotShield
-        processes personal data only for those stated purposes, does not sell
-        merchant or customer personal data, and limits Fraud Orders v1 to
-        supported Shopify order and risk fields without requesting customer
+        app&apos;s security, monitoring, and Fraud Orders functionality.
+        BotShield processes personal data only for those stated purposes, does
+        not sell merchant or customer personal data, and limits Fraud Orders v1
+        to supported Shopify order and risk fields without requesting customer
         name, email, phone, billing address, or shipping address. Merchants
         remain responsible for providing any required notices to their
         customers and for configuring protection settings appropriately for
@@ -113,16 +116,8 @@ export default function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Privacy questions can be sent to{" "}
-        {publicInfo.supportEmail === "SUPPORT_EMAIL_NOT_CONFIGURED" ? (
-          <strong>the support address published in the Shopify App Store listing</strong>
-        ) : (
-          <a href={`mailto:${publicInfo.supportEmail}`}>
-            {publicInfo.supportEmail}
-          </a>
-        )}
-        .
+        Privacy questions can be sent to <PublicSupportEmailLink />.
       </p>
-    </PublicPage>
+    </PublicLegalShell>
   );
 }

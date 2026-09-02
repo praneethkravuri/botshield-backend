@@ -136,7 +136,10 @@ test("privacy policy states automatic 30-day BotEvent retention", async () => {
     "utf8",
   );
   assert.match(privacy, /automatically deleted after 30 days/);
-  assert.match(privacy, /Fraud Orders[\s\S]*does not request customer name/);
+  assert.match(
+    privacy,
+    /does not request customer[\s\S]*billing address, or shipping address/i,
+  );
   assert.match(privacy, /Data Protection Agreement/);
   assert.match(privacy, /do not sell personal data/i);
   assert.match(privacy, /Fraud Orders is a merchant[\s\S]*review workspace/);
@@ -147,9 +150,12 @@ test("terms reference the privacy policy as the merchant data-processing agreeme
     new URL("../app/routes/terms.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(terms, /href="\/privacy"/);
+  assert.match(terms, /privacyUrl|href="\/privacy"/);
   assert.match(terms, /Data Processing/);
-  assert.match(terms, /without requesting customer name, email, phone/);
+  assert.match(
+    terms,
+    /without requesting customer[\s\S]*billing address, or shipping address/i,
+  );
 });
 
 test("mandatory Shopify compliance webhooks are configured and implemented", async () => {
