@@ -5211,6 +5211,7 @@ export function BotShieldAsyncButton({
   disabled,
   ...buttonProps
 }) {
+  const mounted = useBotShieldClientMount();
   const toast = useBotShieldToast();
   const asyncAction = useBotShieldAction({
     action,
@@ -5221,16 +5222,33 @@ export function BotShieldAsyncButton({
     onError,
   });
 
+  const button = (
+    <BotShieldActionButton
+      {...buttonProps}
+      loading={asyncAction.loading}
+      disabled={disabled}
+      onClick={asyncAction.run}
+    >
+      {children}
+    </BotShieldActionButton>
+  );
+
+  if (!mounted) {
+    return (
+      <div className="botshield-async-button-fallback">
+        {button}
+        {asyncAction.error ? (
+          <span className="botshield-async-button-error" role="alert">
+            {asyncAction.error}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <s-stack gap="small-200">
-      <BotShieldActionButton
-        {...buttonProps}
-        loading={asyncAction.loading}
-        disabled={disabled}
-        onClick={asyncAction.run}
-      >
-        {children}
-      </BotShieldActionButton>
+      {button}
       {asyncAction.error ? (
         <s-text tone="critical" role="alert">
           {asyncAction.error}

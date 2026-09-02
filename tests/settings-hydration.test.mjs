@@ -50,6 +50,47 @@ test("Shopify web component shells defer upgrade until after client mount", () =
   assert.doesNotMatch(appRouteSource, /<s-app-nav>/);
 });
 
+const asyncButtonSource = designSource.slice(
+  designSource.indexOf("export function BotShieldAsyncButton"),
+  designSource.indexOf("export function BotShieldBanner"),
+);
+
+const diagnosticsSettingsSource = settingsSource.slice(
+  settingsSource.indexOf('if (activeSection === "diagnostics")'),
+  settingsSource.indexOf('return (\n      <section className="botshield-settings-hub-section is-panel-danger"'),
+);
+
+test("BotShieldAsyncButton keeps SSR and first-client render on native HTML wrappers", () => {
+  assert.match(asyncButtonSource, /const mounted = useBotShieldClientMount\(\)/);
+  assert.match(asyncButtonSource, /botshield-async-button-fallback/);
+  assert.match(asyncButtonSource, /if \(!mounted\)/);
+  assert.match(
+    asyncButtonSource,
+    /<span className="botshield-async-button-error" role="alert">/,
+  );
+  assert.doesNotMatch(
+    asyncButtonSource.slice(0, asyncButtonSource.indexOf("if (!mounted)")),
+    /<s-stack|<s-text/,
+  );
+});
+
+test("BotShieldAsyncButton preserves loading and error behavior after mount", () => {
+  assert.match(asyncButtonSource, /loading={asyncAction\.loading}/);
+  assert.match(asyncButtonSource, /onClick={asyncAction\.run}/);
+  assert.match(asyncButtonSource, /<s-text tone="critical" role="alert">/);
+});
+
+test("Settings diagnostics defers BotShieldAsyncButton Polaris wrappers on SSR", () => {
+  assert.match(diagnosticsSettingsSource, /BotShieldAsyncButton/);
+  assert.match(diagnosticsSettingsSource, /Run diagnostic scan/);
+  assert.match(diagnosticsSettingsSource, /Run simulation scan/);
+  assert.match(diagnosticsSettingsSource, /Refresh status/);
+  assert.match(diagnosticsSettingsSource, /actions\.runDiagnostic/);
+  assert.match(diagnosticsSettingsSource, /actions\.runSimulation/);
+  assert.match(diagnosticsSettingsSource, /actions\.refreshApplicationStatus/);
+  assert.doesNotMatch(diagnosticsSettingsSource, /<s-stack|<s-text/);
+});
+
 test("App Bridge save bar and loading bridges defer browser detection until after mount", () => {
   assert.match(saveBarSource, /function SaveBarBridgeSlot/);
   assert.match(saveBarSource, /function LoadingBridgeSlot/);
