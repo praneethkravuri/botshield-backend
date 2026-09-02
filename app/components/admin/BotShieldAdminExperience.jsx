@@ -42,6 +42,7 @@ import {
 } from "../../lib/ui-status";
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
+import { EMAIL_PATTERN } from "../../lib/email-validation.js";
 
 const CLEAR_SIMULATION_DATA_DESCRIPTION =
   "Permanently delete all simulation and test activity from BotShield. Live storefront activity, protection settings, blocklists, and trusted visitors will remain unchanged.";
