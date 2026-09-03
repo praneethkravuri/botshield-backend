@@ -46,14 +46,6 @@ const appRouteSource = await readFile(
 
 );
 
-const embeddedProviderSource = await readFile(
-
-  new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
-
-  "utf8",
-
-);
-
 
 
 const settingsSource = adminSource.slice(
@@ -86,29 +78,23 @@ test("toast provider keeps a stable SSR and first-client render tree", () => {
 
 
 
-test("Shopify web component shells render Polaris tags during SSR", () => {
+test("Shopify hydration-safe shells keep approved s-page while avoiding SSR leaf polaris tags", () => {
 
   assert.match(designSource, /function BotShieldNativePage/);
 
   assert.match(designSource, /BotShieldPolarisPage heading=\{heading\}/);
 
-  assert.doesNotMatch(designSource, /botshield-native-page-fallback/);
-
   assert.match(designSource, /function BotShieldActionButton/);
 
-  assert.match(designSource, /<s-button/);
+  assert.match(designSource, /BotShieldPolarisButton/);
 
-  assert.doesNotMatch(designSource, /botshield-action-button-fallback/);
-
-  assert.match(designSource, /function BotShieldStatusBadge/);
-
-  assert.doesNotMatch(designSource, /botshield-status-badge-fallback/);
+  assert.doesNotMatch(designSource, /<s-button/);
 
   assert.match(appNavSource, /<s-app-nav>/);
 
   assert.match(appNavSource, /rel:\s*"home"/);
 
-  assert.doesNotMatch(appNavSource, /useBotShieldClientMount/);
+  assert.doesNotMatch(appNavSource, /return null;/);
 
 });
 
@@ -212,13 +198,11 @@ test("Settings hub section initializes from loader-provided SSR state", () => {
 
 
 
-test("embedded app registers Shopify navigate handling for s-link compatibility", () => {
+test("embedded app uses official AppProvider for App Bridge navigation", () => {
 
-  assert.match(embeddedProviderSource, /shopify:navigate/);
+  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
 
-  assert.match(embeddedProviderSource, /document\.addEventListener\("shopify:navigate"/);
-
-  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider/);
+  assert.match(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
 
 });
 
