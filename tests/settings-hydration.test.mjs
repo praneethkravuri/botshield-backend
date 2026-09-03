@@ -46,6 +46,14 @@ const appRouteSource = await readFile(
 
 );
 
+const embeddedProviderSource = await readFile(
+
+  new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
+
+  "utf8",
+
+);
+
 
 
 const settingsSource = adminSource.slice(
@@ -78,7 +86,7 @@ test("toast provider keeps a stable SSR and first-client render tree", () => {
 
 
 
-test("Shopify hydration-safe shells avoid SSR leaf polaris tags", () => {
+test("Shopify web component shells render Polaris tags during SSR", () => {
 
   assert.match(designSource, /function BotShieldNativePage/);
 
@@ -88,17 +96,19 @@ test("Shopify hydration-safe shells avoid SSR leaf polaris tags", () => {
 
   assert.match(designSource, /function BotShieldActionButton/);
 
-  assert.match(designSource, /BotShieldPolarisButton/);
+  assert.match(designSource, /<s-button/);
 
-  assert.doesNotMatch(designSource, /<s-button/);
+  assert.doesNotMatch(designSource, /botshield-action-button-fallback/);
 
   assert.match(designSource, /function BotShieldStatusBadge/);
 
-  assert.match(appNavSource, /setHydrated\(true\)/);
+  assert.doesNotMatch(designSource, /botshield-status-badge-fallback/);
 
   assert.match(appNavSource, /<s-app-nav>/);
 
   assert.match(appNavSource, /rel:\s*"home"/);
+
+  assert.doesNotMatch(appNavSource, /useBotShieldClientMount/);
 
 });
 
@@ -202,11 +212,13 @@ test("Settings hub section initializes from loader-provided SSR state", () => {
 
 
 
-test("embedded app uses official AppProvider for App Bridge navigation", () => {
+test("embedded app registers Shopify navigate handling for s-link compatibility", () => {
 
-  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
+  assert.match(embeddedProviderSource, /shopify:navigate/);
 
-  assert.match(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
+  assert.match(embeddedProviderSource, /document\.addEventListener\("shopify:navigate"/);
+
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider/);
 
 });
 
