@@ -215,3 +215,74 @@ test("shared Polaris wrappers render real Shopify web components", async () => {
   assert.doesNotMatch(polarisSource, /createLayoutHost\("stack"\)/);
   assert.doesNotMatch(polarisSource, /createLeafHost\("button"/);
 });
+
+test("BotShieldAppFrame injects admin CSS with hydration-safe style markup", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(designSource, /export const BOTSHIELD_ADMIN_STYLES = `/);
+  assert.match(
+    designSource,
+    /dangerouslySetInnerHTML=\{\{ __html: BOTSHIELD_ADMIN_STYLES \}\}/,
+  );
+  assert.match(designSource, /BOTSHIELD_ADMIN_STYLES[\s\S]*botshield-admin-shell/);
+  assert.doesNotMatch(
+    designSource,
+    /BotShieldAppFrame[\s\S]{0,260}<style>\{/,
+  );
+});
+
+test("style text children are forbidden and dangerouslySetInnerHTML hydrates admin CSS", () => {
+  const css =
+    ".botshield-admin-shell { color: #1f1f1f; } .botshield-route-shell s-page { display: block; } .botshield-titlebar > span { color: inherit; }";
+
+  const innerHtmlTree = React.createElement(
+    "div",
+    null,
+    React.createElement("style", {
+      dangerouslySetInnerHTML: { __html: css },
+    }),
+  );
+
+  const serverHtml = renderToString(innerHtmlTree);
+  const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
+  const container = dom.window.document.createElement("div");
+  container.innerHTML = serverHtml;
+  dom.window.document.body.appendChild(container);
+
+  const messages = [];
+  const originalError = console.error;
+  console.error = (...args) => {
+    messages.push(
+      args
+        .map((arg) => (typeof arg === "string" ? arg : arg?.message || String(arg)))
+        .join(" "),
+    );
+    originalError(...args);
+  };
+
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+
+  try {
+    hydrateRoot(container, innerHtmlTree);
+  } finally {
+    console.error = originalError;
+  }
+
+  const styleMismatch = messages.some((message) =>
+    /Text content did not match[\s\S]*botshield-admin-shell/i.test(message),
+  );
+
+  assert.equal(
+    styleMismatch,
+    false,
+    "expected dangerouslySetInnerHTML style boundary to hydrate cleanly",
+  );
+  assert.match(serverHtml, /botshield-admin-shell/);
+});

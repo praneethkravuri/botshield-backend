@@ -24,7 +24,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "test:mvp": "node --test tests/*.test.mjs && npx vite-node app/dev/hydration-ssr-probe.mjs"
+    "test:mvp": "node --test tests/*.test.mjs && npx vite-node app/dev/style-ssr-probe.mjs && npx vite-node app/dev/hydration-ssr-probe.mjs"
   },
   "type": "module",
   "engines": {

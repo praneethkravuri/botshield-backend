@@ -97,10 +97,7 @@ export function useBotShieldToast() {
   return useContext(ToastContext);
 }
 
-export function BotShieldAppFrame({ children }) {
-  return (
-    <BotShieldToastProvider>
-      <style>{`
+export const BOTSHIELD_ADMIN_STYLES = `
         .botshield-admin-shell {
           --botshield-bg: transparent;
           --botshield-surface: #ffffff;
@@ -4795,7 +4792,14 @@ export function BotShieldAppFrame({ children }) {
           .botshield-checklist-row,
           .botshield-activity-row { grid-template-columns: 1fr; }
         }
-      `}</style>
+`;
+
+export function BotShieldAppFrame({ children }) {
+  return (
+    <BotShieldToastProvider>
+      <style
+        dangerouslySetInnerHTML={{ __html: BOTSHIELD_ADMIN_STYLES }}
+      />
       <div className="botshield-admin-shell">{children}</div>
     </BotShieldToastProvider>
   );
