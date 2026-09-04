@@ -11,6 +11,7 @@ import {
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom-element-click.js";
+import { useBotShieldPolarisReady } from "../../hooks/use-botshield-polaris-ready.js";
 import { runBotShieldModalCommand } from "../../lib/botshield-modal-command.js";
 import {
   BotShieldBadge,
@@ -5497,6 +5498,7 @@ export function BotShieldNativeModal({
 }) {
   const wasOpenRef = useRef(false);
   const showRequestRef = useRef(0);
+  const { ready } = useBotShieldPolarisReady();
 
   useEffect(() => {
     if (!open) {
@@ -5517,9 +5519,25 @@ export function BotShieldNativeModal({
     };
   }, [id, open]);
 
-  const handleAfterHide = () => {
-    onAfterHide?.();
-  };
+  useEffect(() => {
+    if (!ready || !id || typeof onAfterHide !== "function") {
+      return undefined;
+    }
+
+    const modal = document.getElementById(id);
+    if (!modal) {
+      return undefined;
+    }
+
+    const handleAfterHide = () => {
+      onAfterHide();
+    };
+
+    modal.addEventListener("afterhide", handleAfterHide);
+    return () => {
+      modal.removeEventListener("afterhide", handleAfterHide);
+    };
+  }, [id, onAfterHide, ready]);
 
   return (
     <BotShieldModalShell
@@ -5528,7 +5546,6 @@ export function BotShieldNativeModal({
       heading={heading}
       size={size}
       {...(modalPadding ? { padding: modalPadding } : {})}
-      onAfterhide={handleAfterHide}
     >
       <BotShieldBox
         padding={padding}

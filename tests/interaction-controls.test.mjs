@@ -90,7 +90,8 @@ test("Fraud Orders drawers close without unsaved draft state", () => {
   assert.match(setupSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_SETUP_MODAL_ID\)/);
   assert.match(reviewSource, /BotShieldNativeModal/);
   assert.match(reviewSource, /BOTSHIELD_FRAUD_REVIEW_MODAL_ID/);
-  assert.match(reviewSource, /hideBotShieldModal\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
+  assert.match(reviewSource, /commandFor=\{BOTSHIELD_FRAUD_REVIEW_MODAL_ID\}/);
+  assert.match(reviewSource, /command="--hide"/);
   assert.match(reviewSource, /Close review/);
   assert.match(reviewSource, /View order in Shopify/);
   assert.doesNotMatch(reviewSource, /Open in Shopify/);

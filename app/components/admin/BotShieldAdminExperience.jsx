@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   buildSimulationResultPresentation,
   getSimulationResultSummary,
@@ -3584,10 +3585,6 @@ function FraudOrderSetupDrawer({ connected, errorCode, onAccessConnected, onClos
 }
 
 function FraudOrderReviewModal({ order, onClose, needsReview, riskLabel, riskTone }) {
-  const requestClose = () => {
-    hideBotShieldModal(BOTSHIELD_FRAUD_REVIEW_MODAL_ID);
-  };
-
   const signals = order ? fraudOrderSignalList(order) : [];
   const tone = order ? fraudOrderRiskBadgeTone(riskTone(order)) : "neutral";
   const orderLabel = order?.name || order?.orderName || "Order";
@@ -3604,9 +3601,14 @@ function FraudOrderReviewModal({ order, onClose, needsReview, riskLabel, riskTon
       onAfterHide={onClose}
       open={Boolean(order)}
       primaryAction={
-        <BotShieldActionButton slot="primary-action" variant="primary" onClick={requestClose}>
+        <BotShieldPolarisButton
+          slot="primary-action"
+          variant="primary"
+          commandFor={BOTSHIELD_FRAUD_REVIEW_MODAL_ID}
+          command="--hide"
+        >
           Close review
-        </BotShieldActionButton>
+        </BotShieldPolarisButton>
       }
       secondaryActions={
         order?.adminUrl ? (
@@ -3722,6 +3724,65 @@ function FraudOrderReviewModal({ order, onClose, needsReview, riskLabel, riskTon
   );
 }
 
+function getFraudDiagMode(searchParams) {
+  if (!import.meta.env.DEV) return "E";
+  return String(searchParams.get("fraudDiag") || "E").toUpperCase();
+}
+
+function renderFraudReviewModalDiag(mode, props) {
+  if (mode === "A") return null;
+
+  if (mode === "B") {
+    return (
+      <BotShieldModalShell
+        accessibilityLabel="Order investigation"
+        heading="Order investigation"
+        id={BOTSHIELD_FRAUD_REVIEW_MODAL_ID}
+        size="large"
+      >
+        <BotShieldBox className="botshield-native-modal-body botshield-fraud-review-modal" padding="base" />
+      </BotShieldModalShell>
+    );
+  }
+
+  if (mode === "C") {
+    return (
+      <BotShieldNativeModal
+        bodyClassName="botshield-fraud-review-modal"
+        heading="Order investigation"
+        id={BOTSHIELD_FRAUD_REVIEW_MODAL_ID}
+        open={false}
+        size="large"
+      />
+    );
+  }
+
+  if (mode === "D") {
+    return (
+      <BotShieldNativeModal
+        bodyClassName="botshield-fraud-review-modal"
+        heading="Order investigation"
+        id={BOTSHIELD_FRAUD_REVIEW_MODAL_ID}
+        onAfterHide={props.onClose}
+        open={Boolean(props.order)}
+        primaryAction={
+          <BotShieldPolarisButton
+            slot="primary-action"
+            variant="primary"
+            commandFor={BOTSHIELD_FRAUD_REVIEW_MODAL_ID}
+            command="--hide"
+          >
+            Close review
+          </BotShieldPolarisButton>
+        }
+        size="large"
+      />
+    );
+  }
+
+  return <FraudOrderReviewModal {...props} />;
+}
+
 function FraudOrdersQueueEmpty({
   actionLabel,
   compact = false,
@@ -3771,6 +3832,8 @@ function FraudOrdersQueueLoading() {
 }
 
 function FraudOrdersPage({ model, actions }) {
+  const [searchParams] = useSearchParams();
+  const fraudDiagMode = getFraudDiagMode(searchParams);
   const [activeFilter, setActiveFilter] = useState("needs-review");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -4059,13 +4122,13 @@ function FraudOrdersPage({ model, actions }) {
           />
         ) : null}
 
-        <FraudOrderReviewModal
-          needsReview={needsReview}
-          onClose={closeReview}
-          order={selectedOrder}
-          riskLabel={riskLabel}
-          riskTone={riskTone}
-        />
+        {renderFraudReviewModalDiag(fraudDiagMode, {
+          needsReview,
+          onClose: closeReview,
+          order: selectedOrder,
+          riskLabel,
+          riskTone,
+        })}
       </>
     </BotShieldNativePage>
   );

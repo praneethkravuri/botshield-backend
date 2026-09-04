@@ -6,6 +6,42 @@ import { mergeEmbeddedAppSearch } from "../lib/embedded-app-navigation.js";
 import { BotShieldPolarisReadyContext } from "../hooks/use-botshield-polaris-ready.js";
 import { useBotShieldCustomElementClick } from "../hooks/use-botshield-custom-element-click.js";
 
+function shouldInstallPolarisDiagnostics(search) {
+  if (!import.meta.env.DEV) return false;
+  return new URLSearchParams(search).has("polarisDiag");
+}
+
+function shouldInstallEmbeddedModalMock(search) {
+  if (!import.meta.env.DEV) return false;
+  return new URLSearchParams(search).has("embeddedMock");
+}
+
+function installEmbeddedModalMock() {
+  if (typeof window === "undefined" || window.__BOTSHIELD_EMBEDDED_MODAL_MOCK__) {
+    return;
+  }
+
+  window.__BOTSHIELD_EMBEDDED_MODAL_MOCK__ = true;
+  const shopify = window.shopify || {};
+  shopify._internal = {
+    modal: {
+      async hide(id) {
+        const modal = document.getElementById(id);
+        if (!modal || typeof modal.hideOverlay !== "function") return;
+        const detachedHideOverlay = modal.hideOverlay;
+        detachedHideOverlay();
+      },
+      async show(id) {
+        const modal = document.getElementById(id);
+        if (!modal || typeof modal.showOverlay !== "function") return;
+        const detachedShowOverlay = modal.showOverlay;
+        detachedShowOverlay();
+      },
+    },
+  };
+  window.shopify = shopify;
+}
+
 const APP_BRIDGE_SCRIPT_SRC = "https://cdn.shopify.com/shopifycloud/app-bridge.js";
 
 function useEmbeddedAppNavigate() {
@@ -84,8 +120,26 @@ export function BotShieldAppNavigation() {
 }
 
 export default function BotShieldEmbeddedAppProvider({ apiKey, children }) {
+  const location = useLocation();
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+
+  if (typeof window !== "undefined" && shouldInstallEmbeddedModalMock(location.search)) {
+    installEmbeddedModalMock();
+  }
+
+  useEffect(() => {
+    if (!shouldInstallPolarisDiagnostics(location.search)) return undefined;
+    let cancelled = false;
+    import("../lib/botshield-polaris-runtime-diagnostics.client.js")
+      .then(({ installBotShieldPolarisRuntimeDiagnostics }) => {
+        if (!cancelled) installBotShieldPolarisRuntimeDiagnostics();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [location.search]);
 
   useEffect(() => {
     let cancelled = false;

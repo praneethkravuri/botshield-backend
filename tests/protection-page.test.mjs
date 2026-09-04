@@ -269,7 +269,7 @@ test("Protection Manage actions mount the native modal before showing it", () =>
   assert.match(designSource, /queueBotShieldModalShow\(id\)/);
   assert.match(
     fs.readFileSync(new URL("../app/lib/botshield-modal-command.js", import.meta.url), "utf8"),
-    /Reflect\.apply\(method, modal, \[\]\)/,
+    /dispatchBotShieldModalCommand\(id, command\)/,
   );
   for (const opener of [
     "openBotProtectionModule",

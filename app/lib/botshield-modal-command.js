@@ -20,31 +20,20 @@ function isUpgradedBotShieldModal(modal) {
   return Boolean(ModalClass && modal instanceof ModalClass);
 }
 
-function invokeBotShieldModalOverlayMethod(modal, methodName) {
-  const method = modal?.[methodName];
-  if (typeof method !== "function") {
-    return false;
-  }
-  try {
-    Reflect.apply(method, modal, []);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export function runBotShieldModalCommand(id, command) {
   if (typeof document === "undefined" || !id) return false;
   const modal = document.getElementById(id);
+  if (globalThis.__BOTSHIELD_POLARIS_DIAG__) {
+    console.info("[botshield-polaris-diag]", "runBotShieldModalCommand", {
+      id,
+      command,
+      tag: modal?.tagName?.toLowerCase?.() || null,
+      constructor: modal?.constructor?.name || null,
+      stack: new Error("runBotShieldModalCommand").stack,
+    });
+  }
   if (!modal) return false;
   if (!isUpgradedBotShieldModal(modal)) return false;
-
-  const overlayMethod =
-    command === "--show" ? "showOverlay" : command === "--hide" ? "hideOverlay" : null;
-
-  if (overlayMethod && invokeBotShieldModalOverlayMethod(modal, overlayMethod)) {
-    return true;
-  }
 
   dispatchBotShieldModalCommand(id, command);
   return true;

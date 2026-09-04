@@ -28,6 +28,17 @@ function installMockModalDom() {
   class MockPolarisModal extends dom.window.HTMLElement {
     #visible = false;
 
+    connectedCallback() {
+      this.addEventListener("command", (event) => {
+        if (event.command === "--show") {
+          this.#visible = true;
+        }
+        if (event.command === "--hide") {
+          this.#visible = false;
+        }
+      });
+    }
+
     showOverlay() {
       this.#visible = true;
     }
@@ -42,10 +53,28 @@ function installMockModalDom() {
   }
 
   dom.window.customElements.define("s-modal", MockPolarisModal);
+
+  dom.window.document.addEventListener(
+    "click",
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof dom.window.HTMLButtonElement)) return;
+      const commandFor = target.getAttribute("commandfor");
+      const command = target.getAttribute("command");
+      if (!commandFor || !command) return;
+      const modal = dom.window.document.getElementById(commandFor);
+      if (!modal) return;
+      const commandEvent = new dom.window.Event("command");
+      commandEvent.command = command;
+      modal.dispatchEvent(commandEvent);
+    },
+    true,
+  );
+
   return dom;
 }
 
-test("runBotShieldModalCommand keeps overlay method receiver bound", () => {
+test("runBotShieldModalCommand dispatches modal commands on upgraded s-modal instances", () => {
   installMockModalDom();
   const modal = document.createElement("s-modal");
   modal.id = "botshield-fraud-review-modal";
@@ -53,12 +82,6 @@ test("runBotShieldModalCommand keeps overlay method receiver bound", () => {
 
   assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--show"), true);
   assert.equal(modal.visible, true);
-
-  const detachedShow = modal.showOverlay;
-  assert.throws(
-    () => detachedShow(),
-    /private member|Cannot set properties of undefined/i,
-  );
 
   assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--hide"), true);
   assert.equal(modal.visible, false);
