@@ -48,7 +48,7 @@ test("Settings async controls use loading state and duplicate submission guards"
   assert.match(settingsSource, /loading={clearingSimulation}/);
   assert.match(settingsSource, /loading={resettingBotShield}/);
   assert.match(settingsSource, /BotShieldAsyncButton/);
-  assert.match(designSource, /disabled={isDisabled}/);
+  assert.match(designSource, /disabled={disabled \|\| loading}/);
   assert.match(designSource, /loading={asyncAction\.loading}/);
 });
 

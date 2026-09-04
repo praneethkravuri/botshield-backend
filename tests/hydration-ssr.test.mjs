@@ -194,21 +194,24 @@ test("official AppProvider injects polaris.js and app shell avoids SSR leaf pola
     "utf8",
   );
   assert.match(appProviderSource, /shopifycloud\/polaris\.js/);
-  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
-  assert.match(polarisSource, /createLeafHost\("button"/);
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider apiKey=\{apiKey\}/);
+  assert.doesNotMatch(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
+  assert.match(polarisSource, /BotShieldPolarisButtonComponent/);
+  assert.match(polarisSource, /useBotShieldCustomElementClick/);
   assert.match(polarisSource, /createElement\("s-page"/);
 });
 
-test("shared layout wrappers render HTML hosts instead of polaris container tags", async () => {
+test("shared Polaris wrappers render real Shopify web components", async () => {
   const polarisSource = await readFile(
     new URL("../app/components/design-system/BotShieldHydrationPolaris.jsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(polarisSource, /createLayoutHost\("stack"\)/);
+  assert.match(polarisSource, /createPolarisComponent\("s-stack"\)/);
   assert.match(polarisSource, /createElement\("s-page"/);
-  assert.match(polarisSource, /layoutPropsToStyle/);
-  assert.doesNotMatch(polarisSource, /createPolarisComponent\("s-stack"\)/);
-  assert.match(polarisSource, /createLeafHost\("button"/);
-  assert.match(polarisSource, /createLeafHost\("badge"/);
+  assert.match(polarisSource, /BotShieldPolarisButtonComponent/);
+  assert.match(polarisSource, /useBotShieldCustomElementClick/);
+  assert.match(polarisSource, /createPolarisComponent\("s-badge"\)/);
+  assert.doesNotMatch(polarisSource, /createLayoutHost\("stack"\)/);
+  assert.doesNotMatch(polarisSource, /createLeafHost\("button"/);
 });

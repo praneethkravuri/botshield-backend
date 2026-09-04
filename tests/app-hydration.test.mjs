@@ -27,7 +27,7 @@ const appIndexSource = await readFile(
   "utf8",
 );
 const navSource = await readFile(
-  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
+  new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
   "utf8",
 );
 
@@ -61,19 +61,19 @@ test("app loader exposes a stable SSR render anchor timestamp", () => {
   assert.match(appIndexSource, /renderAnchorMs:\s*appRouteData\.renderAnchorMs/);
 });
 
-test("shared Polaris wrappers use HTML layout and leaf hosts", () => {
+test("shared Polaris wrappers render real Shopify web components", () => {
   assert.doesNotMatch(polarisSource, /useBotShieldClientMount/);
-  assert.match(polarisSource, /createLayoutHost\("stack"\)/);
-  assert.match(polarisSource, /layoutPropsToStyle/);
+  assert.match(polarisSource, /createPolarisComponent\("s-stack"\)/);
+  assert.match(polarisSource, /BotShieldPolarisButtonComponent/);
+  assert.match(polarisSource, /useBotShieldCustomElementClick/);
   assert.match(polarisSource, /createElement\("s-page"/);
-  assert.match(polarisSource, /createLeafHost\("button"/);
-  assert.doesNotMatch(polarisSource, /createPolarisComponent\("s-button"\)/);
+  assert.doesNotMatch(polarisSource, /createLayoutHost\("stack"\)/);
+  assert.doesNotMatch(polarisSource, /createLeafHost\("button"/);
 });
 
-test("embedded app route uses official Shopify AppProvider", () => {
-  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
-  assert.match(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
-  assert.doesNotMatch(appRouteSource, /BotShieldEmbeddedAppProvider/);
+test("embedded app route uses deferred polaris provider for hydration-safe SSR", () => {
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider apiKey=\{apiKey\}/);
+  assert.doesNotMatch(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
 });
 
 test("hydration-safe relative time uses a stable placeholder before mount", () => {
@@ -108,12 +108,11 @@ test("Protection uses stable render anchor for module activity windows", () => {
   assert.match(protectionSource, /buildModuleProtectionActivity\([\s\S]*?\bnow\b/);
 });
 
-test("embedded app nav renders persistent Shopify s-app-nav during SSR", () => {
+test("embedded app route renders persistent Shopify s-app-nav during SSR", () => {
   assert.match(navSource, /<s-app-nav>/);
-  assert.match(navSource, /rel:\s*"home"/);
-  assert.match(navSource, /href:\s*"\/app"/);
+  assert.match(navSource, /BotShieldNavLink/);
+  assert.match(navSource, /useBotShieldCustomElementClick/);
   assert.doesNotMatch(navSource, /return null;/);
-  assert.doesNotMatch(navSource, /setHydrated\(true\)/);
 });
 
 test("Fraud Orders uses hydration-safe Polaris table and search primitives", () => {
@@ -132,7 +131,7 @@ test("Settings general and diagnostics avoid hydration-unsafe patterns", () => {
 });
 
 test("design system modals and save state defer browser-only branches", () => {
-  assert.match(designSource, /if \(!mounted\) return null;/);
+  assert.doesNotMatch(designSource, /useBotShieldClientMount/);
   assert.match(designSource, /setIsPreviewRoute\(window\.location\.pathname\.startsWith\("\/ui-preview"\)\)/);
   assert.doesNotMatch(
     designSource,

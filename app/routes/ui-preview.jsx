@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import process from "node:process";
-import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import BotShieldEmbeddedAppProvider, {
+  BotShieldAppNavigation,
+} from "../components/BotShieldEmbeddedAppProvider";
 import { redirect } from "react-router";
 import BotShieldAdminExperience from "../components/admin/BotShieldAdminExperience";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
@@ -461,8 +463,9 @@ export default function UiPreview() {
   };
 
   return (
-    <AppProvider embedded={false}>
+    <BotShieldEmbeddedAppProvider apiKey="ui-preview-api-key">
+      <BotShieldAppNavigation />
       <BotShieldAdminExperience model={model} actions={actions} />
-    </AppProvider>
+    </BotShieldEmbeddedAppProvider>
   );
 }

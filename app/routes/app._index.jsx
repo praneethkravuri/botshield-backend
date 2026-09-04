@@ -11,6 +11,7 @@ import {
 } from "../lib/theme-extension-status.js";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 import { formatHydrationStableDateTime } from "../lib/hydration-safe-format.js";
+import { mergeEmbeddedAppSearch } from "../lib/embedded-app-navigation.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -674,10 +675,12 @@ export default function Index() {
       }));
       setPauseUntil(status.protectionPausedUntil || null);
       setProtectionOn(Boolean(status.protectionActive));
+      return status;
     } catch (err) {
       console.error("Failed to load protection status", err);
       recordBackendError("Protection status", err);
       if (throwOnError) throw err;
+      return null;
     }
   };
 
@@ -688,10 +691,12 @@ export default function Index() {
         ...previous,
         ...embedStatus,
       }));
+      return embedStatus;
     } catch (err) {
       console.error("Failed to load theme extension status", err);
       recordBackendError("Theme app embed", err);
       if (throwOnError) throw err;
+      return null;
     }
   };
 
@@ -827,14 +832,17 @@ export default function Index() {
       const response = await fetch("/api/overview-threat-activity");
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Threat activity could not be loaded.");
-      setOverviewThreatActivity({
+      const nextThreatActivity = {
         periodDays: Number(data.periodDays || 90),
         days: Array.isArray(data.days) ? data.days : [],
-      });
+      };
+      setOverviewThreatActivity(nextThreatActivity);
+      return nextThreatActivity;
     } catch (error) {
       console.error("Failed to load Overview threat activity", error);
       recordBackendError("Threat activity", error);
       if (throwOnError) throw error;
+      return null;
     }
   };
 
@@ -995,12 +1003,29 @@ export default function Index() {
     setStoreHealthRefreshing(true);
     setStoreHealthRefreshError("");
     try {
-      await loadThemeExtensionStatus({ throwOnError: true });
-      await loadProtectionStatus({ throwOnError: true });
+      const embedStatus = await loadThemeExtensionStatus({ throwOnError: true });
+      const status = await loadProtectionStatus({ throwOnError: true });
       await loadSettings();
-      await loadOverviewThreatActivity({ throwOnError: true });
+      await loadIncidents(incidentFilters, { throwOnError: true });
+      const threatActivity = await loadOverviewThreatActivity({
+        throwOnError: true,
+      });
+      const threatEventCount = (threatActivity?.days || []).reduce(
+        (sum, day) =>
+          sum +
+          Number(day.allowed || 0) +
+          Number(day.challenged || 0) +
+          Number(day.blocked || 0),
+        0,
+      );
       setLastSyncedAt(new Date().toLocaleTimeString());
-      return { ok: true };
+      return {
+        ok: true,
+        themeAppEmbedActive: Boolean(embedStatus?.themeAppEmbedActive),
+        lastStorefrontDecisionAt: status?.lastStorefrontDecisionAt || null,
+        storefrontReportingActive: Boolean(status?.storefrontReportingActive),
+        threatEventCount,
+      };
     } catch (error) {
       const message = toMerchantErrorMessage(
         error,
@@ -1925,7 +1950,13 @@ export default function Index() {
     };
     if (requestedView && pageMap[requestedView]) {
       setPage(pageMap[requestedView]);
-      navigate(legacyViewPathMap[requestedView], { replace: true });
+      navigate(
+        mergeEmbeddedAppSearch(
+          legacyViewPathMap[requestedView],
+          location.search,
+        ),
+        { replace: true },
+      );
     } else if (pathPageMap[location.pathname]) {
       setPage(pathPageMap[location.pathname]);
     } else {
@@ -2775,7 +2806,7 @@ export default function Index() {
       path = "/app/settings?section=notifications";
     }
     setPage(resolvedPage);
-    navigate(path, { replace: false });
+    navigate(mergeEmbeddedAppSearch(path, location.search), { replace: false });
   };
 
   const polarisActions = {

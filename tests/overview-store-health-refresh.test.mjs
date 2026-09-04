@@ -22,13 +22,16 @@ test("Overview store health refresh uses a dedicated lifecycle", () => {
   assert.match(indexSource, /storeHealthRefreshError/);
   assert.match(indexSource, /loadThemeExtensionStatus\(\{ throwOnError: true \}\)/);
   assert.match(indexSource, /loadProtectionStatus\(\{ throwOnError: true \}\)/);
-  assert.match(indexSource, /loadOverviewThreatActivity\(\{ throwOnError: true \}\)/);
+  assert.match(indexSource, /loadIncidents\(incidentFilters, \{ throwOnError: true \}\)/);
+  assert.match(indexSource, /loadOverviewThreatActivity\(\{[\s\S]*throwOnError: true/);
+  assert.match(indexSource, /threatEventCount/);
   assert.match(indexSource, /refreshStoreHealth,/);
 });
 
 test("Overview refresh status button shows loading and merchant feedback", () => {
   assert.match(overviewSource, /handleRefreshStoreHealth/);
-  assert.match(overviewSource, /toast\.success\("Store health updated"\)/);
+  assert.match(overviewSource, /Connection verified/);
+  assert.match(overviewSource, /toast\.error\(result\.error\)/);
   assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /loading=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /Refresh status/);
@@ -36,6 +39,24 @@ test("Overview refresh status button shows loading and merchant feedback", () =>
   assert.doesNotMatch(
     overviewSource,
     /Refresh status[\s\S]{0,220}onClick=\{storefrontSensorActive \? actions\.refresh/,
+  );
+});
+
+test("Threat activity verify connection refreshes live data when embed is active", () => {
+  const threatEmptyStart = overviewSource.indexOf("botshield-v2-monitoring-empty");
+  assert.notEqual(threatEmptyStart, -1);
+  const threatEmptySection = overviewSource.slice(
+    threatEmptyStart,
+    threatEmptyStart + 900,
+  );
+  assert.match(threatEmptySection, /storefrontSensorActive/);
+  assert.match(threatEmptySection, /handleRefreshStoreHealth/);
+  assert.match(threatEmptySection, /Refresh data/);
+  assert.match(threatEmptySection, /Verify connection/);
+  assert.match(threatEmptySection, /actions\.openThemeEditor/);
+  assert.doesNotMatch(
+    threatEmptySection,
+    /<BotShieldActionButton onClick=\{actions\.openThemeEditor\}>/,
   );
 });
 

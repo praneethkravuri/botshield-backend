@@ -278,7 +278,7 @@ test("Setup checklist stays on supported pages with contextual actions", async (
 
 test("new app shell keeps a simplified Shopify-native app navigation", async () => {
   const source = await readFile(
-    new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
+    new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
     "utf8",
   );
 
@@ -292,6 +292,7 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
   assert.match(source, /href: "\/app\/protection-rules"/);
   assert.match(source, /href: "\/app\/fraud-orders"/);
   assert.match(source, /href: "\/app\/settings"/);
+  assert.doesNotMatch(source, /rel:\s*["']home["']/);
   assert.doesNotMatch(source, /rel="home"/);
   assert.doesNotMatch(source, />Protection Rules</);
   assert.doesNotMatch(source, />Visitors</);
@@ -341,8 +342,9 @@ test("dashboard routes use real paths with legacy query compatibility", async ()
   assert.match(source, /useLocation/);
   assert.match(source, /\[location\.pathname, location\.search, navigate\]/);
   assert.match(source, /setPage\("dashboard"\)/);
-  assert.match(source, /navigate\(legacyViewPathMap\[requestedView\], \{ replace: true \}\)/);
-  assert.match(source, /navigate\(path, \{ replace: false \}\)/);
+  assert.match(source, /mergeEmbeddedAppSearch/);
+  assert.match(source, /mergeEmbeddedAppSearch\([\s\S]*legacyViewPathMap\[requestedView\][\s\S]*\{ replace: true \}/);
+  assert.match(source, /navigate\(mergeEmbeddedAppSearch\(path, location\.search\), \{ replace: false \}\)/);
   assert.doesNotMatch(source, /navigate\(`\/app\?view=/);
   assert.doesNotMatch(source, /setPage\(parsed\.page/);
   assert.doesNotMatch(source, /page !== "legacy"/);
@@ -475,7 +477,7 @@ test("supported pages use Shopify native page chrome", async () => {
 
   assert.match(designSource, /export function BotShieldNativePage/);
   assert.doesNotMatch(designSource, /botshield-native-page-fallback/);
-  assert.match(designSource, /BotShieldPolarisPage heading=\{heading\}/);
+  assert.match(designSource, /<s-page heading=\{heading\}>/);
   assert.doesNotMatch(adminSource, /BotShieldPageLoadingBridge active=\{Boolean\(model\.syncing\)\}/);
   assert.match(hookSource, /export function BotShieldPageLoadingBridge/);
   assert.match(hookSource, /return null;/);
@@ -541,4 +543,20 @@ test("Overview quick response rows stack actions before text is crushed", async 
   assert.match(designSource, /@container overview-quick-actions \(max-width: 520px\)/);
   assert.match(designSource, /"icon copy"\s+"\. action"/);
   assert.doesNotMatch(designSource, /\.botshield-v2-quick-action-row span \{ max-width: 290px/);
+});
+
+test("Threat activity legend stays on one row on desktop widths", async () => {
+  const designSource = await readFile(
+    new URL(
+      "../app/components/design-system/BotShieldDesignSystem.jsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(designSource, /\.botshield-v2-legend \{/);
+  assert.match(designSource, /flex-wrap: nowrap/);
+  assert.match(designSource, /align-items: center/);
+  assert.match(designSource, /@media \(min-width: 720px\) \{\s*\.botshield-v2-chart-controls \{/);
+  assert.match(designSource, /flex-direction: row/);
 });

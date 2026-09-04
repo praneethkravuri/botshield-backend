@@ -182,6 +182,8 @@ test("Protection module managers use native modal sizing and actions", () => {
   assert.match(protectionPage, /Connect storefront/);
   assert.match(designSource, /export function BotShieldNativeModal/);
   assert.match(designSource, /BotShieldModalShell/);
+  assert.doesNotMatch(designSource, /useBotShieldClientMount/);
+  assert.doesNotMatch(designSource, /if \(!mounted\) return null;/);
 });
 
 test("Protection V2.1 exposes only real detection and enforcement capabilities", () => {
@@ -320,4 +322,29 @@ test("blocked and trusted visitor lists stay mutually exclusive", () => {
     /db\.\$transaction\(\[[\s\S]*db\.whitelistIP\.upsert[\s\S]*db\.blockedIP\.deleteMany/,
   );
   assert.match(upsertWhitelist, /where: \{ shop: normalizedShop, ipAddress \}/);
+});
+
+test("Protection inline help icon is decorative when message text is already visible", () => {
+  const inlineHelpStart = designSource.indexOf("export function BotShieldInlineHelp");
+  assert.notEqual(inlineHelpStart, -1);
+  const inlineHelpSource = designSource.slice(inlineHelpStart, inlineHelpStart + 700);
+
+  assert.match(inlineHelpSource, /className="botshield-inline-help"/);
+  assert.match(
+    inlineHelpSource,
+    /className="botshield-inline-help-icon" aria-hidden="true"/,
+  );
+  assert.match(inlineHelpSource, /<BotShieldIcon type="info" tone="info" \/>/);
+  assert.match(designSource, /\.botshield-inline-help-icon \{[\s\S]*pointer-events: none/);
+  assert.match(inlineHelpSource, /role="note"/);
+  assert.doesNotMatch(inlineHelpSource, /onClick|interestFor|s-clickable|s-tooltip/);
+  assert.match(protectionPage, /<BotShieldInlineHelp>/);
+  for (const note of [
+    "Bot Protection identifies automation signals",
+    "Network signals contribute to the risk score",
+    "Rate Protection adds behavioral signals",
+    "Storefront enforcement applies broadly through the",
+  ]) {
+    assert.match(protectionPage, new RegExp(note.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });

@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
-import { useBotShieldClientMount } from "../../hooks/use-botshield-client-mount";
+import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom-element-click.js";
 import {
   BotShieldBadge,
   BotShieldBannerShell,
@@ -127,28 +127,6 @@ export function BotShieldAppFrame({ children }) {
           background: var(--botshield-bg);
           padding-bottom: 48px;
           color: var(--botshield-text);
-        }
-        .botshield-layout-stack,
-        .botshield-layout-box,
-        .botshield-layout-grid,
-        .botshield-layout-button-group,
-        .botshield-layout-table,
-        .botshield-layout-table-header-row,
-        .botshield-layout-table-header,
-        .botshield-layout-table-body,
-        .botshield-layout-table-row,
-        .botshield-layout-table-cell,
-        .botshield-layout-banner {
-          min-width: 0;
-          box-sizing: border-box;
-        }
-        .botshield-layout-stack,
-        .botshield-layout-button-group {
-          display: flex;
-          flex-direction: column;
-        }
-        .botshield-layout-grid {
-          display: grid;
         }
         .botshield-page {
           box-sizing: border-box;
@@ -665,14 +643,20 @@ export function BotShieldAppFrame({ children }) {
         }
         .botshield-v2-legend {
           display: flex;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           justify-content: flex-end;
+          align-items: center;
           gap: 12px;
           color: var(--overview-muted);
           font-size: 11px;
           white-space: nowrap;
         }
-        .botshield-v2-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .botshield-v2-legend span {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          flex: 0 0 auto;
+        }
         .botshield-v2-legend i {
           width: 8px;
           height: 8px;
@@ -1120,8 +1104,7 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-quick-action-row { padding: 13px 0; }
         .botshield-v2-quick-action-row--primary { margin: 3px -8px -6px; padding: 12px 8px 6px; }
         /* Final Overview V2 polish */
-        .botshield-overview-v2 > s-stack,
-        .botshield-overview-v2 > .botshield-layout-stack { gap: 18px; }
+        .botshield-overview-v2 > s-stack { gap: 18px; }
         .botshield-overview-v2 .botshield-overview-title,
         .botshield-analytics-v2 > .botshield-overview-header .botshield-overview-title,
         .botshield-protection-content .botshield-protection-header .botshield-overview-title {
@@ -1190,7 +1173,12 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-section { padding: 19px; }
         .botshield-v2-panel-header h2 { font-size: 17px; }
         .botshield-v2-threat-panel { min-height: 510px; }
-        .botshield-v2-chart-controls { display: grid; justify-items: end; gap: 10px; }
+        .botshield-v2-chart-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 10px;
+        }
         .botshield-v2-period-selector {
           display: inline-flex;
           padding: 2px;
@@ -1243,14 +1231,10 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-quick-action-row .botshield-v2-icon { width: 27px; height: 27px; }
         .botshield-v2-quick-action-row--primary { margin: 2px -7px -5px; padding: 11px 7px 5px; background: #f7f7f8; }
         /* Overview precision pass: density, sparse charts, and interaction clarity. */
-        .botshield-overview-v2 > s-stack,
-        .botshield-overview-v2 > .botshield-layout-stack { gap: 16px; }
+        .botshield-overview-v2 > s-stack { gap: 16px; }
         .botshield-v2-status-actions s-button,
-        .botshield-v2-status-actions .botshield-polaris-button,
         .botshield-v2-protection-action s-button,
-        .botshield-v2-protection-action .botshield-polaris-button,
-        .botshield-v2-quick-action-row s-button,
-        .botshield-v2-quick-action-row .botshield-polaris-button { flex: 0 0 auto; }
+        .botshield-v2-quick-action-row s-button { flex: 0 0 auto; }
         .botshield-v2-kpi-card {
           position: relative;
           min-width: 0;
@@ -1284,7 +1268,22 @@ export function BotShieldAppFrame({ children }) {
         .botshield-v2-value-empty > strong { width: 20px; text-align: center; }
         .botshield-v2-value-empty > div { min-width: 0; }
         .botshield-v2-panel-header { align-items: flex-start; margin-bottom: 16px; }
-        .botshield-v2-chart-controls { align-content: start; }
+        .botshield-v2-chart-controls {
+          align-content: start;
+          flex: 0 1 auto;
+          min-width: min(100%, 320px);
+        }
+        @media (min-width: 720px) {
+          .botshield-v2-chart-controls {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            column-gap: 16px;
+            row-gap: 8px;
+          }
+          .botshield-v2-legend { flex-wrap: nowrap; }
+        }
         .botshield-v2-period-selector button { transition: color 120ms ease, background-color 120ms ease, box-shadow 120ms ease; }
         .botshield-v2-chart { padding-left: 35px; }
         .botshield-v2-chart-bars {
@@ -1324,8 +1323,7 @@ export function BotShieldAppFrame({ children }) {
             align-items: start;
             row-gap: 10px;
           }
-          .botshield-v2-quick-action-row > s-button,
-          .botshield-v2-quick-action-row > .botshield-polaris-button {
+          .botshield-v2-quick-action-row > s-button {
             justify-self: start;
           }
         }
@@ -1335,7 +1333,6 @@ export function BotShieldAppFrame({ children }) {
           .botshield-v2-chart-bars { height: 230px; }
         }
         .botshield-overview-v2 s-button:focus-visible,
-        .botshield-overview-v2 .botshield-polaris-button:focus-visible,
         .botshield-overview-v2 button:focus-visible {
           outline: 2px solid var(--overview-blue);
           outline-offset: 2px;
@@ -1854,8 +1851,7 @@ export function BotShieldAppFrame({ children }) {
           gap: 16px;
           align-content: start;
         }
-        .botshield-native-modal-body .botshield-ip-list > s-stack > s-stack:first-child > s-heading,
-        .botshield-native-modal-body .botshield-ip-list > .botshield-layout-stack > .botshield-layout-stack:first-child > .botshield-polaris-heading {
+        .botshield-native-modal-body .botshield-ip-list > s-stack > s-stack:first-child > s-heading {
           display: none;
         }
         .botshield-protection-modal-intro {
@@ -1946,6 +1942,15 @@ export function BotShieldAppFrame({ children }) {
         .botshield-protection-drawer-metrics > div + div { border-left: 1px solid #e3e5e6; }
         .botshield-protection-drawer-metrics strong { color: #24292d; font-size: 1rem; font-weight: 680; line-height: 1.25rem; }
         .botshield-protection-drawer-metrics span { color: #70767b; font-size: .6875rem; line-height: 1rem; }
+        .botshield-inline-help { position: relative; }
+        .botshield-inline-help-icon {
+          display: inline-flex;
+          flex: 0 0 auto;
+          pointer-events: none;
+          cursor: default;
+          user-select: none;
+        }
+        .botshield-inline-help-icon s-icon { pointer-events: none; }
         .botshield-protection-current-status { display: grid; gap: 8px; }
         .botshield-protection-current-status s-badge { justify-self: start; }
         .botshield-protection-current-status span { color: #62696e; font-size: .78125rem; line-height: 1.1875rem; }
@@ -2453,8 +2458,7 @@ export function BotShieldAppFrame({ children }) {
           font-size: 12px;
           line-height: 1.35;
         }
-        .botshield-native-modal-body.botshield-fraud-review-modal s-stack,
-        .botshield-native-modal-body.botshield-fraud-review-modal .botshield-layout-stack { width: 100%; }
+        .botshield-native-modal-body.botshield-fraud-review-modal s-stack { width: 100%; }
         .botshield-fraud-investigation {
           display: flex;
           flex-direction: column;
@@ -4685,7 +4689,15 @@ export function BotShieldAppFrame({ children }) {
             border-top: 1px solid #dfe3e8;
           }
           .botshield-v2-panel-header { flex-direction: column; }
-          .botshield-v2-legend { justify-content: flex-start; }
+          .botshield-v2-chart-controls {
+            align-items: flex-start;
+            min-width: 0;
+            width: 100%;
+          }
+          .botshield-v2-legend {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+          }
           .botshield-v2-operations { grid-template-columns: 1fr; }
           .botshield-v2-operation + .botshield-v2-operation {
             margin: 0;
@@ -4808,11 +4820,11 @@ export function BotShieldNativePage({
   secondaryActions = null,
 }) {
   return (
-    <BotShieldPolarisPage heading={heading}>
+    <s-page heading={heading}>
       {primaryAction}
       {secondaryActions}
       {children}
-    </BotShieldPolarisPage>
+    </s-page>
   );
 }
 
@@ -5171,15 +5183,18 @@ export function BotShieldActionButton({
   command,
   id,
 }) {
-  const isDisabled = disabled || loading;
+  const buttonRef = useBotShieldCustomElementClick(onClick, {
+    enabled: !disabled && !loading && typeof onClick === "function",
+  });
 
   return (
-    <BotShieldPolarisButton
+    <s-button
+      ref={buttonRef}
       id={id}
       variant={variant}
       tone={tone}
       loading={loading}
-      disabled={isDisabled}
+      disabled={disabled || loading}
       icon={icon}
       accessibilityLabel={accessibilityLabel}
       href={href}
@@ -5187,10 +5202,9 @@ export function BotShieldActionButton({
       slot={slot}
       commandFor={commandFor}
       command={command}
-      onClick={onClick}
     >
       {children}
-    </BotShieldPolarisButton>
+    </s-button>
   );
 }
 
@@ -5372,9 +5386,17 @@ export function BotShieldLoadingState({ label = "Loading BotShield" }) {
 
 export function BotShieldInlineHelp({ children }) {
   return (
-    <BotShieldBox background="subdued" borderRadius="base" padding="base">
+    <BotShieldBox
+      background="subdued"
+      borderRadius="base"
+      padding="base"
+      className="botshield-inline-help"
+      role="note"
+    >
       <BotShieldStack direction="inline" gap="small" alignItems="start">
-        <BotShieldIcon type="info" tone="info" />
+        <span className="botshield-inline-help-icon" aria-hidden="true">
+          <BotShieldIcon type="info" tone="info" />
+        </span>
         <BotShieldText color="subdued">{children}</BotShieldText>
       </BotShieldStack>
     </BotShieldBox>
@@ -5412,9 +5434,6 @@ export function BotShieldInfoModal({
   children,
   closeLabel = "Close",
 }) {
-  const mounted = useBotShieldClientMount();
-  if (!mounted) return null;
-
   return (
     <BotShieldModalShell id={id} heading={heading}>
       <BotShieldBox padding="base">
@@ -5500,7 +5519,6 @@ export function BotShieldNativeModal({
   secondaryActions,
   children,
 }) {
-  const mounted = useBotShieldClientMount();
   const wasOpenRef = useRef(false);
   const showRequestRef = useRef(0);
 
@@ -5526,8 +5544,6 @@ export function BotShieldNativeModal({
   const handleAfterHide = () => {
     onAfterHide?.();
   };
-
-  if (!mounted) return null;
 
   return (
     <BotShieldModalShell
@@ -5560,7 +5576,6 @@ export function BotShieldConfirmationModal({
   size = "small-100",
   tone = "critical",
 }) {
-  const mounted = useBotShieldClientMount();
   const handleConfirm = async () => {
     await onConfirm?.();
     hideBotShieldModal(id);
@@ -5570,8 +5585,6 @@ export function BotShieldConfirmationModal({
     onDismiss?.();
     hideBotShieldModal(id);
   };
-
-  if (!mounted) return null;
 
   return (
     <BotShieldModalShell id={id} heading={heading} size={size}>
@@ -5607,7 +5620,6 @@ export function BotShieldTypedConfirmationModal({
   size = "small-100",
   tone = "critical",
 }) {
-  const mounted = useBotShieldClientMount();
   const [confirmationInput, setConfirmationInput] = useState("");
   const confirmed = confirmationInput.trim() === confirmationText;
 
@@ -5627,8 +5639,6 @@ export function BotShieldTypedConfirmationModal({
     onDismiss?.();
     hideBotShieldModal(id);
   };
-
-  if (!mounted) return null;
 
   return (
     <BotShieldModalShell id={id} heading={heading} size={size}>

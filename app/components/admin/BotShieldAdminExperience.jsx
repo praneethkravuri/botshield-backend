@@ -1294,8 +1294,27 @@ function OverviewPage({ model, actions }) {
     const result = await actions.refreshStoreHealth?.();
     if (result?.skipped) return;
     if (result?.ok) {
-      toast.success("Store health updated");
+      if (result.themeAppEmbedActive && result.lastStorefrontDecisionAt) {
+        toast.success(
+          result.threatEventCount > 0
+            ? "Connection verified. Threat activity updated from recorded storefront decisions."
+            : "Connection verified. Latest storefront decision received.",
+        );
+        return;
+      }
+      if (result.themeAppEmbedActive) {
+        toast.success(
+          "Theme embed is active. Visit your storefront to record the first decision.",
+        );
+        return;
+      }
+      toast.success(
+        "Enable the theme app embed in your theme editor to start storefront reporting.",
+      );
       return;
+    }
+    if (result?.error) {
+      toast.error(result.error);
     }
   };
   const storefrontConnected = hasStorefrontConnection(model);
@@ -1779,8 +1798,18 @@ function OverviewPage({ model, actions }) {
                   <OverviewIcon name="activity" />
                   <h3>Monitoring storefront activity</h3>
                   <p>Allowed, challenged, and blocked decisions will appear as BotShield records real storefront traffic.</p>
-                  <BotShieldActionButton onClick={actions.openThemeEditor}>
-                    Verify connection
+                  <BotShieldActionButton
+                    disabled={model.storeHealthRefreshing}
+                    loading={model.storeHealthRefreshing}
+                    onClick={() => {
+                      if (storefrontSensorActive) {
+                        void handleRefreshStoreHealth();
+                        return;
+                      }
+                      actions.openThemeEditor?.();
+                    }}
+                  >
+                    {storefrontSensorActive ? "Refresh data" : "Verify connection"}
                   </BotShieldActionButton>
                   {lastStorefrontDecisionAt ? (
                     <small>Last decision received <BotShieldHydrationRelativeTime value={lastStorefrontDecisionAt} /></small>

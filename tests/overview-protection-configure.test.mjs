@@ -11,7 +11,7 @@ const adminSource = fs.readFileSync(
   "utf8",
 );
 const appNavSource = fs.readFileSync(
-  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
+  new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
   "utf8",
 );
 const overviewSource = adminSource.slice(

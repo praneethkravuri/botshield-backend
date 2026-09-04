@@ -24,6 +24,64 @@ test("resolveInitialSettingsSection validates settings hub sections", () => {
   assert.equal(resolveInitialSettingsSection("?section=legacy"), "general");
 });
 
+test("mergeEmbeddedAppSearch preserves embedded frame params across app routes", async () => {
+  const { mergeEmbeddedAppSearch } = await import(
+    "../app/lib/embedded-app-navigation.js"
+  );
+
+  const embeddedSearch =
+    "?shop=botshield-test-2.myshopify.com&host=abc&embedded=1&id_token=token";
+
+  assert.equal(
+    mergeEmbeddedAppSearch("/app/protection-rules", embeddedSearch),
+    "/app/protection-rules?shop=botshield-test-2.myshopify.com&host=abc&embedded=1&id_token=token",
+  );
+  assert.equal(
+    mergeEmbeddedAppSearch("/app/analytics", embeddedSearch),
+    "/app/analytics?shop=botshield-test-2.myshopify.com&host=abc&embedded=1&id_token=token",
+  );
+  assert.equal(
+    mergeEmbeddedAppSearch("/app/settings?section=billing", embeddedSearch),
+    "/app/settings?shop=botshield-test-2.myshopify.com&host=abc&embedded=1&id_token=token&section=billing",
+  );
+  assert.equal(
+    mergeEmbeddedAppSearch("/app", embeddedSearch),
+    "/app?shop=botshield-test-2.myshopify.com&host=abc&embedded=1&id_token=token",
+  );
+});
+
+test("embedded app nav exposes Overview first without rel=home", async () => {
+  const navSource = await readFile(
+    new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.doesNotMatch(navSource, /rel:\s*["']home["']/);
+  assert.doesNotMatch(navSource, /rel="home"/);
+
+  const labels = [...navSource.matchAll(/label:\s*"([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(labels, [
+    "Overview",
+    "Analytics",
+    "Protection",
+    "Fraud Orders",
+    "Settings",
+  ]);
+
+  const hrefs = [...navSource.matchAll(/href:\s*"([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(hrefs, [
+    "/app",
+    "/app/analytics",
+    "/app/protection-rules",
+    "/app/fraud-orders",
+    "/app/settings",
+  ]);
+});
+
 test("app loader exposes SSR route state for embedded settings URLs", async () => {
   const appRouteSource = await readFile(
     new URL("../app/routes/app.jsx", import.meta.url),
@@ -39,6 +97,7 @@ test("app loader exposes SSR route state for embedded settings URLs", async () =
   assert.match(appRouteSource, /initialAdminPage:/);
   assert.match(appRouteSource, /initialSettingsSection:/);
   assert.match(appRouteSource, /BotShieldAppNavigation/);
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider apiKey=\{apiKey\}/);
   assert.match(appIndexSource, /initialAdminPage/);
   assert.match(appIndexSource, /initialSettingsSection/);
 });

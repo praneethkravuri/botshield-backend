@@ -30,14 +30,6 @@ const adminSource = await readFile(
 
 );
 
-const appNavSource = await readFile(
-
-  new URL("../app/components/BotShieldAppNavigation.jsx", import.meta.url),
-
-  "utf8",
-
-);
-
 const appRouteSource = await readFile(
 
   new URL("../app/routes/app.jsx", import.meta.url),
@@ -78,23 +70,21 @@ test("toast provider keeps a stable SSR and first-client render tree", () => {
 
 
 
-test("Shopify hydration-safe shells keep approved s-page while avoiding SSR leaf polaris tags", () => {
+test("Shopify hydration-safe shells keep approved s-page and s-button markup", () => {
 
   assert.match(designSource, /function BotShieldNativePage/);
 
-  assert.match(designSource, /BotShieldPolarisPage heading=\{heading\}/);
+  assert.match(designSource, /<s-page heading=\{heading\}>/);
 
   assert.match(designSource, /function BotShieldActionButton/);
 
-  assert.match(designSource, /BotShieldPolarisButton/);
+  assert.match(designSource, /<s-button/);
 
-  assert.doesNotMatch(designSource, /<s-button/);
+  assert.match(designSource, /useBotShieldCustomElementClick/);
 
-  assert.match(appNavSource, /<s-app-nav>/);
+  assert.match(appRouteSource, /BotShieldAppNavigation/);
 
-  assert.match(appNavSource, /rel:\s*"home"/);
-
-  assert.doesNotMatch(appNavSource, /return null;/);
+  assert.doesNotMatch(appRouteSource, /return null;/);
 
 });
 
@@ -198,11 +188,19 @@ test("Settings hub section initializes from loader-provided SSR state", () => {
 
 
 
-test("embedded app uses official AppProvider for App Bridge navigation", () => {
+test("embedded app defers polaris.js until after hydration", async () => {
 
-  assert.match(appRouteSource, /AppProvider embedded apiKey=\{apiKey\}/);
+  assert.match(appRouteSource, /BotShieldEmbeddedAppProvider apiKey=\{apiKey\}/);
 
-  assert.match(appRouteSource, /@shopify\/shopify-app-react-router\/react/);
+  const providerSource = await readFile(
+
+    new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
+
+    "utf8",
+
+  );
+
+  assert.match(providerSource, /ensurePolarisInitialized/);
 
 });
 
