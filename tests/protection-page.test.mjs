@@ -267,7 +267,10 @@ test("Protection Manage actions mount the native modal before showing it", () =>
   assert.doesNotMatch(protectionPage, /\{protectionModal \? \(\s*<BotShieldNativeModal/s);
   assert.match(designSource, /export function queueBotShieldModalShow/);
   assert.match(designSource, /queueBotShieldModalShow\(id\)/);
-  assert.match(designSource, /modal\.showOverlay/);
+  assert.match(
+    fs.readFileSync(new URL("../app/lib/botshield-modal-command.js", import.meta.url), "utf8"),
+    /Reflect\.apply\(method, modal, \[\]\)/,
+  );
   for (const opener of [
     "openBotProtectionModule",
     "openNetworkProtectionModule",
@@ -283,12 +286,16 @@ test("Protection Manage actions mount the native modal before showing it", () =>
 });
 
 test("Protection native modal can reopen after close without remounting the shell", () => {
+  const nativeModalSource = designSource.slice(
+    designSource.indexOf("export function BotShieldNativeModal"),
+    designSource.indexOf("export function BotShieldConfirmationModal"),
+  );
   assert.match(protectionPage, /const closeDrawer = \(\) =>/);
   assert.match(protectionPage, /setProtectionModal\(null\)/);
   assert.match(protectionPage, /open={Boolean\(protectionModal\)}/);
   assert.match(protectionPage, /drawerOpenerRef\.current = document\.activeElement/);
-  assert.match(designSource, /wasOpenRef\.current = false/);
-  assert.match(designSource, /hideBotShieldModal\(id\)/);
+  assert.match(nativeModalSource, /wasOpenRef\.current = false/);
+  assert.doesNotMatch(nativeModalSource, /hideBotShieldModal\(id\)/);
 });
 
 test("Overview Configure deep links still open Protection module managers", () => {

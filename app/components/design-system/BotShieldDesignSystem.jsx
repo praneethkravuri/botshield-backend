@@ -11,6 +11,7 @@ import {
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom-element-click.js";
+import { runBotShieldModalCommand } from "../../lib/botshield-modal-command.js";
 import {
   BotShieldBadge,
   BotShieldBannerShell,
@@ -5435,11 +5436,16 @@ export function BotShieldDangerZone({ title, description, action }) {
 export function BotShieldInfoModal({
   id,
   heading,
+  accessibilityLabel,
   children,
   closeLabel = "Close",
 }) {
   return (
-    <BotShieldModalShell id={id} heading={heading}>
+    <BotShieldModalShell
+      accessibilityLabel={accessibilityLabel ?? heading}
+      id={id}
+      heading={heading}
+    >
       <BotShieldBox padding="base">
         <BotShieldParagraph>{children}</BotShieldParagraph>
       </BotShieldBox>
@@ -5448,41 +5454,6 @@ export function BotShieldInfoModal({
       </BotShieldPolarisButton>
     </BotShieldModalShell>
   );
-}
-
-function runBotShieldModalCommand(id, command) {
-  if (typeof document === "undefined" || !id) return false;
-  const modal = document.getElementById(id);
-  if (!modal) return false;
-
-  if (command === "--show") {
-    if (typeof modal.showOverlay === "function") {
-      modal.showOverlay();
-      return true;
-    }
-    if (typeof modal.show === "function") {
-      modal.show();
-      return true;
-    }
-  } else if (typeof modal.hideOverlay === "function") {
-    modal.hideOverlay();
-    return true;
-  } else if (typeof modal.hide === "function") {
-    modal.hide();
-    return true;
-  }
-
-  const trigger = document.createElement("button");
-  trigger.type = "button";
-  trigger.setAttribute("command", command);
-  trigger.setAttribute("commandfor", id);
-  trigger.style.position = "fixed";
-  trigger.style.opacity = "0";
-  trigger.style.pointerEvents = "none";
-  document.body.appendChild(trigger);
-  trigger.click();
-  document.body.removeChild(trigger);
-  return true;
 }
 
 export function showBotShieldModal(id) {
@@ -5513,6 +5484,7 @@ export const BOTSHIELD_FRAUD_REVIEW_MODAL_ID = "botshield-fraud-review-modal";
 export function BotShieldNativeModal({
   id,
   heading,
+  accessibilityLabel,
   size = "base",
   open = false,
   padding = "base",
@@ -5527,22 +5499,22 @@ export function BotShieldNativeModal({
   const showRequestRef = useRef(0);
 
   useEffect(() => {
-    if (open) {
-      wasOpenRef.current = true;
-      showRequestRef.current += 1;
-      const showRequest = showRequestRef.current;
-      queueBotShieldModalShow(id);
-      return () => {
-        if (showRequestRef.current === showRequest) {
-          showRequestRef.current += 1;
-        }
-      };
+    if (!open) {
+      if (wasOpenRef.current) {
+        wasOpenRef.current = false;
+      }
+      return undefined;
     }
-    if (wasOpenRef.current) {
-      wasOpenRef.current = false;
-      hideBotShieldModal(id);
-    }
-    return undefined;
+
+    wasOpenRef.current = true;
+    showRequestRef.current += 1;
+    const showRequest = showRequestRef.current;
+    queueBotShieldModalShow(id);
+    return () => {
+      if (showRequestRef.current === showRequest) {
+        showRequestRef.current += 1;
+      }
+    };
   }, [id, open]);
 
   const handleAfterHide = () => {
@@ -5551,6 +5523,7 @@ export function BotShieldNativeModal({
 
   return (
     <BotShieldModalShell
+      accessibilityLabel={accessibilityLabel ?? heading}
       id={id}
       heading={heading}
       size={size}
@@ -5572,6 +5545,7 @@ export function BotShieldNativeModal({
 export function BotShieldConfirmationModal({
   id,
   heading,
+  accessibilityLabel,
   children,
   confirmLabel,
   onConfirm,
@@ -5591,7 +5565,12 @@ export function BotShieldConfirmationModal({
   };
 
   return (
-    <BotShieldModalShell id={id} heading={heading} size={size}>
+    <BotShieldModalShell
+      accessibilityLabel={accessibilityLabel ?? heading}
+      id={id}
+      heading={heading}
+      size={size}
+    >
       <BotShieldBox padding="base">
         <BotShieldParagraph>{children}</BotShieldParagraph>
       </BotShieldBox>
@@ -5614,6 +5593,7 @@ export function BotShieldConfirmationModal({
 export function BotShieldTypedConfirmationModal({
   id,
   heading,
+  accessibilityLabel,
   children,
   confirmLabel,
   confirmationText = "RESET",
@@ -5645,7 +5625,12 @@ export function BotShieldTypedConfirmationModal({
   };
 
   return (
-    <BotShieldModalShell id={id} heading={heading} size={size}>
+    <BotShieldModalShell
+      accessibilityLabel={accessibilityLabel ?? heading}
+      id={id}
+      heading={heading}
+      size={size}
+    >
       <BotShieldBox padding="base">
         <BotShieldStack gap="base">
           {children}

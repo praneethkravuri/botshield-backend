@@ -32,12 +32,17 @@ const settingsSource = adminSource.slice(
   adminSource.indexOf("export default function BotShieldAdminExperience"),
 );
 
+const modalCommandSource = fs.readFileSync(
+  new URL("../app/lib/botshield-modal-command.js", import.meta.url),
+  "utf8",
+);
+
 test("shared modal helpers avoid silent show() no-ops", () => {
   assert.match(designSource, /export function showBotShieldModal/);
   assert.match(designSource, /export function queueBotShieldModalShow/);
   assert.match(designSource, /export function hideBotShieldModal/);
   assert.match(designSource, /runBotShieldModalCommand/);
-  assert.match(designSource, /if \(!modal\) return false/);
+  assert.match(modalCommandSource, /if \(!modal\) return false/);
   assert.doesNotMatch(adminSource, /getElementById\([^)]+\)\?\.show/);
 });
 
@@ -106,6 +111,7 @@ test("Protection profile cancel and close use discard confirmation only for prof
   assert.match(protectionSource, /onClick=\{requestClose\}/);
   assert.match(protectionSource, /BotShieldNativeModal/);
   assert.doesNotMatch(protectionSource, /accessibilityLabel="Close"/);
+  assert.match(designSource, /accessibilityLabel=\{accessibilityLabel \?\? heading\}/);
 });
 
 test("Protection modal switches cannot silently discard profile drafts", () => {

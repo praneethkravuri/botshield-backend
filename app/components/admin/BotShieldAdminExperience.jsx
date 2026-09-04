@@ -3843,7 +3843,6 @@ function FraudOrdersPage({ model, actions }) {
   };
   const openReview = (order) => {
     setSelectedOrder(order);
-    queueBotShieldModalShow(BOTSHIELD_FRAUD_REVIEW_MODAL_ID);
   };
   const closeReview = () => setSelectedOrder(null);
 

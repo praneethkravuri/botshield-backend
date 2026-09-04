@@ -100,7 +100,7 @@ test("Fraud Orders review uses native centered modal shell", () => {
   assert.match(page, /function FraudOrderReviewModal/);
   assert.match(page, /BOTSHIELD_FRAUD_REVIEW_MODAL_ID/);
   assert.match(page, /BotShieldNativeModal/);
-  assert.match(page, /queueBotShieldModalShow\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
+  assert.match(page, /open=\{Boolean\(order\)\}/);
   assert.match(page, /hideBotShieldModal\(BOTSHIELD_FRAUD_REVIEW_MODAL_ID\)/);
   assert.match(page, /size="large"/);
 });
