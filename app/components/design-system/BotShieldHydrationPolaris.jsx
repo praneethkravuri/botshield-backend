@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import { createElement } from "react";
 import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom-element-click.js";
+import { useBotShieldCustomElementInput } from "../../hooks/use-botshield-custom-element-input.js";
 
 function createPolarisComponent(tag) {
   return function BotShieldPolarisComponent({ children, className, ...props }) {
@@ -56,18 +57,34 @@ export const BotShieldDivider = createPolarisComponent("s-divider");
 
 export function BotShieldSearchField({
   label,
-  value,
+  labelAccessibilityVisibility,
+  value = "",
   onChange,
+  onInput,
   placeholder,
   disabled,
 }) {
+  const handleInput = (event) => {
+    if (typeof onInput === "function") {
+      onInput(event);
+      return;
+    }
+    onChange?.(event.currentTarget.value);
+  };
+  const inputRef = useBotShieldCustomElementInput(handleInput, {
+    enabled: !disabled,
+    value,
+  });
+
   return (
     <s-search-field
       disabled={disabled}
       label={label}
-      onInput={(event) => onChange?.(event.currentTarget.value)}
       placeholder={placeholder}
-      value={value}
+      ref={inputRef}
+      {...(labelAccessibilityVisibility
+        ? { labelAccessibilityVisibility }
+        : {})}
     />
   );
 }

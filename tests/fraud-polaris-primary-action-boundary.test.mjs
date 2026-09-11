@@ -16,6 +16,14 @@ const designSource = fs.readFileSync(
   new URL("../app/components/design-system/BotShieldDesignSystem.jsx", import.meta.url),
   "utf8",
 );
+const hydrationPolarisSource = fs.readFileSync(
+  new URL("../app/components/design-system/BotShieldHydrationPolaris.jsx", import.meta.url),
+  "utf8",
+);
+const customElementInputSource = fs.readFileSync(
+  new URL("../app/hooks/use-botshield-custom-element-input.js", import.meta.url),
+  "utf8",
+);
 
 function installMockModalDom() {
   const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
@@ -144,6 +152,20 @@ test("BotShieldNativeModal listens for afterhide natively instead of React onAft
 
   assert.match(nativeModalSource, /addEventListener\("afterhide"/);
   assert.doesNotMatch(nativeModalSource, /onAfterhide=\{handleAfterHide\}/);
+});
+
+test("BotShieldSearchField binds input after Polaris upgrade instead of React value/onInput props", () => {
+  const searchFieldSource = hydrationPolarisSource.slice(
+    hydrationPolarisSource.indexOf("export function BotShieldSearchField"),
+    hydrationPolarisSource.indexOf("export function BotShieldTextField"),
+  );
+
+  assert.match(searchFieldSource, /useBotShieldCustomElementInput/);
+  assert.match(searchFieldSource, /ref=\{inputRef\}/);
+  assert.doesNotMatch(searchFieldSource, /<s-search-field[\s\S]*\bvalue=\{/);
+  assert.doesNotMatch(searchFieldSource, /<s-search-field[\s\S]*\bonInput=\{/);
+  assert.match(customElementInputSource, /addEventListener\("input"/);
+  assert.match(customElementInputSource, /useBotShieldPolarisReady/);
 });
 
 test("embedded App Bridge hide path fails when overlay methods are detached", async () => {
