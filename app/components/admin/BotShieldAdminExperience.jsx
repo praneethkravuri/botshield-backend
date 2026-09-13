@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   buildSimulationResultPresentation,
@@ -4579,11 +4579,12 @@ function ProtectionPage({ model, actions }) {
     return undefined;
   }, [protectionModal]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!model.protectionEntryIntent) return undefined;
     const intentOpeners = {
       blocklist: openBlocklist,
       trusted: openTrusted,
+      "trusted-visitors": openTrusted,
       bot: openBotProtectionModule,
       network: openNetworkProtectionModule,
       rate: openRateProtectionModule,

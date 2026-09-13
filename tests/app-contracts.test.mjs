@@ -219,6 +219,9 @@ test("merchant product actions stay connected to real backend workflows", async 
 
   assert.match(indexSource, /protectionEntryIntent/);
   assert.match(indexSource, /setProtectionEntryIntent\("blocklist"\)/);
+  assert.match(indexSource, /setProtectionEntryIntent\("trusted"\)/);
+  assert.match(indexSource, /storeProtectionEntryIntent\("trusted"\)/);
+  assert.match(indexSource, /readStoredProtectionEntryIntent/);
   assert.match(indexSource, /clearProtectionEntryIntent/);
   assert.match(indexSource, /await refreshBackendState\(\)/);
   assert.match(indexSource, /refreshAnalytics/);

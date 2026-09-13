@@ -14,6 +14,27 @@ import { formatHydrationStableDateTime } from "../lib/hydration-safe-format.js";
 import { mergeEmbeddedAppSearch } from "../lib/embedded-app-navigation.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PROTECTION_ENTRY_INTENT_STORAGE_KEY = "botshield:protection-entry-intent";
+
+function readStoredProtectionEntryIntent() {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const pending = sessionStorage.getItem(PROTECTION_ENTRY_INTENT_STORAGE_KEY);
+    if (pending) sessionStorage.removeItem(PROTECTION_ENTRY_INTENT_STORAGE_KEY);
+    return pending;
+  } catch {
+    return null;
+  }
+}
+
+function storeProtectionEntryIntent(intent) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(PROTECTION_ENTRY_INTENT_STORAGE_KEY, intent);
+  } catch {
+    // Ignore storage failures; in-memory intent still applies on the current route.
+  }
+}
 
 function getAppRouteData(matches) {
   return matches.find((match) => match.id === "routes/app")?.data || {};
@@ -54,7 +75,9 @@ export default function Index() {
   const shopifyApiKey =
     matches.find((match) => match.data?.apiKey)?.data?.apiKey || "";
   const [page, setPage] = useState(appRouteData.initialAdminPage ?? "dashboard");
-  const [protectionEntryIntent, setProtectionEntryIntent] = useState(null);
+  const [protectionEntryIntent, setProtectionEntryIntent] = useState(
+    readStoredProtectionEntryIntent,
+  );
 
   const [threatLevel, setThreatLevel] = useState("low");
   const [strictMode, setStrictMode] = useState(false);
@@ -2812,10 +2835,12 @@ export default function Index() {
   const polarisActions = {
     setPage: openPolarisPage,
     openBlocklist: () => {
+      storeProtectionEntryIntent("blocklist");
       setProtectionEntryIntent("blocklist");
       openPolarisPage("detection");
     },
     openTrustedVisitors: () => {
+      storeProtectionEntryIntent("trusted");
       setProtectionEntryIntent("trusted");
       openPolarisPage("detection");
     },

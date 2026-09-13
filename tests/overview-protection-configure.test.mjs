@@ -23,6 +23,13 @@ const protectionSource = adminSource.slice(
   adminSource.indexOf("function SettingsPage"),
 );
 
+test("Overview quick response deep-links blocklist and trusted visitor managers", () => {
+  assert.match(overviewSource, /actions\.openBlocklist/);
+  assert.match(overviewSource, /actions\.openTrustedVisitors/);
+  assert.match(indexSource, /openTrustedVisitors: \(\) => \{/);
+  assert.match(indexSource, /storeProtectionEntryIntent\("trusted"\)/);
+});
+
 test("Overview protection Configure controls deep-link to module managers", () => {
   for (const module of ["bot", "network", "rate", "page"]) {
     assert.match(overviewSource, new RegExp(`module: "${module}"`));
