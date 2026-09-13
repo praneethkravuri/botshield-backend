@@ -23,15 +23,6 @@ const protectionSource = adminSource.slice(
   adminSource.indexOf("function SettingsPage"),
 );
 
-test("Overview quick response deep-links blocklist and trusted visitor managers", () => {
-  assert.match(overviewSource, /actions\.openBlocklist/);
-  assert.match(overviewSource, /actions\.openTrustedVisitors/);
-  assert.match(indexSource, /openTrustedVisitors: \(\) => \{/);
-  assert.match(indexSource, /buildProtectionManagerPath\("blocklist"/);
-  assert.match(indexSource, /buildProtectionManagerPath\("trusted"/);
-  assert.doesNotMatch(indexSource, /sessionStorage/);
-});
-
 test("Overview protection Configure controls deep-link to module managers", () => {
   for (const module of ["bot", "network", "rate", "page"]) {
     assert.match(overviewSource, new RegExp(`module: "${module}"`));
@@ -55,8 +46,11 @@ test("Protection page opens existing module managers from entry intent", () => {
   assert.match(protectionSource, /network: openNetworkProtectionModule/);
   assert.match(protectionSource, /rate: openRateProtectionModule/);
   assert.match(protectionSource, /page: openPageProtectionModule/);
+  assert.match(protectionSource, /blocklist: openBlocklist/);
+  assert.match(protectionSource, /trusted: openTrusted/);
   assert.match(protectionSource, /actions\.clearProtectionEntryIntent\?\.\(\)/);
   assert.match(protectionSource, /if \(guardProfileDraft\(\)\) return undefined;/);
+  assert.doesNotMatch(protectionSource, /searchParams\.get\("manager"\)/);
 });
 
 test("Direct Protection navigation does not auto-open module managers", () => {
@@ -70,6 +64,4 @@ test("Direct Protection navigation does not auto-open module managers", () => {
       "}, [location.pathname, location.search, navigate]);".length,
   );
   assert.doesNotMatch(locationSyncSource, /setProtectionEntryIntent/);
-  assert.match(protectionSource, /searchParams\.get\("manager"\)/);
-  assert.match(protectionSource, /nextParams\.delete\("manager"\)/);
 });

@@ -4176,7 +4176,6 @@ function getProtectionModalKey(modal) {
 
 function ProtectionPage({ model, actions }) {
   const toast = useBotShieldToast();
-  const [searchParams, setSearchParams] = useSearchParams();
   const now = useHydrationStableNow(model.renderAnchorMs);
   const [protectionModal, setProtectionModal] = useState(null);
   const [blockedIpInput, setBlockedIpInput] = useState("");
@@ -4581,30 +4580,10 @@ function ProtectionPage({ model, actions }) {
   }, [protectionModal]);
 
   useEffect(() => {
-    const manager = searchParams.get("manager");
-    if (manager) {
-      const managerOpeners = {
-        blocklist: openBlocklist,
-        trusted: openTrusted,
-        "trusted-visitors": openTrusted,
-      };
-      const openManager = managerOpeners[manager];
-      if (!openManager) {
-        const nextParams = new URLSearchParams(searchParams);
-        nextParams.delete("manager");
-        setSearchParams(nextParams, { replace: true });
-        return undefined;
-      }
-      if (guardProfileDraft()) return undefined;
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete("manager");
-      setSearchParams(nextParams, { replace: true });
-      openManager();
-      return undefined;
-    }
-
     if (!model.protectionEntryIntent) return undefined;
     const intentOpeners = {
+      blocklist: openBlocklist,
+      trusted: openTrusted,
       bot: openBotProtectionModule,
       network: openNetworkProtectionModule,
       rate: openRateProtectionModule,
@@ -4616,14 +4595,7 @@ function ProtectionPage({ model, actions }) {
     openIntent();
     actions.clearProtectionEntryIntent?.();
     return undefined;
-  }, [
-    actions,
-    dirty,
-    model.protectionEntryIntent,
-    protectionModal?.type,
-    searchParams,
-    setSearchParams,
-  ]);
+  }, [actions, dirty, model.protectionEntryIntent, protectionModal?.type]);
 
   if (model) {
     return (

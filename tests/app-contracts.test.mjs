@@ -218,10 +218,11 @@ test("merchant product actions stay connected to real backend workflows", async 
   );
 
   assert.match(indexSource, /protectionEntryIntent/);
-  assert.match(indexSource, /buildProtectionManagerPath\("blocklist"/);
-  assert.match(indexSource, /buildProtectionManagerPath\("trusted"/);
+  assert.match(indexSource, /setProtectionEntryIntent\("blocklist"\)/);
+  assert.match(indexSource, /setProtectionEntryIntent\("trusted"\)/);
   assert.match(indexSource, /clearProtectionEntryIntent/);
   assert.doesNotMatch(indexSource, /sessionStorage/);
+  assert.doesNotMatch(indexSource, /manager=/);
   assert.match(indexSource, /await refreshBackendState\(\)/);
   assert.match(indexSource, /refreshAnalytics/);
   assert.match(indexSource, /cache: "no-store"/);
@@ -231,7 +232,6 @@ test("merchant product actions stay connected to real backend workflows", async 
   assert.match(adminSource, /actions\.removeBlockedIp\(ip\)/);
   assert.match(adminSource, /actions\.removeTrustedIp\(ip\)/);
   assert.match(adminSource, /actions\.runSimulation\(\)/);
-  assert.match(adminSource, /blocklist: openBlocklist,/);
-  assert.match(adminSource, /searchParams\.get\("manager"\)/);
+  assert.match(adminSource, /blocklist: openBlocklist/);
   assert.match(adminSource, /openProtectionModule\?\.\(row\.module\)/);
 });

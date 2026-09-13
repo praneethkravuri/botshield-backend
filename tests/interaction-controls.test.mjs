@@ -119,10 +119,8 @@ test("Protection modal switches cannot silently discard profile drafts", () => {
   assert.match(protectionSource, /if \(guardProfileDraft\(\)\) return;/);
   assert.match(protectionSource, /openBlocklist = \(\) => \{/);
   assert.match(protectionSource, /openTrusted = \(\) => \{/);
-  assert.match(protectionSource, /searchParams\.get\("manager"\)/);
-  assert.match(protectionSource, /model\.protectionEntryIntent/);
-  assert.match(protectionSource, /protectionModal\?\.type/);
-  assert.match(protectionSource, /"trusted-visitors": openTrusted/);
+  assert.match(protectionSource, /model\.protectionEntryIntent, protectionModal\?\.type\]/);
+  assert.doesNotMatch(protectionSource, /searchParams\.get\("manager"\)/);
 });
 
 test("Protection visitor removal confirmations use sequenced native modals", () => {

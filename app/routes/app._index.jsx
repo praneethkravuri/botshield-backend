@@ -12,7 +12,6 @@ import {
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../lib/billing-state.js";
 import { formatHydrationStableDateTime } from "../lib/hydration-safe-format.js";
 import { mergeEmbeddedAppSearch } from "../lib/embedded-app-navigation.js";
-import { buildProtectionManagerPath } from "../lib/protection-manager-entry.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -2813,18 +2812,12 @@ export default function Index() {
   const polarisActions = {
     setPage: openPolarisPage,
     openBlocklist: () => {
-      setPage("security");
-      navigate(
-        buildProtectionManagerPath("blocklist", location.search),
-        { replace: false },
-      );
+      setProtectionEntryIntent("blocklist");
+      openPolarisPage("detection");
     },
     openTrustedVisitors: () => {
-      setPage("security");
-      navigate(
-        buildProtectionManagerPath("trusted", location.search),
-        { replace: false },
-      );
+      setProtectionEntryIntent("trusted");
+      openPolarisPage("detection");
     },
     openProtectionModule: (module) => {
       setProtectionEntryIntent(module);
