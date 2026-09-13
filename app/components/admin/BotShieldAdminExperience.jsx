@@ -3616,7 +3616,7 @@ function FraudOrderReviewModal({ order, onClose, needsReview, riskLabel, riskTon
             href={order.adminUrl}
             slot="secondary-actions"
             target="_top"
-            variant="tertiary"
+            variant="secondary"
           >
             View order in Shopify
           </BotShieldActionButton>
@@ -4059,7 +4059,12 @@ function FraudOrdersPage({ model, actions }) {
       heading="Fraud Orders"
       secondaryActions={
         connected ? (
-          <BotShieldPolarisButton disabled={loading} onClick={refresh} slot="secondary-actions">
+          <BotShieldPolarisButton
+            disabled={loading}
+            onClick={refresh}
+            slot="secondary-actions"
+            variant="secondary"
+          >
             Refresh
           </BotShieldPolarisButton>
         ) : null
