@@ -119,8 +119,9 @@ test("Protection modal switches cannot silently discard profile drafts", () => {
   assert.match(protectionSource, /if \(guardProfileDraft\(\)\) return;/);
   assert.match(protectionSource, /openBlocklist = \(\) => \{/);
   assert.match(protectionSource, /openTrusted = \(\) => \{/);
-  assert.match(protectionSource, /useLayoutEffect\(\(\) => \{/);
-  assert.match(protectionSource, /model\.protectionEntryIntent, protectionModal\?\.type\]/);
+  assert.match(protectionSource, /searchParams\.get\("manager"\)/);
+  assert.match(protectionSource, /model\.protectionEntryIntent/);
+  assert.match(protectionSource, /protectionModal\?\.type/);
   assert.match(protectionSource, /"trusted-visitors": openTrusted/);
 });
 

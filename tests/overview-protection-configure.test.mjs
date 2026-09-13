@@ -27,7 +27,9 @@ test("Overview quick response deep-links blocklist and trusted visitor managers"
   assert.match(overviewSource, /actions\.openBlocklist/);
   assert.match(overviewSource, /actions\.openTrustedVisitors/);
   assert.match(indexSource, /openTrustedVisitors: \(\) => \{/);
-  assert.match(indexSource, /storeProtectionEntryIntent\("trusted"\)/);
+  assert.match(indexSource, /buildProtectionManagerPath\("blocklist"/);
+  assert.match(indexSource, /buildProtectionManagerPath\("trusted"/);
+  assert.doesNotMatch(indexSource, /sessionStorage/);
 });
 
 test("Overview protection Configure controls deep-link to module managers", () => {
@@ -61,10 +63,13 @@ test("Direct Protection navigation does not auto-open module managers", () => {
   assert.match(appNavSource, /href: "\/app\/protection-rules"/);
   assert.match(appNavSource, /label: "Protection"/);
   assert.doesNotMatch(appNavSource, /protectionEntryIntent/);
+  assert.doesNotMatch(appNavSource, /manager=/);
   const locationSyncSource = indexSource.slice(
     indexSource.indexOf("const requestedView = new URLSearchParams(location.search).get(\"view\");"),
     indexSource.indexOf("}, [location.pathname, location.search, navigate]);") +
       "}, [location.pathname, location.search, navigate]);".length,
   );
   assert.doesNotMatch(locationSyncSource, /setProtectionEntryIntent/);
+  assert.match(protectionSource, /searchParams\.get\("manager"\)/);
+  assert.match(protectionSource, /nextParams\.delete\("manager"\)/);
 });
