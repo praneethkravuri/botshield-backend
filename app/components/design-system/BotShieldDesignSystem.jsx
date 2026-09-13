@@ -14,6 +14,12 @@ import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom
 import { useBotShieldPolarisReady } from "../../hooks/use-botshield-polaris-ready.js";
 import { runBotShieldModalCommand } from "../../lib/botshield-modal-command.js";
 import {
+  cleanupNativeModalShowRequest,
+  createBotShieldNativeModalLifecycleState,
+  handleNativeModalAfterHide,
+  markNativeModalShown,
+} from "../../lib/botshield-native-modal-lifecycle.js";
+import {
   BotShieldBadge,
   BotShieldBannerShell,
   BotShieldBox,
@@ -5496,26 +5502,25 @@ export function BotShieldNativeModal({
   secondaryActions,
   children,
 }) {
-  const wasOpenRef = useRef(false);
-  const showRequestRef = useRef(0);
+  const lifecycleRef = useRef(createBotShieldNativeModalLifecycleState());
   const { ready } = useBotShieldPolarisReady();
 
   useEffect(() => {
+    const lifecycle = lifecycleRef.current;
+
     if (!open) {
-      if (wasOpenRef.current) {
-        wasOpenRef.current = false;
-      }
       return undefined;
     }
 
-    wasOpenRef.current = true;
-    showRequestRef.current += 1;
-    const showRequest = showRequestRef.current;
+    const showRequest = markNativeModalShown(lifecycle);
     queueBotShieldModalShow(id);
     return () => {
-      if (showRequestRef.current === showRequest) {
-        showRequestRef.current += 1;
-      }
+      cleanupNativeModalShowRequest(
+        lifecycle,
+        showRequest,
+        id,
+        hideBotShieldModal,
+      );
     };
   }, [id, open]);
 
@@ -5530,6 +5535,7 @@ export function BotShieldNativeModal({
     }
 
     const handleAfterHide = () => {
+      handleNativeModalAfterHide(lifecycleRef.current);
       onAfterHide();
     };
 

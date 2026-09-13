@@ -294,8 +294,9 @@ test("Protection native modal can reopen after close without remounting the shel
   assert.match(protectionPage, /setProtectionModal\(null\)/);
   assert.match(protectionPage, /open={Boolean\(protectionModal\)}/);
   assert.match(protectionPage, /drawerOpenerRef\.current = document\.activeElement/);
-  assert.match(nativeModalSource, /wasOpenRef\.current = false/);
-  assert.doesNotMatch(nativeModalSource, /hideBotShieldModal\(id\)/);
+  assert.match(nativeModalSource, /createBotShieldNativeModalLifecycleState/);
+  assert.match(nativeModalSource, /cleanupNativeModalShowRequest/);
+  assert.doesNotMatch(nativeModalSource, /teardownNativeModalLifecycle/);
 });
 
 test("Overview Configure deep links still open Protection module managers", () => {

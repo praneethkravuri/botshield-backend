@@ -3,6 +3,14 @@ import fs from "node:fs";
 import test from "node:test";
 import { JSDOM } from "jsdom";
 import { runBotShieldModalCommand } from "../app/lib/botshield-modal-command.js";
+import {
+  cleanupNativeModalShowRequest,
+  createBotShieldNativeModalLifecycleState,
+  dispatchFallbackHideIfNeeded,
+  handleNativeModalAfterHide,
+  markNativeModalShown,
+  scheduleFallbackHide,
+} from "../app/lib/botshield-native-modal-lifecycle.js";
 
 const designSource = fs.readFileSync(
   new URL("../app/components/design-system/BotShieldDesignSystem.jsx", import.meta.url),
@@ -12,11 +20,12 @@ const adminSource = fs.readFileSync(
   new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
   "utf8",
 );
-
-const modalCommandSource = fs.readFileSync(
-  new URL("../app/lib/botshield-modal-command.js", import.meta.url),
+const lifecycleSource = fs.readFileSync(
+  new URL("../app/lib/botshield-native-modal-lifecycle.js", import.meta.url),
   "utf8",
 );
+
+const MODAL_ID = "botshield-protection-modal";
 
 function installMockModalDom() {
   const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>");
@@ -35,16 +44,9 @@ function installMockModalDom() {
         }
         if (event.command === "--hide") {
           this.#visible = false;
+          this.dispatchEvent(new dom.window.Event("afterhide"));
         }
       });
-    }
-
-    showOverlay() {
-      this.#visible = true;
-    }
-
-    hideOverlay() {
-      this.#visible = false;
     }
 
     get visible() {
@@ -72,6 +74,20 @@ function installMockModalDom() {
   );
 
   return dom;
+}
+
+function createCommandRecorder() {
+  const commands = [];
+  return {
+    commands,
+    hideModal(id) {
+      commands.push({ id, command: "--hide" });
+      runBotShieldModalCommand(id, "--hide");
+    },
+    count(command) {
+      return commands.filter((entry) => entry.command === command).length;
+    },
+  };
 }
 
 test("runBotShieldModalCommand dispatches modal commands on upgraded s-modal instances", () => {
@@ -103,13 +119,197 @@ test("runBotShieldModalCommand waits for upgraded s-modal instances", () => {
   assert.equal(modal.visible, true);
 });
 
-test("BotShieldNativeModal no longer auto-hides when open becomes false", () => {
+test("BotShieldNativeModal wires guarded fallback hide lifecycle", () => {
   const nativeModalSource = designSource.slice(
     designSource.indexOf("export function BotShieldNativeModal"),
     designSource.indexOf("export function BotShieldConfirmationModal"),
   );
-  assert.match(nativeModalSource, /if \(!open\) \{/);
-  assert.doesNotMatch(nativeModalSource, /hideBotShieldModal\(id\)/);
+  assert.match(nativeModalSource, /createBotShieldNativeModalLifecycleState/);
+  assert.match(nativeModalSource, /cleanupNativeModalShowRequest/);
+  assert.match(nativeModalSource, /handleNativeModalAfterHide/);
+  assert.match(lifecycleSource, /fallbackHideDispatched/);
+  assert.match(lifecycleSource, /nativeHideCompleted/);
+});
+
+test("open -> normal close via afterhide dispatches exactly one hide", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  const showRequest = markNativeModalShown(lifecycle);
+
+  runBotShieldModalCommand(MODAL_ID, "--show");
+  assert.equal(modal.visible, true);
+
+  recorder.hideModal(MODAL_ID);
+  handleNativeModalAfterHide(lifecycle);
+  assert.equal(modal.visible, false);
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+
+  assert.equal(recorder.count("--hide"), 1);
+});
+
+test("open -> unmount before afterhide dispatches one fallback hide", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  const showRequest = markNativeModalShown(lifecycle);
+  runBotShieldModalCommand(MODAL_ID, "--show");
+  assert.equal(modal.visible, true);
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+
+  assert.equal(recorder.count("--hide"), 1);
+  assert.equal(modal.visible, false);
+});
+
+test("open -> React open=false without native close dispatches one fallback hide", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  const showRequest = markNativeModalShown(lifecycle);
+  runBotShieldModalCommand(MODAL_ID, "--show");
+  assert.equal(modal.visible, true);
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+
+  assert.equal(recorder.count("--hide"), 1);
+  assert.equal(modal.visible, false);
+});
+
+test("normal close path does not duplicate hide commands", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  const showRequest = markNativeModalShown(lifecycle);
+
+  runBotShieldModalCommand(MODAL_ID, "--show");
+  recorder.hideModal(MODAL_ID);
+  handleNativeModalAfterHide(lifecycle);
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+
+  assert.equal(recorder.count("--hide"), 1);
+});
+
+test("deferred fallback hide runs once when scheduled explicitly", () => {
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  lifecycle.wasNativeShown = true;
+  let hideCount = 0;
+
+  scheduleFallbackHide(lifecycle, MODAL_ID, () => {
+    hideCount += 1;
+  }, {
+    requestFrame: (callback) => {
+      callback();
+      return 1;
+    },
+    cancelFrame: () => {},
+  });
+
+  assert.equal(hideCount, 1);
+  scheduleFallbackHide(lifecycle, MODAL_ID, () => {
+    hideCount += 1;
+  }, {
+    requestFrame: (callback) => {
+      callback();
+      return 1;
+    },
+    cancelFrame: () => {},
+  });
+  assert.equal(hideCount, 1);
+});
+
+test("subsequent modal can open after fallback teardown", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  let showRequest = markNativeModalShown(lifecycle);
+  runBotShieldModalCommand(MODAL_ID, "--show");
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+  assert.equal(modal.visible, false);
+  assert.equal(recorder.count("--hide"), 1);
+
+  showRequest = markNativeModalShown(lifecycle);
+  runBotShieldModalCommand(MODAL_ID, "--show");
+
+  assert.equal(modal.visible, true);
+  assert.equal(recorder.count("--hide"), 1);
+  assert.equal(
+    runBotShieldModalCommand(MODAL_ID, "--show"),
+    true,
+    "modal should accept a subsequent native show",
+  );
+  assert.equal(modal.visible, true);
+});
+
+test("Protection Manage flow stays usable after one modal open/close cycle", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = MODAL_ID;
+  document.body.appendChild(modal);
+
+  const manageButton = document.createElement("button");
+  manageButton.type = "button";
+  manageButton.id = "manage-blocklist-probe";
+  manageButton.textContent = "Manage blocklist";
+  let manageClicks = 0;
+  manageButton.addEventListener("click", () => {
+    manageClicks += 1;
+  });
+  document.body.appendChild(manageButton);
+
+  const recorder = createCommandRecorder();
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  const showRequest = markNativeModalShown(lifecycle);
+  runBotShieldModalCommand(MODAL_ID, "--show");
+
+  cleanupNativeModalShowRequest(lifecycle, showRequest, MODAL_ID, recorder.hideModal);
+  assert.equal(modal.visible, false);
+
+  manageButton.click();
+  assert.equal(manageClicks, 1, "Manage blocklist should remain clickable after modal teardown");
+});
+
+test("dispatchFallbackHideIfNeeded only hides once", () => {
+  const lifecycle = createBotShieldNativeModalLifecycleState();
+  lifecycle.wasNativeShown = true;
+  let hideCount = 0;
+
+  assert.equal(
+    dispatchFallbackHideIfNeeded(lifecycle, MODAL_ID, () => {
+      hideCount += 1;
+    }),
+    true,
+  );
+  assert.equal(
+    dispatchFallbackHideIfNeeded(lifecycle, MODAL_ID, () => {
+      hideCount += 1;
+    }),
+    false,
+  );
+  assert.equal(hideCount, 1);
 });
 
 test("modal shells provide accessibilityLabel for scroll-box modals", () => {
