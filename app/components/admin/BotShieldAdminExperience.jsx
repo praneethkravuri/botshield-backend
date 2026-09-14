@@ -5489,24 +5489,22 @@ function VisitorAccessRecord({
   return (
     <article className="botshield-visitor-access-record">
       <div className="botshield-visitor-access-record-top">
+        <span className="botshield-visitor-access-record-ip-label">
+          Visitor IP
+        </span>
         <div className="botshield-visitor-access-record-head">
-          <div className="botshield-visitor-access-record-ip-block">
-            <span className="botshield-visitor-access-record-ip-label">
-              Visitor IP
+          <div className="botshield-visitor-access-record-ip-row">
+            <span
+              className={`botshield-visitor-access-record-ip${ipPresentation.truncated ? " is-truncated" : ""}`}
+              title={ipPresentation.truncated ? ipPresentation.full : undefined}
+            >
+              {ipPresentation.display}
             </span>
-            <div className="botshield-visitor-access-record-ip-row">
-              <span
-                className={`botshield-visitor-access-record-ip${ipPresentation.truncated ? " is-truncated" : ""}`}
-                title={ipPresentation.truncated ? ipPresentation.full : undefined}
-              >
-                {ipPresentation.display}
+            {ipPresentation.version === "ipv6" ? (
+              <span className="botshield-visitor-access-record-ip-version">
+                IPv6
               </span>
-              {ipPresentation.version === "ipv6" ? (
-                <span className="botshield-visitor-access-record-ip-version">
-                  IPv6
-                </span>
-              ) : null}
-            </div>
+            ) : null}
           </div>
           <div className="botshield-visitor-access-record-controls">
             <BotShieldStatusBadge status={trusted ? "active" : "blocked"} />

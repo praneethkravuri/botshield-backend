@@ -1982,20 +1982,20 @@ export const BOTSHIELD_ADMIN_STYLES = `
         .botshield-visitor-access-record-top {
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 4px;
           min-width: 0;
+        }
+        .botshield-visitor-access-record-ip-label {
+          display: block;
+          color: #747a7f;
+          font-size: .6875rem;
+          font-weight: 600;
+          line-height: 1rem;
         }
         .botshield-visitor-access-record-head {
           display: flex;
           align-items: center;
           gap: 12px 16px;
-          min-width: 0;
-        }
-        .botshield-visitor-access-record-ip-block {
-          display: flex;
-          flex: 1 1 auto;
-          flex-direction: column;
-          gap: 2px;
           min-width: 0;
         }
         .botshield-visitor-access-record-controls {
@@ -2004,15 +2004,9 @@ export const BOTSHIELD_ADMIN_STYLES = `
           align-items: center;
           gap: 8px;
         }
-        .botshield-visitor-access-record-ip-label {
-          color: #747a7f;
-          font-size: .6875rem;
-          font-weight: 600;
-          line-height: 1rem;
-        }
         .botshield-visitor-access-record-ip-row {
-          display: inline-flex;
-          max-width: 100%;
+          display: flex;
+          flex: 1 1 auto;
           flex-wrap: nowrap;
           align-items: center;
           gap: 6px;
@@ -2029,7 +2023,8 @@ export const BOTSHIELD_ADMIN_STYLES = `
           line-height: 1.25rem;
         }
         .botshield-visitor-access-record-ip.is-truncated {
-          flex: 1 1 auto;
+          flex: 0 1 auto;
+          max-width: 100%;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -2047,7 +2042,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
           text-transform: uppercase;
         }
         .botshield-visitor-access-record-detail {
-          margin: 0;
+          margin: 4px 0 0;
           color: #62696e;
           font-size: .75rem;
           line-height: 1.45;
