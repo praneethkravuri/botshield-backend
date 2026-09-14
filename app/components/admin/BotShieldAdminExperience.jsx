@@ -5489,10 +5489,10 @@ function VisitorAccessRecord({
   return (
     <article className="botshield-visitor-access-record">
       <div className="botshield-visitor-access-record-top">
-        <span className="botshield-visitor-access-record-ip-label">
-          Visitor IP
-        </span>
         <div className="botshield-visitor-access-record-head">
+          <span className="botshield-visitor-access-record-ip-label">
+            Visitor IP
+          </span>
           <div className="botshield-visitor-access-record-ip-row">
             <span
               className={`botshield-visitor-access-record-ip${ipPresentation.truncated ? " is-truncated" : ""}`}

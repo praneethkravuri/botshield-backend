@@ -1982,39 +1982,45 @@ export const BOTSHIELD_ADMIN_STYLES = `
         .botshield-visitor-access-record-top {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 8px;
+          min-width: 0;
+        }
+        .botshield-visitor-access-record-head {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-rows: auto auto;
+          column-gap: 16px;
+          row-gap: 2px;
+          align-items: center;
           min-width: 0;
         }
         .botshield-visitor-access-record-ip-label {
-          display: block;
+          grid-column: 1;
+          grid-row: 1;
           color: #747a7f;
           font-size: .6875rem;
           font-weight: 600;
           line-height: 1rem;
         }
-        .botshield-visitor-access-record-head {
-          display: flex;
-          align-items: center;
-          gap: 12px 16px;
-          min-width: 0;
-        }
-        .botshield-visitor-access-record-controls {
-          display: inline-flex;
-          flex: 0 0 auto;
-          align-items: center;
-          gap: 8px;
-        }
         .botshield-visitor-access-record-ip-row {
-          display: flex;
-          flex: 1 1 auto;
-          flex-wrap: nowrap;
+          grid-column: 1;
+          grid-row: 2;
+          display: inline-flex;
           align-items: center;
           gap: 6px;
+          max-width: 100%;
           min-width: 0;
+          justify-self: start;
+        }
+        .botshield-visitor-access-record-controls {
+          grid-column: 2;
+          grid-row: 2;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          justify-self: end;
         }
         .botshield-visitor-access-record-ip {
-          display: block;
-          flex: 0 1 auto;
           min-width: 0;
           color: #24282b;
           font-family: inherit;
@@ -2023,8 +2029,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
           line-height: 1.25rem;
         }
         .botshield-visitor-access-record-ip.is-truncated {
-          flex: 0 1 auto;
-          max-width: 100%;
+          flex: 1 1 auto;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -2042,7 +2047,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
           text-transform: uppercase;
         }
         .botshield-visitor-access-record-detail {
-          margin: 4px 0 0;
+          margin: 0;
           color: #62696e;
           font-size: .75rem;
           line-height: 1.45;
@@ -2065,11 +2070,12 @@ export const BOTSHIELD_ADMIN_STYLES = `
         }
         @media (max-width: 480px) {
           .botshield-visitor-access-record-head {
-            flex-direction: column;
-            align-items: stretch;
+            grid-template-columns: 1fr;
           }
           .botshield-visitor-access-record-controls {
-            justify-content: flex-start;
+            grid-column: 1;
+            grid-row: 3;
+            justify-self: start;
           }
         }
         .botshield-protection-save-success { padding: 10px 12px; border: 1px solid #b7d7c2; border-radius: 8px; background: #f2f8f4; color: #285b3a; font-size: .78125rem; font-weight: 620; }
