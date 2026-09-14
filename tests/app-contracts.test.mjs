@@ -225,6 +225,7 @@ test("merchant product actions stay connected to real backend workflows", async 
   assert.doesNotMatch(indexSource, /manager=/);
   assert.match(indexSource, /await refreshBackendState\(\)/);
   assert.match(indexSource, /refreshAnalytics/);
+  assert.match(indexSource, /analyticsLastRefreshedAt/);
   assert.match(indexSource, /cache: "no-store"/);
   assert.match(adminSource, /highRiskAlertsOnly/);
   assert.match(adminSource, /actions\.addTrustedIp\(visitorIp\)/);

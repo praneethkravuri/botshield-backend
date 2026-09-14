@@ -2125,6 +2125,7 @@ function AnalyticsBar({ value, maximum, tone = "neutral" }) {
 }
 
 function AnalyticsPage({ model, actions }) {
+  const toast = useBotShieldToast();
   const [periodDays, setPeriodDays] = useState(30);
   const [decisionFilter, setDecisionFilter] = useState("all");
   const [riskFilter, setRiskFilter] = useState("all");
@@ -2315,6 +2316,14 @@ function AnalyticsPage({ model, actions }) {
     setPage(1);
   }
 
+  const handleRefreshAnalytics = async () => {
+    const result = await actions.refreshAnalytics?.();
+    if (result?.skipped) return;
+    if (result?.ok) {
+      toast.success("Analytics updated");
+    }
+  };
+
   return (
     <BotShieldNativePage heading="Analytics">
       <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">
@@ -2350,12 +2359,11 @@ function AnalyticsPage({ model, actions }) {
             <div className="botshield-analytics-toolbar-actions">
               <BotShieldActionButton
                 disabled={model.analyticsRefreshing}
-                loading={model.analyticsRefreshing}
                 onClick={() => {
-                  void actions.refreshAnalytics?.();
+                  void handleRefreshAnalytics();
                 }}
               >
-                Refresh
+                {model.analyticsRefreshing ? "Refreshing…" : "Refresh"}
               </BotShieldActionButton>
               {filtersActive ? <button className="botshield-analytics-clear" onClick={clearFilters} type="button">Clear filters</button> : null}
             </div>
@@ -2366,6 +2374,18 @@ function AnalyticsPage({ model, actions }) {
             <span>{ANALYTICS_PERIODS.find((period) => period.days === periodDays)?.label}</span>
             <span aria-hidden="true">·</span>
             <span>{decisionFilter === "all" ? "All decisions" : getOutcomeLabel(decisionFilter)}</span>
+            {model.analyticsLastRefreshedAt ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="botshield-analytics-refresh-note">
+                  Updated{" "}
+                  <BotShieldHydrationRelativeTime
+                    emptyLabel="recently"
+                    value={model.analyticsLastRefreshedAt}
+                  />
+                </span>
+              </>
+            ) : null}
           </div>
         </section>
 

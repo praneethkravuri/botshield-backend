@@ -151,6 +151,7 @@ export default function Index() {
   const [syncing, setSyncing] = useState(false);
   const [analyticsRefreshing, setAnalyticsRefreshing] = useState(false);
   const [analyticsRefreshError, setAnalyticsRefreshError] = useState("");
+  const [analyticsLastRefreshedAt, setAnalyticsLastRefreshedAt] = useState(null);
   const analyticsRefreshInFlight = useRef(false);
   const [storeHealthRefreshing, setStoreHealthRefreshing] = useState(false);
   const [storeHealthRefreshError, setStoreHealthRefreshError] = useState("");
@@ -978,17 +979,24 @@ export default function Index() {
   const refreshApplicationStatus = () => refreshBackendState({ throwOnError: true });
 
   const refreshAnalytics = async () => {
-    if (analyticsRefreshInFlight.current) return;
+    if (analyticsRefreshInFlight.current) {
+      return { ok: false, skipped: true };
+    }
     analyticsRefreshInFlight.current = true;
     setAnalyticsRefreshing(true);
     setAnalyticsRefreshError("");
     try {
       await loadScans({ bustCache: true, throwOnError: true });
       setLastSyncedAt(new Date().toLocaleTimeString());
+      setAnalyticsLastRefreshedAt(new Date().toISOString());
+      return { ok: true };
     } catch (error) {
-      setAnalyticsRefreshError(
-        toMerchantErrorMessage(error, "Couldn't refresh analytics."),
+      const message = toMerchantErrorMessage(
+        error,
+        "Couldn't refresh analytics.",
       );
+      setAnalyticsRefreshError(message);
+      return { ok: false, error: message };
     } finally {
       analyticsRefreshInFlight.current = false;
       setAnalyticsRefreshing(false);
@@ -2762,6 +2770,7 @@ export default function Index() {
     syncing,
     analyticsRefreshing,
     analyticsRefreshError,
+    analyticsLastRefreshedAt,
     storeHealthRefreshing,
     storeHealthRefreshError,
     readinessItems: polarisReadinessItems,

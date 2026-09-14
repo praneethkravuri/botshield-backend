@@ -1515,6 +1515,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
         .botshield-analytics-clear, .botshield-analytics-detail-button, .botshield-analytics-pagination button { border: 0; background: transparent; color: #2c5f9e; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
         .botshield-analytics-clear { height: 34px; padding: 0 6px; }
         .botshield-analytics-filter-context { display: flex; width: 100%; gap: 7px; align-items: center; padding-top: 9px; border-top: 1px solid #e6e7e8; color: #656b70; font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1rem; }
+        .botshield-analytics-refresh-note { color: inherit; font-size: inherit; line-height: inherit; }
         .botshield-analytics-toolbar-actions { display: flex; gap: 5px; align-items: center; min-height: 34px; }
         .botshield-analytics-toolbar-actions .botshield-action-button { min-height: 34px; }
         .botshield-analytics-clear:disabled, .botshield-analytics-pagination button:disabled { color: #a3a6a9; cursor: default; }

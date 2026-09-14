@@ -6,9 +6,17 @@ const analyticsSource = await readFile(
   new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
   "utf8",
 );
+const indexSource = await readFile(
+  new URL("../app/routes/app._index.jsx", import.meta.url),
+  "utf8",
+);
 const scansSource = await readFile(
   new URL("../app/routes/api.scans.jsx", import.meta.url),
   "utf8",
+);
+const analyticsPageSource = analyticsSource.slice(
+  analyticsSource.indexOf("function AnalyticsPage"),
+  analyticsSource.indexOf("function AnalyticsKpi"),
 );
 
 test("Analytics is an investigation workspace rather than an Overview duplicate", () => {
@@ -43,6 +51,35 @@ test("Analytics controls provide supported periods and connected filters", () =>
   assert.match(analyticsSource, /refreshAnalytics/);
   assert.match(analyticsSource, /analyticsRefreshing/);
   assert.match(analyticsSource, /Couldn't refresh analytics/);
+});
+
+test("Analytics manual refresh exposes visible progress, success, and error feedback", () => {
+  assert.match(analyticsPageSource, /const handleRefreshAnalytics = async \(\) =>/);
+  assert.match(analyticsPageSource, /await actions\.refreshAnalytics\?\.\(\)/);
+  assert.match(analyticsPageSource, /toast\.success\("Analytics updated"\)/);
+  assert.match(analyticsPageSource, /model\.analyticsRefreshing \? "Refreshing…" : "Refresh"/);
+  assert.match(analyticsPageSource, /model\.analyticsLastRefreshedAt/);
+  assert.match(analyticsPageSource, /BotShieldHydrationRelativeTime/);
+  assert.match(analyticsPageSource, /botshield-analytics-refresh-note/);
+  const refreshHandler = analyticsPageSource.slice(
+    analyticsPageSource.indexOf("const handleRefreshAnalytics"),
+    analyticsPageSource.indexOf("return ("),
+  );
+  assert.doesNotMatch(refreshHandler, /clearFilters/);
+  assert.doesNotMatch(analyticsPageSource, /loading=\{model\.analyticsRefreshing\}/);
+
+  const refreshAnalyticsSource = indexSource.slice(
+    indexSource.indexOf("const refreshAnalytics = async"),
+    indexSource.indexOf("const refreshStoreHealth = async"),
+  );
+  assert.match(refreshAnalyticsSource, /analyticsRefreshInFlight\.current/);
+  assert.match(refreshAnalyticsSource, /return \{ ok: false, skipped: true \}/);
+  assert.match(refreshAnalyticsSource, /loadScans\(\{ bustCache: true, throwOnError: true \}\)/);
+  assert.match(refreshAnalyticsSource, /setAnalyticsLastRefreshedAt\(new Date\(\)\.toISOString\(\)\)/);
+  assert.match(refreshAnalyticsSource, /setAnalyticsRefreshError\(message\)/);
+  assert.match(refreshAnalyticsSource, /return \{ ok: true \}/);
+  assert.match(indexSource, /analyticsLastRefreshedAt/);
+  assert.match(indexSource, /loadScans\(\{ bustCache: true, throwOnError: true \}\)/);
 });
 
 test("scan telemetry exposes only recorded dimensions needed by Analytics", () => {
