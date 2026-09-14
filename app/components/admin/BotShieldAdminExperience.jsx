@@ -67,7 +67,10 @@ import {
 } from "../design-system/BotShieldDesignSystem";
 import { safeFetchJson } from "../../lib/safe-fetch";
 import { toMerchantErrorMessage } from "../../lib/merchant-error-message";
-import { isValidIpAddressInput } from "../../lib/ip-address";
+import {
+  formatVisitorAccessIpPresentation,
+  isValidIpAddressInput,
+} from "../../lib/ip-address";
 import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
 import {
   getBillingStatusModel,
@@ -5481,12 +5484,30 @@ function VisitorAccessRecord({
     ? "Allowed through automated protection after review."
     : "Stopped before continuing through the storefront.");
   const showUpdated = Boolean(time && time !== "Unknown");
+  const ipPresentation = formatVisitorAccessIpPresentation(ip);
 
   return (
     <article className="botshield-visitor-access-record">
       <div className="botshield-visitor-access-record-top">
         <div className="botshield-visitor-access-record-identity">
-          <span className="botshield-visitor-access-record-ip">{ip}</span>
+          <div className="botshield-visitor-access-record-ip-block">
+            <span className="botshield-visitor-access-record-ip-label">
+              Visitor IP
+            </span>
+            <div className="botshield-visitor-access-record-ip-row">
+              <span
+                className={`botshield-visitor-access-record-ip${ipPresentation.truncated ? " is-truncated" : ""}`}
+                title={ipPresentation.truncated ? ipPresentation.full : undefined}
+              >
+                {ipPresentation.display}
+              </span>
+              {ipPresentation.version === "ipv6" ? (
+                <span className="botshield-visitor-access-record-ip-version">
+                  IPv6
+                </span>
+              ) : null}
+            </div>
+          </div>
           <BotShieldStatusBadge status={trusted ? "active" : "blocked"} />
         </div>
         <div className="botshield-visitor-access-record-action">
