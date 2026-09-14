@@ -5489,7 +5489,7 @@ function VisitorAccessRecord({
   return (
     <article className="botshield-visitor-access-record">
       <div className="botshield-visitor-access-record-top">
-        <div className="botshield-visitor-access-record-identity">
+        <div className="botshield-visitor-access-record-head">
           <div className="botshield-visitor-access-record-ip-block">
             <span className="botshield-visitor-access-record-ip-label">
               Visitor IP
@@ -5508,21 +5508,21 @@ function VisitorAccessRecord({
               ) : null}
             </div>
           </div>
-          <BotShieldStatusBadge status={trusted ? "active" : "blocked"} />
+          <div className="botshield-visitor-access-record-controls">
+            <BotShieldStatusBadge status={trusted ? "active" : "blocked"} />
+            <BotShieldActionButton onClick={onRemove} tone="critical">
+              Remove
+            </BotShieldActionButton>
+          </div>
         </div>
-        <div className="botshield-visitor-access-record-action">
-          <BotShieldActionButton onClick={onRemove} tone="critical">
-            Remove
-          </BotShieldActionButton>
-        </div>
+        <p className="botshield-visitor-access-record-detail">{detail}</p>
+        {source || showUpdated ? (
+          <div className="botshield-visitor-access-record-meta">
+            {source ? <span>Source: {source}</span> : null}
+            {showUpdated ? <span>Updated: {time}</span> : null}
+          </div>
+        ) : null}
       </div>
-      <p className="botshield-visitor-access-record-detail">{detail}</p>
-      {source || showUpdated ? (
-        <div className="botshield-visitor-access-record-meta">
-          {source ? <span>Source: {source}</span> : null}
-          {showUpdated ? <span>Updated: {time}</span> : null}
-        </div>
-      ) : null}
     </article>
   );
 }

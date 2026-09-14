@@ -1980,23 +1980,29 @@ export const BOTSHIELD_ADMIN_STYLES = `
           border-bottom: 0;
         }
         .botshield-visitor-access-record-top {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          align-items: start;
-          gap: 10px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
         }
-        .botshield-visitor-access-record-identity {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
+        .botshield-visitor-access-record-head {
+          display: flex;
           align-items: center;
-          gap: 8px 12px;
+          gap: 12px 16px;
           min-width: 0;
         }
         .botshield-visitor-access-record-ip-block {
           display: flex;
+          flex: 1 1 auto;
           flex-direction: column;
           gap: 2px;
           min-width: 0;
+        }
+        .botshield-visitor-access-record-controls {
+          display: inline-flex;
+          flex: 0 0 auto;
+          align-items: center;
+          gap: 8px;
         }
         .botshield-visitor-access-record-ip-label {
           color: #747a7f;
@@ -2006,14 +2012,14 @@ export const BOTSHIELD_ADMIN_STYLES = `
         }
         .botshield-visitor-access-record-ip-row {
           display: flex;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           align-items: center;
           gap: 6px;
           min-width: 0;
         }
         .botshield-visitor-access-record-ip {
           display: block;
-          max-width: 100%;
+          min-width: 0;
           color: #24282b;
           font-family: inherit;
           font-size: .8125rem;
@@ -2021,6 +2027,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
           line-height: 1.25rem;
         }
         .botshield-visitor-access-record-ip.is-truncated {
+          flex: 1 1 auto;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -2037,11 +2044,8 @@ export const BOTSHIELD_ADMIN_STYLES = `
           letter-spacing: .04em;
           text-transform: uppercase;
         }
-        .botshield-visitor-access-record-action {
-          flex: 0 0 auto;
-        }
         .botshield-visitor-access-record-detail {
-          margin: 8px 0 0;
+          margin: 0;
           color: #62696e;
           font-size: .75rem;
           line-height: 1.45;
@@ -2063,11 +2067,12 @@ export const BOTSHIELD_ADMIN_STYLES = `
           overflow-wrap: anywhere;
         }
         @media (max-width: 480px) {
-          .botshield-visitor-access-record-top {
-            grid-template-columns: 1fr;
+          .botshield-visitor-access-record-head {
+            flex-direction: column;
+            align-items: stretch;
           }
-          .botshield-visitor-access-record-action {
-            justify-self: start;
+          .botshield-visitor-access-record-controls {
+            justify-content: flex-start;
           }
         }
         .botshield-protection-save-success { padding: 10px 12px; border: 1px solid #b7d7c2; border-radius: 8px; background: #f2f8f4; color: #285b3a; font-size: .78125rem; font-weight: 620; }
