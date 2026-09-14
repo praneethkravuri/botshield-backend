@@ -1630,7 +1630,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
         .botshield-analytics-summary dt { color: #5b6267; font-size: .75rem; font-weight: 550; line-height: 1rem; }
         .botshield-analytics-summary dd { margin: 0; overflow: hidden; color: #25292c; font-size: .9375rem; font-weight: 600; line-height: 1.25rem; letter-spacing: -.008em; text-overflow: ellipsis; white-space: nowrap; }
         .botshield-analytics-summary > p { margin: 0; color: #656b70; font-size: .8125rem; line-height: 1.25rem; }
-        .botshield-analytics-visitor-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1rem; }
+        .botshield-analytics-visitor-id { font-family: inherit; font-size: .75rem; font-variant-numeric: tabular-nums; line-height: 1rem; }
         .botshield-analytics-repeat { margin-left: 7px; padding: 2px 5px; border-radius: 5px; background: #eef3f8; color: #42617f; font-size: 8px; font-weight: 800; text-transform: uppercase; }
         .botshield-analytics-visitor-table tr.is-recurring { background: #fbfcfd; }
         .botshield-analytics-pagination { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 13px; border-top: 1px solid #e7e8e9; color: var(--analytics-tertiary); font-size: .75rem; line-height: 1rem; }
@@ -1996,7 +1996,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
           display: block;
           max-width: 100%;
           color: #24282b;
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+          font-family: inherit;
           font-size: .8125rem;
           font-weight: 650;
           line-height: 1.25rem;
