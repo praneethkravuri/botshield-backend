@@ -68,6 +68,7 @@ import {
 import { safeFetchJson } from "../../lib/safe-fetch";
 import { toMerchantErrorMessage } from "../../lib/merchant-error-message";
 import { isValidIpAddressInput } from "../../lib/ip-address";
+import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
 import {
   getBillingStatusModel,
   getEmailStatus,
@@ -3098,7 +3099,7 @@ function filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone
         : normalizedFilter === "needs-review"
           ? needsReview(order)
           : normalizedFilter === "pending-fulfillment"
-            ? fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order)
+            ? fraudOrderNeedsPreFulfillmentReview(order)
             : riskTone(order) === normalizedFilter;
 
     if (!query) return filterMatch;
@@ -3138,17 +3139,6 @@ function fraudOrderSignalList(order) {
     });
   }
   return signals;
-}
-
-function fraudOrderIsPendingFulfillment(order) {
-  const status = String(order.fulfillmentStatus || "").toLowerCase();
-  return !status || /unfulfilled|partial|pending|on hold|not fulfilled/.test(status);
-}
-
-function fraudOrderIsElevated(order) {
-  const risk = String(order.risk || order.riskLevel || "pending").toLowerCase();
-  const recommendation = String(order.recommendation || "").toLowerCase();
-  return /high|medium/.test(risk) || /review|cancel|investigate/.test(recommendation);
 }
 
 function fraudOrderRiskBadgeTone(riskTone) {
@@ -3878,8 +3868,8 @@ function FraudOrdersPage({ model, actions }) {
     },
     { high: 0, low: 0, medium: 0, pending: 0, review: 0 },
   );
-  const pendingFulfillment = orders.filter(
-    (order) => fraudOrderIsPendingFulfillment(order) && fraudOrderIsElevated(order),
+  const pendingFulfillment = orders.filter((order) =>
+    fraudOrderNeedsPreFulfillmentReview(order),
   ).length;
   const filteredOrders = connected
     ? filterFraudOrders(orders, { activeFilter, search, needsReview, riskTone })
