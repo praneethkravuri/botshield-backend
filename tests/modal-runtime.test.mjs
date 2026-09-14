@@ -119,6 +119,100 @@ test("runBotShieldModalCommand waits for upgraded s-modal instances", () => {
   assert.equal(modal.visible, true);
 });
 
+function appendOverlayModal(id = "botshield-overlay-modal") {
+  const modal = document.createElement("s-modal");
+  modal.id = id;
+  modal.showOverlay = function showOverlay() {
+    modal.overlayReceiver = modal;
+    modal.overlayShowCalls = (modal.overlayShowCalls || 0) + 1;
+    modal._visible = true;
+  };
+  modal.hideOverlay = function hideOverlay() {
+    modal.overlayReceiver = modal;
+    modal.overlayHideCalls = (modal.overlayHideCalls || 0) + 1;
+    modal._visible = false;
+  };
+  document.body.appendChild(modal);
+  return modal;
+}
+
+test("runBotShieldModalCommand uses receiver-bound showOverlay when available", () => {
+  installMockModalDom();
+  const modal = appendOverlayModal();
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--show"), true);
+  assert.equal(modal.overlayShowCalls, 1);
+  assert.equal(modal.overlayReceiver, modal);
+  assert.equal(modal._visible, true);
+});
+
+test("runBotShieldModalCommand uses receiver-bound hideOverlay when available", () => {
+  installMockModalDom();
+  const modal = appendOverlayModal();
+  modal._visible = true;
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--hide"), true);
+  assert.equal(modal.overlayHideCalls, 1);
+  assert.equal(modal.overlayReceiver, modal);
+  assert.equal(modal._visible, false);
+});
+
+test("runBotShieldModalCommand preserves overlay receiver through Reflect.apply", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = "botshield-receiver-modal";
+  let receiverAtCallTime = null;
+  modal.showOverlay = function showOverlay() {
+    receiverAtCallTime = this;
+  };
+  document.body.appendChild(modal);
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--show"), true);
+  assert.equal(receiverAtCallTime, modal);
+});
+
+test("runBotShieldModalCommand falls back to commandFor when showOverlay throws", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = "botshield-throwing-show-modal";
+  modal.showOverlay = function showOverlay() {
+    throw new Error("detached overlay failure");
+  };
+  document.body.appendChild(modal);
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--show"), true);
+  assert.equal(modal.visible, true);
+});
+
+test("runBotShieldModalCommand falls back to commandFor when hideOverlay throws", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = "botshield-throwing-hide-modal";
+  modal.hideOverlay = function hideOverlay() {
+    throw new Error("detached overlay failure");
+  };
+  document.body.appendChild(modal);
+
+  runBotShieldModalCommand(modal.id, "--show");
+  assert.equal(modal.visible, true);
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--hide"), true);
+  assert.equal(modal.visible, false);
+});
+
+test("runBotShieldModalCommand falls back to commandFor when overlay methods are missing", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = "botshield-command-only-modal";
+  document.body.appendChild(modal);
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--show"), true);
+  assert.equal(modal.visible, true);
+
+  assert.equal(runBotShieldModalCommand(modal.id, "--hide"), true);
+  assert.equal(modal.visible, false);
+});
+
 test("BotShieldNativeModal wires guarded fallback hide lifecycle", () => {
   const nativeModalSource = designSource.slice(
     designSource.indexOf("export function BotShieldNativeModal"),

@@ -83,9 +83,9 @@ function installMockModalDom() {
   return dom;
 }
 
-test("runBotShieldModalCommand uses command dispatch instead of imperative overlay calls", () => {
-  assert.doesNotMatch(modalCommandSource, /Reflect\.apply/);
-  assert.doesNotMatch(modalCommandSource, /invokeBotShieldModalOverlayMethod/);
+test("runBotShieldModalCommand prefers receiver-bound overlay calls before command dispatch", () => {
+  assert.match(modalCommandSource, /Reflect\.apply\(method, modal, \[\]\)/);
+  assert.match(modalCommandSource, /invokeBotShieldModalOverlayMethod/);
   assert.match(modalCommandSource, /dispatchBotShieldModalCommand/);
 });
 
@@ -102,7 +102,7 @@ test("detached overlay methods throw the production private-member failure class
   );
 });
 
-test("runBotShieldModalCommand dispatches --show and --hide without touching overlay methods", () => {
+test("runBotShieldModalCommand uses receiver-bound overlay methods when available", () => {
   installMockModalDom();
   const modal = document.createElement("s-modal");
   modal.id = "botshield-fraud-review-modal";
@@ -122,11 +122,32 @@ test("runBotShieldModalCommand dispatches --show and --hide without touching ove
 
   assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--show"), true);
   assert.equal(modal.visible, true);
-  assert.equal(overlayReads, 0);
+  assert.equal(overlayReads, 1);
 
   assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--hide"), true);
   assert.equal(modal.visible, false);
-  assert.equal(overlayReads, 0);
+  assert.equal(overlayReads, 2);
+  assert.deepEqual(modal.commandLog, []);
+});
+
+test("runBotShieldModalCommand falls back to command dispatch when overlay methods throw", () => {
+  installMockModalDom();
+  const modal = document.createElement("s-modal");
+  modal.id = "botshield-fraud-review-modal";
+  modal.showOverlay = function showOverlay() {
+    throw new Error("detached overlay failure");
+  };
+  modal.hideOverlay = function hideOverlay() {
+    throw new Error("detached overlay failure");
+  };
+  document.body.appendChild(modal);
+
+  assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--show"), true);
+  assert.equal(modal.visible, true);
+  assert.deepEqual(modal.commandLog, ["--show"]);
+
+  assert.equal(runBotShieldModalCommand("botshield-fraud-review-modal", "--hide"), true);
+  assert.equal(modal.visible, false);
   assert.deepEqual(modal.commandLog, ["--show", "--hide"]);
 });
 
