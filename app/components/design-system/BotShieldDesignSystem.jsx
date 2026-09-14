@@ -2011,7 +2011,8 @@ export const BOTSHIELD_ADMIN_STYLES = `
           line-height: 1rem;
         }
         .botshield-visitor-access-record-ip-row {
-          display: flex;
+          display: inline-flex;
+          max-width: 100%;
           flex-wrap: nowrap;
           align-items: center;
           gap: 6px;
@@ -2019,6 +2020,7 @@ export const BOTSHIELD_ADMIN_STYLES = `
         }
         .botshield-visitor-access-record-ip {
           display: block;
+          flex: 0 1 auto;
           min-width: 0;
           color: #24282b;
           font-family: inherit;
