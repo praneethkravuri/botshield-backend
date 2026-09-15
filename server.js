@@ -13,6 +13,7 @@ import {
   BOTSHIELD_BASIC_TRIAL_DAYS,
 } from "./app/lib/billing-state.js";
 import { startDataRetentionScheduler } from "./app/lib/data-retention.server.js";
+import { requestLogPathname } from "./app/lib/request-log-path.server.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -151,7 +152,10 @@ async function loadApplicationRoutes() {
     }),
   );
   app.use(publicPath, express.static(assetsBuildDirectory));
-  app.use(morgan("tiny"));
+  morgan.token("path", requestLogPathname);
+  app.use(
+    morgan(":method :path :status :res[content-length] - :response-time ms"),
+  );
 
   if (build.fetch) {
     app.all("*", createRequestListener(build.fetch));
