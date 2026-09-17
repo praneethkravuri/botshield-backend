@@ -140,6 +140,11 @@ test("value page UI includes required functional sections", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
+  const styles = await readFile(
+    new URL("../app/styles/value-page.css", import.meta.url),
+    "utf8",
+  );
+
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Threats stopped/);
   assert.match(page, /Protection value over time/);
@@ -150,5 +155,16 @@ test("value page UI includes required functional sections", async () => {
   assert.match(page, /How calculations work/);
   assert.match(page, /Why BotShield/);
   assert.match(page, /Your value story is just getting started/);
+  assert.match(page, /className="[^"]*\bbv-hero\b/);
+  assert.match(page, /className="[^"]*\bbv-economics-flow\b/);
+  assert.match(page, /className="[^"]*\bbv-chart\b/);
+  assert.match(page, /className="[^"]*\bbv-projection-grid\b/);
+  assert.match(page, /className="[^"]*\bbv-disclosure\b/);
+  assert.match(page, /Set assumptions/);
+  assert.match(page, /Protection behind these estimates/);
+  assert.match(page, /useAnimatedNumber/);
+  assert.doesNotMatch(page, /botshield-v2-chart-column/);
+  assert.doesNotMatch(page, /botshield-v2-chart-label/);
+  assert.match(styles, /prefers-reduced-motion/);
   assert.doesNotMatch(page, /Cloudflare/);
 });
