@@ -99,23 +99,20 @@ test("active navigation exposes the six supported BotShield pages", async () => 
   assert.match(valueRoute, /export \{ default \} from "\.\/app\._index"/);
 });
 
-test("value page shell renders a placeholder without savings logic", async () => {
+test("value page is routed through dedicated ValuePage component", async () => {
   const adminExperience = await readFile(
     new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
     "utf8",
   );
+  const valuePage = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
 
-  assert.match(adminExperience, /function ValuePage\(/);
-  assert.match(
-    adminExperience,
-    /See the business impact of your BotShield protection\./,
-  );
-  assert.match(
-    adminExperience,
-    /Your protection value and estimated savings will appear here\./,
-  );
+  assert.match(adminExperience, /import ValuePage from "\.\/ValuePage\.jsx"/);
   assert.match(adminExperience, /screen === "value" \? <ValuePage \/> : null/);
-  assert.doesNotMatch(adminExperience, /function ValuePage[\s\S]*ROI/);
+  assert.match(valuePage, /\/api\/value/);
+  assert.match(valuePage, /Estimated value protected/);
 });
 
 test("production cannot expose the in-memory UI preview as a real app", async () => {

@@ -72,6 +72,7 @@ import {
   isValidIpAddressInput,
 } from "../../lib/ip-address";
 import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
+import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
   getEmailStatus,
@@ -3841,21 +3842,6 @@ function FraudOrdersQueueLoading() {
       </div>
       <p>Loading orders…</p>
     </div>
-  );
-}
-
-function ValuePage() {
-  return (
-    <Screen
-      title="Value"
-      subtitle="See the business impact of your BotShield protection."
-    >
-      <BotShieldCard>
-        <BotShieldParagraph color="subdued">
-          Your protection value and estimated savings will appear here.
-        </BotShieldParagraph>
-      </BotShieldCard>
-    </Screen>
   );
 }
 
