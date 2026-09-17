@@ -4,6 +4,12 @@ import { formatHydrationStableNumber } from "../../lib/hydration-safe-format.js"
 import { safeFetchJson } from "../../lib/safe-fetch.js";
 import { formatCurrency } from "../../lib/value-calculations.js";
 import {
+  BotShieldParagraph,
+  BotShieldPolarisButton,
+  BotShieldStack,
+  BotShieldText,
+} from "../design-system/BotShieldHydrationPolaris.jsx";
+import {
   BotShieldActionButton,
   BotShieldBanner,
   BotShieldCard,
@@ -12,10 +18,6 @@ import {
   BotShieldNativeModal,
   BotShieldNativePage,
   BotShieldPageShell,
-  BotShieldParagraph,
-  BotShieldPolarisButton,
-  BotShieldStack,
-  BotShieldText,
   BotShieldTextField,
   hideBotShieldModal,
   showBotShieldModal,
