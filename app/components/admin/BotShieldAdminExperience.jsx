@@ -3844,6 +3844,21 @@ function FraudOrdersQueueLoading() {
   );
 }
 
+function ValuePage() {
+  return (
+    <Screen
+      title="Value"
+      subtitle="See the business impact of your BotShield protection."
+    >
+      <BotShieldCard>
+        <BotShieldParagraph color="subdued">
+          Your protection value and estimated savings will appear here.
+        </BotShieldParagraph>
+      </BotShieldCard>
+    </Screen>
+  );
+}
+
 function FraudOrdersPage({ model, actions }) {
   const [searchParams] = useSearchParams();
   const fraudDiagMode = getFraudDiagMode(searchParams);
@@ -7304,9 +7319,11 @@ export default function BotShieldAdminExperience({ model, actions }) {
     model.page === "blocklist" ||
     model.page === "trusted"
       ? "detection"
-      : model.page === "fraud-orders"
-        ? "fraud-orders"
-        : model.page === "settings" ||
+      : model.page === "value"
+        ? "value"
+        : model.page === "fraud-orders"
+          ? "fraud-orders"
+          : model.page === "settings" ||
             model.page === "policy" ||
             model.page === "billing" ||
             model.page === "alerts-reports"
@@ -7333,6 +7350,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
+      {screen === "value" ? <ValuePage /> : null}
       {screen === "fraud-orders" ? (
         <FraudOrdersPage model={model} actions={actions} />
       ) : null}

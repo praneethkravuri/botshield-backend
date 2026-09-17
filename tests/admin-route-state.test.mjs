@@ -11,6 +11,7 @@ test("resolveInitialAdminPage maps supported app paths", () => {
   assert.equal(resolveInitialAdminPage("/app/analytics", ""), "analytics");
   assert.equal(resolveInitialAdminPage("/app/protection-rules", ""), "security");
   assert.equal(resolveInitialAdminPage("/app/fraud-orders", ""), "fraud-orders");
+  assert.equal(resolveInitialAdminPage("/app/value", ""), "value");
   assert.equal(resolveInitialAdminPage("/app", ""), "dashboard");
 });
 
@@ -64,8 +65,9 @@ test("embedded app nav exposes Overview first without rel=home", async () => {
   );
   assert.deepEqual(labels, [
     "Overview",
-    "Analytics",
     "Protection",
+    "Analytics",
+    "Value",
     "Fraud Orders",
     "Settings",
   ]);
@@ -75,8 +77,9 @@ test("embedded app nav exposes Overview first without rel=home", async () => {
   );
   assert.deepEqual(hrefs, [
     "/app",
-    "/app/analytics",
     "/app/protection-rules",
+    "/app/analytics",
+    "/app/value",
     "/app/fraud-orders",
     "/app/settings",
   ]);

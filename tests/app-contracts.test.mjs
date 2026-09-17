@@ -73,7 +73,7 @@ test("every enabled admin action button has a real handler or destination", asyn
   );
 });
 
-test("active navigation exposes the five supported BotShield pages", async () => {
+test("active navigation exposes the six supported BotShield pages", async () => {
   const shell = await readFile(
     new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
     "utf8",
@@ -82,14 +82,40 @@ test("active navigation exposes the five supported BotShield pages", async () =>
     new URL("../app/routes/app.fraud-orders.jsx", import.meta.url),
     "utf8",
   );
+  const valueRoute = await readFile(
+    new URL("../app/routes/app.value.jsx", import.meta.url),
+    "utf8",
+  );
 
   assert.match(shell, /Overview/);
   assert.match(shell, /href: "\/app"/);
   assert.doesNotMatch(shell, /rel:\s*["']home["']/);
   assert.doesNotMatch(shell, /rel="home"/);
+  assert.match(shell, /label: "Value"/);
+  assert.match(shell, /href: "\/app\/value"/);
   assert.match(shell, /label: "Fraud Orders"/);
   assert.match(shell, /href: "\/app\/fraud-orders"/);
   assert.match(fraudRoute, /export \{ default \} from "\.\/app\._index"/);
+  assert.match(valueRoute, /export \{ default \} from "\.\/app\._index"/);
+});
+
+test("value page shell renders a placeholder without savings logic", async () => {
+  const adminExperience = await readFile(
+    new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(adminExperience, /function ValuePage\(/);
+  assert.match(
+    adminExperience,
+    /See the business impact of your BotShield protection\./,
+  );
+  assert.match(
+    adminExperience,
+    /Your protection value and estimated savings will appear here\./,
+  );
+  assert.match(adminExperience, /screen === "value" \? <ValuePage \/> : null/);
+  assert.doesNotMatch(adminExperience, /function ValuePage[\s\S]*ROI/);
 });
 
 test("production cannot expose the in-memory UI preview as a real app", async () => {
