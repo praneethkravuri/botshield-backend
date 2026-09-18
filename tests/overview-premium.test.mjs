@@ -59,7 +59,7 @@ test("overview premium wiring stays overview-only", async () => {
   assert.doesNotMatch(valuePage, /OverviewAnimatedNumber/);
   assert.match(
     adminExperience,
-    /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">/,
+    /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2 botshield-analytics-premium">/,
   );
   assert.match(
     adminExperience,

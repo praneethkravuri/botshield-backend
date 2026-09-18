@@ -56,7 +56,7 @@ test("analytics layout contracts remain unchanged", async () => {
 
   assert.match(
     adminExperience,
-    /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">/,
+    /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2 botshield-analytics-premium">/,
   );
   assert.match(adminExperience, /className="botshield-analytics-kpis"/);
   assert.match(adminExperience, /className="botshield-analytics-split botshield-analytics-split--primary"/);

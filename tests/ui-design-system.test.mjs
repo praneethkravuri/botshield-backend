@@ -526,7 +526,7 @@ test("supported pages share one stable outer page shell geometry", async () => {
 
   for (const pageClass of [
     "botshield-overview-content botshield-overview-v2 botshield-overview-premium",
-    "botshield-analytics-content botshield-analytics-v2",
+    "botshield-analytics-content botshield-analytics-v2 botshield-analytics-premium",
     "botshield-protection-content botshield-protection-premium",
     "botshield-fraud-orders-content",
     "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content",
