@@ -72,7 +72,6 @@ import {
   isValidIpAddressInput,
 } from "../../lib/ip-address";
 import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
-import { AnimatedMetricNumber } from "../../lib/botshield-motion.jsx";
 import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
@@ -1272,6 +1271,9 @@ function OverviewIcon({ name, centered = false }) {
 
 function OverviewMetricCard({ label, value, detail, loading, icon }) {
   const numericValue = Number(value);
+  const displayValue = Number.isFinite(numericValue)
+    ? formatHydrationStableNumber(numericValue)
+    : "\u2014";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
       {loading ? (
@@ -1282,9 +1284,7 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
             <div className="botshield-v2-kpi-label">{label}</div>
             <OverviewIcon name={icon} />
           </div>
-          <div className="botshield-v2-kpi-value">
-            <AnimatedMetricNumber enabled={!loading} value={numericValue} />
-          </div>
+          <div className="botshield-v2-kpi-value">{displayValue}</div>
           <div className="botshield-v2-kpi-detail">{detail}</div>
         </>
       )}
@@ -1547,7 +1547,7 @@ function OverviewPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Overview">
-      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 bs-motion-page">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
         <BotShieldStack gap="large">
           <section
             className={`botshield-v2-status ${protectionState.className}`}
@@ -1591,22 +1591,20 @@ function OverviewPage({ model, actions }) {
                 <div className="botshield-v2-eyebrow">Connection status</div>
                 <h2 id="store-health-title">Store health</h2>
               </div>
-              <span className={model.storeHealthRefreshing ? "bs-motion-refreshing" : undefined}>
-                <BotShieldActionButton
-                  disabled={model.storeHealthRefreshing}
-                  loading={model.storeHealthRefreshing}
-                  variant="tertiary"
-                  onClick={() => {
-                    if (storefrontSensorActive) {
-                      void handleRefreshStoreHealth();
-                      return;
-                    }
-                    actions.openThemeEditor?.();
-                  }}
-                >
-                  {storefrontSensorActive ? "Refresh status" : "Verify connection"}
-                </BotShieldActionButton>
-              </span>
+              <BotShieldActionButton
+                disabled={model.storeHealthRefreshing}
+                loading={model.storeHealthRefreshing}
+                variant="tertiary"
+                onClick={() => {
+                  if (storefrontSensorActive) {
+                    void handleRefreshStoreHealth();
+                    return;
+                  }
+                  actions.openThemeEditor?.();
+                }}
+              >
+                {storefrontSensorActive ? "Refresh status" : "Verify connection"}
+              </BotShieldActionButton>
             </div>
             {model.storeHealthRefreshError ? (
               <BotShieldBanner tone="critical" title="Couldn't refresh store health">
@@ -1655,9 +1653,7 @@ function OverviewPage({ model, actions }) {
                     centered
                   />
                   <div>
-                    <strong>
-                      <AnimatedMetricNumber value={item.value} />
-                    </strong>
+                    <strong>{formatHydrationStableNumber(item.value)}</strong>
                     <span>{item.label}</span>
                     <small>{item.detail}</small>
                   </div>
@@ -2331,7 +2327,7 @@ function AnalyticsPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Analytics">
-      <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2 bs-motion-page">
+      <BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">
         {model.analyticsRefreshError ? (
           <BotShieldBanner tone="critical" title="Couldn't refresh analytics">
             {model.analyticsRefreshError}
@@ -2362,16 +2358,14 @@ function AnalyticsPage({ model, actions }) {
             {availableSignals.length ? <label htmlFor="analytics-signal-filter">Threat signal<select id="analytics-signal-filter" value={signalFilter} onChange={(event) => { setSignalFilter(event.target.value); setPage(1); }}><option value="all">All signals</option>{availableSignals.map((signal) => <option key={signal} value={signal}>{signal}</option>)}</select></label> : null}
             <label className="botshield-analytics-search" htmlFor="analytics-search-filter">Search<input id="analytics-search-filter" onChange={(event) => { setSearchFilter(event.target.value); setPage(1); }} placeholder="Path, reason, country, or network" type="search" value={searchFilter} /></label>
             <div className="botshield-analytics-toolbar-actions">
-              <span className={model.analyticsRefreshing ? "bs-motion-refreshing" : undefined}>
-                <BotShieldActionButton
-                  disabled={model.analyticsRefreshing}
-                  onClick={() => {
-                    void handleRefreshAnalytics();
-                  }}
-                >
-                  {model.analyticsRefreshing ? "Refreshing…" : "Refresh"}
-                </BotShieldActionButton>
-              </span>
+              <BotShieldActionButton
+                disabled={model.analyticsRefreshing}
+                onClick={() => {
+                  void handleRefreshAnalytics();
+                }}
+              >
+                {model.analyticsRefreshing ? "Refreshing…" : "Refresh"}
+              </BotShieldActionButton>
               {filtersActive ? <button className="botshield-analytics-clear" onClick={clearFilters} type="button">Clear filters</button> : null}
             </div>
           </div>
@@ -2396,7 +2390,6 @@ function AnalyticsPage({ model, actions }) {
           </div>
         </section>
 
-        <div className="bs-motion-period-surface" key={`analytics-period-${periodDays}`}>
         <section className="botshield-analytics-kpis" aria-label="Analytical metrics">
           <AnalyticsKpi label="Suspicious events" value={suspiciousEvents.length} detail="Storefront events with elevated threat signals" />
           <AnalyticsKpi label="Intervention rate" value={`${analyticsPercent(interventionCount, suspiciousEvents.length)}%`} detail="Share of suspicious events blocked or challenged" />
@@ -2432,13 +2425,12 @@ function AnalyticsPage({ model, actions }) {
         <AnalyticsPanel title="Signal combinations" subtitle="Threat signals that appear together in recorded events.">{combinationRows.length ? <div className="botshield-analytics-combinations">{combinationRows.map((row) => <div className="botshield-analytics-combination" key={row.label}><div className="botshield-analytics-combination-signals">{row.label.split(" + ").map((signal, index) => <span key={signal}>{index ? <b aria-hidden="true">+</b> : null}<strong>{signal}</strong></span>)}</div><dl><div><dt>Events</dt><dd>{row.count}</dd></div><div><dt>Share</dt><dd>{analyticsPercent(row.count, suspiciousEvents.length)}%</dd></div><div><dt>Intervention</dt><dd>{analyticsPercent(row.interventions, row.count)}%</dd></div></dl></div>)}</div> : <AnalyticsEmpty text="No multi-signal event combinations were recorded during this period." />}</AnalyticsPanel>
 
         <aside className="botshield-analytics-insight"><OverviewIcon name="activity" centered /><div><span>Key insight</span><strong>{insightTitle}</strong><p>{insightDetail}</p></div></aside>
-        </div>
 
         <section className="botshield-analytics-summary" aria-labelledby="analytics-summary-title"><header><span>Investigation</span><h2 id="analytics-summary-title">Investigation summary</h2></header>{suspiciousEvents.length ? <dl>{topSignal ? <div><dt>Most common signal</dt><dd>{topSignal.label}</dd></div> : null}{peakActivityBucket ? <div><dt>Highest-risk period</dt><dd>{peakActivityLabel}</dd></div> : null}{pathRows[0] ? <div><dt>Most targeted path</dt><dd>{formatAnalyticsPath(pathRows[0].label)}</dd></div> : null}{visitorRows[0] ? <div><dt>Most active visitor</dt><dd>{visitorRows[0].masked}</dd></div> : null}</dl> : <p>No suspicious activity is available to summarize for this selection.</p>}</section>
 
         <div className="botshield-analytics-section-label">Investigation</div>
         <AnalyticsPanel title="Event explorer" subtitle="Filter and review the storefront events behind these metrics.">
-          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Reasons</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody className="bs-motion-rows" key={`explorer-page-${page}`}>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{formatHydrationStableNumber(filteredEvents.length)} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
+          {paginatedEvents.length ? <><div className="botshield-analytics-table-wrap"><table className="botshield-analytics-table botshield-analytics-event-table"><thead><tr><th>Time</th><th>Risk</th><th>Threat signal</th><th>Reasons</th><th>Decision</th><th>Page / path</th><th>Action</th></tr></thead><tbody>{paginatedEvents.map((event) => { const signals = getAnalyticsSignals(event); return <tr key={event.id}><td>{formatAnalyticsTimestamp(event.createdAt)}</td><td><BotShieldStatusBadge status={event.threatLevel} label={getRiskLabel(event.threatLevel)} /></td><td>{signals.join(", ") || "No elevated signal"}</td><td><span title={formatMerchantReasons(event.reasonCodes || event.reasons)}>{formatMerchantReasons(event.reasonCodes || event.reasons)}</span></td><td><BotShieldStatusBadge status={event.actionTaken} label={getOutcomeLabel(event.actionTaken)} /></td><td><span title={event.pathVisited || "/"}>{event.pathVisited || "/"}</span></td><td><button className="botshield-analytics-detail-button" onClick={() => setSelectedEvent(event)} type="button">View details</button></td></tr>; })}</tbody></table></div><div className="botshield-analytics-pagination"><span>{formatHydrationStableNumber(filteredEvents.length)} matching event{filteredEvents.length === 1 ? "" : "s"}</span><div><button disabled={visiblePage === 1} onClick={() => setPage((current) => Math.max(1, current - 1))} type="button">Previous</button><span>Page {visiblePage} of {totalPages}</span><button disabled={visiblePage === totalPages} onClick={() => setPage((current) => Math.min(totalPages, current + 1))} type="button">Next</button></div></div></> : <AnalyticsEmpty text={filtersActive ? "No events match these filters. Clear filters or choose a wider date range." : "No storefront events were recorded during this period."} />}
         </AnalyticsPanel>
 
         <AnalyticsEventDetails
@@ -2463,19 +2455,7 @@ function maskAnalyticsVisitor(value) {
 }
 
 function AnalyticsKpi({ label, value, detail, compact = false }) {
-  return (
-    <div className={`botshield-analytics-kpi${compact ? " is-compact" : ""}`}>
-      <span>{label}</span>
-      <strong>
-        {typeof value === "number" ? (
-          <AnimatedMetricNumber value={value} />
-        ) : (
-          value
-        )}
-      </strong>
-      <small>{detail}</small>
-    </div>
-  );
+  return <div className={`botshield-analytics-kpi${compact ? " is-compact" : ""}`}><span>{label}</span><strong>{typeof value === "number" ? formatHydrationStableNumber(value) : value}</strong><small>{detail}</small></div>;
 }
 
 function AnalyticsPanel({ title, subtitle, children }) {
@@ -3263,7 +3243,7 @@ function FraudReviewSnapshot({
               className={`botshield-fraud-snapshot-value${item.unavailable ? " is-unavailable" : ""}`}
               aria-label={item.unavailable ? `${item.label} unavailable` : undefined}
             >
-              {item.unavailable ? "—" : <AnimatedMetricNumber value={item.value} />}
+              {item.unavailable ? "—" : item.value}
             </strong>
             <small className="botshield-fraud-snapshot-detail">{item.detail}</small>
           </>
@@ -4093,21 +4073,19 @@ function FraudOrdersPage({ model, actions }) {
       heading="Fraud Orders"
       secondaryActions={
         connected ? (
-          <span className={loading ? "bs-motion-refreshing" : undefined}>
-            <BotShieldPolarisButton
-              disabled={loading}
-              onClick={refresh}
-              slot="secondary-actions"
-              variant="secondary"
-            >
-              Refresh
-            </BotShieldPolarisButton>
-          </span>
+          <BotShieldPolarisButton
+            disabled={loading}
+            onClick={refresh}
+            slot="secondary-actions"
+            variant="secondary"
+          >
+            Refresh
+          </BotShieldPolarisButton>
         ) : null
       }
     >
       <>
-        <BotShieldPageShell className="botshield-fraud-orders-content bs-motion-page">
+        <BotShieldPageShell className="botshield-fraud-orders-content">
           {renderAccessBanner()}
           {renderErrorBanner()}
 
@@ -4636,7 +4614,7 @@ function ProtectionPage({ model, actions }) {
   if (model) {
     return (
       <BotShieldNativePage heading="Protection">
-        <BotShieldPageShell className="botshield-protection-content bs-motion-page">
+        <BotShieldPageShell className="botshield-protection-content">
         <section className={`botshield-protection-status ${protectionHealthy ? "is-healthy" : "is-attention"}`}>
           <div className="botshield-protection-status-icon"><OverviewIcon name="shield" centered /></div>
           <div>
@@ -7235,7 +7213,7 @@ function SettingsPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Settings">
-      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content bs-motion-page">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
         <header className="botshield-overview-header botshield-settings-hub-header">
           <div
             aria-label="BotShield operational status"
@@ -7351,7 +7329,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
   }, [lastScreen, screen]);
 
   const routeContent = (
-    <div className="bs-motion-route" key={screen}>
+    <div key={screen}>
       {screen === "dashboard" ? (
         <OverviewPage model={model} actions={actions} />
       ) : null}
