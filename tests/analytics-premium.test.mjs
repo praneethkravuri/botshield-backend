@@ -14,6 +14,10 @@ test("analytics premium stylesheet is scoped and supports reduced motion", async
   assert.match(css, /\.ba-primary-chart/);
   assert.match(css, /\.ba-event-explorer-panel/);
   assert.match(css, /--ba-teal:/);
+  assert.match(css, /--ba-radius-panel:/);
+  assert.match(css, /@keyframes ba-bar-width/);
+  assert.match(css, /select:has\(option:checked:not\(\[value="all"\]\)\)/);
+  assert.match(css, /\.ba-event-explorer-panel/);
   assert.doesNotMatch(css, /\.botshield-overview-premium/);
   assert.doesNotMatch(css, /\.botshield-protection-premium/);
 });
