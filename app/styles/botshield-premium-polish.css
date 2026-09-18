@@ -1,0 +1,293 @@
+/* BotShield safe premium visual polish — CSS only, page-scoped, no layout changes */
+
+:root {
+  --bs-polish-fast: 140ms;
+  --bs-polish-normal: 200ms;
+  --bs-polish-enter: 260ms;
+  --bs-polish-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bs-polish-blue: rgba(44, 110, 203, 0.14);
+  --bs-polish-green: rgba(41, 132, 90, 0.14);
+  --bs-polish-violet: rgba(92, 106, 196, 0.12);
+}
+
+@keyframes bs-polish-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bs-polish-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bs-polish-bar-reveal {
+  from {
+    opacity: 0.45;
+    transform: scaleY(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* ── Overview ── */
+.botshield-overview-v2 s-stack > section {
+  animation: bs-polish-enter var(--bs-polish-enter) var(--bs-polish-ease) both;
+}
+.botshield-overview-v2 s-stack > section:nth-child(1) { animation-delay: 0ms; }
+.botshield-overview-v2 s-stack > section:nth-child(2) { animation-delay: 35ms; }
+.botshield-overview-v2 s-stack > section:nth-child(3) { animation-delay: 70ms; }
+.botshield-overview-v2 s-stack > section:nth-child(4) { animation-delay: 105ms; }
+.botshield-overview-v2 s-stack > section:nth-child(n + 5) { animation-delay: 140ms; }
+
+.botshield-overview-v2 .botshield-v2-kpi-card {
+  transition:
+    border-color var(--bs-polish-normal) ease,
+    box-shadow var(--bs-polish-normal) ease;
+}
+.botshield-overview-v2 .botshield-v2-kpi-card:hover {
+  border-color: #c9cccf;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 18px rgba(32, 34, 35, 0.05);
+}
+
+.botshield-overview-v2 .botshield-v2-status-indicator {
+  animation: bs-polish-enter 300ms var(--bs-polish-ease) both;
+}
+
+.botshield-overview-v2 .botshield-v2-status--active .botshield-v2-status-indicator {
+  box-shadow: 0 0 0 3px var(--bs-polish-green);
+}
+
+.botshield-overview-v2 .botshield-v2-health-dot {
+  transition: background-color var(--bs-polish-normal) ease, box-shadow var(--bs-polish-normal) ease;
+}
+
+.botshield-overview-v2 .botshield-v2-activity-row {
+  animation: bs-polish-enter 240ms var(--bs-polish-ease) both;
+}
+.botshield-overview-v2 .botshield-v2-activity-row:nth-child(2) { animation-delay: 20ms; }
+.botshield-overview-v2 .botshield-v2-activity-row:nth-child(3) { animation-delay: 40ms; }
+.botshield-overview-v2 .botshield-v2-activity-row:nth-child(4) { animation-delay: 60ms; }
+.botshield-overview-v2 .botshield-v2-activity-row:nth-child(5) { animation-delay: 80ms; }
+
+.botshield-overview-v2 .botshield-v2-quick-action-row {
+  transition:
+    border-color var(--bs-polish-normal) ease,
+    box-shadow var(--bs-polish-normal) ease,
+    transform var(--bs-polish-fast) ease;
+}
+.botshield-overview-v2 .botshield-v2-quick-action-row:hover {
+  border-color: #c9cccf;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 16px rgba(32, 34, 35, 0.05);
+}
+.botshield-overview-v2 .botshield-v2-quick-action-row:active {
+  transform: scale(0.99);
+}
+
+.botshield-overview-v2 .botshield-v2-chart-bar {
+  transform-origin: bottom center;
+  animation: bs-polish-bar-reveal 320ms var(--bs-polish-ease) both;
+}
+
+.botshield-overview-v2 .botshield-v2-health-item button[disabled],
+.botshield-overview-v2 .botshield-v2-health-heading button[disabled] {
+  animation: bs-polish-spin 700ms linear infinite;
+}
+
+/* ── Protection ── */
+.botshield-protection-content > section {
+  animation: bs-polish-enter var(--bs-polish-enter) var(--bs-polish-ease) both;
+}
+.botshield-protection-content > section:nth-child(2) { animation-delay: 40ms; }
+.botshield-protection-content > section:nth-child(3) { animation-delay: 80ms; }
+.botshield-protection-content > section:nth-child(4) { animation-delay: 120ms; }
+
+.botshield-protection-content .botshield-protection-row {
+  animation: bs-polish-enter 260ms var(--bs-polish-ease) both;
+  transition: background-color var(--bs-polish-normal) ease;
+}
+.botshield-protection-content .botshield-protection-row:nth-child(1) { animation-delay: 10ms; }
+.botshield-protection-content .botshield-protection-row:nth-child(2) { animation-delay: 30ms; }
+.botshield-protection-content .botshield-protection-row:nth-child(3) { animation-delay: 50ms; }
+.botshield-protection-content .botshield-protection-row:nth-child(4) { animation-delay: 70ms; }
+
+.botshield-protection-content .botshield-protection-status.is-healthy {
+  border-color: rgba(41, 132, 90, 0.28);
+  box-shadow: inset 3px 0 0 rgba(41, 132, 90, 0.55);
+}
+
+.botshield-protection-content .botshield-protection-access article {
+  transition:
+    border-color var(--bs-polish-normal) ease,
+    box-shadow var(--bs-polish-normal) ease;
+}
+
+/* ── Analytics (conservative — no section/split animations) ── */
+.botshield-analytics-v2 .botshield-analytics-period button {
+  transition:
+    color var(--bs-polish-fast) ease,
+    background-color var(--bs-polish-fast) ease,
+    border-color var(--bs-polish-fast) ease,
+    box-shadow var(--bs-polish-fast) ease;
+}
+
+.botshield-analytics-v2 .botshield-analytics-filter-row select,
+.botshield-analytics-v2 .botshield-analytics-filter-row input {
+  transition:
+    border-color var(--bs-polish-fast) ease,
+    box-shadow var(--bs-polish-fast) ease;
+}
+.botshield-analytics-v2 .botshield-analytics-filter-row select:focus-visible,
+.botshield-analytics-v2 .botshield-analytics-filter-row input:focus-visible {
+  box-shadow: 0 0 0 2px rgba(44, 110, 203, 0.18);
+}
+
+.botshield-analytics-v2 .botshield-analytics-kpi {
+  animation: bs-polish-enter 260ms var(--bs-polish-ease) both;
+  transition:
+    background-color var(--bs-polish-normal) ease,
+    box-shadow var(--bs-polish-normal) ease;
+}
+.botshield-analytics-v2 .botshield-analytics-kpi:nth-child(1) { animation-delay: 0ms; }
+.botshield-analytics-v2 .botshield-analytics-kpi:nth-child(2) { animation-delay: 30ms; }
+.botshield-analytics-v2 .botshield-analytics-kpi:nth-child(3) { animation-delay: 60ms; }
+.botshield-analytics-v2 .botshield-analytics-kpi:nth-child(4) { animation-delay: 90ms; }
+
+.botshield-analytics-v2 .botshield-analytics-histogram i {
+  transform-origin: bottom center;
+  animation: bs-polish-bar-reveal 300ms var(--bs-polish-ease) both;
+  transition: opacity var(--bs-polish-normal) ease;
+}
+
+.botshield-analytics-v2 .botshield-analytics-bar-fill {
+  transform-origin: left center;
+  transition: opacity var(--bs-polish-normal) ease, filter var(--bs-polish-normal) ease;
+}
+
+.botshield-analytics-v2 .botshield-analytics-table tbody tr {
+  animation: bs-polish-enter 220ms var(--bs-polish-ease) both;
+}
+
+.botshield-analytics-v2 s-banner,
+.botshield-analytics-v2 .botshield-banner {
+  animation: bs-polish-enter 240ms var(--bs-polish-ease) both;
+}
+
+.botshield-analytics-v2 .botshield-analytics-toolbar-actions button[disabled] {
+  animation: bs-polish-spin 700ms linear infinite;
+}
+
+.botshield-analytics-v2 .botshield-analytics-detail-button {
+  transition:
+    color var(--bs-polish-fast) ease,
+    background-color var(--bs-polish-fast) ease,
+    transform var(--bs-polish-fast) ease;
+}
+.botshield-analytics-v2 .botshield-analytics-detail-button:active {
+  transform: scale(0.99);
+}
+
+.botshield-analytics-v2 .botshield-analytics-ranked-row:hover {
+  background-color: rgba(44, 110, 203, 0.04);
+  transition: background-color var(--bs-polish-normal) ease;
+}
+
+/* ── Fraud Orders ── */
+.botshield-fraud-orders-content .botshield-fraud-snapshot-item {
+  animation: bs-polish-enter 260ms var(--bs-polish-ease) both;
+  transition:
+    border-color var(--bs-polish-normal) ease,
+    background-color var(--bs-polish-normal) ease,
+    box-shadow var(--bs-polish-normal) ease,
+    transform var(--bs-polish-fast) ease;
+}
+.botshield-fraud-orders-content .botshield-fraud-snapshot-item.is-interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 6px 16px rgba(32, 34, 35, 0.05);
+}
+.botshield-fraud-orders-content .botshield-fraud-snapshot-item.is-selected {
+  border-color: rgba(44, 110, 203, 0.35);
+  background-color: rgba(44, 110, 203, 0.05);
+}
+
+.botshield-fraud-orders-content .botshield-fraud-table tbody tr {
+  animation: bs-polish-enter 240ms var(--bs-polish-ease) both;
+}
+
+.botshield-fraud-orders-content .botshield-fraud-filter-group button {
+  transition:
+    color var(--bs-polish-fast) ease,
+    background-color var(--bs-polish-fast) ease,
+    border-color var(--bs-polish-fast) ease;
+}
+
+.botshield-fraud-orders-content s-button[disabled] {
+  animation: bs-polish-spin 700ms linear infinite;
+}
+
+.botshield-fraud-orders-content .botshield-fraud-review-link {
+  transition: color var(--bs-polish-fast) ease, opacity var(--bs-polish-fast) ease;
+}
+
+/* ── Settings ── */
+.botshield-settings-hub-content > header,
+.botshield-settings-hub-content > section {
+  animation: bs-polish-enter 260ms var(--bs-polish-ease) both;
+}
+
+.botshield-settings-hub-content .botshield-settings-hub-nav button {
+  transition:
+    color var(--bs-polish-fast) ease,
+    background-color var(--bs-polish-fast) ease,
+    border-color var(--bs-polish-fast) ease;
+}
+
+.botshield-settings-hub-content .botshield-settings-hub-panel {
+  animation: bs-polish-enter 280ms var(--bs-polish-ease) 40ms both;
+}
+
+.botshield-settings-hub-content .botshield-settings-hub-strip-item {
+  transition: background-color var(--bs-polish-normal) ease, border-color var(--bs-polish-normal) ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botshield-overview-v2 s-stack > section,
+  .botshield-overview-v2 .botshield-v2-kpi-card,
+  .botshield-overview-v2 .botshield-v2-status-indicator,
+  .botshield-overview-v2 .botshield-v2-activity-row,
+  .botshield-overview-v2 .botshield-v2-chart-bar,
+  .botshield-overview-v2 .botshield-v2-health-item button[disabled],
+  .botshield-overview-v2 .botshield-v2-health-heading button[disabled],
+  .botshield-protection-content > section,
+  .botshield-protection-content .botshield-protection-row,
+  .botshield-analytics-v2 .botshield-analytics-kpi,
+  .botshield-analytics-v2 .botshield-analytics-histogram i,
+  .botshield-analytics-v2 .botshield-analytics-table tbody tr,
+  .botshield-analytics-v2 s-banner,
+  .botshield-analytics-v2 .botshield-banner,
+  .botshield-analytics-v2 .botshield-analytics-toolbar-actions button[disabled],
+  .botshield-fraud-orders-content .botshield-fraud-snapshot-item,
+  .botshield-fraud-orders-content .botshield-fraud-table tbody tr,
+  .botshield-fraud-orders-content s-button[disabled],
+  .botshield-settings-hub-content > header,
+  .botshield-settings-hub-content > section,
+  .botshield-settings-hub-content .botshield-settings-hub-panel {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .botshield-overview-v2 .botshield-v2-quick-action-row:active,
+  .botshield-analytics-v2 .botshield-analytics-detail-button:active,
+  .botshield-fraud-orders-content .botshield-fraud-snapshot-item.is-interactive:hover {
+    transform: none !important;
+  }
+}
