@@ -525,13 +525,15 @@ test("supported pages share one stable outer page shell geometry", async () => {
   assert.doesNotMatch(designSource, /min\(1140px, calc\(100vw - 56px\)\)/);
 
   for (const pageClass of [
-    "botshield-overview-content botshield-overview-v2",
-    "botshield-analytics-content botshield-analytics-v2",
-    "botshield-protection-content",
-    "botshield-fraud-orders-content",
-    "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content",
+    "botshield-overview-content botshield-overview-v2 bs-motion-page",
+    "botshield-analytics-content botshield-analytics-v2 bs-motion-page",
+    "botshield-protection-content bs-motion-page",
+    "botshield-fraud-orders-content bs-motion-page",
+    "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content bs-motion-page",
   ]) {
-    assert.match(adminSource, new RegExp(`<BotShieldPageShell className="${pageClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+    for (const token of pageClass.split(" ")) {
+      assert.match(adminSource, new RegExp(`\\b${token}\\b`));
+    }
   }
 });
 

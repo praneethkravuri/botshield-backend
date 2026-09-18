@@ -13,6 +13,7 @@ import { useBotShieldAction } from "../../hooks/use-botshield-action";
 import { useBotShieldCustomElementClick } from "../../hooks/use-botshield-custom-element-click.js";
 import { useBotShieldPolarisReady } from "../../hooks/use-botshield-polaris-ready.js";
 import { runBotShieldModalCommand } from "../../lib/botshield-modal-command.js";
+import "../../styles/botshield-motion.css";
 import {
   cleanupNativeModalShowRequest,
   createBotShieldNativeModalLifecycleState,
