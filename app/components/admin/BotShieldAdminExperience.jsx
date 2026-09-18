@@ -1252,7 +1252,7 @@ function OverviewIcon({ name, centered = false }) {
     clock: "clock",
     rate: "gauge",
     page: "page",
-    reporting: "connect",
+    reporting: "chart-line",
     visitor: "person",
   };
   return (
@@ -1662,7 +1662,6 @@ function OverviewPage({ model, actions }) {
                 <div
                   className="botshield-v2-impact-metric"
                   key={item.label}
-                  style={{ alignItems: "center" }}
                 >
                   <OverviewIcon
                     name={index === 0 ? "shield" : "activity"}
