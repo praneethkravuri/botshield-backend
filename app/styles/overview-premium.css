@@ -308,14 +308,84 @@
   box-shadow: 0 2px 8px rgba(26, 35, 50, 0.18);
 }
 
-/* Protection modules */
+/* Protection health — breathable module rows */
+.botshield-overview-premium .botshield-v2-protection-panel .botshield-v2-protection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 0;
+}
 .botshield-overview-premium .botshield-v2-protection-row {
-  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-areas:
+    "icon copy"
+    "icon actions";
+  align-items: start;
+  column-gap: 14px;
+  row-gap: 10px;
+  padding: 16px 18px;
   border: 1px solid var(--bo-border);
   border-radius: 12px;
   background: var(--bo-surface-muted);
   animation: bo-enter 260ms var(--bo-ease) both;
   transition: border-color 180ms ease, background-color 180ms ease;
+  min-width: 0;
+}
+.botshield-overview-premium .botshield-v2-protection-row:last-child {
+  border-bottom: 1px solid var(--bo-border);
+  padding-bottom: 16px;
+}
+.botshield-overview-premium .botshield-v2-protection-row .botshield-v2-icon {
+  grid-area: icon;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  align-self: start;
+}
+.botshield-overview-premium .botshield-v2-protection-row .botshield-v2-icon s-icon,
+.botshield-overview-premium .botshield-v2-protection-row .botshield-v2-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.botshield-overview-premium .botshield-v2-protection-copy {
+  grid-area: copy;
+  min-width: 0;
+  max-width: none;
+}
+.botshield-overview-premium .botshield-v2-protection-copy strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+  white-space: normal;
+}
+.botshield-overview-premium .botshield-v2-protection-copy span {
+  display: block;
+  max-width: none;
+  margin-top: 5px;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  line-height: 1.45;
+  font-size: 12px;
+}
+.botshield-overview-premium .botshield-v2-protection-action {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  min-width: 0;
+  width: 100%;
+}
+.botshield-overview-premium .botshield-v2-threat-summary {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bo-border);
 }
 .botshield-overview-premium .botshield-v2-protection-row:nth-child(1) { animation-delay: 10ms; }
 .botshield-overview-premium .botshield-v2-protection-row:nth-child(2) { animation-delay: 30ms; }
@@ -376,6 +446,11 @@
   }
   .botshield-overview-premium .botshield-v2-kpi-value {
     font-size: 26px;
+  }
+  .botshield-overview-premium .botshield-v2-protection-action {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 

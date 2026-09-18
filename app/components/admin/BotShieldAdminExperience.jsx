@@ -1922,13 +1922,7 @@ function OverviewPage({ model, actions }) {
                   </div>
                 ))}
               </div>
-              <div
-                style={{
-                  marginTop: "14px",
-                  paddingTop: "14px",
-                  borderTop: "1px solid #e1e3e5",
-                }}
-              >
+              <div className="botshield-v2-threat-summary">
                 <div
                   style={{
                     display: "flex",
