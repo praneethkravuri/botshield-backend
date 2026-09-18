@@ -72,6 +72,8 @@ import {
   isValidIpAddressInput,
 } from "../../lib/ip-address";
 import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
+import { OverviewAnimatedNumber } from "../../lib/overview-motion.jsx";
+import "../../styles/overview-premium.css";
 import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
@@ -1271,9 +1273,6 @@ function OverviewIcon({ name, centered = false }) {
 
 function OverviewMetricCard({ label, value, detail, loading, icon }) {
   const numericValue = Number(value);
-  const displayValue = Number.isFinite(numericValue)
-    ? formatHydrationStableNumber(numericValue)
-    : "\u2014";
   return (
     <div className="botshield-v2-kpi-card" aria-busy={loading || undefined}>
       {loading ? (
@@ -1284,7 +1283,9 @@ function OverviewMetricCard({ label, value, detail, loading, icon }) {
             <div className="botshield-v2-kpi-label">{label}</div>
             <OverviewIcon name={icon} />
           </div>
-          <div className="botshield-v2-kpi-value">{displayValue}</div>
+          <div className="botshield-v2-kpi-value">
+            <OverviewAnimatedNumber enabled={!loading} value={numericValue} />
+          </div>
           <div className="botshield-v2-kpi-detail">{detail}</div>
         </>
       )}
@@ -1547,8 +1548,21 @@ function OverviewPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Overview">
-      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-overview-premium">
         <BotShieldStack gap="large">
+          <header className="bo-page-intro">
+            <div className="bo-page-intro-copy">
+              <p>
+                Real-time storefront protection status, threat activity, and security
+                response for your Shopify store.
+              </p>
+            </div>
+            <div aria-label="Active protection modules" className="bo-page-intro-badge">
+              <OverviewIcon centered name="shield" />
+              {activeProtections} / {protectionRows.length} modules active
+            </div>
+          </header>
+
           <section
             className={`botshield-v2-status ${protectionState.className}`}
             aria-labelledby="botshield-protection-status-title"
@@ -1591,20 +1605,22 @@ function OverviewPage({ model, actions }) {
                 <div className="botshield-v2-eyebrow">Connection status</div>
                 <h2 id="store-health-title">Store health</h2>
               </div>
-              <BotShieldActionButton
-                disabled={model.storeHealthRefreshing}
-                loading={model.storeHealthRefreshing}
-                variant="tertiary"
-                onClick={() => {
-                  if (storefrontSensorActive) {
-                    void handleRefreshStoreHealth();
-                    return;
-                  }
-                  actions.openThemeEditor?.();
-                }}
-              >
-                {storefrontSensorActive ? "Refresh status" : "Verify connection"}
-              </BotShieldActionButton>
+              <span className={model.storeHealthRefreshing ? "bo-refresh-spin" : undefined}>
+                <BotShieldActionButton
+                  disabled={model.storeHealthRefreshing}
+                  loading={model.storeHealthRefreshing}
+                  variant="tertiary"
+                  onClick={() => {
+                    if (storefrontSensorActive) {
+                      void handleRefreshStoreHealth();
+                      return;
+                    }
+                    actions.openThemeEditor?.();
+                  }}
+                >
+                  {storefrontSensorActive ? "Refresh status" : "Verify connection"}
+                </BotShieldActionButton>
+              </span>
             </div>
             {model.storeHealthRefreshError ? (
               <BotShieldBanner tone="critical" title="Couldn't refresh store health">
@@ -1653,7 +1669,9 @@ function OverviewPage({ model, actions }) {
                     centered
                   />
                   <div>
-                    <strong>{formatHydrationStableNumber(item.value)}</strong>
+                    <strong>
+                      <OverviewAnimatedNumber enabled={!loading} value={item.value} />
+                    </strong>
                     <span>{item.label}</span>
                     <small>{item.detail}</small>
                   </div>

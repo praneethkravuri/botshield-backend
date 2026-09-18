@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+test("overview premium stylesheet is scoped and supports reduced motion", async () => {
+  const css = await readFile(
+    new URL("../app/styles/overview-premium.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(css, /\.botshield-overview-premium/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\.bo-page-intro/);
+  assert.match(css, /\.botshield-v2-status/);
+  assert.match(css, /\.botshield-v2-kpi-card/);
+  assert.doesNotMatch(css, /\.botshield-analytics-v2/);
+  assert.doesNotMatch(css, /\.botshield-protection-content/);
+});
+
+test("overview premium wiring stays overview-only", async () => {
+  const adminExperience = await readFile(
+    new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
+    "utf8",
+  );
+  const valuePage = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(adminExperience, /overview-premium\.css/);
+  assert.match(adminExperience, /OverviewAnimatedNumber/);
+  assert.match(
+    adminExperience,
+    /className="botshield-overview-content botshield-overview-v2 botshield-overview-premium"/,
+  );
+  assert.match(adminExperience, /className="bo-page-intro"/);
+  assert.match(adminExperience, /bo-refresh-spin/);
+
+  assert.doesNotMatch(valuePage, /overview-premium/);
+  assert.doesNotMatch(valuePage, /OverviewAnimatedNumber/);
+  assert.match(
+    adminExperience,
+    /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2">/,
+  );
+  assert.match(
+    adminExperience,
+    /<BotShieldPageShell className="botshield-protection-content/,
+  );
+});
+
+test("overview motion helper SSRs final numeric values", async () => {
+  const motion = await readFile(
+    new URL("../app/lib/overview-motion.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(motion, /useState\(target\)/);
+  assert.match(motion, /prefersReducedMotion/);
+  assert.match(motion, /formatHydrationStableNumber/);
+  assert.doesNotMatch(motion, /Math\.random/);
+  assert.doesNotMatch(motion, /Date\.now/);
+});

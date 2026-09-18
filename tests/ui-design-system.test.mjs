@@ -525,7 +525,7 @@ test("supported pages share one stable outer page shell geometry", async () => {
   assert.doesNotMatch(designSource, /min\(1140px, calc\(100vw - 56px\)\)/);
 
   for (const pageClass of [
-    "botshield-overview-content botshield-overview-v2",
+    "botshield-overview-content botshield-overview-v2 botshield-overview-premium",
     "botshield-analytics-content botshield-analytics-v2",
     "botshield-protection-content",
     "botshield-fraud-orders-content",
