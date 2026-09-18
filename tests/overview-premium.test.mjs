@@ -20,6 +20,8 @@ test("overview premium stylesheet is scoped and supports reduced motion", async 
   assert.match(css, /grid-template-areas:[\s\S]*"icon copy"/);
   assert.match(css, /\.botshield-v2-protection-copy span[\s\S]*white-space:\s*normal/);
   assert.match(css, /\.botshield-v2-threat-summary/);
+  assert.match(css, /\.botshield-v2-quick-action-row--primary > s-button/);
+  assert.match(css, /grid-template-areas:[\s\S]*"cta cta"/);
   assert.doesNotMatch(css, /\.botshield-analytics-v2/);
   assert.doesNotMatch(css, /\.botshield-protection-content/);
 });
@@ -48,6 +50,10 @@ test("overview premium wiring stays overview-only", async () => {
     /botshield-v2-impact-metric[\s\S]*style=\{\{\s*alignItems:\s*"center"\s*\}\}/,
   );
   assert.match(adminExperience, /className="botshield-v2-threat-summary"/);
+  assert.match(
+    adminExperience,
+    /Review protection[\s\S]*onClick=\{\(\) => actions\.setPage\("detection"\)\}/,
+  );
 
   assert.doesNotMatch(valuePage, /overview-premium/);
   assert.doesNotMatch(valuePage, /OverviewAnimatedNumber/);
