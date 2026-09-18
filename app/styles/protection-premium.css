@@ -128,6 +128,8 @@
 .botshield-protection-premium .botshield-protection-status-icon {
   position: relative;
   z-index: 1;
+  display: grid;
+  place-items: center;
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -135,21 +137,121 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
     0 1px 2px rgba(0, 0, 0, 0.18);
+  overflow: visible;
+}
+.botshield-protection-premium .botshield-protection-status-icon::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(255, 255, 255, 0.025) 100%);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+  animation: bp-icon-bezel 520ms var(--bp-ease) both;
+}
+.botshield-protection-premium .botshield-protection-status-icon::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  animation: bp-icon-status-led 480ms var(--bp-ease) 180ms both;
 }
 .botshield-protection-premium .botshield-protection-status.is-healthy .botshield-protection-status-icon {
   border-color: var(--bp-green-hero);
   background: linear-gradient(180deg, #2f383f 0%, #283038 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(56, 142, 110, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.botshield-protection-premium .botshield-protection-status.is-healthy .botshield-protection-status-icon::before {
+  border-color: rgba(56, 142, 110, 0.2);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(56, 142, 110, 0.12);
+  animation: bp-icon-bezel 520ms var(--bp-ease) both, bp-icon-ring-settle 640ms var(--bp-ease) 80ms both;
+}
+.botshield-protection-premium .botshield-protection-status.is-healthy .botshield-protection-status-icon::after {
+  background: rgba(72, 154, 120, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(56, 142, 110, 0.28),
+    0 0 3px rgba(56, 142, 110, 0.1);
 }
 .botshield-protection-premium .botshield-protection-status.is-attention .botshield-protection-status-icon {
   border-color: rgba(166, 124, 0, 0.35);
   background: linear-gradient(180deg, #353028 0%, #2d2822 100%);
 }
+.botshield-protection-premium .botshield-protection-status.is-attention .botshield-protection-status-icon::before {
+  border-color: rgba(166, 124, 0, 0.18);
+}
+.botshield-protection-premium .botshield-protection-status.is-attention .botshield-protection-status-icon::after {
+  background: rgba(180, 140, 60, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(166, 124, 0, 0.28),
+    0 0 3px rgba(166, 124, 0, 0.08);
+}
 .botshield-protection-premium .botshield-protection-status-icon .botshield-v2-icon {
-  width: 34px;
-  height: 34px;
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
   background: transparent;
-  filter: brightness(1.35) saturate(0.85);
+  filter: brightness(1.58) saturate(0.72) contrast(1.12);
+  animation: bp-icon-glyph 420ms var(--bp-ease) 120ms both;
+}
+@keyframes bp-icon-bezel {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes bp-icon-ring-settle {
+  from {
+    box-shadow:
+      inset 0 1px 3px rgba(0, 0, 0, 0.32),
+      inset 0 0 0 0 rgba(56, 142, 110, 0);
+  }
+  to {
+    box-shadow:
+      inset 0 1px 3px rgba(0, 0, 0, 0.32),
+      inset 0 0 0 1px rgba(56, 142, 110, 0.12);
+  }
+}
+@keyframes bp-icon-status-led {
+  from {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes bp-icon-glyph {
+  from {
+    opacity: 0.72;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 .botshield-protection-premium .botshield-protection-status > div:nth-child(2) {
   position: relative;
@@ -557,7 +659,10 @@
   .botshield-protection-premium .botshield-protection-access-grid article,
   .botshield-protection-premium .botshield-visitor-access-record,
   .botshield-protection-premium .botshield-protection-filter-empty,
-  .botshield-protection-premium .botshield-protection-row-action s-button:active {
+  .botshield-protection-premium .botshield-protection-row-action s-button:active,
+  .botshield-protection-premium .botshield-protection-status-icon::before,
+  .botshield-protection-premium .botshield-protection-status-icon::after,
+  .botshield-protection-premium .botshield-protection-status-icon .botshield-v2-icon {
     animation: none !important;
     transition: none !important;
     transform: none !important;

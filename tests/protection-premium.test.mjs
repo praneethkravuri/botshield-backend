@@ -14,6 +14,8 @@ test("protection premium stylesheet is scoped and supports reduced motion", asyn
   assert.match(css, /\.botshield-protection-status/);
   assert.match(css, /--bp-graphite:/);
   assert.match(css, /\.botshield-protection-status\.is-healthy \.botshield-protection-status-icon/);
+  assert.match(css, /\.botshield-protection-status-icon::before/);
+  assert.match(css, /@keyframes bp-icon-ring-settle/);
   assert.match(css, /--bp-hero-ink:/);
   assert.match(css, /\.botshield-protection-row\.is-active/);
   assert.match(css, /\.botshield-visitor-access-record/);
