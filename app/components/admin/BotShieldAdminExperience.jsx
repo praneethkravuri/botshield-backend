@@ -74,6 +74,7 @@ import {
 import { fraudOrderNeedsPreFulfillmentReview } from "../../lib/fraud-order-pending-fulfillment.js";
 import { OverviewAnimatedNumber } from "../../lib/overview-motion.jsx";
 import "../../styles/overview-premium.css";
+import "../../styles/protection-premium.css";
 import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
@@ -4625,7 +4626,20 @@ function ProtectionPage({ model, actions }) {
   if (model) {
     return (
       <BotShieldNativePage heading="Protection">
-        <BotShieldPageShell className="botshield-protection-content">
+        <BotShieldPageShell className="botshield-protection-content botshield-protection-premium">
+          <header className="bp-page-intro">
+            <div className="bp-page-intro-copy">
+              <p>
+                Configure detection modules, enforcement policy, and visitor access
+                for your storefront.
+              </p>
+            </div>
+            <div aria-label="Active protection modules" className="bp-page-intro-badge">
+              <OverviewIcon centered name="shield" />
+              {activeProtections} / {protectionRows.length} modules active
+            </div>
+          </header>
+
         <section className={`botshield-protection-status ${protectionHealthy ? "is-healthy" : "is-attention"}`}>
           <div className="botshield-protection-status-icon"><OverviewIcon name="shield" centered /></div>
           <div>
@@ -4642,7 +4656,7 @@ function ProtectionPage({ model, actions }) {
         <section className="botshield-protection-section">
           <div className="botshield-protection-section-heading"><span>Protection modules</span><h2>Protection modules</h2><p>Configure the protection modules BotShield uses on your storefront.</p></div>
           <div className="botshield-protection-list">
-            {protectionRows.map((row) => <div className="botshield-protection-row" key={row.name}>
+            {protectionRows.map((row) => <div className={`botshield-protection-row${row.active ? " is-active" : ""}`} key={row.name}>
               <div className="botshield-protection-module-icon"><OverviewIcon name={row.icon} centered /></div>
               <div className="botshield-protection-row-content">
                 <div className="botshield-protection-row-title">{row.name}</div>

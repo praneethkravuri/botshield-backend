@@ -1,0 +1,455 @@
+/* BotShield Protection premium redesign — scoped to .botshield-protection-premium only */
+
+.botshield-protection-premium {
+  --bp-navy: #1a2332;
+  --bp-navy-soft: #243b55;
+  --bp-blue: #2c6ecb;
+  --bp-green: #29845a;
+  --bp-green-soft: #e3f1df;
+  --bp-amber: #b98900;
+  --bp-red: #d72c0d;
+  --bp-red-soft: #fff4f0;
+  --bp-surface: #ffffff;
+  --bp-surface-muted: #f4f6f8;
+  --bp-border: #dfe3e8;
+  --bp-ink: #202223;
+  --bp-muted: #6d7175;
+  --bp-enter: 260ms;
+  --bp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes bp-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.botshield-protection-premium > *:not(s-modal):not(ui-save-bar) {
+  animation: bp-enter var(--bp-enter) var(--bp-ease) both;
+}
+.botshield-protection-premium > *:nth-child(1) { animation-delay: 0ms; }
+.botshield-protection-premium > *:nth-child(2) { animation-delay: 35ms; }
+.botshield-protection-premium > *:nth-child(3) { animation-delay: 70ms; }
+.botshield-protection-premium > *:nth-child(4) { animation-delay: 105ms; }
+.botshield-protection-premium > *:nth-child(5) { animation-delay: 140ms; }
+.botshield-protection-premium > *:nth-child(n + 6) { animation-delay: 175ms; }
+
+/* Page intro */
+.botshield-protection-premium .bp-page-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 0 6px;
+}
+.botshield-protection-premium .bp-page-intro-copy p {
+  margin: 0;
+  max-width: 680px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--bp-muted);
+}
+.botshield-protection-premium .bp-page-intro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--bp-border);
+  border-radius: 999px;
+  background: var(--bp-surface);
+  font-size: 12px;
+  color: var(--bp-muted);
+}
+
+/* Security status hero */
+.botshield-protection-premium .botshield-protection-status {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 16px 18px;
+  align-items: start;
+  min-height: 0;
+  padding: 22px 24px;
+  border: 1px solid rgba(41, 132, 90, 0.22);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--bp-navy) 0%, var(--bp-navy-soft) 100%);
+  box-shadow: 0 8px 28px rgba(26, 35, 50, 0.14);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-status.is-attention {
+  border-color: rgba(185, 137, 0, 0.35);
+  background: linear-gradient(135deg, #2a2418 0%, #3a3224 100%);
+}
+.botshield-protection-premium .botshield-protection-status::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--bp-green);
+  border-radius: 16px 0 0 16px;
+}
+.botshield-protection-premium .botshield-protection-status.is-attention::before {
+  background: var(--bp-amber);
+}
+.botshield-protection-premium .botshield-protection-status-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.botshield-protection-premium .botshield-protection-status-icon .botshield-v2-icon {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+}
+.botshield-protection-premium .botshield-protection-status span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.botshield-protection-premium .botshield-protection-status h2 {
+  margin: 4px 0 0;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+.botshield-protection-premium .botshield-protection-status p {
+  margin: 6px 0 0;
+  max-width: 720px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.botshield-protection-premium .botshield-protection-status-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 12px;
+}
+
+/* Sections */
+.botshield-protection-premium .botshield-protection-section {
+  gap: 14px;
+}
+.botshield-protection-premium .botshield-protection-section-heading > span {
+  color: var(--bp-muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.botshield-protection-premium .botshield-protection-section-heading h2 {
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--bp-ink);
+}
+.botshield-protection-premium .botshield-protection-section-heading p {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--bp-muted);
+}
+
+/* Protection modules */
+.botshield-protection-premium .botshield-protection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.botshield-protection-premium .botshield-protection-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(130px, 0.75fr) auto auto;
+  gap: 14px 18px;
+  align-items: start;
+  min-height: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--bp-border);
+  border-radius: 14px;
+  background: var(--bp-surface);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.035);
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  animation: bp-enter var(--bp-enter) var(--bp-ease) both;
+}
+.botshield-protection-premium .botshield-protection-row:nth-child(1) { animation-delay: 20ms; }
+.botshield-protection-premium .botshield-protection-row:nth-child(2) { animation-delay: 45ms; }
+.botshield-protection-premium .botshield-protection-row:nth-child(3) { animation-delay: 70ms; }
+.botshield-protection-premium .botshield-protection-row:nth-child(4) { animation-delay: 95ms; }
+.botshield-protection-premium .botshield-protection-row:hover {
+  border-color: rgba(44, 110, 203, 0.22);
+  background: #fbfcfd;
+  box-shadow: 0 4px 16px rgba(32, 34, 35, 0.06);
+}
+.botshield-protection-premium .botshield-protection-row.is-active {
+  border-color: rgba(41, 132, 90, 0.28);
+  background: linear-gradient(180deg, #f6fbf8 0%, #ffffff 100%);
+}
+.botshield-protection-premium .botshield-protection-row:last-child {
+  border-bottom: 1px solid var(--bp-border);
+}
+.botshield-protection-premium .botshield-protection-module-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(44, 110, 203, 0.14);
+  background: rgba(44, 110, 203, 0.08);
+}
+.botshield-protection-premium .botshield-protection-module-icon .botshield-v2-icon {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+}
+.botshield-protection-premium .botshield-protection-row-title {
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--bp-ink);
+}
+.botshield-protection-premium .botshield-protection-row-copy {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--bp-muted);
+  white-space: normal;
+}
+.botshield-protection-premium .botshield-protection-row-config {
+  padding: 10px 14px;
+  border: 1px solid var(--bp-border);
+  border-radius: 10px;
+  background: var(--bp-surface-muted);
+  border-left: 1px solid var(--bp-border);
+}
+.botshield-protection-premium .botshield-protection-row-config span {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.botshield-protection-premium .botshield-protection-row-config strong {
+  font-size: 13px;
+  white-space: normal;
+  text-overflow: unset;
+}
+.botshield-protection-premium .botshield-protection-row-status {
+  align-self: center;
+  min-height: 0;
+  padding-top: 2px;
+}
+.botshield-protection-premium .botshield-protection-row-status s-badge {
+  opacity: 1;
+  transition: opacity 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-row-action {
+  align-self: center;
+  min-height: 0;
+}
+.botshield-protection-premium .botshield-protection-row-action s-button {
+  width: auto;
+  min-width: 82px;
+  transition: transform 160ms ease;
+}
+.botshield-protection-premium .botshield-protection-row-action s-button:active {
+  transform: scale(0.98);
+}
+
+/* Protection policy */
+.botshield-protection-premium .botshield-protection-policy {
+  border: 1px solid var(--bp-border);
+  border-radius: 14px;
+  background: var(--bp-surface);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.035);
+  overflow: hidden;
+}
+.botshield-protection-premium .botshield-protection-policy-main {
+  padding: 22px 24px;
+  gap: 14px;
+}
+.botshield-protection-premium .botshield-protection-policy-flow > div {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border-color: var(--bp-border);
+  background: var(--bp-surface-muted);
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-policy-flow small {
+  white-space: normal;
+  text-overflow: unset;
+}
+.botshield-protection-premium .botshield-protection-policy-side {
+  padding: 22px 24px;
+  background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
+  border-left: 1px solid var(--bp-border);
+}
+.botshield-protection-premium .botshield-protection-policy-map > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bp-surface-muted);
+  transition: background-color 180ms ease;
+}
+
+/* Visitor access cards */
+.botshield-protection-premium .botshield-protection-access-grid {
+  gap: 16px;
+}
+.botshield-protection-premium .botshield-protection-access-grid article {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 14px 18px;
+  align-items: start;
+  min-height: 0;
+  padding: 20px;
+  border: 1px solid var(--bp-border);
+  border-radius: 14px;
+  background: var(--bp-surface);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.035);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  animation: bp-enter var(--bp-enter) var(--bp-ease) both;
+}
+.botshield-protection-premium .botshield-protection-access-grid article:nth-child(1) {
+  animation-delay: 30ms;
+  border-color: rgba(215, 44, 13, 0.18);
+  background: linear-gradient(180deg, #fff9f7 0%, #ffffff 100%);
+}
+.botshield-protection-premium .botshield-protection-access-grid article:nth-child(2) {
+  animation-delay: 55ms;
+  border-color: rgba(41, 132, 90, 0.2);
+  background: linear-gradient(180deg, #f6fbf8 0%, #ffffff 100%);
+}
+.botshield-protection-premium .botshield-protection-access-grid article:hover {
+  box-shadow: 0 4px 16px rgba(32, 34, 35, 0.06);
+}
+.botshield-protection-premium .botshield-protection-access-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.botshield-protection-premium .botshield-protection-access-grid article:nth-child(1) .botshield-protection-access-icon {
+  border-color: rgba(215, 44, 13, 0.16);
+  background: rgba(215, 44, 13, 0.06);
+}
+.botshield-protection-premium .botshield-protection-access-grid article:nth-child(2) .botshield-protection-access-icon {
+  border-color: rgba(41, 132, 90, 0.18);
+  background: rgba(41, 132, 90, 0.08);
+}
+.botshield-protection-premium .botshield-protection-access-grid h3 {
+  font-size: 15px;
+}
+.botshield-protection-premium .botshield-protection-access-grid p {
+  font-size: 13px;
+  line-height: 1.45;
+}
+.botshield-protection-premium .botshield-protection-access-count strong {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+.botshield-protection-premium .botshield-protection-access-grid article > s-button {
+  width: auto;
+  min-width: 0;
+  justify-self: end;
+  align-self: end;
+}
+
+/* Modal content presentation (not modal mechanics) */
+.botshield-protection-premium .botshield-protection-drawer-section {
+  padding-bottom: 20px;
+  transition: border-color 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-rate-controls,
+.botshield-protection-premium .botshield-protection-signal-list,
+.botshield-protection-premium .botshield-protection-decision-preview,
+.botshield-protection-premium .botshield-protection-drawer-metrics {
+  border-radius: 12px;
+  border-color: var(--bp-border);
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-modal-state {
+  transition: opacity 180ms ease;
+}
+.botshield-protection-premium .botshield-protection-access-summary {
+  padding: 6px 0 2px;
+}
+.botshield-protection-premium .botshield-visitor-access-record {
+  padding: 14px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--bp-border);
+  border-radius: 10px;
+  background: var(--bp-surface-muted);
+  animation: bp-enter 220ms var(--bp-ease) both;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.botshield-protection-premium .botshield-visitor-access-record:last-child {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--bp-border);
+}
+.botshield-protection-premium .botshield-protection-filter-empty {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--bp-surface-muted);
+  animation: bp-enter 220ms var(--bp-ease) both;
+}
+
+@media (max-width: 980px) {
+  .botshield-protection-premium .botshield-protection-row {
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-areas:
+      "icon content"
+      "icon config"
+      "status action";
+    gap: 12px 14px;
+  }
+  .botshield-protection-premium .botshield-protection-module-icon { grid-area: icon; }
+  .botshield-protection-premium .botshield-protection-row-content { grid-area: content; }
+  .botshield-protection-premium .botshield-protection-row-config {
+    grid-area: config;
+    padding-left: 14px;
+    border-left: 0;
+  }
+  .botshield-protection-premium .botshield-protection-row-status { grid-area: status; }
+  .botshield-protection-premium .botshield-protection-row-action {
+    grid-area: action;
+    justify-content: flex-end;
+  }
+  .botshield-protection-premium .botshield-protection-policy {
+    grid-template-columns: 1fr;
+  }
+  .botshield-protection-premium .botshield-protection-policy-side {
+    border-left: 0;
+    border-top: 1px solid var(--bp-border);
+  }
+}
+
+@media (max-width: 760px) {
+  .botshield-protection-premium .botshield-protection-status {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 18px 16px;
+  }
+  .botshield-protection-premium .botshield-protection-status-action {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+  .botshield-protection-premium .botshield-protection-access-grid article {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .botshield-protection-premium .botshield-protection-access-grid article > s-button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botshield-protection-premium > *,
+  .botshield-protection-premium .botshield-protection-row,
+  .botshield-protection-premium .botshield-protection-access-grid article,
+  .botshield-protection-premium .botshield-visitor-access-record,
+  .botshield-protection-premium .botshield-protection-filter-empty,
+  .botshield-protection-premium .botshield-protection-row-action s-button:active {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
