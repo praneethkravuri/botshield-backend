@@ -28,6 +28,8 @@
   --ba-muted: #5c6166;
   --ba-muted-cool: #72787d;
   --ba-workspace-max: min(100%, 1440px);
+  --ba-gutter: 24px;
+  --ba-panel-padding: 24px;
   --ba-radius-panel: 16px;
   --ba-radius-control: 10px;
   --ba-shadow-soft: 0 1px 2px rgba(16, 20, 26, 0.04), 0 6px 20px rgba(16, 20, 26, 0.04);
@@ -80,15 +82,43 @@
   }
 }
 
-/* Intelligence workspace — modern expansive canvas */
+/* Intelligence workspace — canonical Analytics content grid */
+.botshield-analytics-premium,
+.botshield-analytics-premium.botshield-analytics-v2,
+.botshield-analytics-premium.botshield-analytics-v2 > .ba-page-intro,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-controls,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-kpis,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-section-label,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-panel,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-split,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-insight,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-summary {
+  box-sizing: border-box;
+}
+
 .botshield-analytics-premium.botshield-analytics-v2 {
   width: 100%;
   max-width: var(--ba-workspace-max);
+  min-width: 0;
   margin-inline: auto;
   gap: 32px;
   padding-bottom: 56px;
   color: var(--ba-ink);
   background: var(--ba-surface-workspace);
+  overflow-x: clip;
+}
+
+.botshield-analytics-premium.botshield-analytics-v2 > .ba-page-intro,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-controls,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-kpis,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-section-label,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-panel,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-split,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-insight,
+.botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-summary {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Major-section entrance only (direct shell children) */
@@ -114,7 +144,7 @@
   justify-content: space-between;
   gap: 16px 20px;
   margin-bottom: 0;
-  padding: 22px 24px;
+  padding: var(--ba-panel-padding);
   border: 1px solid var(--ba-border-quiet);
   border-radius: var(--ba-radius-panel);
   background: linear-gradient(180deg, #fafbfc 0%, #f6f8fa 100%);
@@ -205,27 +235,35 @@
 
 /* ── Filter control deck — one clean instrument surface ── */
 .botshield-analytics-premium > .botshield-analytics-controls {
+  display: block;
   margin-top: 0;
-  padding: 20px 24px 22px;
+  padding: var(--ba-panel-padding);
   border: 1px solid var(--ba-border-quiet);
-  border-radius: 14px;
+  border-radius: var(--ba-radius-panel);
   background: var(--ba-surface);
   box-shadow: var(--ba-shadow-soft);
 }
 .botshield-analytics-premium .botshield-analytics-filter-row {
   display: grid;
+  flex: none;
   grid-template-columns:
-    minmax(140px, 1fr)
-    minmax(140px, 1fr)
-    minmax(160px, 1.15fr)
-    minmax(260px, 1.55fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1.15fr)
+    minmax(0, 1.55fr)
     auto;
   gap: 14px;
   align-items: end;
   width: 100%;
   min-width: 0;
 }
+.botshield-analytics-premium .botshield-analytics-filter-row > label,
+.botshield-analytics-premium .botshield-analytics-filter-row > .botshield-analytics-toolbar-actions {
+  min-width: 0;
+}
 .botshield-analytics-premium .botshield-analytics-filter-row label {
+  display: grid;
+  gap: 6px;
   color: #5a6168;
   font-size: 11px;
   font-weight: 650;
@@ -235,6 +273,10 @@
 .botshield-analytics-premium .botshield-analytics-search {
   width: 100%;
   min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-toolbar-actions {
+  justify-self: end;
+  align-self: end;
 }
 .botshield-analytics-premium .botshield-analytics-filter-row select,
 .botshield-analytics-premium .botshield-analytics-filter-row input {
@@ -333,16 +375,22 @@
 }
 .botshield-analytics-premium .botshield-analytics-kpi {
   position: relative;
+  min-width: 0;
   min-height: 0;
-  padding: 22px 24px;
+  padding: var(--ba-panel-padding);
   border-right: none;
+  box-sizing: border-box;
   transition: background-color var(--ba-mid) ease;
+}
+.botshield-analytics-premium .botshield-analytics-kpi::before {
+  display: none;
 }
 .botshield-analytics-premium .botshield-analytics-kpi:last-child {
   border-right: 0;
 }
 .botshield-analytics-premium .botshield-analytics-kpi:hover {
   background: rgba(248, 249, 250, 0.9);
+  box-shadow: none;
 }
 .botshield-analytics-premium .botshield-analytics-kpi > span {
   display: flex;
@@ -422,11 +470,14 @@
 
 /* Shared analysis panel frame — light modern surfaces */
 .botshield-analytics-premium .botshield-analytics-panel {
-  padding: 24px 26px;
+  width: 100%;
+  min-width: 0;
+  padding: var(--ba-panel-padding);
   border: 1px solid var(--ba-border-quiet);
   border-radius: var(--ba-radius-panel);
   background: var(--ba-surface);
   box-shadow: var(--ba-shadow-soft);
+  box-sizing: border-box;
   transition:
     border-color var(--ba-mid) ease,
     box-shadow var(--ba-mid) ease;
@@ -575,7 +626,22 @@
 /* Secondary distribution panels — modern sibling modules */
 .botshield-analytics-premium .botshield-analytics-split,
 .botshield-analytics-premium .botshield-analytics-split--primary {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 22px;
+}
+.botshield-analytics-premium .botshield-analytics-split > .botshield-analytics-panel,
+.botshield-analytics-premium .botshield-analytics-split--primary > .botshield-analytics-panel {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.botshield-analytics-premium .botshield-analytics-split--primary > .botshield-analytics-panel:first-child {
+  border-top-width: 1px;
+  border-top-color: var(--ba-border-quiet);
 }
 .botshield-analytics-premium .botshield-analytics-split--primary .botshield-analytics-panel > header {
   margin-bottom: 16px;
@@ -595,6 +661,8 @@
   transition: background-color var(--ba-fast) ease;
 }
 .botshield-analytics-premium .botshield-analytics-ranked-row:hover {
+  margin-inline: 0;
+  padding-inline: 0;
   background: var(--ba-surface-cool);
 }
 .botshield-analytics-premium .botshield-analytics-ranked-copy strong {
@@ -636,15 +704,26 @@
   gap: 14px;
 }
 .botshield-analytics-premium .botshield-analytics-risk-row {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 78px) minmax(0, 1fr) 36px 42px;
+  min-width: 0;
   min-height: 32px;
   gap: 12px;
+  align-items: center;
   font-variant-numeric: tabular-nums;
   color: var(--ba-slate);
   font-size: 13px;
 }
+.botshield-analytics-premium .botshield-analytics-risk-row > b,
+.botshield-analytics-premium .botshield-analytics-risk-row > span:last-child {
+  text-align: right;
+}
 .botshield-analytics-premium .botshield-analytics-risk-row > b {
   color: var(--ba-ink);
   font-weight: 650;
+}
+.botshield-analytics-premium .botshield-analytics-risk-row .botshield-analytics-bar-track {
+  min-width: 0;
 }
 .botshield-analytics-premium .botshield-analytics-risk-dot.is-high {
   background: #b54708;
@@ -866,8 +945,12 @@
   .botshield-analytics-premium .ba-page-intro-actions {
     justify-content: space-between;
   }
+  .botshield-analytics-premium {
+    --ba-gutter: 20px;
+    --ba-panel-padding: 20px;
+  }
   .botshield-analytics-premium > .botshield-analytics-controls {
-    padding: 18px 20px 20px;
+    padding: var(--ba-panel-padding);
   }
   .botshield-analytics-premium .botshield-analytics-filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -879,7 +962,7 @@
     grid-column: 1 / -1;
   }
   .botshield-analytics-premium .botshield-analytics-kpi {
-    padding: 20px;
+    padding: var(--ba-panel-padding);
   }
   .botshield-analytics-premium .botshield-analytics-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -890,6 +973,10 @@
 }
 
 @media (max-width: 640px) {
+  .botshield-analytics-premium {
+    --ba-gutter: 16px;
+    --ba-panel-padding: 16px;
+  }
   .botshield-analytics-premium.botshield-analytics-v2 {
     gap: 24px;
   }
@@ -911,7 +998,7 @@
     grid-template-columns: 1fr;
   }
   .botshield-analytics-premium .botshield-analytics-kpi {
-    padding: 18px 20px;
+    padding: var(--ba-panel-padding);
   }
   .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity-facts {
     grid-template-columns: 1fr;

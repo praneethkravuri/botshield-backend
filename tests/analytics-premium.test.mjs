@@ -16,8 +16,18 @@ test("analytics premium stylesheet is scoped and supports reduced motion", async
   assert.match(css, /--ba-teal:/);
   assert.match(css, /--ba-radius-panel:/);
   assert.match(css, /--ba-workspace-max: min\(100%, 1440px\)/);
+  assert.match(css, /--ba-gutter:/);
+  assert.match(css, /--ba-panel-padding:/);
   assert.match(css, /\.botshield-analytics-premium > \.ba-page-intro[\s\S]*overflow: hidden/);
   assert.match(css, /\.botshield-analytics-premium > \.botshield-analytics-kpis/);
+  assert.match(
+    css,
+    /\.botshield-analytics-premium\.botshield-analytics-v2 > \.botshield-analytics-split[\s\S]*width: 100%/,
+  );
+  assert.match(
+    css,
+    /\.botshield-analytics-split--primary[\s\S]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\)/,
+  );
   assert.doesNotMatch(css, /box-shadow: inset 3px 0 0/);
   assert.match(css, /@keyframes ba-bar-width/);
   assert.match(css, /select:has\(option:checked:not\(\[value="all"\]\)\)/);
