@@ -76,6 +76,7 @@ import { OverviewAnimatedNumber } from "../../lib/overview-motion.jsx";
 import "../../styles/overview-premium.css";
 import "../../styles/protection-premium.css";
 import "../../styles/analytics-premium.css";
+import "../../styles/fraud-orders-premium.css";
 import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
@@ -4126,7 +4127,7 @@ function FraudOrdersPage({ model, actions }) {
       }
     >
       <>
-        <BotShieldPageShell className="botshield-fraud-orders-content">
+        <BotShieldPageShell className="botshield-fraud-orders-content botshield-fraud-orders-premium">
           {renderAccessBanner()}
           {renderErrorBanner()}
 
