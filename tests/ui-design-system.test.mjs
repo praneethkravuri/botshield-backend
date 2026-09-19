@@ -529,7 +529,7 @@ test("supported pages share one stable outer page shell geometry", async () => {
     "botshield-analytics-content botshield-analytics-v2 botshield-analytics-premium",
     "botshield-protection-content botshield-protection-premium",
     "botshield-fraud-orders-content botshield-fraud-orders-premium",
-    "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content",
+    "botshield-overview-content botshield-overview-v2 botshield-settings-hub-content botshield-settings-premium",
   ]) {
     assert.match(adminSource, new RegExp(`<BotShieldPageShell className="${pageClass.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
   }

@@ -1,0 +1,451 @@
+/* BotShield Settings premium — scoped to .botshield-settings-premium only */
+
+.botshield-settings-premium {
+  --settings-ink: #202223;
+  --settings-muted: #6d7175;
+  --settings-muted-cool: #8c9196;
+  --settings-border: #dfe3e8;
+  --settings-border-quiet: #eaeced;
+  --settings-surface: #ffffff;
+  --settings-surface-muted: #f9fafb;
+  --settings-surface-cool: #f4f6f8;
+  --settings-accent: #2c6ecb;
+  --settings-green: #29845a;
+  --settings-green-soft: #f4fbf6;
+  --settings-green-border: #c9e3d0;
+  --settings-amber-soft: #fffaf0;
+  --settings-amber-border: #ead6a5;
+  --settings-red-soft: #fff8f7;
+  --settings-red-border: #f1b8b5;
+  --settings-workspace-max: min(100%, 1440px);
+  --settings-motion-instant: 100ms;
+  --settings-motion-fast: 160ms;
+  --settings-motion-normal: 340ms;
+  --settings-motion-slow: 420ms;
+  --settings-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --settings-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --settings-shadow-soft: 0 1px 2px rgba(16, 20, 26, 0.04), 0 6px 20px rgba(16, 20, 26, 0.04);
+}
+
+@keyframes settings-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes settings-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes settings-section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes settings-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes settings-error-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes settings-loading-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.58;
+  }
+}
+
+/* Supersede shared premium-polish Settings motion */
+.botshield-settings-premium.botshield-settings-hub-content > header,
+.botshield-settings-premium.botshield-settings-hub-content > section,
+.botshield-settings-premium .botshield-settings-hub-panel {
+  animation: none !important;
+}
+
+/* Canonical workspace */
+.botshield-settings-premium.botshield-settings-hub-content {
+  width: 100%;
+  max-width: var(--settings-workspace-max);
+  min-width: 0;
+  margin-inline: auto;
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.botshield-settings-premium.botshield-settings-hub-content > *,
+.botshield-settings-premium .botshield-settings-hub-layout {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Page arrival */
+.botshield-settings-premium .botshield-settings-hub-header {
+  animation: settings-page-enter var(--settings-motion-slow) var(--settings-ease-out) both;
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav {
+  animation: settings-page-enter var(--settings-motion-slow) var(--settings-ease-out) 55ms both;
+}
+
+.botshield-settings-premium .botshield-settings-hub-panel {
+  animation: settings-content-enter var(--settings-motion-slow) var(--settings-ease-out) 110ms both;
+}
+
+/* Operational strip */
+.botshield-settings-premium .botshield-settings-hub-strip-item {
+  transition:
+    background-color var(--settings-motion-fast) var(--settings-ease-standard),
+    border-color var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+/* Left navigation rail */
+.botshield-settings-premium .botshield-settings-hub-nav {
+  border-color: var(--settings-border-quiet);
+  background: var(--settings-surface);
+  box-shadow: var(--settings-shadow-soft);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item {
+  transition:
+    background-color var(--settings-motion-fast) var(--settings-ease-standard),
+    color var(--settings-motion-fast) var(--settings-ease-standard),
+    box-shadow var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item span {
+  display: inline-block;
+  transition: transform var(--settings-motion-fast) var(--settings-ease-out);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item:hover {
+  background: var(--settings-surface-cool);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item:hover span {
+  transform: translateX(2px);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item.is-active {
+  background: rgba(44, 110, 203, 0.07);
+  box-shadow: inset 3px 0 0 var(--settings-accent);
+}
+
+.botshield-settings-premium .botshield-settings-hub-nav-item.is-danger.is-active {
+  background: var(--settings-red-soft);
+  box-shadow: inset 3px 0 0 var(--overview-red, #d82c0d);
+}
+
+/* Section transition — content workspace only */
+.botshield-settings-premium .botshield-settings-hub-panel > .botshield-settings-hub-section,
+.botshield-settings-premium .botshield-settings-hub-panel > section.botshield-settings-hub-section {
+  animation: settings-section-enter 360ms var(--settings-ease-out) both;
+}
+
+.botshield-settings-premium .botshield-settings-hub-panel > s-banner {
+  animation: settings-error-enter 260ms var(--settings-ease-out) both;
+}
+
+/* Section headers */
+.botshield-settings-premium .botshield-settings-hub-section-head .botshield-v2-eyebrow {
+  color: var(--settings-muted-cool);
+  letter-spacing: 0.1em;
+}
+
+.botshield-settings-premium .botshield-settings-hub-section-head h2 {
+  letter-spacing: -0.018em;
+}
+
+.botshield-settings-premium .botshield-settings-hub-section-head p {
+  max-width: 56ch;
+}
+
+/* Surfaces — controlled hierarchy */
+.botshield-settings-premium .botshield-settings-hub-group,
+.botshield-settings-premium .botshield-settings-hub-subgroup {
+  border-color: var(--settings-border-quiet);
+  box-shadow: var(--settings-shadow-soft);
+}
+
+.botshield-settings-premium .botshield-settings-hub-subgroup.is-operational {
+  border-left-color: var(--settings-green);
+}
+
+.botshield-settings-premium .botshield-settings-hub-group.is-privacy {
+  background: #fcfcfd;
+}
+
+.botshield-settings-premium .botshield-settings-hub-delivery-body {
+  border-color: var(--settings-border-quiet);
+  background: var(--settings-surface-muted);
+}
+
+/* Row system */
+.botshield-settings-premium .botshield-settings-hub-row {
+  transition: background-color var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-row:hover {
+  background: var(--settings-surface-muted);
+}
+
+.botshield-settings-premium .botshield-settings-hub-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--settings-border-quiet);
+  border-radius: 10px;
+  background: var(--settings-surface-muted);
+}
+
+.botshield-settings-premium .botshield-settings-hub-row-icon .botshield-v2-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Row entrance — capped stagger within containers */
+.botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-row,
+.botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-danger,
+.botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-plan-card,
+.botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-subscription-panel {
+  animation: settings-row-enter 300ms var(--settings-ease-out) both;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(1),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(1),
+.botshield-settings-premium .botshield-settings-hub-section > .botshield-settings-hub-danger:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(2),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(2),
+.botshield-settings-premium .botshield-settings-hub-section > .botshield-settings-hub-danger:nth-child(3) {
+  animation-delay: 70ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(3),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(3) {
+  animation-delay: 100ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(4),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(4) {
+  animation-delay: 130ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(5),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(5) {
+  animation-delay: 160ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(6),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(6) {
+  animation-delay: 190ms;
+}
+
+.botshield-settings-premium .botshield-settings-hub-group > .botshield-settings-hub-row:nth-child(n + 7),
+.botshield-settings-premium .botshield-settings-hub-subgroup > .botshield-settings-hub-row:nth-child(n + 7) {
+  animation-delay: 190ms;
+}
+
+/* Status pills */
+.botshield-settings-premium .botshield-settings-hub-status-pill {
+  transition:
+    background-color 180ms var(--settings-ease-standard),
+    border-color 180ms var(--settings-ease-standard),
+    color 180ms var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-status-pill.is-healthy {
+  border-color: var(--settings-green-border);
+  background: var(--settings-green-soft);
+}
+
+.botshield-settings-premium .botshield-settings-hub-status-pill.is-attention {
+  border-color: var(--settings-amber-border);
+  background: var(--settings-amber-soft);
+}
+
+/* Values / numerics */
+.botshield-settings-premium .botshield-settings-hub-value,
+.botshield-settings-premium .botshield-settings-hub-plan-price,
+.botshield-settings-premium .botshield-settings-hub-subscription-item .botshield-settings-hub-value,
+.botshield-settings-premium .botshield-settings-hub-subscription-value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Billing anchor */
+.botshield-settings-premium .botshield-settings-hub-plan-card {
+  transition:
+    border-color var(--settings-motion-fast) var(--settings-ease-standard),
+    box-shadow var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-plan-card--current {
+  box-shadow:
+    0 0 0 1px rgba(41, 132, 90, 0.1),
+    var(--settings-shadow-soft);
+}
+
+.botshield-settings-premium .botshield-settings-hub-plan-price-row {
+  align-items: baseline;
+}
+
+.botshield-settings-premium .botshield-settings-hub-subscription-panel {
+  border-color: var(--settings-border-quiet);
+  background: var(--settings-surface-muted);
+}
+
+.botshield-settings-premium .botshield-settings-hub-subscription-grid {
+  gap: 16px 20px;
+}
+
+/* Inputs */
+.botshield-settings-premium .botshield-settings-hub-field s-text-field,
+.botshield-settings-premium .botshield-settings-hub-row-control s-text-field {
+  transition:
+    box-shadow var(--settings-motion-fast) var(--settings-ease-standard),
+    border-color var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-field s-text-field:focus-within,
+.botshield-settings-premium .botshield-settings-hub-row-control s-text-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(44, 110, 203, 0.16);
+}
+
+/* Links / legal actions */
+.botshield-settings-premium .botshield-settings-hub-legal-link {
+  transition:
+    background-color var(--settings-motion-fast) var(--settings-ease-standard),
+    border-color var(--settings-motion-fast) var(--settings-ease-standard),
+    color var(--settings-motion-fast) var(--settings-ease-standard),
+    transform var(--settings-motion-fast) var(--settings-ease-out);
+}
+
+.botshield-settings-premium .botshield-settings-hub-legal-link:hover {
+  transform: translateX(1px);
+}
+
+/* Danger zone */
+.botshield-settings-premium .botshield-settings-hub-danger {
+  transition:
+    background-color var(--settings-motion-fast) var(--settings-ease-standard),
+    border-color var(--settings-motion-fast) var(--settings-ease-standard);
+}
+
+.botshield-settings-premium .botshield-settings-hub-danger:hover {
+  border-color: #e8a8a5;
+  background: #fff5f4;
+}
+
+.botshield-settings-premium .botshield-settings-hub-danger-icon .botshield-v2-icon {
+  border-color: var(--settings-red-border);
+}
+
+/* Diagnostics surfaces */
+.botshield-settings-premium .botshield-settings-hub-row.is-diagnostic {
+  border-left-color: var(--settings-ink);
+}
+
+.botshield-settings-premium .botshield-settings-hub-diagnostic-results,
+.botshield-settings-premium .botshield-settings-hub-simulation-results {
+  animation: settings-row-enter 280ms var(--settings-ease-out) 80ms both;
+}
+
+/* Real loading feedback — Polaris buttons only */
+.botshield-settings-premium .botshield-settings-hub-panel s-button[loading] {
+  animation: settings-loading-pulse 750ms ease-in-out infinite;
+}
+
+/* Responsive motion safety */
+@media (max-width: 980px) {
+  .botshield-settings-premium .botshield-settings-hub-nav {
+    animation-delay: 0ms;
+  }
+}
+
+@media (max-width: 640px) {
+  .botshield-settings-premium .botshield-settings-hub-nav-item:hover span {
+    transform: none;
+  }
+
+  .botshield-settings-premium .botshield-settings-hub-legal-link:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .botshield-settings-premium .botshield-settings-hub-header,
+  .botshield-settings-premium .botshield-settings-hub-nav,
+  .botshield-settings-premium .botshield-settings-hub-panel,
+  .botshield-settings-premium .botshield-settings-hub-panel > .botshield-settings-hub-section,
+  .botshield-settings-premium .botshield-settings-hub-panel > section.botshield-settings-hub-section,
+  .botshield-settings-premium .botshield-settings-hub-panel > s-banner,
+  .botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-row,
+  .botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-danger,
+  .botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-plan-card,
+  .botshield-settings-premium .botshield-settings-hub-section .botshield-settings-hub-subscription-panel,
+  .botshield-settings-premium .botshield-settings-hub-diagnostic-results,
+  .botshield-settings-premium .botshield-settings-hub-simulation-results,
+  .botshield-settings-premium .botshield-settings-hub-panel s-button[loading] {
+    animation: none !important;
+  }
+
+  .botshield-settings-premium .botshield-settings-hub-strip-item,
+  .botshield-settings-premium .botshield-settings-hub-nav-item,
+  .botshield-settings-premium .botshield-settings-hub-nav-item span,
+  .botshield-settings-premium .botshield-settings-hub-row,
+  .botshield-settings-premium .botshield-settings-hub-status-pill,
+  .botshield-settings-premium .botshield-settings-hub-plan-card,
+  .botshield-settings-premium .botshield-settings-hub-legal-link,
+  .botshield-settings-premium .botshield-settings-hub-danger,
+  .botshield-settings-premium .botshield-settings-hub-field s-text-field,
+  .botshield-settings-premium .botshield-settings-hub-row-control s-text-field {
+    transition: none !important;
+  }
+
+  .botshield-settings-premium .botshield-settings-hub-nav-item:hover span,
+  .botshield-settings-premium .botshield-settings-hub-legal-link:hover {
+    transform: none !important;
+  }
+}

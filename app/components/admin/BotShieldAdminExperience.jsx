@@ -77,6 +77,7 @@ import "../../styles/overview-premium.css";
 import "../../styles/protection-premium.css";
 import "../../styles/analytics-premium.css";
 import "../../styles/fraud-orders-premium.css";
+import "../../styles/settings-premium.css";
 import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
@@ -7268,7 +7269,7 @@ function SettingsPage({ model, actions }) {
 
   return (
     <BotShieldNativePage heading="Settings">
-      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content">
+      <BotShieldPageShell className="botshield-overview-content botshield-overview-v2 botshield-settings-hub-content botshield-settings-premium">
         <header className="botshield-overview-header botshield-settings-hub-header">
           <div
             aria-label="BotShield operational status"
