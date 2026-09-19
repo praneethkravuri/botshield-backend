@@ -19,15 +19,51 @@
   --fo-radius-panel: 16px;
   --fo-radius-control: 10px;
   --fo-shadow-soft: 0 1px 2px rgba(16, 20, 26, 0.04), 0 6px 20px rgba(16, 20, 26, 0.04);
-  --fo-motion-fast: 140ms;
-  --fo-motion-normal: 280ms;
-  --fo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fo-motion-instant: 100ms;
+  --fo-motion-fast: 160ms;
+  --fo-motion-normal: 320ms;
+  --fo-motion-slow: 440ms;
+  --fo-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --fo-ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
-@keyframes fo-enter {
+@keyframes fo-page-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fo-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fo-snapshot-value-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fo-empty-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -41,6 +77,16 @@
   }
   100% {
     background-position: -100% 0;
+  }
+}
+
+@keyframes fo-refresh-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
   }
 }
 
@@ -63,19 +109,19 @@
 }
 
 .botshield-fraud-orders-premium.botshield-fraud-orders-content > *:not(s-modal):not(ui-save-bar) {
-  animation: fo-enter var(--fo-motion-normal) var(--fo-ease) both;
+  animation: fo-page-enter var(--fo-motion-slow) var(--fo-ease-out) both;
 }
 .botshield-fraud-orders-premium.botshield-fraud-orders-content > *:nth-child(1) {
   animation-delay: 0ms;
 }
 .botshield-fraud-orders-premium.botshield-fraud-orders-content > *:nth-child(2) {
-  animation-delay: 40ms;
+  animation-delay: 65ms;
 }
 .botshield-fraud-orders-premium.botshield-fraud-orders-content > *:nth-child(3) {
-  animation-delay: 80ms;
+  animation-delay: 130ms;
 }
 .botshield-fraud-orders-premium.botshield-fraud-orders-content > *:nth-child(n + 4) {
-  animation-delay: 120ms;
+  animation-delay: 195ms;
 }
 
 /* Review snapshot — calm metric strip */
@@ -89,15 +135,40 @@
 .botshield-fraud-orders-premium .botshield-fraud-snapshot-item {
   padding: 16px var(--fo-panel-padding);
   border-right: 1px solid var(--fo-border-quiet);
+  animation: none !important;
 }
 .botshield-fraud-orders-premium .botshield-fraud-snapshot-item:last-child {
   border-right: 0;
 }
 .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive {
-  transition: background-color var(--fo-motion-fast) ease;
+  transition:
+    transform var(--fo-motion-fast) var(--fo-ease-out),
+    background-color var(--fo-motion-fast) var(--fo-ease-standard),
+    box-shadow var(--fo-motion-fast) var(--fo-ease-standard);
 }
 .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive:hover {
+  transform: translateY(-2px);
   background: var(--fo-surface-cool);
+  box-shadow: 0 4px 14px rgba(16, 20, 26, 0.07);
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive:active {
+  transform: translateY(0);
+  transition-duration: var(--fo-motion-instant);
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item .botshield-fraud-snapshot-value {
+  animation: fo-snapshot-value-enter var(--fo-motion-normal) var(--fo-ease-out) both;
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item:nth-child(1) .botshield-fraud-snapshot-value {
+  animation-delay: 200ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item:nth-child(2) .botshield-fraud-snapshot-value {
+  animation-delay: 240ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item:nth-child(3) .botshield-fraud-snapshot-value {
+  animation-delay: 280ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-snapshot-item:nth-child(4) .botshield-fraud-snapshot-value {
+  animation-delay: 320ms;
 }
 .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-selected {
   background: var(--fo-surface-muted);
@@ -175,9 +246,18 @@
   font-size: 13px;
   font-weight: 600;
   transition:
-    color var(--fo-motion-fast) ease,
-    background-color var(--fo-motion-fast) ease,
-    box-shadow var(--fo-motion-fast) ease;
+    color var(--fo-motion-fast) var(--fo-ease-standard),
+    background-color var(--fo-motion-fast) var(--fo-ease-standard),
+    border-color var(--fo-motion-fast) var(--fo-ease-standard),
+    box-shadow var(--fo-motion-fast) var(--fo-ease-standard);
+}
+.botshield-fraud-orders-premium .botshield-fraud-search-wrap s-search-field {
+  transition:
+    box-shadow var(--fo-motion-fast) var(--fo-ease-standard),
+    border-color var(--fo-motion-fast) var(--fo-ease-standard);
+}
+.botshield-fraud-orders-premium .botshield-fraud-search-wrap s-search-field:focus-within {
+  box-shadow: 0 0 0 2px rgba(44, 110, 203, 0.18);
 }
 .botshield-fraud-orders-premium .botshield-fraud-filter-group button.is-active {
   background: var(--fo-ink);
@@ -197,6 +277,7 @@
   min-width: 0;
   overflow-x: auto;
   scrollbar-gutter: stable;
+  transition: opacity 220ms var(--fo-ease-standard);
 }
 .botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-header {
   color: var(--fo-muted);
@@ -205,11 +286,57 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-row {
-  transition: background-color var(--fo-motion-fast) ease;
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap:has(s-table[loading]) {
+  opacity: 0.88;
 }
-.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-row:hover {
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row {
+  animation: fo-row-enter 300ms var(--fo-ease-out) both;
+  transition:
+    background-color var(--fo-motion-fast) var(--fo-ease-standard),
+    box-shadow var(--fo-motion-fast) var(--fo-ease-standard);
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(1) {
+  animation-delay: 0ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(2) {
+  animation-delay: 35ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(3) {
+  animation-delay: 70ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(4) {
+  animation-delay: 105ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(5) {
+  animation-delay: 140ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(6) {
+  animation-delay: 175ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(7) {
+  animation-delay: 210ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(8) {
+  animation-delay: 245ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:nth-child(n + 9) {
+  animation-delay: 245ms;
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row:hover {
   background: var(--fo-surface-muted);
+}
+.botshield-fraud-orders-premium
+  .botshield-fraud-table-wrap
+  s-table-body
+  > s-table-row:hover
+  > s-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--fo-blue);
+}
+.botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row s-badge {
+  transition:
+    background-color 180ms var(--fo-ease-standard),
+    color 180ms var(--fo-ease-standard),
+    border-color 180ms var(--fo-ease-standard);
 }
 .botshield-fraud-orders-premium .botshield-fraud-table-order {
   max-width: 100%;
@@ -218,7 +345,16 @@
   white-space: nowrap;
   font-size: 13px;
   font-weight: 650;
-  transition: color var(--fo-motion-fast) ease;
+  transition:
+    color var(--fo-motion-fast) var(--fo-ease-standard),
+    transform var(--fo-motion-fast) var(--fo-ease-out);
+}
+.botshield-fraud-orders-premium
+  .botshield-fraud-table-wrap
+  s-table-body
+  > s-table-row:hover
+  .botshield-fraud-table-order {
+  transform: translateX(2px);
 }
 .botshield-fraud-orders-premium .botshield-fraud-table-value {
   display: inline-block;
@@ -235,12 +371,22 @@
   font-size: 13px;
   font-weight: 650;
   transition:
-    color var(--fo-motion-fast) ease,
-    background-color var(--fo-motion-fast) ease;
+    color var(--fo-motion-fast) var(--fo-ease-standard),
+    background-color var(--fo-motion-fast) var(--fo-ease-standard),
+    transform var(--fo-motion-fast) var(--fo-ease-out);
 }
 .botshield-fraud-orders-premium .botshield-fraud-review-link:hover {
   background: rgba(44, 110, 203, 0.08);
+  transform: translateX(2px);
   text-decoration: none;
+}
+.botshield-fraud-orders-premium .botshield-fraud-review-link:active {
+  transform: translateX(1px);
+  transition-duration: var(--fo-motion-instant);
+}
+.botshield-fraud-orders-premium .botshield-fraud-review-link:focus-visible {
+  outline: 2px solid var(--fo-blue);
+  outline-offset: 2px;
 }
 
 /* Pending risk — deliberate uncertainty, not error */
@@ -262,10 +408,14 @@
   background: transparent;
 }
 .botshield-fraud-orders-premium .botshield-fraud-queue-skeleton-row span {
-  animation: fo-skeleton 1200ms ease-in-out infinite;
+  animation: fo-skeleton 1300ms ease-in-out infinite;
 }
 .botshield-fraud-orders-premium .botshield-fraud-queue-empty {
   padding: 28px var(--fo-panel-padding);
+  animation: fo-empty-enter 300ms var(--fo-ease-out) both;
+}
+s-page:has(.botshield-fraud-orders-premium) s-button[disabled][slot="secondary-actions"] {
+  animation: fo-refresh-pulse 750ms ease-in-out infinite;
 }
 .botshield-fraud-orders-premium .botshield-fraud-queue-empty h3 {
   font-size: 15px;
@@ -334,15 +484,30 @@
 
 @media (prefers-reduced-motion: reduce) {
   .botshield-fraud-orders-premium.botshield-fraud-orders-content > *,
-  .botshield-fraud-orders-premium .botshield-fraud-queue-skeleton-row span {
+  .botshield-fraud-orders-premium.botshield-fraud-orders-content > s-banner,
+  .botshield-fraud-orders-premium .botshield-fraud-snapshot-item .botshield-fraud-snapshot-value,
+  .botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row,
+  .botshield-fraud-orders-premium .botshield-fraud-queue-empty,
+  .botshield-fraud-orders-premium .botshield-fraud-queue-skeleton-row span,
+  s-page:has(.botshield-fraud-orders-premium) s-button[disabled][slot="secondary-actions"] {
     animation: none !important;
   }
   .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive,
   .botshield-fraud-orders-premium .botshield-fraud-filter-group button,
-  .botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-row,
+  .botshield-fraud-orders-premium .botshield-fraud-search-wrap s-search-field,
+  .botshield-fraud-orders-premium .botshield-fraud-table-wrap,
+  .botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row,
+  .botshield-fraud-orders-premium .botshield-fraud-table-wrap s-table-body > s-table-row s-badge,
   .botshield-fraud-orders-premium .botshield-fraud-table-order,
   .botshield-fraud-orders-premium .botshield-fraud-review-link,
   .botshield-native-modal-body.botshield-fraud-setup-modal .botshield-fraud-setup-progress-bar span {
     transition: none !important;
+  }
+  .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive,
+  .botshield-fraud-orders-premium .botshield-fraud-snapshot-item.is-interactive:hover,
+  .botshield-fraud-orders-premium .botshield-fraud-table-order,
+  .botshield-fraud-orders-premium .botshield-fraud-review-link,
+  .botshield-fraud-orders-premium .botshield-fraud-review-link:hover {
+    transform: none !important;
   }
 }
