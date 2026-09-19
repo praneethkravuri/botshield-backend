@@ -29,6 +29,19 @@ test("analytics premium stylesheet is scoped and supports reduced motion", async
     /\.botshield-analytics-split--primary[\s\S]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\)/,
   );
   assert.doesNotMatch(css, /box-shadow: inset 3px 0 0/);
+  assert.match(
+    css,
+    /\.botshield-analytics-compact-ranking > div[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto auto/,
+  );
+  assert.match(
+    css,
+    /\.botshield-analytics-compact-ranking \.botshield-analytics-bar-track[\s\S]*grid-column: 1 \/ -1/,
+  );
+  assert.match(css, /\.botshield-analytics-compact-ranking[\s\S]*max-width: none/);
+  assert.match(css, /\.botshield-analytics-table-wrap[\s\S]*overflow-x: auto/);
+  assert.match(css, /\.botshield-analytics-ranked-row[\s\S]*minmax\(0,/);
+  assert.match(css, /\.botshield-analytics-risk-row[\s\S]*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(css, /\.botshield-analytics-ranked-row:hover[\s\S]*margin-inline: -/);
   assert.match(css, /@keyframes ba-bar-width/);
   assert.match(css, /select:has\(option:checked:not\(\[value="all"\]\)\)/);
   assert.match(css, /\.ba-event-explorer-panel/);

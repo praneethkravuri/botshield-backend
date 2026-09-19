@@ -656,9 +656,33 @@
   gap: 16px;
 }
 .botshield-analytics-premium .botshield-analytics-ranked-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.35fr);
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
   padding: 6px 0;
   border-radius: 8px;
   transition: background-color var(--ba-fast) ease;
+}
+.botshield-analytics-premium .botshield-analytics-ranked-copy,
+.botshield-analytics-premium .botshield-analytics-ranked-measure {
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-ranked-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.botshield-analytics-premium .botshield-analytics-ranked-measure {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-ranked-measure > span {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .botshield-analytics-premium .botshield-analytics-ranked-row:hover {
   margin-inline: 0;
@@ -725,6 +749,11 @@
 .botshield-analytics-premium .botshield-analytics-risk-row .botshield-analytics-bar-track {
   min-width: 0;
 }
+.botshield-analytics-premium .botshield-analytics-risk-total {
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ba-border-quiet);
+}
 .botshield-analytics-premium .botshield-analytics-risk-dot.is-high {
   background: #b54708;
 }
@@ -789,10 +818,15 @@
 }
 
 .botshield-analytics-premium .botshield-analytics-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--ba-border-quiet);
   border-radius: 12px;
   background: var(--ba-surface);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
 }
 .botshield-analytics-premium .botshield-analytics-table {
   min-width: 0;
@@ -860,6 +894,8 @@
   transform: translateY(1px);
 }
 .botshield-analytics-premium .botshield-analytics-pagination {
+  min-width: 0;
+  flex-wrap: wrap;
   border-top: 1px solid var(--ba-border-quiet);
   color: var(--ba-muted-cool);
 }
@@ -903,22 +939,160 @@
 
 /* Insight + summary — tertiary */
 .botshield-analytics-premium .botshield-analytics-insight {
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--ba-border-quiet);
   border-left: 3px solid rgba(74, 102, 122, 0.45);
   border-radius: 6px 14px 14px 6px;
   background: var(--ba-surface-muted);
   box-shadow: none;
+  box-sizing: border-box;
 }
 .botshield-analytics-premium .botshield-analytics-summary {
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--ba-border-quiet);
   background: var(--ba-surface-muted);
   border-radius: 14px;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
-/* Compact ranking overflow */
-.botshield-analytics-premium .botshield-analytics-compact-ranking span {
+/* Path / network compact ranking — stable 3-row hierarchy */
+.botshield-analytics-premium .botshield-analytics-compact-ranking {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: none;
   min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto;
+  gap: 8px 12px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking > div > span:not(.botshield-analytics-bar-track) {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ba-ink);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking b {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  color: var(--ba-ink);
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  text-align: right;
+  white-space: nowrap;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking small {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  min-width: 0;
+  max-width: 11rem;
+  color: var(--ba-muted-cool);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  text-align: right;
+  white-space: nowrap;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking .botshield-analytics-bar-track {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-compact-ranking em {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  margin: 0;
+  color: var(--ba-muted-cool);
+  font-size: 12px;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+  text-align: left;
+}
+
+/* Signal combinations */
+.botshield-analytics-premium .botshield-analytics-combinations {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-combination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 20px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ba-border-quiet);
+}
+.botshield-analytics-premium .botshield-analytics-combination:last-child {
+  border-bottom: 0;
+}
+.botshield-analytics-premium .botshield-analytics-combination-signals {
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-combination dl {
+  flex-shrink: 0;
+  gap: 16px;
+  margin: 0;
+}
+
+/* Detection outcomes rate cell */
+.botshield-analytics-premium .botshield-analytics-rate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+.botshield-analytics-premium .botshield-analytics-rate strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.botshield-analytics-premium .botshield-analytics-rate .botshield-analytics-bar-track {
+  min-width: 0;
+}
+
+/* Visitor intelligence table */
+.botshield-analytics-premium .botshield-analytics-visitor-table th,
+.botshield-analytics-premium .botshield-analytics-visitor-table td {
+  min-width: 0;
+}
+.botshield-analytics-premium .botshield-analytics-visitor-table th:nth-child(3),
+.botshield-analytics-premium .botshield-analytics-visitor-table td:nth-child(3) {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.botshield-analytics-premium .botshield-analytics-visitor-id {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 /* Refresh */
@@ -970,6 +1144,22 @@
   .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .botshield-analytics-premium .botshield-analytics-ranked-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .botshield-analytics-premium .botshield-analytics-ranked-measure > span {
+    text-align: left;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking small {
+    max-width: 9rem;
+  }
+  .botshield-analytics-premium .botshield-analytics-combination {
+    grid-template-columns: 1fr;
+  }
+  .botshield-analytics-premium .botshield-analytics-combination dl {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1006,6 +1196,29 @@
   }
   .botshield-analytics-premium .ba-primary-chart .botshield-analytics-histogram {
     height: 104px;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto;
+    gap: 6px 10px;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking b {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking small {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    max-width: none;
+    text-align: left;
+    white-space: normal;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking .botshield-analytics-bar-track {
+    grid-row: 3;
+  }
+  .botshield-analytics-premium .botshield-analytics-compact-ranking em {
+    grid-row: 4;
   }
 }
 
