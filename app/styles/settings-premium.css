@@ -92,10 +92,9 @@
   }
 }
 
-/* Supersede shared premium-polish Settings motion */
+/* Supersede shared premium-polish Settings motion (panel uses settings-content-enter below) */
 .botshield-settings-premium.botshield-settings-hub-content > header,
-.botshield-settings-premium.botshield-settings-hub-content > section,
-.botshield-settings-premium .botshield-settings-hub-panel {
+.botshield-settings-premium.botshield-settings-hub-content > section {
   animation: none !important;
 }
 
