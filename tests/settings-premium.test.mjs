@@ -31,6 +31,14 @@ test("settings premium stylesheet is scoped with motion and reduced-motion suppo
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /@media \(max-width: 980px\)/);
   assert.match(css, /@media \(max-width: 640px\)/);
+  assert.match(
+    css,
+    /\.botshield-settings-hub-nav-item \.botshield-v2-icon[\s\S]*display: inline-flex[\s\S]*align-items: center[\s\S]*justify-content: center/,
+  );
+  assert.match(
+    css,
+    /\.botshield-settings-hub-nav-item:hover > span:not\(\.botshield-v2-icon\)/,
+  );
   assert.doesNotMatch(css, /\.botshield-overview-premium/);
   assert.doesNotMatch(css, /\.botshield-analytics-premium/);
   assert.doesNotMatch(css, /\.botshield-fraud-orders-premium/);
