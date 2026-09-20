@@ -147,7 +147,7 @@ test("value page UI includes required functional sections", async () => {
 
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Threats stopped/);
-  assert.match(page, /Protection &amp; value trend/);
+  assert.match(page, /Protection activity trend/);
   assert.match(page, /Value drivers/);
   assert.match(page, /Protection economics/);
   assert.match(page, /Value outlook/);
@@ -155,10 +155,10 @@ test("value page UI includes required functional sections", async () => {
   assert.match(page, /How calculations work/);
   assert.match(page, /Your value model/);
   assert.match(page, /botshield-value-premium/);
-  assert.match(page, /className="[^"]*\bbv-hero\b/);
+  assert.match(page, /className="[^"]*\bbv-executive\b/);
   assert.match(page, /className="[^"]*\bbv-economics-flow\b/);
   assert.match(page, /className="[^"]*\bbv-chart\b/);
-  assert.match(page, /className="[^"]*\bbv-projection-grid\b/);
+  assert.match(page, /className="[^"]*\bbv-outlook-stack\b/);
   assert.match(page, /className="[^"]*\bbv-disclosure\b/);
   assert.match(page, /Set assumptions/);
   assert.match(page, /Protection evidence/);

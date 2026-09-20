@@ -14,7 +14,7 @@ test("value premium root and workspace geometry are scoped", async () => {
 
   assert.match(page, /botshield-value-premium/);
   assert.match(css, /\.botshield-value-premium/);
-  assert.match(css, /--bv-workspace-max: 1440px/);
+  assert.match(css, /--bv-workspace-max: 1360px/);
   assert.match(css, /max-width: min\(100%, var\(--bv-workspace-max\)\)/);
   assert.match(css, /margin-inline: auto/);
   assert.match(page, /value-page\.css/);
@@ -35,13 +35,14 @@ test("value premium dashboard grids and surface system exist", async () => {
 
   assert.match(page, /bv-dashboard-analytics/);
   assert.match(page, /bv-dashboard-evidence/);
-  assert.match(page, /bv-surface-major/);
+  assert.match(page, /bv-panel/);
+  assert.match(page, /bv-executive/);
   assert.match(css, /\.bv-dashboard-analytics/);
   assert.match(css, /grid-template-columns: minmax\(0, 2fr\) minmax\(0, 1fr\)/);
   assert.match(css, /\.bv-dashboard-evidence/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(css, /--bv-radius-major:/);
-  assert.match(css, /--bv-radius-card:/);
+  assert.match(css, /--bv-border: #b8bcc0/);
+  assert.match(css, /--bv-ink: #121314/);
 });
 
 test("value premium sections and terminology replace legacy marketing blocks", async () => {
@@ -52,7 +53,7 @@ test("value premium sections and terminology replace legacy marketing blocks", a
 
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Protection economics/);
-  assert.match(page, /Protection &amp; value trend/);
+  assert.match(page, /Protection activity trend/);
   assert.match(page, /Value drivers/);
   assert.match(page, /Protection evidence/);
   assert.match(page, /Value outlook/);
@@ -122,8 +123,9 @@ test("value premium economics flow keeps four desktop steps", async () => {
   assert.match(page, /Protection interventions/);
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Estimated net value/);
-  assert.match(page, /bv-flow-step-meta/);
+  assert.match(page, /bv-flow-step-badge/);
   assert.match(css, /\.bv-economics-flow[\s\S]*flex-wrap: nowrap/);
+  assert.match(css, /\.bv-chart-zero-plot/);
 });
 
 test("value premium motion and reduced-motion coverage exist", async () => {
@@ -138,9 +140,7 @@ test("value premium motion and reduced-motion coverage exist", async () => {
 
   assert.match(page, /useAnimatedNumber/);
   assert.match(page, /prefersReducedMotion/);
-  assert.match(css, /@keyframes bv-page-enter/);
-  assert.match(css, /@keyframes bv-flow-reveal/);
-  assert.match(css, /@keyframes bv-chart-draw/);
+  assert.match(css, /@keyframes bv-enter/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /animation: none !important/);
 });
@@ -153,8 +153,6 @@ test("value premium responsive breakpoints and icon geometry exist", async () =>
 
   assert.match(css, /\.bv-icon/);
   assert.match(css, /display: inline-flex/);
-  assert.match(css, /@media \(max-width: 1200px\)/);
-  assert.match(css, /@media \(max-width: 1100px\)/);
   assert.match(css, /@media \(max-width: 980px\)/);
   assert.match(css, /@media \(max-width: 768px\)/);
   assert.match(css, /@media \(max-width: 640px\)/);
@@ -166,7 +164,6 @@ test("value premium preserves truthful economics semantics", async () => {
     "utf8",
   );
 
-  assert.match(page, /costPerStoppedThreat == null/);
   assert.match(page, /valueToCostRatio == null/);
   assert.match(page, /estimatedValueProtected == null/);
   assert.match(page, /retentionMessage/);

@@ -70,6 +70,6 @@ test("value page remains untouched by premium polish pass", async () => {
   );
 
   assert.match(valuePage, /value-page\.css/);
-  assert.match(valuePage, /bv-hero/);
+  assert.match(valuePage, /bv-executive/);
   assert.doesNotMatch(valuePage, /botshield-premium-polish/);
 });
