@@ -11,7 +11,6 @@ import {
   BotShieldStack,
 } from "../design-system/BotShieldHydrationPolaris.jsx";
 import {
-  BotShieldActionButton,
   BotShieldBanner,
   BotShieldLoadingState,
   BotShieldNativeModal,
@@ -54,9 +53,9 @@ const CATEGORY_ICON_MAP = {
   uncategorized: "info",
 };
 
-function ValueIcon({ name }) {
+function ValueIcon({ name, tone = "neutral" }) {
   return (
-    <span className="bv-icon" aria-hidden="true">
+    <span className={`bv-icon bv-icon-${tone}`} aria-hidden="true">
       <BotShieldIcon
         type={VALUE_ICONS[name] || VALUE_ICONS.shield}
         size="small"
@@ -133,12 +132,15 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
     return Math.max(1, ...trend.map((bucket) => bucket.blocked || 0));
   }, [assumptionsConfigured, trend]);
 
-  const activeDays = trend.filter(
+  const hasPlotValues = trend.some(
     (bucket) =>
       bucket.blocked > 0 ||
       bucket.challenged > 0 ||
       (assumptionsConfigured && (bucket.estimatedValueProtected || 0) > 0),
-  ).length;
+  );
+
+  const density =
+    trend.length <= 7 ? "sparse" : trend.length <= 31 ? "medium" : "dense";
 
   if (!trend.length) {
     return (
@@ -150,6 +152,32 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
         <p>
           Protection trends appear when BotShield records blocked or challenged
           storefront activity in this period.
+        </p>
+      </div>
+    );
+  }
+
+  if (!hasPlotValues) {
+    return (
+      <div className="bv-chart-wrap bv-chart-wrap-zero">
+        <div className="bv-chart-legend" aria-label="Chart legend">
+          <span>
+            <i className="is-blocked" aria-hidden="true" />
+            Threats stopped
+          </span>
+        </div>
+        <div className="bv-chart-zero-plot" role="img" aria-label="Zero intervention activity chart">
+          <div className="bv-chart-zero-grid" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="bv-chart-zero-baseline" aria-hidden="true" />
+        </div>
+        <p className="bv-chart-zero-copy">
+          No blocked or challenged activity in this period. Detected suspicious
+          events are summarized in Protection evidence — they are not counted as
+          stopped threats.
         </p>
       </div>
     );
@@ -180,8 +208,8 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
         <div
           className="bv-chart"
           role="img"
-          aria-label={`Protection and value trend with ${activeDays} active periods`}
-          data-density={activeDays <= 3 ? "sparse" : activeDays <= 12 ? "medium" : "dense"}
+          aria-label={`Protection and value trend across ${trend.length} periods`}
+          data-density={density}
         >
           <div className="bv-chart-scale" aria-hidden="true">
             <span>
@@ -278,8 +306,10 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
 function ValueDrivers({ categories, currency, configured, hasInterventions }) {
   if (!hasInterventions) {
     return (
-      <div className="bv-inline-empty">
-        <ValueIcon name="shield" />
+      <div className="bv-panel-empty">
+        <span className="bv-panel-empty-icon">
+          <ValueIcon name="shield" tone="observed" />
+        </span>
         <div>
           <strong>No intervention-based value drivers yet</strong>
           <p>
@@ -293,8 +323,10 @@ function ValueDrivers({ categories, currency, configured, hasInterventions }) {
 
   if (!categories.length) {
     return (
-      <div className="bv-inline-empty">
-        <ValueIcon name="info" />
+      <div className="bv-panel-empty">
+        <span className="bv-panel-empty-icon">
+          <ValueIcon name="info" />
+        </span>
         <div>
           <strong>No categorized interventions yet</strong>
           <p>
@@ -442,40 +474,71 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
   );
 }
 
+const VALUE_MODEL_PARAMS = [
+  {
+    id: "blocked",
+    label: "Value per blocked event",
+    icon: "block",
+    format: (assumptions) =>
+      formatCurrency(assumptions.estimatedValuePerBlockedEvent || 0, "USD"),
+    help: "Business value assigned to each blocked threat.",
+  },
+  {
+    id: "challenge",
+    label: "Value per challenge",
+    icon: "shield",
+    format: (assumptions) =>
+      formatCurrency(assumptions.estimatedValuePerChallenge || 0, "USD"),
+    help: "Business value assigned to each challenged event.",
+  },
+  {
+    id: "minutes",
+    label: "Staff minutes saved",
+    icon: "settings",
+    format: (assumptions) => `${assumptions.staffMinutesSavedPerIntervention || 0} min`,
+    help: "Manual review time avoided per intervention.",
+  },
+  {
+    id: "hourly",
+    label: "Staff hourly cost",
+    icon: "cost",
+    format: (assumptions) => formatCurrency(assumptions.staffHourlyCost || 0, "USD"),
+    help: "Hourly staff cost used for time-savings estimates.",
+  },
+];
+
 function ValueModelSummary({ assumptions, configured, onEdit }) {
   return (
-    <div className="bv-model-grid">
-      <div className="bv-model-status">
-        <span className={`bv-semantic-badge${configured ? " is-configured" : ""}`}>
-          {configured ? "Merchant configured" : "Not configured"}
-        </span>
-        <p>
-          Estimated financial impact is calculated from observed BotShield protection
-          activity using these merchant-defined assumptions.
-        </p>
+    <>
+      <div className="bv-model-head">
+        <div className="bv-model-head-copy">
+          <div className="bv-model-head-title">
+            <span className={`bv-semantic-badge${configured ? " is-configured" : ""}`}>
+              {configured ? "Merchant configured" : "Not configured"}
+            </span>
+          </div>
+          <p>
+            Estimated financial impact is calculated from observed BotShield protection
+            activity using these merchant-defined assumptions.
+          </p>
+        </div>
         <BotShieldPolarisButton variant="secondary" onClick={onEdit}>
           Edit assumptions
         </BotShieldPolarisButton>
       </div>
-      <dl className="bv-model-fields">
-        <div>
-          <dt>Value per blocked event</dt>
-          <dd>{formatCurrency(assumptions.estimatedValuePerBlockedEvent || 0, "USD")}</dd>
-        </div>
-        <div>
-          <dt>Value per challenge</dt>
-          <dd>{formatCurrency(assumptions.estimatedValuePerChallenge || 0, "USD")}</dd>
-        </div>
-        <div>
-          <dt>Staff minutes saved</dt>
-          <dd>{assumptions.staffMinutesSavedPerIntervention || 0} min</dd>
-        </div>
-        <div>
-          <dt>Staff hourly cost</dt>
-          <dd>{formatCurrency(assumptions.staffHourlyCost || 0, "USD")}</dd>
-        </div>
-      </dl>
-    </div>
+      <div className="bv-model-params">
+        {VALUE_MODEL_PARAMS.map((param) => (
+          <article className="bv-model-param" key={param.id}>
+            <span className="bv-model-param-icon">
+              <ValueIcon name={param.icon} tone="model" />
+            </span>
+            <span className="bv-model-param-label">{param.label}</span>
+            <span className="bv-model-param-value">{param.format(assumptions)}</span>
+            <span className="bv-model-param-help">{param.help}</span>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -606,6 +669,8 @@ export default function ValuePage() {
   };
 
   const animateValues = Boolean(payload) && !loading && !rangeTransition;
+  const rangeLabel =
+    RANGE_OPTIONS.find((option) => option.id === range)?.label || range;
 
   return (
     <BotShieldNativePage heading="Value">
@@ -668,7 +733,7 @@ export default function ValuePage() {
 
               <section aria-labelledby="value-hero-title" className="bv-hero bv-animate-enter bv-animate-enter-delay-1">
                 <div className="bv-hero-inner">
-                  <div className="bv-hero-primary">
+                  <div className="bv-hero-top">
                     <div className="bv-hero-heading">
                       <span className="bv-semantic-badge is-estimated">Estimated</span>
                       <p className="bv-hero-label" id="value-hero-title">
@@ -708,6 +773,15 @@ export default function ValuePage() {
                           </span>
                         </>
                       )}
+                      {!configured && hasActivity ? (
+                        <p className="bv-hero-note">
+                          Observed protection activity is available below. Estimated
+                          financial metrics unlock after you configure assumptions.
+                        </p>
+                      ) : null}
+                    </div>
+                    <div aria-hidden="true" className="bv-hero-motif">
+                      <ValueIcon name="shield" tone="hero" />
                     </div>
                   </div>
 
@@ -793,22 +867,10 @@ export default function ValuePage() {
                 </div>
               ) : null}
 
-              {!configured && hasActivity ? (
-                <div className="bv-callout bv-animate-enter bv-animate-enter-delay-2">
-                  <ValueIcon name="settings" />
-                  <div>
-                    <strong>Configure your value model</strong>
-                    <p>
-                      Observed protection activity is available below. Estimated
-                      financial metrics unlock after you set merchant assumptions.
-                    </p>
-                  </div>
-                </div>
-              ) : null}
-
+              <div className="bv-section-group bv-animate-enter bv-animate-enter-delay-2">
               <section
                 aria-labelledby="value-economics-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-2"
+                className="bv-surface bv-surface-major"
               >
                 <div className="bv-section-head">
                   <div>
@@ -830,13 +892,14 @@ export default function ValuePage() {
                         enabled={animateValues}
                       />
                     </span>
+                    <span className="bv-flow-step-meta">for this {rangeLabel} period</span>
                   </div>
                   <span aria-hidden="true" className="bv-flow-arrow">
                     →
                   </span>
                   <div className="bv-flow-step is-interventions">
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="shield" />
+                      <ValueIcon name="shield" tone="observed" />
                     </span>
                     <span className="bv-semantic-badge is-observed">Observed</span>
                     <span className="bv-flow-step-label">Protection interventions</span>
@@ -846,13 +909,14 @@ export default function ValuePage() {
                         value={payload.activity.interventions}
                       />
                     </span>
+                    <span className="bv-flow-step-meta">Blocked + challenged</span>
                   </div>
                   <span aria-hidden="true" className="bv-flow-arrow">
                     →
                   </span>
                   <div className={`bv-flow-step is-protected${configured ? "" : " is-locked"}`}>
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="trend" />
+                      <ValueIcon name="trend" tone="estimated" />
                     </span>
                     <span className="bv-semantic-badge is-estimated">Estimated</span>
                     <span className="bv-flow-step-label">Estimated value protected</span>
@@ -867,13 +931,16 @@ export default function ValuePage() {
                         "—"
                       )}
                     </span>
+                    <span className="bv-flow-step-meta">
+                      {configured ? "From merchant assumptions" : "Configure assumptions"}
+                    </span>
                   </div>
                   <span aria-hidden="true" className="bv-flow-arrow">
                     →
                   </span>
                   <div className={`bv-flow-step is-net${configured ? "" : " is-locked"}`}>
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="trend" />
+                      <ValueIcon name="trend" tone="estimated" />
                     </span>
                     <span className="bv-semantic-badge is-estimated">Estimated</span>
                     <span className="bv-flow-step-label">Estimated net value</span>
@@ -888,117 +955,136 @@ export default function ValuePage() {
                         "—"
                       )}
                     </span>
+                    <span className="bv-flow-step-meta">
+                      {configured ? "Value protected minus plan cost" : "Configure assumptions"}
+                    </span>
                   </div>
                 </div>
                 {payload.economics.valueToCostRatio != null ? (
                   <div className="bv-efficiency-badge">
-                    <ValueIcon name="trend" />
+                    <ValueIcon name="trend" tone="estimated" />
                     {payload.economics.valueToCostRatio}× estimated value-to-cost
                   </div>
                 ) : null}
               </section>
+              </div>
 
-              <section
-                aria-labelledby="value-chart-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
-              >
-                <div className="bv-section-head">
-                  <div>
-                    <h2 id="value-chart-title">Protection &amp; value trend</h2>
-                    <p>
-                      {configured
-                        ? "Observed threats stopped with estimated value protected across the selected period."
-                        : "Observed protection activity over time. Configure your value model for financial estimates."}
-                    </p>
+              <div className="bv-section-group bv-dashboard-analytics bv-animate-enter bv-animate-enter-delay-3">
+                <section
+                  aria-labelledby="value-chart-title"
+                  className="bv-surface bv-surface-major bv-surface-panel"
+                >
+                  <div className="bv-section-head">
+                    <div>
+                      <h2 id="value-chart-title">Protection &amp; value trend</h2>
+                      <p>
+                        {configured
+                          ? "Observed threats stopped with estimated value protected across the selected period."
+                          : "Observed protection activity over time. Configure your value model for financial estimates."}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <ValueProtectionChart
-                  assumptionsConfigured={configured}
-                  currency={currency}
-                  trend={payload.trend}
-                />
-              </section>
+                  <ValueProtectionChart
+                    assumptionsConfigured={configured}
+                    currency={currency}
+                    trend={payload.trend}
+                  />
+                </section>
 
-              <section
-                aria-labelledby="value-drivers-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
-              >
-                <div className="bv-section-head">
-                  <div>
-                    <h2 id="value-drivers-title">Value drivers</h2>
-                    <p>
-                      Protection categories contributing to your observed interventions
-                      and estimated value.
-                    </p>
+                <section
+                  aria-labelledby="value-drivers-title"
+                  className="bv-surface bv-surface-major bv-surface-panel"
+                >
+                  <div className="bv-section-head">
+                    <div>
+                      <h2 id="value-drivers-title">Value drivers</h2>
+                      <p>
+                        Protection categories contributing to your observed interventions
+                        and estimated value.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <ValueDrivers
-                  categories={payload.categories}
-                  configured={configured}
-                  currency={currency}
-                  hasInterventions={hasInterventions}
-                />
-              </section>
+                  <ValueDrivers
+                    categories={payload.categories}
+                    configured={configured}
+                    currency={currency}
+                    hasInterventions={hasInterventions}
+                  />
+                </section>
+              </div>
 
-              <section
-                aria-labelledby="value-evidence-title"
-                className="bv-surface bv-surface-compact bv-animate-enter bv-animate-enter-delay-4"
-              >
-                <div className="bv-section-head">
-                  <div>
-                    <span className="bv-semantic-badge is-observed">Observed</span>
-                    <h2 id="value-evidence-title">Protection evidence</h2>
-                    <p>
-                      These are observed storefront protection events. Financial values
-                      elsewhere on this page are estimates based on your configured
-                      assumptions.
-                    </p>
+              <div className="bv-section-group bv-dashboard-evidence bv-animate-enter bv-animate-enter-delay-4">
+                <section
+                  aria-labelledby="value-evidence-title"
+                  className="bv-surface bv-surface-major bv-surface-panel bv-surface-evidence"
+                >
+                  <div className="bv-section-head">
+                    <div>
+                      <span className="bv-semantic-badge is-observed">Observed</span>
+                      <h2 id="value-evidence-title">Protection evidence</h2>
+                      <p>
+                        These are observed storefront protection events. Financial values
+                        elsewhere on this page are estimates based on your configured
+                        assumptions.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="bv-basis">
-                  <div className="bv-basis-item is-primary">
-                    <span className="bv-basis-label">Blocked</span>
-                    <span className="bv-basis-value">
-                      <AnimatedCount
-                        enabled={animateValues}
-                        value={payload.activity.threatsStopped}
-                      />
-                    </span>
+                  <div className="bv-basis">
+                    <div className="bv-basis-item is-blocked">
+                      <span className="bv-basis-icon">
+                        <ValueIcon name="block" tone="observed" />
+                      </span>
+                      <span className="bv-basis-label">Blocked</span>
+                      <span className="bv-basis-value">
+                        <AnimatedCount
+                          enabled={animateValues}
+                          value={payload.activity.threatsStopped}
+                        />
+                      </span>
+                    </div>
+                    <div className="bv-basis-item is-challenged">
+                      <span className="bv-basis-icon">
+                        <ValueIcon name="shield" tone="observed" />
+                      </span>
+                      <span className="bv-basis-label">Challenged</span>
+                      <span className="bv-basis-value">
+                        <AnimatedCount
+                          enabled={animateValues}
+                          value={payload.activity.challengesIssued}
+                        />
+                      </span>
+                    </div>
+                    <div className="bv-basis-item is-detected">
+                      <span className="bv-basis-icon">
+                        <ValueIcon name="activity" tone="detected" />
+                      </span>
+                      <span className="bv-basis-label">Detected</span>
+                      <span className="bv-basis-value">
+                        <AnimatedCount
+                          enabled={animateValues}
+                          value={payload.activity.threatsDetected}
+                        />
+                      </span>
+                    </div>
+                    <div className="bv-basis-item is-interventions">
+                      <span className="bv-basis-icon">
+                        <ValueIcon name="shield" tone="neutral" />
+                      </span>
+                      <span className="bv-basis-label">Interventions</span>
+                      <span className="bv-basis-value">
+                        <AnimatedCount
+                          enabled={animateValues}
+                          value={payload.activity.interventions}
+                        />
+                      </span>
+                    </div>
                   </div>
-                  <div className="bv-basis-item">
-                    <span className="bv-basis-label">Challenged</span>
-                    <span className="bv-basis-value">
-                      <AnimatedCount
-                        enabled={animateValues}
-                        value={payload.activity.challengesIssued}
-                      />
-                    </span>
-                  </div>
-                  <div className="bv-basis-item">
-                    <span className="bv-basis-label">Detected</span>
-                    <span className="bv-basis-value">
-                      <AnimatedCount
-                        enabled={animateValues}
-                        value={payload.activity.threatsDetected}
-                      />
-                    </span>
-                  </div>
-                  <div className="bv-basis-item">
-                    <span className="bv-basis-label">Interventions</span>
-                    <span className="bv-basis-value">
-                      <AnimatedCount
-                        enabled={animateValues}
-                        value={payload.activity.interventions}
-                      />
-                    </span>
-                  </div>
-                </div>
-              </section>
+                </section>
 
-              <section
-                aria-labelledby="value-outlook-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
-              >
+                <section
+                  aria-labelledby="value-outlook-title"
+                  className="bv-surface bv-surface-major bv-surface-panel bv-surface-outlook"
+                >
                 <div className="bv-section-head">
                   <div>
                     <span className="bv-semantic-badge is-projected">Projected</span>
@@ -1093,44 +1179,55 @@ export default function ValuePage() {
                     </div>
                     <p className="bv-projection-basis">{payload.projection.basisLabel}</p>
                     {!configured ? (
-                      <BotShieldActionButton onClick={openAssumptions}>
+                      <button className="bv-text-action" onClick={openAssumptions} type="button">
                         Configure value model
-                      </BotShieldActionButton>
+                      </button>
                     ) : null}
                   </>
                 ) : (
-                  <div className="bv-inline-empty">
-                    <ValueIcon name="info" />
+                  <div className="bv-panel-empty">
+                    <span className="bv-panel-empty-icon">
+                      <ValueIcon name="info" tone="projected" />
+                    </span>
                     <div>
                       <strong>Projection unavailable</strong>
                       <p>{payload.projection.reason}</p>
                       {!configured ? (
-                        <BotShieldActionButton onClick={openAssumptions}>
+                        <button className="bv-text-action" onClick={openAssumptions} type="button">
                           Configure value model
-                        </BotShieldActionButton>
+                        </button>
                       ) : null}
                     </div>
                   </div>
                 )}
-              </section>
+                </section>
+              </div>
 
-              <section
-                aria-labelledby="value-model-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
-              >
-                <div className="bv-section-head">
-                  <h2 id="value-model-title">Your value model</h2>
-                </div>
-                <ValueModelSummary
-                  assumptions={payload.assumptions}
-                  configured={configured}
-                  onEdit={openAssumptions}
-                />
-              </section>
+              <div className="bv-section-group bv-animate-enter bv-animate-enter-delay-4">
+                <section
+                  aria-labelledby="value-model-title"
+                  className="bv-surface bv-surface-major bv-surface-model"
+                >
+                  <div className="bv-section-head bv-section-head-inline">
+                    <h2 id="value-model-title">Your value model</h2>
+                  </div>
+                  <ValueModelSummary
+                    assumptions={payload.assumptions}
+                    configured={configured}
+                    onEdit={openAssumptions}
+                  />
+                </section>
+              </div>
 
-              <section className="bv-surface bv-surface-muted bv-animate-enter bv-animate-enter-delay-4">
+              <div className="bv-section-group bv-section-group-compact bv-animate-enter bv-animate-enter-delay-4">
+                <section className="bv-surface bv-surface-methodology">
                 <details className="bv-disclosure">
-                  <summary>How calculations work</summary>
+                  <summary>
+                    <span className="bv-disclosure-label">
+                      <ValueIcon name="info" />
+                      How calculations work
+                    </span>
+                  </summary>
                   <div className="bv-disclosure-body">
                     <div>
                       <h4>Observed</h4>
@@ -1186,7 +1283,8 @@ export default function ValuePage() {
                     </p>
                   </div>
                 </details>
-              </section>
+                </section>
+              </div>
             </div>
           ) : null}
         </div>
