@@ -147,21 +147,21 @@ test("value page UI includes required functional sections", async () => {
 
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Threats stopped/);
-  assert.match(page, /Protection value over time/);
-  assert.match(page, /Where your value came from/);
-  assert.match(page, /Your BotShield economics/);
-  assert.match(page, /If your current protection rate continues/);
+  assert.match(page, /Protection &amp; value trend/);
+  assert.match(page, /Value drivers/);
+  assert.match(page, /Protection economics/);
+  assert.match(page, /Value outlook/);
   assert.match(page, /Edit assumptions/);
   assert.match(page, /How calculations work/);
-  assert.match(page, /Why BotShield/);
-  assert.match(page, /Your value story is just getting started/);
+  assert.match(page, /Your value model/);
+  assert.match(page, /botshield-value-premium/);
   assert.match(page, /className="[^"]*\bbv-hero\b/);
   assert.match(page, /className="[^"]*\bbv-economics-flow\b/);
   assert.match(page, /className="[^"]*\bbv-chart\b/);
   assert.match(page, /className="[^"]*\bbv-projection-grid\b/);
   assert.match(page, /className="[^"]*\bbv-disclosure\b/);
   assert.match(page, /Set assumptions/);
-  assert.match(page, /Protection behind these estimates/);
+  assert.match(page, /Protection evidence/);
   assert.match(page, /useAnimatedNumber/);
   assert.doesNotMatch(page, /botshield-v2-chart-column/);
   assert.doesNotMatch(page, /botshield-v2-chart-label/);

@@ -39,26 +39,28 @@ const VALUE_ICONS = {
   settings: "settings",
   info: "info",
   refresh: "refresh",
-  shop: "store",
   lock: "lock",
-  person: "person",
   globe: "globe-lines",
   activity: "chart-line",
   block: "disabled",
+  page: "page",
 };
 
-function ValueIcon({ name, centered = false }) {
+const CATEGORY_ICON_MAP = {
+  "bot-protection": "block",
+  "network-protection": "globe",
+  "rate-protection": "activity",
+  "page-protection": "lock",
+  uncategorized: "info",
+};
+
+function ValueIcon({ name }) {
   return (
-    <span
-      className="bv-icon"
-      aria-hidden="true"
-      style={centered ? { display: "grid", placeItems: "center" } : undefined}
-    >
+    <span className="bv-icon" aria-hidden="true">
       <BotShieldIcon
         type={VALUE_ICONS[name] || VALUE_ICONS.shield}
         size="small"
         color="subdued"
-        style={centered ? { display: "block", margin: "auto" } : undefined}
       />
     </span>
   );
@@ -70,7 +72,9 @@ function prefersReducedMotion() {
 }
 
 function useAnimatedNumber(target, { duration = 580, enabled = true } = {}) {
-  const [display, setDisplay] = useState(enabled && !prefersReducedMotion() ? 0 : target);
+  const [display, setDisplay] = useState(
+    enabled && !prefersReducedMotion() ? 0 : target,
+  );
   const frameRef = useRef(null);
 
   useEffect(() => {
@@ -116,14 +120,17 @@ function AnimatedCurrency({ amount, currency, enabled = true }) {
 }
 
 function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
+  const maxBlocked = useMemo(
+    () => Math.max(1, ...trend.map((bucket) => bucket.blocked || 0)),
+    [trend],
+  );
+
   const chartMaximum = useMemo(() => {
-    const values = trend.map((bucket) =>
-      Math.max(
-        bucket.blocked,
-        assumptionsConfigured ? bucket.estimatedValueProtected || 0 : 0,
-      ),
-    );
-    return Math.max(1, ...values);
+    if (assumptionsConfigured) {
+      const values = trend.map((bucket) => bucket.estimatedValueProtected || 0);
+      return Math.max(1, ...values, 0);
+    }
+    return Math.max(1, ...trend.map((bucket) => bucket.blocked || 0));
   }, [assumptionsConfigured, trend]);
 
   const activeDays = trend.filter(
@@ -137,12 +144,12 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
     return (
       <div className="bv-chart-empty">
         <div className="bv-chart-empty-icon">
-          <ValueIcon name="trend" centered />
+          <ValueIcon name="trend" />
         </div>
         <h3>No protection activity yet</h3>
         <p>
-          BotShield will chart protection value over time as storefront security
-          activity is recorded.
+          Protection trends appear when BotShield records blocked or challenged
+          storefront activity in this period.
         </p>
       </div>
     );
@@ -152,116 +159,149 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
     <div className="bv-chart-wrap">
       <div className="bv-chart-legend" aria-label="Chart legend">
         {assumptionsConfigured ? (
+          <>
+            <span>
+              <i className="is-value" aria-hidden="true" />
+              Estimated value protected
+            </span>
+            <span>
+              <i className="is-blocked" aria-hidden="true" />
+              Threats stopped (relative)
+            </span>
+          </>
+        ) : (
           <span>
-            <i className="is-value" aria-hidden="true" />
-            Estimated value protected
+            <i className="is-blocked" aria-hidden="true" />
+            Threats stopped
           </span>
-        ) : null}
-        <span>
-          <i className="is-blocked" aria-hidden="true" />
-          Threats stopped
-        </span>
+        )}
       </div>
-      <div
-        className="bv-chart"
-        role="img"
-        aria-label={`Protection value chart with ${activeDays} active periods`}
-        data-density={activeDays <= 3 ? "sparse" : activeDays <= 12 ? "medium" : "dense"}
-      >
-        <div className="bv-chart-scale" aria-hidden="true">
-          <span>
-            {assumptionsConfigured
-              ? formatCurrency(chartMaximum, currency)
-              : formatHydrationStableNumber(chartMaximum)}
-          </span>
-          <span>
-            {assumptionsConfigured
-              ? formatCurrency(chartMaximum / 2, currency)
-              : formatHydrationStableNumber(Math.round(chartMaximum / 2))}
-          </span>
-          <span>{assumptionsConfigured ? formatCurrency(0, currency) : "0"}</span>
-        </div>
-        <div className="bv-chart-bars">
-          {trend.map((bucket) => {
-            const valueHeight = assumptionsConfigured
-              ? ((bucket.estimatedValueProtected || 0) / chartMaximum) * 100
-              : 0;
-            const blockedHeight = (bucket.blocked / chartMaximum) * 100;
-            const primaryHeight = assumptionsConfigured
-              ? Math.max(valueHeight, blockedHeight > 0 ? 4 : 0)
-              : Math.max(blockedHeight, bucket.blocked > 0 ? 6 : 0);
+      <div className="bv-chart-scroll">
+        <div
+          className="bv-chart"
+          role="img"
+          aria-label={`Protection and value trend with ${activeDays} active periods`}
+          data-density={activeDays <= 3 ? "sparse" : activeDays <= 12 ? "medium" : "dense"}
+        >
+          <div className="bv-chart-scale" aria-hidden="true">
+            <span>
+              {assumptionsConfigured
+                ? formatCurrency(chartMaximum, currency)
+                : formatHydrationStableNumber(chartMaximum)}
+            </span>
+            <span>
+              {assumptionsConfigured
+                ? formatCurrency(chartMaximum / 2, currency)
+                : formatHydrationStableNumber(Math.round(chartMaximum / 2))}
+            </span>
+            <span>{assumptionsConfigured ? formatCurrency(0, currency) : "0"}</span>
+          </div>
+          <div className="bv-chart-bars">
+            {trend.map((bucket) => {
+              const blockedHeight = ((bucket.blocked || 0) / chartMaximum) * 100;
+              const valueHeight = assumptionsConfigured
+                ? ((bucket.estimatedValueProtected || 0) / chartMaximum) * 100
+                : 0;
+              const blockedContextHeight = assumptionsConfigured
+                ? ((bucket.blocked || 0) / maxBlocked) * 28
+                : 0;
+              const primaryHeight = assumptionsConfigured
+                ? Math.max(valueHeight, bucket.blocked > 0 ? 4 : 0, blockedContextHeight)
+                : Math.max(blockedHeight, bucket.blocked > 0 ? 6 : 0);
 
-            return (
-              <button
-                type="button"
-                className="bv-chart-col"
-                key={bucket.key}
-                aria-label={`${bucket.label}: ${bucket.blocked} stopped, ${bucket.challenged} challenged${
-                  assumptionsConfigured
-                    ? `, ${formatCurrency(bucket.estimatedValueProtected || 0, currency)} estimated value`
-                    : ""
-                }`}
-              >
-                <div
-                  className="bv-chart-bar-stack"
-                  style={{ height: `${primaryHeight}%` }}
+              return (
+                <button
+                  type="button"
+                  className="bv-chart-col"
+                  key={bucket.key}
+                  aria-label={`${bucket.label}: ${bucket.blocked} stopped, ${bucket.challenged} challenged${
+                    assumptionsConfigured
+                      ? `, ${formatCurrency(bucket.estimatedValueProtected || 0, currency)} estimated value`
+                      : ""
+                  }`}
                 >
-                  {assumptionsConfigured && valueHeight > 0 ? (
-                    <span className="is-value" style={{ flex: valueHeight }} />
-                  ) : null}
-                  {!assumptionsConfigured && blockedHeight > 0 ? (
-                    <span className="is-blocked" style={{ flex: blockedHeight }} />
-                  ) : null}
-                </div>
-                <div className="bv-chart-tooltip" role="tooltip">
-                  <strong>{bucket.label}</strong>
-                  <span>
-                    Threats stopped <b>{bucket.blocked}</b>
-                  </span>
-                  <span>
-                    Challenges <b>{bucket.challenged}</b>
-                  </span>
-                  {assumptionsConfigured ? (
+                  <div
+                    className="bv-chart-bar-stack"
+                    style={{ height: `${primaryHeight}%` }}
+                  >
+                    {assumptionsConfigured && valueHeight > 0 ? (
+                      <span className="is-value" style={{ flex: valueHeight }} />
+                    ) : null}
+                    {assumptionsConfigured && blockedContextHeight > 0 ? (
+                      <span
+                        className="is-blocked is-context"
+                        style={{ flex: blockedContextHeight }}
+                      />
+                    ) : null}
+                    {!assumptionsConfigured && blockedHeight > 0 ? (
+                      <span className="is-blocked" style={{ flex: blockedHeight }} />
+                    ) : null}
+                  </div>
+                  <div className="bv-chart-tooltip" role="tooltip">
+                    <strong>{bucket.label}</strong>
                     <span>
-                      Est. value{" "}
-                      <b>{formatCurrency(bucket.estimatedValueProtected || 0, currency)}</b>
+                      Threats stopped <b>{bucket.blocked}</b>
                     </span>
-                  ) : (
-                    <span>Set assumptions for financial estimates</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="bv-chart-axis" aria-hidden="true">
-          <span>{trend[0]?.label}</span>
-          <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
-          <span>{trend[trend.length - 1]?.label}</span>
+                    <span>
+                      Challenges <b>{bucket.challenged}</b>
+                    </span>
+                    {assumptionsConfigured ? (
+                      <span>
+                        Est. value{" "}
+                        <b>{formatCurrency(bucket.estimatedValueProtected || 0, currency)}</b>
+                      </span>
+                    ) : (
+                      <span>Set assumptions for financial estimates</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="bv-chart-axis" aria-hidden="true">
+            <span>{trend[0]?.label}</span>
+            <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
+            <span>{trend[trend.length - 1]?.label}</span>
+          </div>
         </div>
       </div>
       {!assumptionsConfigured ? (
-        <p className="bv-projection-basis" style={{ marginTop: 12 }}>
-          Configure savings assumptions to overlay estimated financial value on this
-          chart.
+        <p className="bv-chart-note">
+          Configure your value model to overlay estimated financial value on observed
+          protection activity.
         </p>
       ) : null}
     </div>
   );
 }
 
-function CategoryBreakdown({ categories, currency, configured }) {
+function ValueDrivers({ categories, currency, configured, hasInterventions }) {
+  if (!hasInterventions) {
+    return (
+      <div className="bv-inline-empty">
+        <ValueIcon name="shield" />
+        <div>
+          <strong>No intervention-based value drivers yet</strong>
+          <p>
+            Value drivers appear after BotShield records blocked or challenged
+            protection activity.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!categories.length) {
     return (
-      <div className="bv-empty">
-        <div className="bv-empty-icon">
-          <ValueIcon name="shield" centered />
+      <div className="bv-inline-empty">
+        <ValueIcon name="info" />
+        <div>
+          <strong>No categorized interventions yet</strong>
+          <p>
+            Category breakdown appears when protection events include recognizable
+            BotShield reason signals.
+          </p>
         </div>
-        <h3>No categorized protection yet</h3>
-        <p>
-          Category breakdown appears when BotShield records protection activity
-          across bot, rate, network, and page defenses.
-        </p>
       </div>
     );
   }
@@ -277,7 +317,7 @@ function CategoryBreakdown({ categories, currency, configured }) {
         <div className="bv-breakdown-row" key={row.id}>
           <div className="bv-breakdown-label">
             <span className="bv-breakdown-icon">
-              <ValueIcon name={row.id === "bot" ? "block" : row.id === "rate" ? "activity" : "globe"} centered />
+              <ValueIcon name={CATEGORY_ICON_MAP[row.id] || "info"} />
             </span>
             {row.label}
           </div>
@@ -306,16 +346,16 @@ function CategoryBreakdown({ categories, currency, configured }) {
 
 function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
   return (
-    <BotShieldNativeModal id={VALUE_ASSUMPTIONS_MODAL_ID} heading="Savings assumptions">
+    <BotShieldNativeModal id={VALUE_ASSUMPTIONS_MODAL_ID} heading="Value model">
       <BotShieldStack gap="base">
         <BotShieldParagraph color="subdued">
-          Customize how BotShield estimates financial impact for your business.
-          These inputs are used only to estimate financial impact. Actual savings
-          may vary.
+          Configure how BotShield translates observed protection activity into
+          estimated financial impact. These inputs are merchant-defined estimates
+          only — actual savings may vary.
         </BotShieldParagraph>
-        <div>
+        <div className="bv-assumption-field">
           <BotShieldTextField
-            label="Estimated value per blocked harmful event ($)"
+            label="Estimated value per blocked event (USD)"
             type="number"
             min="0"
             value={String(draft.estimatedValuePerBlockedEvent ?? 0)}
@@ -327,12 +367,12 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
             }
           />
           <p className="bv-assumption-field-help">
-            Dollar value you assign to each harmful event BotShield blocks.
+            Your estimate of the business value of preventing one blocked threat.
           </p>
         </div>
-        <div>
+        <div className="bv-assumption-field">
           <BotShieldTextField
-            label="Estimated value per challenged event ($)"
+            label="Estimated value per challenged event (USD)"
             type="number"
             min="0"
             value={String(draft.estimatedValuePerChallenge ?? 0)}
@@ -344,12 +384,12 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
             }
           />
           <p className="bv-assumption-field-help">
-            Estimated benefit when BotShield challenges suspicious visitors.
+            Your estimate of the value created by challenging suspicious traffic.
           </p>
         </div>
-        <div>
+        <div className="bv-assumption-field">
           <BotShieldTextField
-            label="Staff minutes saved per intervention"
+            label="Staff minutes saved per intervention (minutes)"
             type="number"
             min="0"
             value={String(draft.staffMinutesSavedPerIntervention ?? 0)}
@@ -361,12 +401,13 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
             }
           />
           <p className="bv-assumption-field-help">
-            Time your team would spend handling each protection event manually.
+            Estimated manual review or response time avoided per blocked or
+            challenged event.
           </p>
         </div>
-        <div>
+        <div className="bv-assumption-field">
           <BotShieldTextField
-            label="Estimated staff hourly cost ($)"
+            label="Estimated staff hourly cost (USD)"
             type="number"
             min="0"
             value={String(draft.staffHourlyCost ?? 0)}
@@ -378,7 +419,7 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
             }
           />
           <p className="bv-assumption-field-help">
-            Blended hourly cost used to estimate staff time savings.
+            Approximate hourly staff cost used to value time savings.
           </p>
         </div>
         <BotShieldStack direction="inline" gap="base">
@@ -393,11 +434,48 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
             Cancel
           </BotShieldPolarisButton>
           <BotShieldPolarisButton variant="tertiary" disabled={saving} onClick={onReset}>
-            Reset
+            Reset to defaults
           </BotShieldPolarisButton>
         </BotShieldStack>
       </BotShieldStack>
     </BotShieldNativeModal>
+  );
+}
+
+function ValueModelSummary({ assumptions, configured, onEdit }) {
+  return (
+    <div className="bv-model-grid">
+      <div className="bv-model-status">
+        <span className={`bv-semantic-badge${configured ? " is-configured" : ""}`}>
+          {configured ? "Merchant configured" : "Not configured"}
+        </span>
+        <p>
+          Estimated financial impact is calculated from observed BotShield protection
+          activity using these merchant-defined assumptions.
+        </p>
+        <BotShieldPolarisButton variant="secondary" onClick={onEdit}>
+          Edit assumptions
+        </BotShieldPolarisButton>
+      </div>
+      <dl className="bv-model-fields">
+        <div>
+          <dt>Value per blocked event</dt>
+          <dd>{formatCurrency(assumptions.estimatedValuePerBlockedEvent || 0, "USD")}</dd>
+        </div>
+        <div>
+          <dt>Value per challenge</dt>
+          <dd>{formatCurrency(assumptions.estimatedValuePerChallenge || 0, "USD")}</dd>
+        </div>
+        <div>
+          <dt>Staff minutes saved</dt>
+          <dd>{assumptions.staffMinutesSavedPerIntervention || 0} min</dd>
+        </div>
+        <div>
+          <dt>Staff hourly cost</dt>
+          <dd>{formatCurrency(assumptions.staffHourlyCost || 0, "USD")}</dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -445,9 +523,13 @@ export default function ValuePage() {
 
   const currency = payload?.currentPlan?.currency || "USD";
   const configured = payload?.economics?.assumptionsConfigured;
+  const activity = payload?.activity;
   const hasActivity =
-    payload &&
-    (payload.activity.threatsStopped > 0 || payload.activity.threatsDetected > 0);
+    activity &&
+    (activity.threatsStopped > 0 ||
+      activity.challengesIssued > 0 ||
+      activity.threatsDetected > 0);
+  const hasInterventions = activity && activity.interventions > 0;
 
   const openAssumptions = () => {
     setAssumptionDraft({
@@ -527,15 +609,15 @@ export default function ValuePage() {
 
   return (
     <BotShieldNativePage heading="Value">
-      <BotShieldPageShell className="botshield-value-content">
+      <BotShieldPageShell className="botshield-value-content botshield-value-premium">
         <div className="botshield-value-dashboard">
-          {/* ── Header ── */}
-          <header className="bv-header bv-animate-enter">
-            <div className="bv-header-copy">
-              <h1>Value</h1>
-              <p>See the business impact of your BotShield protection.</p>
+          <header className="bv-command-bar bv-animate-enter">
+            <div className="bv-command-copy">
+              <p className="bv-command-lead">
+                Understand the business impact of your BotShield protection.
+              </p>
             </div>
-            <div className="bv-header-actions">
+            <div className="bv-command-actions">
               <div className="bv-period" aria-label="Value period">
                 {RANGE_OPTIONS.map((option) => (
                   <button
@@ -559,7 +641,7 @@ export default function ValuePage() {
                 onClick={() => loadValue(range)}
                 type="button"
               >
-                <ValueIcon name="refresh" centered />
+                <ValueIcon name="refresh" />
               </button>
             </div>
           </header>
@@ -584,14 +666,11 @@ export default function ValuePage() {
                 </BotShieldBanner>
               ) : null}
 
-              {/* ── Hero ── */}
-              <section
-                aria-labelledby="value-hero-title"
-                className="bv-hero bv-animate-enter bv-animate-enter-delay-1"
-              >
+              <section aria-labelledby="value-hero-title" className="bv-hero bv-animate-enter bv-animate-enter-delay-1">
                 <div className="bv-hero-inner">
-                  <div className="bv-hero-top">
-                    <div>
+                  <div className="bv-hero-primary">
+                    <div className="bv-hero-heading">
+                      <span className="bv-semantic-badge is-estimated">Estimated</span>
                       <p className="bv-hero-label" id="value-hero-title">
                         Estimated value protected
                       </p>
@@ -604,31 +683,36 @@ export default function ValuePage() {
                               enabled={animateValues}
                             />
                           </p>
-                          <p className="bv-hero-support">
-                            Based on your observed BotShield protection activity and
-                            configured savings assumptions.
+                          <p className="bv-hero-context">
+                            Based on observed storefront protection activity and your
+                            configured value model.
                           </p>
                         </>
                       ) : (
-                        <div className="bv-hero-empty">
-                          <p className="bv-hero-amount" aria-hidden="true">
+                        <>
+                          <p className="bv-hero-amount is-unavailable" aria-live="polite">
                             —
                           </p>
-                          <p className="bv-hero-support">
-                            Set your savings assumptions to calculate financial impact.
+                          <p className="bv-hero-context">
+                            Financial estimates are unavailable until a value model is
+                            configured.
+                          </p>
+                          <p className="bv-hero-setup-copy">
+                            Add your assumptions to translate observed protection activity
+                            into estimated business value.
                           </p>
                           <span className="bv-hero-cta">
                             <BotShieldPolarisButton variant="primary" onClick={openAssumptions}>
                               Set assumptions
                             </BotShieldPolarisButton>
                           </span>
-                        </div>
+                        </>
                       )}
                     </div>
                   </div>
 
                   <div className="bv-hero-metrics" aria-label="Value summary metrics">
-                    <div className="bv-hero-metric">
+                    <div className="bv-hero-metric is-observed">
                       <span className="bv-hero-metric-label">BotShield cost</span>
                       <span className="bv-hero-metric-value">
                         <AnimatedCurrency
@@ -638,7 +722,7 @@ export default function ValuePage() {
                         />
                       </span>
                     </div>
-                    <div className="bv-hero-metric">
+                    <div className="bv-hero-metric is-observed">
                       <span className="bv-hero-metric-label">Threats stopped</span>
                       <span className="bv-hero-metric-value">
                         <AnimatedCount
@@ -647,7 +731,16 @@ export default function ValuePage() {
                         />
                       </span>
                     </div>
-                    <div className="bv-hero-metric">
+                    <div className="bv-hero-metric is-observed">
+                      <span className="bv-hero-metric-label">Interventions</span>
+                      <span className="bv-hero-metric-value">
+                        <AnimatedCount
+                          enabled={animateValues}
+                          value={payload.activity.interventions}
+                        />
+                      </span>
+                    </div>
+                    <div className="bv-hero-metric is-observed">
                       <span className="bv-hero-metric-label">Cost per stopped threat</span>
                       <span className="bv-hero-metric-value">
                         {payload.economics.costPerStoppedThreat == null
@@ -661,7 +754,7 @@ export default function ValuePage() {
                           )}
                       </span>
                     </div>
-                    <div className="bv-hero-metric">
+                    <div className="bv-hero-metric is-estimated">
                       <span className="bv-hero-metric-label">Estimated net value</span>
                       <span className="bv-hero-metric-value">
                         {configured ? (
@@ -675,8 +768,8 @@ export default function ValuePage() {
                         )}
                       </span>
                     </div>
-                    <div className="bv-hero-metric">
-                      <span className="bv-hero-metric-label">Estimated value-to-cost</span>
+                    <div className="bv-hero-metric is-estimated">
+                      <span className="bv-hero-metric-label">Value-to-cost</span>
                       <span className="bv-hero-metric-value">
                         {payload.economics.valueToCostRatio == null
                           ? "—"
@@ -688,48 +781,48 @@ export default function ValuePage() {
               </section>
 
               {!hasActivity ? (
-                <div className="bv-empty bv-animate-enter bv-animate-enter-delay-2">
-                  <div className="bv-empty-icon">
-                    <ValueIcon name="shield" centered />
+                <div className="bv-inline-empty bv-animate-enter bv-animate-enter-delay-2">
+                  <ValueIcon name="shield" />
+                  <div>
+                    <strong>No protection activity recorded yet</strong>
+                    <p>
+                      BotShield needs storefront protection activity before it can
+                      summarize business impact for this period.
+                    </p>
                   </div>
-                  <h3>Your value story is just getting started</h3>
-                  <p>
-                    BotShield needs protection activity before it can calculate
-                    business impact.
-                  </p>
                 </div>
               ) : null}
 
               {!configured && hasActivity ? (
-                <div className="bv-empty bv-animate-enter bv-animate-enter-delay-2">
-                  <div className="bv-empty-icon">
-                    <ValueIcon name="settings" centered />
+                <div className="bv-callout bv-animate-enter bv-animate-enter-delay-2">
+                  <ValueIcon name="settings" />
+                  <div>
+                    <strong>Configure your value model</strong>
+                    <p>
+                      Observed protection activity is available below. Estimated
+                      financial metrics unlock after you set merchant assumptions.
+                    </p>
                   </div>
-                  <h3>Turn protection activity into business value</h3>
-                  <p>Set your assumptions to estimate the financial impact of BotShield.</p>
-                  <BotShieldPolarisButton variant="primary" onClick={openAssumptions}>
-                    Set assumptions
-                  </BotShieldPolarisButton>
                 </div>
               ) : null}
 
-              {/* ── Economics flow ── */}
               <section
                 aria-labelledby="value-economics-title"
                 className="bv-surface bv-animate-enter bv-animate-enter-delay-2"
               >
                 <div className="bv-section-head">
                   <div>
-                    <h2 id="value-economics-title">Your BotShield economics</h2>
-                    <p>How your plan cost compares to estimated protection value.</p>
+                    <h2 id="value-economics-title">Protection economics</h2>
+                    <p>How plan cost compares to observed interventions and estimated value.</p>
                   </div>
                 </div>
                 <div className="bv-economics-flow">
                   <div className="bv-flow-step is-cost">
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="cost" centered />
+                      <ValueIcon name="cost" />
                     </span>
-                    <span className="bv-flow-step-label">You paid</span>
+                    <span className="bv-semantic-badge is-observed">Observed</span>
+                    <span className="bv-flow-step-label">BotShield cost</span>
                     <span className="bv-flow-step-value">
                       <AnimatedCurrency
                         amount={payload.economics.allocatedPlanCost}
@@ -741,11 +834,28 @@ export default function ValuePage() {
                   <span aria-hidden="true" className="bv-flow-arrow">
                     →
                   </span>
-                  <div className="bv-flow-step is-protected">
+                  <div className="bv-flow-step is-interventions">
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="shield" centered />
+                      <ValueIcon name="shield" />
                     </span>
-                    <span className="bv-flow-step-label">BotShield protected</span>
+                    <span className="bv-semantic-badge is-observed">Observed</span>
+                    <span className="bv-flow-step-label">Protection interventions</span>
+                    <span className="bv-flow-step-value">
+                      <AnimatedCount
+                        enabled={animateValues}
+                        value={payload.activity.interventions}
+                      />
+                    </span>
+                  </div>
+                  <span aria-hidden="true" className="bv-flow-arrow">
+                    →
+                  </span>
+                  <div className={`bv-flow-step is-protected${configured ? "" : " is-locked"}`}>
+                    <span className="bv-flow-step-icon">
+                      <ValueIcon name="trend" />
+                    </span>
+                    <span className="bv-semantic-badge is-estimated">Estimated</span>
+                    <span className="bv-flow-step-label">Estimated value protected</span>
                     <span className="bv-flow-step-value">
                       {configured ? (
                         <AnimatedCurrency
@@ -761,10 +871,11 @@ export default function ValuePage() {
                   <span aria-hidden="true" className="bv-flow-arrow">
                     →
                   </span>
-                  <div className="bv-flow-step is-net">
+                  <div className={`bv-flow-step is-net${configured ? "" : " is-locked"}`}>
                     <span className="bv-flow-step-icon">
-                      <ValueIcon name="trend" centered />
+                      <ValueIcon name="trend" />
                     </span>
+                    <span className="bv-semantic-badge is-estimated">Estimated</span>
                     <span className="bv-flow-step-label">Estimated net value</span>
                     <span className="bv-flow-step-value">
                       {configured ? (
@@ -781,24 +892,23 @@ export default function ValuePage() {
                 </div>
                 {payload.economics.valueToCostRatio != null ? (
                   <div className="bv-efficiency-badge">
-                    <ValueIcon name="trend" centered />
+                    <ValueIcon name="trend" />
                     {payload.economics.valueToCostRatio}× estimated value-to-cost
                   </div>
                 ) : null}
               </section>
 
-              {/* ── Chart ── */}
               <section
                 aria-labelledby="value-chart-title"
                 className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
               >
                 <div className="bv-section-head">
                   <div>
-                    <h2 id="value-chart-title">Protection value over time</h2>
+                    <h2 id="value-chart-title">Protection &amp; value trend</h2>
                     <p>
                       {configured
-                        ? "Estimated value protected across the selected period."
-                        : "Protection activity over time. Configure assumptions for financial estimates."}
+                        ? "Observed threats stopped with estimated value protected across the selected period."
+                        : "Observed protection activity over time. Configure your value model for financial estimates."}
                     </p>
                   </div>
                 </div>
@@ -809,33 +919,40 @@ export default function ValuePage() {
                 />
               </section>
 
-              {/* ── Category breakdown ── */}
               <section
-                aria-labelledby="value-breakdown-title"
+                aria-labelledby="value-drivers-title"
                 className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
               >
                 <div className="bv-section-head">
                   <div>
-                    <h2 id="value-breakdown-title">Where your value came from</h2>
-                    <p>Protection categories contributing to your estimated value.</p>
+                    <h2 id="value-drivers-title">Value drivers</h2>
+                    <p>
+                      Protection categories contributing to your observed interventions
+                      and estimated value.
+                    </p>
                   </div>
                 </div>
-                <CategoryBreakdown
+                <ValueDrivers
                   categories={payload.categories}
                   configured={configured}
                   currency={currency}
+                  hasInterventions={hasInterventions}
                 />
               </section>
 
-              {/* ── Protection basis (de-emphasized) ── */}
               <section
-                aria-labelledby="value-basis-title"
-                className="bv-surface bv-surface-muted bv-surface-compact bv-animate-enter bv-animate-enter-delay-4"
+                aria-labelledby="value-evidence-title"
+                className="bv-surface bv-surface-compact bv-animate-enter bv-animate-enter-delay-4"
               >
-                <div className="bv-section-head" style={{ marginBottom: 12 }}>
+                <div className="bv-section-head">
                   <div>
-                    <h2 id="value-basis-title">Protection behind these estimates</h2>
-                    <p>Observed storefront activity supporting the financial model.</p>
+                    <span className="bv-semantic-badge is-observed">Observed</span>
+                    <h2 id="value-evidence-title">Protection evidence</h2>
+                    <p>
+                      These are observed storefront protection events. Financial values
+                      elsewhere on this page are estimates based on your configured
+                      assumptions.
+                    </p>
                   </div>
                 </div>
                 <div className="bv-basis">
@@ -866,19 +983,30 @@ export default function ValuePage() {
                       />
                     </span>
                   </div>
+                  <div className="bv-basis-item">
+                    <span className="bv-basis-label">Interventions</span>
+                    <span className="bv-basis-value">
+                      <AnimatedCount
+                        enabled={animateValues}
+                        value={payload.activity.interventions}
+                      />
+                    </span>
+                  </div>
                 </div>
               </section>
 
-              {/* ── Projections ── */}
               <section
-                aria-labelledby="value-projection-title"
+                aria-labelledby="value-outlook-title"
                 className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
               >
                 <div className="bv-section-head">
                   <div>
-                    <h2 id="value-projection-title">
-                      If your current protection rate continues
-                    </h2>
+                    <span className="bv-semantic-badge is-projected">Projected</span>
+                    <h2 id="value-outlook-title">Value outlook</h2>
+                    <p>
+                      Projected protection activity if the currently observed rate
+                      continues.
+                    </p>
                   </div>
                 </div>
                 {payload.projection.available ? (
@@ -889,21 +1017,36 @@ export default function ValuePage() {
                         <div className="bv-projection-metrics">
                           <div className="bv-projection-metric">
                             <span>Projected threats stopped</span>
-                            <strong>{payload.projection.next30Days.threatsStopped}</strong>
+                            <strong>
+                              <AnimatedCount
+                                enabled={animateValues}
+                                value={payload.projection.next30Days.threatsStopped}
+                              />
+                            </strong>
                           </div>
                           <div className="bv-projection-metric">
                             <span>Projected interventions</span>
-                            <strong>{payload.projection.next30Days.interventions}</strong>
+                            <strong>
+                              <AnimatedCount
+                                enabled={animateValues}
+                                value={payload.projection.next30Days.interventions}
+                              />
+                            </strong>
                           </div>
                           <div className="bv-projection-metric is-highlight">
                             <span>Projected estimated value</span>
                             <strong>
                               {payload.projection.next30Days.estimatedValueProtected == null
                                 ? "—"
-                                : formatCurrency(
-                                    payload.projection.next30Days.estimatedValueProtected,
-                                    currency,
-                                  )}
+                                : (
+                                  <AnimatedCurrency
+                                    amount={
+                                      payload.projection.next30Days.estimatedValueProtected
+                                    }
+                                    currency={currency}
+                                    enabled={animateValues}
+                                  />
+                                )}
                             </strong>
                           </div>
                         </div>
@@ -913,21 +1056,36 @@ export default function ValuePage() {
                         <div className="bv-projection-metrics">
                           <div className="bv-projection-metric">
                             <span>Projected threats stopped</span>
-                            <strong>{payload.projection.next12Months.threatsStopped}</strong>
+                            <strong>
+                              <AnimatedCount
+                                enabled={animateValues}
+                                value={payload.projection.next12Months.threatsStopped}
+                              />
+                            </strong>
                           </div>
                           <div className="bv-projection-metric">
                             <span>Projected interventions</span>
-                            <strong>{payload.projection.next12Months.interventions}</strong>
+                            <strong>
+                              <AnimatedCount
+                                enabled={animateValues}
+                                value={payload.projection.next12Months.interventions}
+                              />
+                            </strong>
                           </div>
                           <div className="bv-projection-metric is-highlight">
                             <span>Projected estimated value</span>
                             <strong>
                               {payload.projection.next12Months.estimatedValueProtected == null
                                 ? "—"
-                                : formatCurrency(
-                                    payload.projection.next12Months.estimatedValueProtected,
-                                    currency,
-                                  )}
+                                : (
+                                  <AnimatedCurrency
+                                    amount={
+                                      payload.projection.next12Months.estimatedValueProtected
+                                    }
+                                    currency={currency}
+                                    enabled={animateValues}
+                                  />
+                                )}
                             </strong>
                           </div>
                         </div>
@@ -936,39 +1094,59 @@ export default function ValuePage() {
                     <p className="bv-projection-basis">{payload.projection.basisLabel}</p>
                     {!configured ? (
                       <BotShieldActionButton onClick={openAssumptions}>
-                        Set assumptions
+                        Configure value model
                       </BotShieldActionButton>
                     ) : null}
                   </>
                 ) : (
-                  <div className="bv-empty" style={{ border: 0, background: "transparent", padding: "12px 0" }}>
-                    <p>{payload.projection.reason}</p>
-                    {!configured ? (
-                      <BotShieldActionButton onClick={openAssumptions}>
-                        Set assumptions
-                      </BotShieldActionButton>
-                    ) : null}
+                  <div className="bv-inline-empty">
+                    <ValueIcon name="info" />
+                    <div>
+                      <strong>Projection unavailable</strong>
+                      <p>{payload.projection.reason}</p>
+                      {!configured ? (
+                        <BotShieldActionButton onClick={openAssumptions}>
+                          Configure value model
+                        </BotShieldActionButton>
+                      ) : null}
+                    </div>
                   </div>
                 )}
               </section>
 
-              {/* ── Methodology ── */}
+              <section
+                aria-labelledby="value-model-title"
+                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
+              >
+                <div className="bv-section-head">
+                  <h2 id="value-model-title">Your value model</h2>
+                </div>
+                <ValueModelSummary
+                  assumptions={payload.assumptions}
+                  configured={configured}
+                  onEdit={openAssumptions}
+                />
+              </section>
+
               <section className="bv-surface bv-surface-muted bv-animate-enter bv-animate-enter-delay-4">
                 <details className="bv-disclosure">
                   <summary>How calculations work</summary>
                   <div className="bv-disclosure-body">
                     <div>
-                      <h4>Observed data</h4>
+                      <h4>Observed</h4>
                       <ul>
-                        <li>Blocked and challenged storefront activity</li>
-                        <li>Protection category from BotShield reason codes</li>
-                        <li>Current plan price and selected period</li>
-                        <li>Observed history within retention limits</li>
+                        <li>Actual BotShield storefront protection activity</li>
+                        <li>Blocked, challenged, detected, and intervention counts</li>
+                        <li>Allocated plan cost for the selected period</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Estimates</h4>
+                      <h4>Estimated</h4>
                       <ul>
+                        <li>
+                          Financial values calculated from merchant assumptions and
+                          observed interventions
+                        </li>
                         <li>
                           Estimated value protected = blocked value + challenged value
                           + staff time savings
@@ -977,9 +1155,28 @@ export default function ValuePage() {
                           Estimated net value = estimated value protected minus
                           allocated plan cost
                         </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Projected</h4>
+                      <ul>
                         <li>
-                          Projections extrapolate from observed daily rates when enough
-                          history exists
+                          Future extrapolations based on available observed activity
+                          when enough history exists
+                        </li>
+                        <li>Projections are not guarantees of future results</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Retention</h4>
+                      <ul>
+                        <li>
+                          Historical observed activity is limited by BotShield&apos;s
+                          existing retention policy
+                        </li>
+                        <li>
+                          Longer ranges may include fewer retained days than the
+                          selected period label suggests
                         </li>
                       </ul>
                     </div>
@@ -989,46 +1186,6 @@ export default function ValuePage() {
                     </p>
                   </div>
                 </details>
-              </section>
-
-              {/* ── Why BotShield ── */}
-              <section
-                aria-labelledby="value-why-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
-              >
-                <div className="bv-section-head">
-                  <h2 id="value-why-title">Why BotShield</h2>
-                </div>
-                <div className="bv-why-grid">
-                  <article className="bv-why-card">
-                    <span className="bv-why-icon">
-                      <ValueIcon name="shop" centered />
-                    </span>
-                    <h3>Shopify-focused</h3>
-                    <p>Built for Shopify storefront protection workflows.</p>
-                  </article>
-                  <article className="bv-why-card">
-                    <span className="bv-why-icon">
-                      <ValueIcon name="info" centered />
-                    </span>
-                    <h3>Transparent impact</h3>
-                    <p>See protection activity alongside understandable estimates.</p>
-                  </article>
-                  <article className="bv-why-card">
-                    <span className="bv-why-icon">
-                      <ValueIcon name="person" centered />
-                    </span>
-                    <h3>Merchant control</h3>
-                    <p>Configure assumptions and protection rules on your terms.</p>
-                  </article>
-                  <article className="bv-why-card">
-                    <span className="bv-why-icon">
-                      <ValueIcon name="cost" centered />
-                    </span>
-                    <h3>Simple economics</h3>
-                    <p>Understand cost relative to observed protection value.</p>
-                  </article>
-                </div>
               </section>
             </div>
           ) : null}
