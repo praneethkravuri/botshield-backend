@@ -173,7 +173,17 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /vv2-semantic-status/);
   assert.match(page, /Estimated net value/);
   assert.match(page, /Estimated ROI/);
+  assert.match(page, /Est\. value \/ cost/);
   assert.match(page, /formatFinancial/);
+  assert.match(page, /formatValueToCostRatio/);
+});
+
+test("flagship-v3 build marker is present on Value root", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /data-value-ui-revision="flagship-v3"/);
 });
 
 test("interventions equal blocked plus challenged", () => {
@@ -403,15 +413,20 @@ test("Value page includes required information architecture sections", async () 
   );
 
   assert.match(page, /Your BotShield value/);
-  assert.match(page, /Protection efficiency/);
   assert.match(page, /Protection impact/);
+  assert.match(page, /vv2-impact-rail/);
   assert.match(page, /Value drivers/);
   assert.match(page, /Value outlook/);
   assert.match(page, /How Value is calculated/);
-  assert.match(page, /No interventions yet/);
+  assert.match(page, /No interventions this period/);
+  assert.match(page, /vv2-dual-grid/);
+  assert.match(page, /vv2-equation-card/);
   assert.match(page, /Set assumptions/);
   assert.match(page, /Save assumptions/);
   assert.match(page, /Cancel/);
+  assert.match(page, /Data window/);
+  assert.match(page, /Current-plan 12-month cost/);
+  assert.doesNotMatch(page, /Protection efficiency/);
   assert.doesNotMatch(page, /Annualized estimate/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
   assert.doesNotMatch(page, /Why BotShield/);
@@ -477,21 +492,23 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
     "utf8",
   );
 
-  assert.match(css, /max-width: 1280px/);
-  assert.match(css, /--vv2-hero-bg: #121a26/);
+  assert.match(css, /max-width: 1260px/);
+  assert.match(css, /--vv2-hero-bg: #141824/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(css, /glassmorphism/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /\.vv2-enter/);
   assert.match(css, /\.vv2-value-flow/);
-  assert.match(css, /\.vv2-efficiency-rail/);
-  assert.match(css, /\.vv2-outlook-section/);
+  assert.match(css, /\.vv2-macro-card/);
+  assert.match(css, /\.vv2-dual-grid/);
+  assert.match(css, /\.vv2-impact-rail/);
   assert.match(css, /\.vv2-impact-layout/);
-  assert.match(page, /See what BotShield protection is worth to your business/);
+  assert.match(page, /Understand the business impact of BotShield protection/);
   assert.match(page, /Observed \+ estimated/);
   assert.match(page, /vv2-driver-fill/);
   assert.match(page, /ValueInlineState/);
   assert.match(page, /deriveEstimatedRoi/);
+  assert.match(page, /data-value-ui-revision="flagship-v3"/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
 });
