@@ -33,13 +33,20 @@ test("value dashboard sections and hero layout exist", async () => {
   );
 
   assert.match(page, /bv-hero/);
+  assert.match(page, /bv-section/);
   assert.match(page, /bv-economics-flow/);
+  assert.match(page, /bv-evidence-rail/);
   assert.match(page, /bv-projection-grid/);
+  assert.match(page, /bv-why-row/);
   assert.match(page, /Protection value over time/);
   assert.match(page, /Where your value came from/);
   assert.match(page, /Your BotShield economics/);
+  assert.doesNotMatch(page, /Turn protection activity into business value/);
+  assert.doesNotMatch(page, /bv-surface/);
   assert.match(css, /\.bv-hero/);
+  assert.match(css, /\.bv-section/);
   assert.match(css, /\.bv-economics-flow/);
+  assert.match(css, /\.bv-evidence-rail/);
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
@@ -54,6 +61,7 @@ test("value dashboard chart legend matches rendered series logic", async () => {
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Threats stopped/);
   assert.match(page, /No stopped-threat activity in this period/);
+  assert.match(page, /Detected activity is not counted as stopped protection/);
   assert.match(page, /className="is-value"/);
   assert.match(page, /className="is-blocked"/);
 });

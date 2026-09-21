@@ -148,16 +148,24 @@ function ValueProtectionChart({
   if (!trend.length || !hasPlotValues) {
     return (
       <div className="bv-zero-state bv-zero-state--chart">
-        <div className="bv-zero-state-icon">
-          <ValueIcon name="trend" centered />
-        </div>
         <div className="bv-zero-state-copy">
           <h3>No stopped-threat activity in this period</h3>
-          <p>
-            {threatsDetected > 0
-              ? `BotShield detected ${formatHydrationStableNumber(threatsDetected)} suspicious events, but none were blocked or challenged. Trend reporting appears after an intervention is recorded.`
-              : "Protection value over time appears when BotShield records blocked or challenged storefront activity."}
-          </p>
+          {threatsDetected > 0 ? (
+            <>
+              <p>
+                {formatHydrationStableNumber(threatsDetected)} threats were detected,
+                but none were blocked or challenged.
+              </p>
+              <p className="bv-zero-state-note">
+                Detected activity is not counted as stopped protection.
+              </p>
+            </>
+          ) : (
+            <p>
+              Protection value over time appears when BotShield records blocked or
+              challenged storefront activity.
+            </p>
+          )}
         </div>
       </div>
     );
@@ -277,9 +285,6 @@ function CategoryBreakdown({ categories, currency, configured }) {
   if (!categories.length) {
     return (
       <div className="bv-zero-state bv-zero-state--compact">
-        <div className="bv-zero-state-icon">
-          <ValueIcon name="shield" centered />
-        </div>
         <div className="bv-zero-state-copy">
           <h3>No categorized value yet</h3>
           <p>
@@ -728,37 +733,18 @@ export default function ValuePage() {
                 </div>
               ) : null}
 
-              {!configured && hasActivity ? (
-                <div className="bv-zero-state bv-zero-state--inline bv-animate-enter bv-animate-enter-delay-2">
-                  <div className="bv-zero-state-icon">
-                    <ValueIcon name="settings" centered />
-                  </div>
-                  <div className="bv-zero-state-copy">
-                    <h3>Turn protection activity into business value</h3>
-                    <p>Set your assumptions to estimate the financial impact of BotShield.</p>
-                    <BotShieldPolarisButton variant="primary" onClick={openAssumptions}>
-                      Set assumptions
-                    </BotShieldPolarisButton>
-                  </div>
-                </div>
-              ) : null}
-
               {/* ── Economics flow ── */}
               <section
                 aria-labelledby="value-economics-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-2"
+                className="bv-section bv-animate-enter bv-animate-enter-delay-2"
               >
                 <div className="bv-section-head">
                   <div>
                     <h2 id="value-economics-title">Your BotShield economics</h2>
-                    <p>How your plan cost compares to estimated protection value.</p>
                   </div>
                 </div>
                 <div className="bv-economics-flow">
                   <div className="bv-flow-step is-cost">
-                    <span className="bv-flow-step-icon">
-                      <ValueIcon name="cost" centered />
-                    </span>
                     <span className="bv-flow-step-label">You paid</span>
                     <span className="bv-flow-step-value">
                       <AnimatedCurrency
@@ -772,9 +758,6 @@ export default function ValuePage() {
                     →
                   </span>
                   <div className="bv-flow-step is-protected">
-                    <span className="bv-flow-step-icon">
-                      <ValueIcon name="shield" centered />
-                    </span>
                     <span className="bv-flow-step-label">BotShield protected</span>
                     <span className="bv-flow-step-value">
                       {configured ? (
@@ -792,9 +775,6 @@ export default function ValuePage() {
                     →
                   </span>
                   <div className="bv-flow-step is-net">
-                    <span className="bv-flow-step-icon">
-                      <ValueIcon name="trend" centered />
-                    </span>
                     <span className="bv-flow-step-label">Estimated net value</span>
                     <span className="bv-flow-step-value">
                       {configured ? (
@@ -810,17 +790,16 @@ export default function ValuePage() {
                   </div>
                 </div>
                 {payload.economics.valueToCostRatio != null ? (
-                  <div className="bv-efficiency-badge">
-                    <ValueIcon name="trend" centered />
+                  <p className="bv-efficiency-note">
                     {payload.economics.valueToCostRatio}× estimated value-to-cost
-                  </div>
+                  </p>
                 ) : null}
               </section>
 
               {/* ── Chart ── */}
               <section
                 aria-labelledby="value-chart-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
+                className="bv-section bv-animate-enter bv-animate-enter-delay-3"
               >
                 <div className="bv-section-head">
                   <div>
@@ -843,7 +822,7 @@ export default function ValuePage() {
               {/* ── Category breakdown ── */}
               <section
                 aria-labelledby="value-breakdown-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-3"
+                className="bv-section bv-animate-enter bv-animate-enter-delay-3"
               >
                 <div className="bv-section-head">
                   <div>
@@ -858,18 +837,17 @@ export default function ValuePage() {
                 />
               </section>
 
-              {/* ── Protection basis (de-emphasized) ── */}
+              {/* ── Protection evidence ── */}
               <section
                 aria-labelledby="value-basis-title"
-                className="bv-surface bv-surface-muted bv-surface-compact bv-animate-enter bv-animate-enter-delay-4"
+                className="bv-section bv-animate-enter bv-animate-enter-delay-4"
               >
-                <div className="bv-section-head" style={{ marginBottom: 12 }}>
+                <div className="bv-section-head">
                   <div>
                     <h2 id="value-basis-title">Protection behind these estimates</h2>
-                    <p>Observed storefront activity supporting the financial model.</p>
                   </div>
                 </div>
-                <div className="bv-basis">
+                <div className="bv-evidence-rail">
                   <div className="bv-basis-item is-primary">
                     <span className="bv-basis-label">Blocked</span>
                     <span className="bv-basis-value">
@@ -903,7 +881,7 @@ export default function ValuePage() {
               {/* ── Projections ── */}
               <section
                 aria-labelledby="value-projection-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
+                className="bv-section bv-animate-enter bv-animate-enter-delay-4"
               >
                 <div className="bv-section-head">
                   <div>
@@ -973,44 +951,35 @@ export default function ValuePage() {
                     ) : null}
                   </>
                   ) : (
-                    <div className="bv-zero-state bv-zero-state--compact">
+                    <div className="bv-zero-state bv-zero-state--projection">
                       <div className="bv-zero-state-copy">
-                        <h3>Projections are not yet meaningful</h3>
+                        <h3>Projections require meaningful protection activity</h3>
                         <p>
                           Forward estimates need recorded blocked or challenged
                           activity at the current observed rate.
                         </p>
                         <p className="bv-projection-basis">{payload.projection.basisLabel}</p>
-                        {!configured ? (
-                          <BotShieldActionButton onClick={openAssumptions}>
-                            Set assumptions
-                          </BotShieldActionButton>
-                        ) : null}
                       </div>
                     </div>
                   )
                 ) : (
-                  <div className="bv-zero-state bv-zero-state--compact">
+                  <div className="bv-zero-state bv-zero-state--projection">
                     <div className="bv-zero-state-copy">
                       <p>{payload.projection.reason}</p>
                     </div>
-                    {!configured ? (
-                      <BotShieldActionButton onClick={openAssumptions}>
-                        Set assumptions
-                      </BotShieldActionButton>
-                    ) : null}
                   </div>
                 )}
               </section>
 
               {/* ── Methodology ── */}
-              <section className="bv-surface bv-surface-disclosure bv-animate-enter bv-animate-enter-delay-4">
+              <section className="bv-section bv-section-disclosure bv-animate-enter bv-animate-enter-delay-4">
                 <details className="bv-disclosure">
                   <summary>
                     <span className="bv-disclosure-label">
                       <ValueIcon name="info" centered />
                       How calculations work
                     </span>
+                    <span aria-hidden="true" className="bv-disclosure-chevron" />
                   </summary>
                   <div className="bv-disclosure-body">
                     <div>
@@ -1050,34 +1019,34 @@ export default function ValuePage() {
               {/* ── Why BotShield ── */}
               <section
                 aria-labelledby="value-why-title"
-                className="bv-surface bv-animate-enter bv-animate-enter-delay-4"
+                className="bv-section bv-section-footer bv-animate-enter bv-animate-enter-delay-4"
               >
                 <div className="bv-section-head">
                   <h2 id="value-why-title">Why BotShield</h2>
                 </div>
-                <div className="bv-why-grid">
-                  <article className="bv-why-card">
+                <div className="bv-why-row">
+                  <article className="bv-why-item">
                     <span className="bv-why-icon">
                       <ValueIcon name="shop" centered />
                     </span>
                     <h3>Shopify-focused</h3>
                     <p>Built for Shopify storefront protection workflows.</p>
                   </article>
-                  <article className="bv-why-card">
+                  <article className="bv-why-item">
                     <span className="bv-why-icon">
                       <ValueIcon name="info" centered />
                     </span>
                     <h3>Transparent impact</h3>
                     <p>See protection activity alongside understandable estimates.</p>
                   </article>
-                  <article className="bv-why-card">
+                  <article className="bv-why-item">
                     <span className="bv-why-icon">
                       <ValueIcon name="person" centered />
                     </span>
                     <h3>Merchant control</h3>
                     <p>Configure assumptions and protection rules on your terms.</p>
                   </article>
-                  <article className="bv-why-card">
+                  <article className="bv-why-item">
                     <span className="bv-why-icon">
                       <ValueIcon name="cost" centered />
                     </span>
