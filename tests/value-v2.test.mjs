@@ -169,10 +169,10 @@ test("estimated values are clearly distinguished in Value UI", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /Estimated value protected/);
+  assert.match(page, /Estimated protected value/);
   assert.match(page, /vv2-estimated-tag/);
   assert.match(page, /Estimated net value/);
-  assert.match(page, /Estimated protected value/);
+  assert.match(page, /Estimated ROI/);
   assert.match(page, /formatFinancial/);
 });
 
@@ -201,7 +201,7 @@ test("true measured zero renders 0 for observed counts", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /formatCount\(payload\.activity\.threatsBlocked\)/);
+  assert.match(page, /formatCount\(activity\.threatsBlocked\)/);
   const dashboard = buildDashboard([]);
   assert.equal(dashboard.activity.threatsBlocked, 0);
 });
@@ -243,9 +243,9 @@ test("projection is explicitly labeled in UI", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /Projected impact/);
-  assert.match(page, /vv2-projection-tag/);
-  assert.match(page, />Projection</);
+  assert.match(page, /Forward value outlook/);
+  assert.match(page, /vv2-outlook-tag/);
+  assert.match(page, />Estimate</);
 });
 
 test("observed ranges are limited to 7d and 30d without fake long history", () => {
@@ -402,13 +402,14 @@ test("Value page includes required information architecture sections", async () 
     "utf8",
   );
 
-  assert.match(page, /Protection evidence/);
-  assert.match(page, /Value economics/);
-  assert.match(page, /Protection value over time/);
+  assert.match(page, /Your BotShield value/);
+  assert.match(page, /Protection efficiency/);
+  assert.match(page, /Annualized estimate/);
+  assert.match(page, /Protection impact over time/);
   assert.match(page, /Value drivers/);
-  assert.match(page, /Projected impact/);
+  assert.match(page, /Forward value outlook/);
   assert.match(page, /How Value is calculated/);
-  assert.match(page, /No protection interventions in this period/);
+  assert.match(page, /No interventions yet/);
   assert.match(page, /Set assumptions/);
   assert.match(page, /Save assumptions/);
   assert.match(page, /Cancel/);
@@ -463,4 +464,30 @@ test("value server layer queries storefront events and billing status", async ()
 test("production build script remains available for Value verification", async () => {
   const pkg = await readFile(new URL("../package.json", import.meta.url), "utf8");
   assert.match(pkg, /"build": "react-router build"/);
+});
+
+test("Value premium visual layer keeps isolated styling contracts", async () => {
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(css, /max-width: 1280px/);
+  assert.match(css, /--vv2-hero-bg: #141c28/);
+  assert.doesNotMatch(css, /backdrop-filter/);
+  assert.doesNotMatch(css, /glassmorphism/);
+  assert.match(css, /prefers-reduced-motion/);
+  assert.match(css, /\.vv2-enter/);
+  assert.match(css, /\.vv2-value-flow/);
+  assert.match(css, /\.vv2-efficiency-rail/);
+  assert.match(css, /\.vv2-outlook-section/);
+  assert.match(page, /See what BotShield protection is worth to your business/);
+  assert.match(page, /vv2-driver-fill/);
+  assert.match(page, /ValueInlineState/);
+  assert.match(page, /deriveEstimatedRoi/);
+  assert.doesNotMatch(page, /Value economics/);
 });
