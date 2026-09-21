@@ -170,21 +170,18 @@ test("estimated values are clearly distinguished in Value UI", async () => {
     "utf8",
   );
   assert.match(page, /Estimated protected value/);
-  assert.match(page, /vv2-semantic-status/);
   assert.match(page, /Estimated net value/);
   assert.match(page, /Estimated ROI/);
-  assert.match(page, /Est\. value \/ cost/);
   assert.match(page, /formatFinancial/);
-  assert.match(page, /formatValueToCostRatio/);
 });
 
-test("flagship-v4 build marker is present on Value root", async () => {
+test("flagship-v5 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v4"/);
-  assert.match(page, /data-value-layout="executive-equation-impact"/);
+  assert.match(page, /data-value-ui-revision="flagship-v5"/);
+  assert.match(page, /data-value-layout="light-financial-dashboard"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -194,8 +191,8 @@ test("impact chart keeps observed event counts separate from financial estimates
   );
 
   const chartBody = page.slice(
-    page.indexOf("function ValueImpactChartBody"),
-    page.indexOf("function AssumptionsModal"),
+    page.indexOf("function ValueObservedChart"),
+    page.indexOf("function ValueObservedSection"),
   );
   assert.match(chartBody, /bucket\.interventions/);
   assert.match(chartBody, /Blocked/);
@@ -204,7 +201,28 @@ test("impact chart keeps observed event counts separate from financial estimates
   assert.doesNotMatch(chartBody, /formatValueV2Currency/);
 });
 
-test("Value outlook uses a compact projected comparison table", async () => {
+test("flagship-v5 uses light first viewport instead of dark executive hero", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /vv2-viewport-split/);
+  assert.match(page, /vv2-financial-panel/);
+  assert.match(page, /vv2-economics-panel/);
+  assert.match(page, /vv2-business-equation/);
+  assert.doesNotMatch(page, /vv2-executive/);
+  assert.doesNotMatch(page, /Your BotShield value/);
+  assert.doesNotMatch(page, /vv2-equation-card/);
+  assert.doesNotMatch(css, /--vv2-hero-bg/);
+  assert.doesNotMatch(css, /\.vv2-executive/);
+});
+
+test("Projected outlook uses a compact projected comparison table", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -287,7 +305,7 @@ test("projection is explicitly labeled in UI", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /Value outlook/);
+  assert.match(page, /Projected outlook/);
   assert.match(page, /vv2-projected-badge/);
   assert.match(page, /vv2-outlook-table/);
   assert.match(page, />Projected</);
@@ -447,20 +465,21 @@ test("Value page includes required information architecture sections", async () 
     "utf8",
   );
 
-  assert.match(page, /Your BotShield value/);
-  assert.match(page, /Protection impact/);
-  assert.match(page, /vv2-impact-rail/);
+  assert.match(page, /Observed protection/);
+  assert.match(page, /vv2-analytics-band/);
+  assert.match(page, /vv2-observed-summary/);
   assert.match(page, /Value drivers/);
-  assert.match(page, /Value outlook/);
+  assert.match(page, /Projected outlook/);
   assert.match(page, /How Value is calculated/);
-  assert.match(page, /No interventions this period/);
-  assert.match(page, /vv2-dual-grid/);
-  assert.match(page, /vv2-equation-card/);
+  assert.match(page, /No protection interventions recorded in this period/);
+  assert.match(page, /vv2-lower-band/);
+  assert.match(page, /vv2-business-equation/);
   assert.match(page, /Set assumptions/);
   assert.match(page, /Save assumptions/);
   assert.match(page, /Cancel/);
   assert.match(page, /Data window/);
   assert.match(page, /Current-plan 12-month cost/);
+  assert.doesNotMatch(page, /Protection impact/);
   assert.doesNotMatch(page, /Protection efficiency/);
   assert.doesNotMatch(page, /Annualized estimate/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
@@ -528,23 +547,21 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   );
 
   assert.match(css, /max-width: 1260px/);
-  assert.match(css, /--vv2-hero-bg: #141824/);
+  assert.match(css, /\.vv2-viewport-split/);
+  assert.match(css, /\.vv2-business-equation/);
+  assert.match(css, /\.vv2-analytics-layout/);
+  assert.match(css, /\.vv2-lower-band/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(css, /glassmorphism/);
+  assert.doesNotMatch(css, /\.vv2-executive/);
   assert.match(css, /prefers-reduced-motion/);
   assert.match(css, /\.vv2-enter/);
-  assert.match(css, /\.vv2-value-flow/);
-  assert.match(css, /\.vv2-macro-card/);
-  assert.match(css, /\.vv2-dual-grid/);
-  assert.match(css, /\.vv2-impact-rail/);
-  assert.match(css, /\.vv2-impact-layout/);
   assert.match(page, /Understand the business impact of BotShield protection/);
-  assert.match(page, /Observed \+ estimated/);
   assert.match(page, /vv2-driver-fill/);
   assert.match(page, /ValueInlineState/);
   assert.match(page, /deriveEstimatedRoi/);
-  assert.match(page, /data-value-ui-revision="flagship-v4"/);
-  assert.match(page, /data-value-layout="executive-equation-impact"/);
+  assert.match(page, /data-value-ui-revision="flagship-v5"/);
+  assert.match(page, /data-value-layout="light-financial-dashboard"/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
 });

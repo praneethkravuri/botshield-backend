@@ -53,18 +53,6 @@ function formatRoiPercent(value, configured) {
   return `${prefix}${Math.abs(rounded)}%`;
 }
 
-function formatValueToCostRatio(value, configured) {
-  if (!configured || value == null || !Number.isFinite(value)) return "—";
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded >= 1000) {
-    return `${Math.round(rounded).toLocaleString("en-US")}×`;
-  }
-  if (Number.isInteger(rounded)) {
-    return `${rounded}×`;
-  }
-  return `${rounded.toFixed(1)}×`;
-}
-
 function deriveCostPerIntervention(allocatedPlanCost, interventions) {
   if (interventions <= 0 || allocatedPlanCost == null) return null;
   return allocatedPlanCost / interventions;
@@ -108,12 +96,9 @@ function countObservedInterventionDays(trend) {
   return trend.filter((bucket) => bucket.interventions > 0).length;
 }
 
-function hasTrendActivity(trend) {
+function hasObservedChartActivity(trend) {
   return trend.some(
-    (bucket) =>
-      bucket.blocked > 0 ||
-      bucket.challenged > 0 ||
-      (bucket.estimatedValueProtected || 0) > 0,
+    (bucket) => bucket.blocked > 0 || bucket.challenged > 0 || bucket.interventions > 0,
   );
 }
 
@@ -131,155 +116,126 @@ function ValueInlineState({ icon, title, children }) {
   );
 }
 
-function ValueImpactSection({
-  trend,
-  currency,
-  assumptionsConfigured,
-  activity,
-  economics,
-  observationLabel,
-}) {
-  const hasActivity = hasTrendActivity(trend);
+function ValueObservedChart({ trend, observationLabel }) {
+  const maximum = Math.max(1, ...trend.map((bucket) => bucket.interventions));
 
   return (
-    <>
-      <div className="vv2-impact-rail" aria-label="Observed protection metrics">
-        <div className="vv2-impact-metric is-detected">
-          <span className="vv2-metric-label">Detected</span>
-          <span className="vv2-metric-value">{formatCount(activity.threatsDetected)}</span>
+    <div className="vv2-observed-chart">
+      <div className="vv2-chart-head">
+        <div>
+          <h3>Protection activity</h3>
+          <p>{observationLabel}</p>
         </div>
-        <div className="vv2-impact-metric">
-          <span className="vv2-metric-label">Blocked</span>
-          <span className="vv2-metric-value">{formatCount(activity.threatsBlocked)}</span>
-        </div>
-        <div className="vv2-impact-metric">
-          <span className="vv2-metric-label">Challenged</span>
-          <span className="vv2-metric-value">{formatCount(activity.challengesIssued)}</span>
-        </div>
-        <div className="vv2-impact-metric">
-          <span className="vv2-metric-label">Interventions</span>
-          <span className="vv2-metric-value">{formatCount(activity.interventions)}</span>
+        <div className="vv2-chart-legend" aria-label="Chart legend">
+          <span>
+            <i className="is-blocked" aria-hidden="true" />
+            Blocked
+          </span>
+          <span>
+            <i className="is-challenged" aria-hidden="true" />
+            Challenged
+          </span>
+          <span>
+            <i className="is-interventions" aria-hidden="true" />
+            Interventions
+          </span>
         </div>
       </div>
-      <p className="vv2-impact-note">
-        Detected is observed activity. Interventions are blocked or challenged activity.
-      </p>
-      {hasActivity ? (
-        <div className="vv2-impact-layout">
-          <div className="vv2-chart-wrap">
-            <div className="vv2-chart-head">
-              <div>
-                <h3>Intervention history</h3>
-                <p>{observationLabel}</p>
-              </div>
-              <div className="vv2-chart-legend" aria-label="Chart legend">
-                <span>
-                  <i className="is-blocked" aria-hidden="true" />
-                  Blocked
-                </span>
-                <span>
-                  <i className="is-challenged" aria-hidden="true" />
-                  Challenged
-                </span>
-              </div>
-            </div>
-            <ValueImpactChartBody trend={trend} />
-          </div>
-          <aside aria-label="Period activity" className="vv2-period-summary">
-            <div className="vv2-period-summary-head">
-              <span>Observed</span>
-              <h3>Period activity</h3>
-            </div>
-            <dl>
-              <div>
-                <dt>Blocked</dt>
-                <dd>{formatCount(activity.threatsBlocked)}</dd>
-              </div>
-              <div>
-                <dt>Challenged</dt>
-                <dd>{formatCount(activity.challengesIssued)}</dd>
-              </div>
-              <div>
-                <dt>Interventions</dt>
-                <dd>{formatCount(activity.interventions)}</dd>
-              </div>
-              <div>
-                <dt>Estimated protected value</dt>
-                <dd className="is-estimated">
-                  {formatFinancial(
-                    economics.estimatedValueProtected,
-                    currency,
-                    assumptionsConfigured,
-                  )}
-                </dd>
-              </div>
-            </dl>
-          </aside>
+      <div className="vv2-chart" role="group" aria-label="Protection activity chart">
+        <div className="vv2-chart-scale" aria-hidden="true">
+          <span>{formatCount(maximum)}</span>
+          <span>{formatCount(Math.round(maximum / 2))}</span>
+          <span>0</span>
         </div>
-      ) : (
-        <ValueInlineState icon="—" title="No interventions this period">
-          <p>Impact history appears when BotShield blocks or challenges activity.</p>
-        </ValueInlineState>
-      )}
-    </>
+        <div className="vv2-chart-bars">
+          {trend.map((bucket) => {
+            const blockedHeight = (bucket.blocked / maximum) * 100;
+            const challengedHeight = (bucket.challenged / maximum) * 100;
+            const stackHeight = Math.max(
+              blockedHeight + challengedHeight,
+              bucket.interventions > 0 ? 4 : 0,
+            );
+
+            return (
+              <button
+                type="button"
+                className="vv2-chart-col"
+                key={bucket.key}
+                aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged, ${bucket.interventions} interventions`}
+              >
+                <div
+                  className="vv2-chart-bar-stack"
+                  style={{ height: `${stackHeight}%` }}
+                >
+                  {challengedHeight > 0 ? (
+                    <span className="is-challenged" style={{ flex: challengedHeight }} />
+                  ) : null}
+                  {blockedHeight > 0 ? (
+                    <span className="is-blocked" style={{ flex: blockedHeight }} />
+                  ) : null}
+                </div>
+                <span className="vv2-chart-tooltip" role="tooltip">
+                  <strong>{bucket.label}</strong>
+                  <span>
+                    Blocked <b>{formatCount(bucket.blocked)}</b>
+                  </span>
+                  <span>
+                    Challenged <b>{formatCount(bucket.challenged)}</b>
+                  </span>
+                  <span>
+                    Interventions <b>{formatCount(bucket.interventions)}</b>
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="vv2-chart-axis" aria-hidden="true">
+          <span>{trend[0]?.label}</span>
+          <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
+          <span>{trend[trend.length - 1]?.label}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function ValueImpactChartBody({ trend }) {
-  const maximum = Math.max(
-    1,
-    ...trend.map((bucket) => bucket.interventions),
-  );
+function ValueObservedSection({ trend, activity, observationLabel }) {
+  const hasActivity = hasObservedChartActivity(trend);
 
   return (
-    <div className="vv2-chart" role="group" aria-label="Protection impact chart">
-      <div className="vv2-chart-scale" aria-hidden="true">
-        <span>{formatCount(maximum)}</span>
-        <span>{formatCount(Math.round(maximum / 2))}</span>
-        <span>0</span>
-      </div>
-      <div className="vv2-chart-bars">
-        {trend.map((bucket) => {
-          const blockedHeight = (bucket.blocked / maximum) * 100;
-          const challengedHeight = (bucket.challenged / maximum) * 100;
-          const stackHeight = Math.max(
-            blockedHeight + challengedHeight,
-            bucket.interventions > 0 ? 4 : 0,
-          );
-
-          return (
-            <button
-              type="button"
-              className="vv2-chart-col"
-              key={bucket.key}
-              aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged, ${bucket.interventions} interventions`}
-            >
-              <div
-                className="vv2-chart-bar-stack"
-                style={{ height: `${stackHeight}%` }}
-              >
-                {challengedHeight > 0 ? (
-                  <span className="is-challenged" style={{ flex: challengedHeight }} />
-                ) : null}
-                {blockedHeight > 0 ? (
-                  <span className="is-blocked" style={{ flex: blockedHeight }} />
-                ) : null}
-              </div>
-              <span className="vv2-chart-tooltip" role="tooltip">
-                <strong>{bucket.label}</strong>
-                <span>Blocked <b>{formatCount(bucket.blocked)}</b></span>
-                <span>Challenged <b>{formatCount(bucket.challenged)}</b></span>
-                <span>Total <b>{formatCount(bucket.interventions)}</b></span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="vv2-chart-axis" aria-hidden="true">
-        <span>{trend[0]?.label}</span>
-        <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
-        <span>{trend[trend.length - 1]?.label}</span>
-      </div>
+    <div className="vv2-analytics-layout">
+      {hasActivity ? (
+        <ValueObservedChart observationLabel={observationLabel} trend={trend} />
+      ) : (
+        <div className="vv2-chart-empty">
+          <p>No intervention activity to chart for this period.</p>
+        </div>
+      )}
+      <aside aria-label="Observed summary" className="vv2-observed-summary">
+        <h3>Observed summary</h3>
+        <dl>
+          <div className="is-detected">
+            <dt>Detected</dt>
+            <dd>{formatCount(activity.threatsDetected)}</dd>
+          </div>
+          <div>
+            <dt>Blocked</dt>
+            <dd>{formatCount(activity.threatsBlocked)}</dd>
+          </div>
+          <div>
+            <dt>Challenged</dt>
+            <dd>{formatCount(activity.challengesIssued)}</dd>
+          </div>
+          <div>
+            <dt>Interventions</dt>
+            <dd>{formatCount(activity.interventions)}</dd>
+          </div>
+        </dl>
+        <p className="vv2-observed-note">
+          Detected is observed activity. Interventions are blocked or challenged activity.
+        </p>
+      </aside>
     </div>
   );
 }
@@ -520,8 +476,8 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="executive-equation-impact"
-          data-value-ui-revision="flagship-v4"
+          data-value-layout="light-financial-dashboard"
+          data-value-ui-revision="flagship-v5"
         >
           <header className="vv2-header">
             <div className="vv2-header-copy">
@@ -591,138 +547,122 @@ export default function ValuePage() {
                 <p className="vv2-retention-note">{payload.retentionMessage}</p>
               ) : null}
 
-              <section aria-labelledby="vv2-executive-title" className="vv2-executive vv2-enter">
-                <div className="vv2-executive-head">
-                  <span className="vv2-window-label">{payload.observationLabel}</span>
-                  <span
-                    className="vv2-semantic-status"
-                    title="Observed protection metrics combined with configured financial assumptions."
-                  >
-                    <i aria-hidden="true" className="vv2-semantic-dot" />
-                    Observed + estimated
-                  </span>
-                </div>
-                <div className="vv2-executive-main">
-                  <div className="vv2-executive-primary">
-                    <p className="vv2-executive-label" id="vv2-executive-title">
-                      Estimated protected value
-                    </p>
-                    <div className="vv2-executive-value-row">
-                      <p
-                        className={`vv2-executive-value vv2-data-reveal${
-                          configured &&
-                          (economics.estimatedValueProtected || 0) > 0
-                            ? " is-positive"
-                            : configured
-                              ? ""
-                              : " is-unavailable"
-                        }`}
-                        aria-live="polite"
-                      >
-                        {formatFinancial(
-                          economics.estimatedValueProtected,
-                          currency,
-                          configured,
-                        )}
-                      </p>
+              {activity.interventions === 0 ? (
+                <div className="vv2-zero-band vv2-enter">
+                  <p className="vv2-zero-band-message">
+                    No protection interventions recorded in this period.
+                  </p>
+                  <div className="vv2-zero-band-grid">
+                    <div className="vv2-zero-band-item">
+                      <span className="vv2-metric-label">BotShield cost</span>
+                      <strong>
+                        {formatValueV2Currency(economics.allocatedPlanCost, currency)}
+                      </strong>
                     </div>
-                    <p className="vv2-executive-support">
-                      {configured
-                        ? "Estimated from observed protection and your configured assumptions."
-                        : "Configure assumptions to estimate financial impact."}
-                    </p>
                     {!configured ? (
-                      <button
-                        className="vv2-btn vv2-btn-primary vv2-btn-hero"
-                        onClick={openAssumptions}
-                        type="button"
-                      >
-                        Set assumptions
-                      </button>
+                      <div className="vv2-zero-band-item">
+                        <span className="vv2-metric-label">Financial estimates</span>
+                        <button
+                          className="vv2-btn vv2-btn-primary vv2-btn-compact"
+                          onClick={openAssumptions}
+                          type="button"
+                        >
+                          Set assumptions
+                        </button>
+                      </div>
                     ) : null}
                   </div>
-                  <div className="vv2-executive-outcomes" aria-label="Economic outcomes">
-                    <div className="vv2-outcome-metric">
+                </div>
+              ) : null}
+
+              <section
+                aria-labelledby="vv2-financial-title"
+                className="vv2-viewport-split vv2-enter"
+              >
+                <div className="vv2-financial-panel">
+                  <p className="vv2-metric-label" id="vv2-financial-title">
+                    Estimated protected value
+                  </p>
+                  <p
+                    className={`vv2-hero-amount vv2-metric-reveal${
+                      configured &&
+                      (economics.estimatedValueProtected || 0) > 0
+                        ? " is-positive"
+                        : ""
+                    }`}
+                    aria-live="polite"
+                  >
+                    {formatFinancial(
+                      economics.estimatedValueProtected,
+                      currency,
+                      configured,
+                    )}
+                  </p>
+                  <div className="vv2-financial-secondary">
+                    <div className="vv2-financial-secondary-item">
                       <span className="vv2-metric-label">Estimated net value</span>
-                      <span className="vv2-metric-value vv2-data-reveal">
+                      <strong className="vv2-metric-reveal">
                         {formatFinancial(economics.estimatedNetValue, currency, configured)}
-                      </span>
+                      </strong>
                     </div>
-                    <div className="vv2-outcome-metric">
+                    <div className="vv2-financial-secondary-item">
                       <span className="vv2-metric-label">Estimated ROI</span>
-                      <span className="vv2-metric-value vv2-data-reveal">
+                      <strong className="vv2-metric-reveal">
                         {formatRoiPercent(estimatedRoi, configured)}
-                      </span>
-                    </div>
-                    <div className="vv2-outcome-metric">
-                      <span className="vv2-metric-label">Est. value / cost</span>
-                      <span className="vv2-metric-value vv2-data-reveal">
-                        {formatValueToCostRatio(economics.valueToCostRatio, configured)}
-                      </span>
+                      </strong>
                     </div>
                   </div>
                 </div>
-                <div className="vv2-executive-rail" aria-label="Executive instrument rail">
-                  <div className="vv2-executive-metric">
-                    <span className="vv2-metric-label">BotShield cost</span>
-                    <span className="vv2-metric-value">
-                      {formatValueV2Currency(economics.allocatedPlanCost, currency)}
-                    </span>
-                  </div>
-                  <div className="vv2-executive-metric">
-                    <span className="vv2-metric-label">Interventions</span>
-                    <span className="vv2-metric-value">
-                      {formatCount(activity.interventions)}
-                    </span>
-                  </div>
-                  <div className="vv2-executive-metric">
-                    <span className="vv2-metric-label">Cost / intervention</span>
-                    <span className="vv2-metric-value">
-                      {formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
-                    </span>
-                  </div>
-                  <div className="vv2-executive-metric">
-                    <span className="vv2-metric-label">Est. value / intervention</span>
-                    <span className="vv2-metric-value">
-                      {formatPerUnit(estValuePerIntervention, currency, configured)}
-                    </span>
-                  </div>
+                <div aria-label="BotShield economics" className="vv2-economics-panel">
+                  <p className="vv2-metric-label">BotShield cost</p>
+                  <p className="vv2-cost-amount">
+                    {formatValueV2Currency(economics.allocatedPlanCost, currency)}
+                  </p>
+                  <dl className="vv2-economics-stats">
+                    <div>
+                      <dt>Interventions</dt>
+                      <dd>{formatCount(activity.interventions)}</dd>
+                    </div>
+                    <div>
+                      <dt>Cost / intervention</dt>
+                      <dd>
+                        {formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Est. value / intervention</dt>
+                      <dd>
+                        {formatPerUnit(estValuePerIntervention, currency, configured)}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
               </section>
 
               <section
-                aria-labelledby="vv2-flow-title"
-                className="vv2-macro-card vv2-equation-card vv2-enter"
+                aria-label="Business value equation"
+                className="vv2-business-equation vv2-enter"
               >
-                <div className="vv2-equation-head">
-                  <div>
-                    <h2 className="vv2-section-title" id="vv2-flow-title">
-                      Your BotShield value
-                    </h2>
-                    <p className="vv2-section-subtitle">
-                      From subscription cost to estimated business impact.
-                    </p>
-                  </div>
-                </div>
-                <div className="vv2-value-flow" key={`flow-${range}`}>
-                  <div className="vv2-flow-stage vv2-flow-step-1">
-                    <span className="vv2-flow-node-marker" aria-hidden="true" />
-                    <span className="vv2-flow-label">You paid</span>
+                <div className="vv2-equation-track" key={`equation-${range}`}>
+                  <div className="vv2-equation-cell vv2-eq-step-1">
+                    <span className="vv2-metric-label">BotShield cost</span>
                     <strong>{formatValueV2Currency(economics.allocatedPlanCost, currency)}</strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-2" />
-                  <div className="vv2-flow-stage vv2-flow-step-3">
-                    <span className="vv2-flow-node-marker" aria-hidden="true" />
-                    <span className="vv2-flow-label">BotShield intervened</span>
+                  <span aria-hidden="true" className="vv2-equation-op vv2-eq-step-2">
+                    +
+                  </span>
+                  <div className="vv2-equation-cell vv2-eq-step-3">
+                    <span className="vv2-metric-label">Protection activity</span>
                     <strong>
                       {formatCount(activity.interventions)}{" "}
-                      {activity.interventions === 1 ? "time" : "times"}
+                      {activity.interventions === 1 ? "intervention" : "interventions"}
                     </strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-4" />
-                  <div className="vv2-flow-stage vv2-flow-step-5">
-                    <span className="vv2-flow-node-marker" aria-hidden="true" />
-                    <span className="vv2-flow-label">Est. protected</span>
+                  <span aria-hidden="true" className="vv2-equation-op vv2-equation-arrow vv2-eq-step-4">
+                    →
+                  </span>
+                  <div className="vv2-equation-cell vv2-eq-step-5">
+                    <span className="vv2-metric-label">Estimated protected value</span>
                     <strong>
                       {formatFinancial(
                         economics.estimatedValueProtected,
@@ -731,55 +671,45 @@ export default function ValuePage() {
                       )}
                     </strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-6" />
-                  <div className="vv2-flow-stage vv2-flow-step-7 is-outcome">
-                    <span className="vv2-flow-node-marker" aria-hidden="true" />
-                    <span className="vv2-flow-label">Est. net value</span>
+                  <span aria-hidden="true" className="vv2-equation-op vv2-equation-arrow vv2-eq-step-6">
+                    →
+                  </span>
+                  <div className="vv2-equation-cell is-outcome vv2-eq-step-7">
+                    <span className="vv2-metric-label">Estimated net value</span>
                     <strong>
                       {formatFinancial(economics.estimatedNetValue, currency, configured)}
                     </strong>
                   </div>
                 </div>
-                <p className="vv2-equation-note">
-                  Observed subscription cost and interventions are shown alongside estimates
-                  derived from your configured assumptions.
-                </p>
               </section>
 
               <section
-                aria-labelledby="vv2-impact-title"
-                className="vv2-macro-card vv2-protection-card vv2-enter"
+                aria-labelledby="vv2-observed-title"
+                className="vv2-analytics-band vv2-enter"
               >
-                <div className="vv2-section-head">
-                  <h2 className="vv2-section-title" id="vv2-impact-title">
-                    Protection impact
+                <div className="vv2-band-head">
+                  <h2 className="vv2-band-title" id="vv2-observed-title">
+                    Observed protection
                   </h2>
+                  <span className="vv2-window-label">{payload.observationLabel}</span>
                 </div>
-                <ValueImpactSection
+                <ValueObservedSection
                   activity={activity}
-                  assumptionsConfigured={configured}
-                  currency={currency}
-                  economics={economics}
                   observationLabel={payload.observationLabel}
                   trend={payload.trend}
                 />
               </section>
 
-              <div className="vv2-dual-grid vv2-enter">
-                <section
-                  aria-labelledby="vv2-drivers-title"
-                  className="vv2-macro-card vv2-drivers-card"
-                >
-                  <div className="vv2-section-head">
-                    <h2 className="vv2-section-title" id="vv2-drivers-title">
+              <div className="vv2-lower-band vv2-enter">
+                <section aria-labelledby="vv2-drivers-title" className="vv2-drivers-pane">
+                  <div className="vv2-pane-head">
+                    <h2 className="vv2-band-title" id="vv2-drivers-title">
                       Value drivers
                     </h2>
-                    <p className="vv2-section-subtitle">
-                      What contributed to estimated protection value.
-                    </p>
+                    <p>Estimated contribution by intervention category.</p>
                   </div>
                   {payload.drivers.length ? (
-                    <div className="vv2-drivers-list">
+                    <div className="vv2-drivers-grid">
                       {payload.drivers.map((row, index) => {
                         const share =
                           activity.interventions > 0
@@ -790,7 +720,7 @@ export default function ValuePage() {
                             className={`vv2-driver-row${index === 0 ? " is-top" : ""}`}
                             key={row.id}
                           >
-                            <div className="vv2-driver-label">
+                            <div className="vv2-driver-main">
                               <strong>{row.label}</strong>
                               <span>{formatCount(row.interventions)}</span>
                             </div>
@@ -801,17 +731,15 @@ export default function ValuePage() {
                                   style={{ width: `${share}%` }}
                                 />
                               </div>
-                            </div>
-                            <div className="vv2-driver-meta">
                               <span className="vv2-driver-share">{share}%</span>
-                              <strong>
-                                {formatFinancial(
-                                  row.estimatedValueProtected,
-                                  currency,
-                                  configured,
-                                )}
-                              </strong>
                             </div>
+                            <strong className="vv2-driver-value">
+                              {formatFinancial(
+                                row.estimatedValueProtected,
+                                currency,
+                                configured,
+                              )}
+                            </strong>
                           </div>
                         );
                       })}
@@ -825,16 +753,13 @@ export default function ValuePage() {
                   )}
                 </section>
 
-                <section
-                  aria-labelledby="vv2-outlook-title"
-                  className="vv2-macro-card vv2-outlook-card"
-                >
-                  <div className="vv2-section-head vv2-outlook-head">
+                <section aria-labelledby="vv2-outlook-title" className="vv2-outlook-pane">
+                  <div className="vv2-pane-head">
                     <div>
-                      <h2 className="vv2-section-title" id="vv2-outlook-title">
-                        Value outlook
+                      <h2 className="vv2-band-title" id="vv2-outlook-title">
+                        Projected outlook
                       </h2>
-                      <p className="vv2-section-subtitle">Forward-looking estimates only.</p>
+                      <p>Forward-looking estimates only.</p>
                     </div>
                     <span className="vv2-projected-badge">Projected</span>
                   </div>
