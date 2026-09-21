@@ -170,7 +170,7 @@ test("estimated values are clearly distinguished in Value UI", async () => {
     "utf8",
   );
   assert.match(page, /Estimated protected value/);
-  assert.match(page, /vv2-estimated-tag/);
+  assert.match(page, /vv2-semantic-status/);
   assert.match(page, /Estimated net value/);
   assert.match(page, /Estimated ROI/);
   assert.match(page, /formatFinancial/);
@@ -243,9 +243,9 @@ test("projection is explicitly labeled in UI", async () => {
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /Forward value outlook/);
+  assert.match(page, /Value outlook/);
   assert.match(page, /vv2-outlook-tag/);
-  assert.match(page, />Estimate</);
+  assert.match(page, />Projected</);
 });
 
 test("observed ranges are limited to 7d and 30d without fake long history", () => {
@@ -320,7 +320,7 @@ test("period switching and refresh are wired in Value UI", async () => {
   assert.match(page, /RANGE_OPTIONS/);
   assert.match(page, /setRange\(option\.id\)/);
   assert.match(page, /loadValue\(range\)/);
-  assert.match(page, /aria-label="Refresh Value dashboard"/);
+  assert.match(page, /aria-label="Refresh Value data"/);
 });
 
 test("API error and recovery states are handled in Value UI", async () => {
@@ -404,15 +404,16 @@ test("Value page includes required information architecture sections", async () 
 
   assert.match(page, /Your BotShield value/);
   assert.match(page, /Protection efficiency/);
-  assert.match(page, /Annualized estimate/);
-  assert.match(page, /Protection impact over time/);
+  assert.match(page, /Protection impact/);
   assert.match(page, /Value drivers/);
-  assert.match(page, /Forward value outlook/);
+  assert.match(page, /Value outlook/);
   assert.match(page, /How Value is calculated/);
   assert.match(page, /No interventions yet/);
   assert.match(page, /Set assumptions/);
   assert.match(page, /Save assumptions/);
   assert.match(page, /Cancel/);
+  assert.doesNotMatch(page, /Annualized estimate/);
+  assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
   assert.doesNotMatch(page, /Why BotShield/);
 });
 
@@ -477,7 +478,7 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   );
 
   assert.match(css, /max-width: 1280px/);
-  assert.match(css, /--vv2-hero-bg: #141c28/);
+  assert.match(css, /--vv2-hero-bg: #121a26/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(css, /glassmorphism/);
   assert.match(css, /prefers-reduced-motion/);
@@ -485,9 +486,12 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(css, /\.vv2-value-flow/);
   assert.match(css, /\.vv2-efficiency-rail/);
   assert.match(css, /\.vv2-outlook-section/);
+  assert.match(css, /\.vv2-impact-layout/);
   assert.match(page, /See what BotShield protection is worth to your business/);
+  assert.match(page, /Observed \+ estimated/);
   assert.match(page, /vv2-driver-fill/);
   assert.match(page, /ValueInlineState/);
   assert.match(page, /deriveEstimatedRoi/);
   assert.doesNotMatch(page, /Value economics/);
+  assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
 });

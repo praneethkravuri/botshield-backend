@@ -29,6 +29,7 @@ const RANGE_OPTIONS = [
   { id: "30d", label: "30D" },
 ];
 
+const PROJECTION_MIN_OBSERVED_DAYS = 7;
 const VALUE_ASSUMPTIONS_MODAL_ID = "botshield-value-v2-assumptions-modal";
 
 function formatCount(value) {
@@ -40,8 +41,8 @@ function formatFinancial(value, currency, configured) {
   return formatValueV2Currency(value, currency);
 }
 
-function formatPerUnit(value, currency, configured) {
-  if (!configured || value == null || !Number.isFinite(value)) return "—";
+function formatPerUnit(value, currency, available) {
+  if (!available || value == null || !Number.isFinite(value)) return "—";
   return formatValueV2Currency(value, currency);
 }
 
@@ -75,67 +76,6 @@ function deriveEstimatedRoi(estimatedNetValue, allocatedPlanCost, configured) {
   return (estimatedNetValue / allocatedPlanCost) * 100;
 }
 
-function deriveAnnualizedEstimates(payload) {
-  const {
-    economics,
-    activity,
-    assumptionsConfigured,
-    currentPlan,
-    projection,
-    observedWindowDays,
-  } = payload;
-
-  const monthlyPrice = currentPlan?.monthlyPrice;
-  const annualCost =
-    monthlyPrice != null && Number.isFinite(monthlyPrice)
-      ? Number((monthlyPrice * 12).toFixed(2))
-      : null;
-
-  if (!assumptionsConfigured || activity.interventions <= 0) {
-    return {
-      annualProtected: null,
-      annualNet: null,
-      annualCost,
-      annualRoi: null,
-      eligible: false,
-    };
-  }
-
-  let annualProtected = null;
-  if (
-    projection?.eligible &&
-    projection.next12Months?.estimatedValueProtected != null
-  ) {
-    annualProtected = projection.next12Months.estimatedValueProtected;
-  } else if (
-    economics.estimatedValueProtected != null &&
-    observedWindowDays > 0
-  ) {
-    annualProtected = Number(
-      ((economics.estimatedValueProtected / observedWindowDays) * 365).toFixed(
-        2,
-      ),
-    );
-  }
-
-  const annualNet =
-    annualProtected != null && annualCost != null
-      ? Number((annualProtected - annualCost).toFixed(2))
-      : null;
-  const annualRoi =
-    annualNet != null && annualCost != null && annualCost > 0
-      ? (annualNet / annualCost) * 100
-      : null;
-
-  return {
-    annualProtected,
-    annualNet,
-    annualCost,
-    annualRoi,
-    eligible: annualProtected != null,
-  };
-}
-
 function deriveProjectionNetValue(
   estimatedValueProtected,
   windowDays,
@@ -150,6 +90,10 @@ function deriveProjectionNetValue(
       ? monthlyPrice * 12
       : allocatePlanCostForPeriod(monthlyPrice, windowDays);
   return Number((estimatedValueProtected - windowCost).toFixed(2));
+}
+
+function countObservedInterventionDays(trend) {
+  return trend.filter((bucket) => bucket.interventions > 0).length;
 }
 
 function hasTrendActivity(trend) {
@@ -175,7 +119,13 @@ function ValueInlineState({ icon, title, children }) {
   );
 }
 
-function ValueTrendSection({ trend, currency, assumptionsConfigured }) {
+function ValueTrendSection({
+  trend,
+  currency,
+  assumptionsConfigured,
+  activity,
+  economics,
+}) {
   if (!hasTrendActivity(trend)) {
     return null;
   }
@@ -192,87 +142,117 @@ function ValueTrendSection({ trend, currency, assumptionsConfigured }) {
   );
 
   return (
-    <div className="vv2-chart-wrap">
-      <div className="vv2-chart-legend" aria-label="Chart legend">
-        <span>
-          <i className="is-blocked" aria-hidden="true" />
-          Blocked (observed)
-        </span>
-        <span>
-          <i className="is-challenged" aria-hidden="true" />
-          Challenged (observed)
-        </span>
-        {assumptionsConfigured ? (
+    <div className="vv2-impact-layout">
+      <div className="vv2-chart-wrap">
+        <div className="vv2-chart-legend" aria-label="Chart legend">
           <span>
-            <i className="is-estimated" aria-hidden="true" />
-            Estimated protected value
-          </span>
-        ) : null}
-      </div>
-      <div
-        className="vv2-chart"
-        role="img"
-        aria-label="Protection impact over time chart"
-      >
-        <div className="vv2-chart-scale" aria-hidden="true">
-          <span>
-            {assumptionsConfigured
-              ? formatValueV2Currency(maximum, currency)
-              : formatCount(maximum)}
+            <i className="is-blocked" aria-hidden="true" />
+            Blocked
           </span>
           <span>
-            {assumptionsConfigured
-              ? formatValueV2Currency(maximum / 2, currency)
-              : formatCount(Math.round(maximum / 2))}
+            <i className="is-challenged" aria-hidden="true" />
+            Challenged
           </span>
-          <span>{assumptionsConfigured ? formatValueV2Currency(0, currency) : "0"}</span>
+          {assumptionsConfigured ? (
+            <span>
+              <i className="is-estimated" aria-hidden="true" />
+              Est. protected value
+            </span>
+          ) : null}
         </div>
-        <div className="vv2-chart-bars">
-          {trend.map((bucket) => {
-            const blockedHeight = (bucket.blocked / maximum) * 100;
-            const challengedHeight = (bucket.challenged / maximum) * 100;
-            const estimatedHeight = assumptionsConfigured
-              ? ((bucket.estimatedValueProtected || 0) / maximum) * 100
-              : 0;
-            const stackHeight = assumptionsConfigured
-              ? Math.max(estimatedHeight, blockedHeight + challengedHeight)
-              : Math.max(blockedHeight + challengedHeight, bucket.blocked > 0 ? 4 : 0);
+        <div
+          className="vv2-chart"
+          role="img"
+          aria-label="Protection impact chart"
+        >
+          <div className="vv2-chart-scale" aria-hidden="true">
+            <span>
+              {assumptionsConfigured
+                ? formatValueV2Currency(maximum, currency)
+                : formatCount(maximum)}
+            </span>
+            <span>
+              {assumptionsConfigured
+                ? formatValueV2Currency(maximum / 2, currency)
+                : formatCount(Math.round(maximum / 2))}
+            </span>
+            <span>{assumptionsConfigured ? formatValueV2Currency(0, currency) : "0"}</span>
+          </div>
+          <div className="vv2-chart-bars">
+            {trend.map((bucket) => {
+              const blockedHeight = (bucket.blocked / maximum) * 100;
+              const challengedHeight = (bucket.challenged / maximum) * 100;
+              const estimatedHeight = assumptionsConfigured
+                ? ((bucket.estimatedValueProtected || 0) / maximum) * 100
+                : 0;
+              const stackHeight = assumptionsConfigured
+                ? Math.max(estimatedHeight, blockedHeight + challengedHeight)
+                : Math.max(blockedHeight + challengedHeight, bucket.blocked > 0 ? 4 : 0);
 
-            return (
-              <button
-                type="button"
-                className="vv2-chart-col"
-                key={bucket.key}
-                aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged${
-                  assumptionsConfigured
-                    ? `, ${formatValueV2Currency(bucket.estimatedValueProtected || 0, currency)} estimated`
-                    : ""
-                }`}
-              >
-                <div
-                  className="vv2-chart-bar-stack"
-                  style={{ height: `${stackHeight}%` }}
+              return (
+                <button
+                  type="button"
+                  className="vv2-chart-col"
+                  key={bucket.key}
+                  aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged${
+                    assumptionsConfigured
+                      ? `, ${formatValueV2Currency(bucket.estimatedValueProtected || 0, currency)} estimated`
+                      : ""
+                  }`}
+                  title={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged`}
                 >
-                  {assumptionsConfigured && estimatedHeight > 0 ? (
-                    <span className="is-estimated" style={{ flex: estimatedHeight }} />
-                  ) : null}
-                  {challengedHeight > 0 ? (
-                    <span className="is-challenged" style={{ flex: challengedHeight }} />
-                  ) : null}
-                  {blockedHeight > 0 ? (
-                    <span className="is-blocked" style={{ flex: blockedHeight }} />
-                  ) : null}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="vv2-chart-axis" aria-hidden="true">
-          <span>{trend[0]?.label}</span>
-          <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
-          <span>{trend[trend.length - 1]?.label}</span>
+                  <div
+                    className="vv2-chart-bar-stack"
+                    style={{ height: `${stackHeight}%` }}
+                  >
+                    {assumptionsConfigured && estimatedHeight > 0 ? (
+                      <span className="is-estimated" style={{ flex: estimatedHeight }} />
+                    ) : null}
+                    {challengedHeight > 0 ? (
+                      <span className="is-challenged" style={{ flex: challengedHeight }} />
+                    ) : null}
+                    {blockedHeight > 0 ? (
+                      <span className="is-blocked" style={{ flex: blockedHeight }} />
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="vv2-chart-axis" aria-hidden="true">
+            <span>{trend[0]?.label}</span>
+            <span>{trend[Math.floor((trend.length - 1) / 2)]?.label}</span>
+            <span>{trend[trend.length - 1]?.label}</span>
+          </div>
         </div>
       </div>
+      <aside aria-label="Period summary" className="vv2-period-summary">
+        <h3>Period summary</h3>
+        <dl>
+          <div>
+            <dt>Interventions</dt>
+            <dd>{formatCount(activity.interventions)}</dd>
+          </div>
+          <div>
+            <dt>Blocked</dt>
+            <dd>{formatCount(activity.threatsBlocked)}</dd>
+          </div>
+          <div>
+            <dt>Challenged</dt>
+            <dd>{formatCount(activity.challengesIssued)}</dd>
+          </div>
+          <div>
+            <dt>Est. protected value</dt>
+            <dd>
+              {formatFinancial(
+                economics.estimatedValueProtected,
+                currency,
+                assumptionsConfigured,
+              )}
+            </dd>
+          </div>
+        </dl>
+      </aside>
     </div>
   );
 }
@@ -412,6 +392,9 @@ export default function ValuePage() {
   const economics = payload?.economics;
   const activity = payload?.activity;
   const monthlyPrice = payload?.currentPlan?.monthlyPrice;
+  const observedInterventionDays = payload
+    ? countObservedInterventionDays(payload.trend)
+    : 0;
 
   const costPerIntervention = economics
     ? deriveCostPerIntervention(economics.allocatedPlanCost, activity?.interventions || 0)
@@ -430,7 +413,6 @@ export default function ValuePage() {
         configured,
       )
     : null;
-  const annualized = payload ? deriveAnnualizedEstimates(payload) : null;
 
   const openAssumptions = () => {
     setAssumptionDraft({
@@ -533,13 +515,28 @@ export default function ValuePage() {
                 Edit assumptions
               </button>
               <button
-                aria-label="Refresh Value dashboard"
+                aria-label="Refresh Value data"
                 className={`vv2-btn vv2-btn-icon${loading ? " is-spinning" : ""}`}
                 disabled={loading}
                 onClick={() => loadValue(range)}
+                title="Refresh Value data"
                 type="button"
               >
-                ↻
+                <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 16 16" width="16">
+                  <path
+                    d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.5"
+                  />
+                  <path
+                    d="M13.5 3.5V7H10"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                  />
+                </svg>
               </button>
             </div>
           </header>
@@ -564,6 +561,12 @@ export default function ValuePage() {
               ) : null}
 
               <section aria-labelledby="vv2-executive-title" className="vv2-executive vv2-enter">
+                <div className="vv2-executive-head">
+                  <span className="vv2-semantic-status">
+                    <i aria-hidden="true" className="vv2-semantic-dot" />
+                    Observed + estimated
+                  </span>
+                </div>
                 <div className="vv2-executive-main">
                   <div className="vv2-executive-primary">
                     <p className="vv2-executive-label" id="vv2-executive-title">
@@ -587,9 +590,6 @@ export default function ValuePage() {
                           configured,
                         )}
                       </p>
-                      {configured ? (
-                        <span className="vv2-estimated-tag">Estimated</span>
-                      ) : null}
                     </div>
                     <p className="vv2-executive-support">
                       {configured
@@ -606,6 +606,7 @@ export default function ValuePage() {
                       </button>
                     ) : null}
                   </div>
+                  <div aria-hidden="true" className="vv2-executive-divider" />
                   <div className="vv2-executive-outcomes" aria-label="Executive outcomes">
                     <div className="vv2-outcome-metric">
                       <span className="vv2-metric-label">Estimated net value</span>
@@ -650,25 +651,33 @@ export default function ValuePage() {
               </section>
 
               <section aria-labelledby="vv2-flow-title" className="vv2-value-flow-section vv2-enter">
-                <h2 className="vv2-flow-heading" id="vv2-flow-title">
-                  Your BotShield value
-                </h2>
-                <div className="vv2-value-flow">
-                  <div className="vv2-flow-node vv2-flow-reveal">
+                <div className="vv2-flow-head">
+                  <h2 className="vv2-flow-heading" id="vv2-flow-title">
+                    Your BotShield value
+                  </h2>
+                  <p className="vv2-flow-helper">
+                    From subscription cost to estimated business impact.
+                  </p>
+                </div>
+                <div className="vv2-value-flow" key={`flow-${range}`}>
+                  <div className="vv2-flow-node vv2-flow-step-1">
+                    <span className="vv2-flow-marker" aria-hidden="true" />
                     <span className="vv2-flow-label">You paid</span>
                     <strong>{formatValueV2Currency(economics.allocatedPlanCost, currency)}</strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector" />
-                  <div className="vv2-flow-node vv2-flow-reveal">
+                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-2" />
+                  <div className="vv2-flow-node vv2-flow-step-3">
+                    <span className="vv2-flow-marker" aria-hidden="true" />
                     <span className="vv2-flow-label">BotShield intervened</span>
                     <strong>
                       {formatCount(activity.interventions)}{" "}
                       {activity.interventions === 1 ? "time" : "times"}
                     </strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector" />
-                  <div className="vv2-flow-node vv2-flow-reveal">
-                    <span className="vv2-flow-label">Estimated protected value</span>
+                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-4" />
+                  <div className="vv2-flow-node vv2-flow-step-5">
+                    <span className="vv2-flow-marker" aria-hidden="true" />
+                    <span className="vv2-flow-label">Est. protected</span>
                     <strong>
                       {formatFinancial(
                         economics.estimatedValueProtected,
@@ -677,9 +686,10 @@ export default function ValuePage() {
                       )}
                     </strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-flow-connector" />
-                  <div className="vv2-flow-node vv2-flow-reveal is-outcome">
-                    <span className="vv2-flow-label">Estimated net value</span>
+                  <span aria-hidden="true" className="vv2-flow-connector vv2-flow-step-6" />
+                  <div className="vv2-flow-node vv2-flow-step-7 is-outcome">
+                    <span className="vv2-flow-marker" aria-hidden="true" />
+                    <span className="vv2-flow-label">Est. net value</span>
                     <strong>
                       {formatFinancial(economics.estimatedNetValue, currency, configured)}
                     </strong>
@@ -691,7 +701,7 @@ export default function ValuePage() {
                 <div className="vv2-section-head vv2-section-head-compact">
                   <h2 id="vv2-efficiency-title">Protection efficiency</h2>
                   <p className="vv2-section-note">
-                    Detected activity is observed. Interventions are blocked or challenged activity.
+                    Observed protection activity for this period.
                   </p>
                 </div>
                 <div className="vv2-efficiency-rail">
@@ -712,100 +722,94 @@ export default function ValuePage() {
                     <span className="vv2-metric-value">{formatCount(activity.interventions)}</span>
                   </div>
                 </div>
-              </section>
-
-              <section aria-labelledby="vv2-annual-title" className="vv2-section vv2-enter">
-                <div className="vv2-section-head vv2-section-head-compact">
-                  <h2 id="vv2-annual-title">Annualized estimate</h2>
-                  <p className="vv2-section-note">
-                    Based on eligible observed activity and configured assumptions.
-                  </p>
-                </div>
-                <div className="vv2-annual-strip">
-                  <div className="vv2-annual-item">
-                    <span className="vv2-metric-label">Annualized est. protected value</span>
-                    <span className="vv2-metric-value">
-                      {formatFinancial(annualized?.annualProtected, currency, configured)}
+                <div className="vv2-efficiency-secondary">
+                  <div>
+                    <span className="vv2-metric-label">Cost / intervention</span>
+                    <span className="vv2-metric-value-sm">
+                      {formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
                     </span>
                   </div>
-                  <div className="vv2-annual-item">
-                    <span className="vv2-metric-label">Annualized est. net value</span>
-                    <span className="vv2-metric-value">
-                      {formatFinancial(annualized?.annualNet, currency, configured)}
-                    </span>
-                  </div>
-                  <div className="vv2-annual-item">
-                    <span className="vv2-metric-label">Annualized est. BotShield cost</span>
-                    <span className="vv2-metric-value">
-                      {annualized?.annualCost != null
-                        ? formatValueV2Currency(annualized.annualCost, currency)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="vv2-annual-item">
-                    <span className="vv2-metric-label">Annualized est. ROI</span>
-                    <span className="vv2-metric-value">
-                      {formatRoiPercent(annualized?.annualRoi, configured)}
+                  <div>
+                    <span className="vv2-metric-label">Est. value / intervention</span>
+                    <span className="vv2-metric-value-sm">
+                      {formatPerUnit(estValuePerIntervention, currency, configured)}
                     </span>
                   </div>
                 </div>
+                <p className="vv2-efficiency-footnote">
+                  Detected is observed activity. Interventions are blocked or challenged activity.
+                </p>
               </section>
 
               <section aria-labelledby="vv2-trend-title" className="vv2-section vv2-section-open vv2-enter">
                 <div className="vv2-section-head vv2-section-head-compact">
-                  <h2 id="vv2-trend-title">Protection impact over time</h2>
+                  <h2 id="vv2-trend-title">Protection impact</h2>
+                  <p className="vv2-section-note">Interventions across the selected period.</p>
                 </div>
                 {hasTrendActivity(payload.trend) ? (
                   <ValueTrendSection
+                    activity={activity}
                     assumptionsConfigured={configured}
                     currency={currency}
+                    economics={economics}
                     trend={payload.trend}
                   />
                 ) : (
-                  <ValueInlineState icon="—" title="No interventions yet">
-                    <p>
-                      Impact history appears after BotShield blocks or challenges activity.
-                    </p>
-                  </ValueInlineState>
+                  <>
+                    <div aria-hidden="true" className="vv2-section-divider" />
+                    <ValueInlineState icon="—" title="No interventions yet">
+                      <p>
+                        Impact history appears after BotShield blocks or challenges activity.
+                      </p>
+                    </ValueInlineState>
+                  </>
                 )}
               </section>
 
               <section aria-labelledby="vv2-drivers-title" className="vv2-section vv2-section-open vv2-enter">
                 <div className="vv2-section-head vv2-section-head-compact">
                   <h2 id="vv2-drivers-title">Value drivers</h2>
+                  <p className="vv2-section-note">
+                    What contributed to estimated protection value.
+                  </p>
                 </div>
                 {payload.drivers.length ? (
                   <div className="vv2-drivers-list">
-                    {payload.drivers.map((row, index) => (
-                      <div
-                        className={`vv2-driver-row${index === 0 ? " is-top" : ""}`}
-                        key={row.id}
-                      >
-                        <strong>{row.label}</strong>
-                        <div>
-                          <span className="vv2-driver-counts">
-                            {formatCount(row.blocked)} blocked · {formatCount(row.challenged)}{" "}
-                            challenged
-                          </span>
-                          <div aria-hidden="true" className="vv2-driver-track">
-                            <span
-                              className="vv2-driver-fill"
-                              style={{ width: `${row.shareOfInterventions || 0}%` }}
-                            />
+                    {payload.drivers.map((row, index) => {
+                      const share =
+                        activity.interventions > 0
+                          ? Math.round((row.interventions / activity.interventions) * 100)
+                          : 0;
+                      return (
+                        <div
+                          className={`vv2-driver-row${index === 0 ? " is-top" : ""}`}
+                          key={row.id}
+                        >
+                          <div className="vv2-driver-label">
+                            <strong>{row.label}</strong>
+                            <span>{formatCount(row.interventions)}</span>
+                          </div>
+                          <div className="vv2-driver-bar-wrap">
+                            <div aria-hidden="true" className="vv2-driver-track">
+                              <span
+                                className="vv2-driver-fill"
+                                style={{ width: `${share}%` }}
+                              />
+                            </div>
+                          </div>
+                          <div className="vv2-driver-meta">
+                            <span className="vv2-driver-share">{share}%</span>
+                            <strong>
+                              {formatFinancial(
+                                row.estimatedValueProtected,
+                                currency,
+                                configured,
+                              )}
+                            </strong>
                           </div>
                         </div>
-                        <div className="vv2-driver-meta">
-                          <strong>
-                            {formatFinancial(
-                              row.estimatedValueProtected,
-                              currency,
-                              configured,
-                            )}
-                          </strong>
-                          <span>{formatCount(row.interventions)} interventions</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <ValueInlineState icon="·" title="No value drivers yet">
@@ -821,20 +825,29 @@ export default function ValuePage() {
                 className="vv2-section vv2-section-open vv2-outlook-section vv2-enter"
               >
                 <div className="vv2-section-head vv2-section-head-compact">
-                  <h2 id="vv2-outlook-title">Forward value outlook</h2>
+                  <h2 id="vv2-outlook-title">Value outlook</h2>
+                  <span className="vv2-projected-badge">Projected</span>
                 </div>
                 {payload.projection.eligible ? (
                   <>
                     <div className="vv2-outlook-grid">
                       {[
-                        { window: payload.projection.next30Days, days: 30, label: "30 days" },
-                        { window: payload.projection.next12Months, days: 365, label: "12 months" },
+                        {
+                          window: payload.projection.next30Days,
+                          days: 30,
+                          label: "Next 30 days",
+                        },
+                        {
+                          window: payload.projection.next12Months,
+                          days: 365,
+                          label: "Next 12 months",
+                        },
                       ].map(({ window, days, label }) => (
                         <article className="vv2-outlook-card" key={label}>
-                          <span className="vv2-outlook-tag">Estimate</span>
+                          <span className="vv2-outlook-tag">Projected</span>
                           <h3>{label}</h3>
                           <div className="vv2-outlook-metric">
-                            <span>Estimated interventions</span>
+                            <span>Projected interventions</span>
                             <strong>{formatCount(window.projectedInterventions)}</strong>
                           </div>
                           <div className="vv2-outlook-metric">
@@ -862,6 +875,14 @@ export default function ValuePage() {
                               )}
                             </strong>
                           </div>
+                          {days >= 365 && monthlyPrice != null ? (
+                            <div className="vv2-outlook-metric">
+                              <span>Est. BotShield cost</span>
+                              <strong>
+                                {formatValueV2Currency(monthlyPrice * 12, currency)}
+                              </strong>
+                            </div>
+                          ) : null}
                         </article>
                       ))}
                     </div>
@@ -873,6 +894,13 @@ export default function ValuePage() {
                       BotShield needs more intervention activity before it can estimate future
                       value.
                     </p>
+                    {observedInterventionDays > 0 &&
+                    observedInterventionDays < PROJECTION_MIN_OBSERVED_DAYS ? (
+                      <p className="vv2-inline-context">
+                        {observedInterventionDays} of {PROJECTION_MIN_OBSERVED_DAYS} observed
+                        days with intervention activity.
+                      </p>
+                    ) : null}
                   </ValueInlineState>
                 )}
               </section>
@@ -891,48 +919,29 @@ export default function ValuePage() {
                   <div className="vv2-disclosure-body">
                     <div>
                       <h4>Observed</h4>
-                      <ul>
-                        <li>Detected: medium- and high-risk storefront events</li>
-                        <li>Blocked: requests BotShield blocked</li>
-                        <li>Challenged: requests BotShield challenged</li>
-                        <li>Interventions: blocked + challenged</li>
-                      </ul>
+                      <p>What BotShield directly measured during the selected period.</p>
                     </div>
                     <div>
                       <h4>Estimated</h4>
-                      <ul>
-                        <li>
-                          Estimated protected value uses your assumptions for blocked and
-                          challenged events, plus optional staff time savings
-                        </li>
-                        <li>Estimated net value subtracts allocated BotShield plan cost</li>
-                        <li>
-                          Estimated ROI is estimated net value divided by allocated plan cost
-                        </li>
-                      </ul>
+                      <p>
+                        Financial values derived from merchant assumptions and observed
+                        protection activity.
+                      </p>
                     </div>
                     <div>
-                      <h4>Projection</h4>
-                      <ul>
-                        <li>
-                          Forward outlook extrapolates from observed daily intervention rates
-                          when enough history exists
-                        </li>
-                      </ul>
+                      <h4>Projected</h4>
+                      <p>
+                        Forward estimates derived from eligible observed activity when enough
+                        intervention history exists.
+                      </p>
                     </div>
                     <div>
                       <h4>Retention</h4>
-                      <ul>
-                        <li>
-                          Storefront activity is retained for approximately 30 days; observed
-                          periods reflect that window
-                        </li>
-                      </ul>
+                      <p>
+                        Observed Value history is constrained by the existing BotEvent retention
+                        window.
+                      </p>
                     </div>
-                    <p>
-                      Financial estimates depend on merchant-configured assumptions and do not
-                      represent independently verified savings.
-                    </p>
                   </div>
                 </details>
               </section>
