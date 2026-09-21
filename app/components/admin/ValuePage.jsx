@@ -115,7 +115,12 @@ function AnimatedCurrency({ amount, currency, enabled = true }) {
   return formatCurrency(animated, currency);
 }
 
-function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
+function ValueProtectionChart({
+  trend,
+  currency,
+  assumptionsConfigured,
+  threatsDetected = 0,
+}) {
   const chartMaximum = useMemo(() => {
     const values = trend.map((bucket) =>
       Math.max(
@@ -126,6 +131,13 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
     return Math.max(1, ...values);
   }, [assumptionsConfigured, trend]);
 
+  const hasPlotValues = trend.some(
+    (bucket) =>
+      bucket.blocked > 0 ||
+      bucket.challenged > 0 ||
+      (assumptionsConfigured && (bucket.estimatedValueProtected || 0) > 0),
+  );
+
   const activeDays = trend.filter(
     (bucket) =>
       bucket.blocked > 0 ||
@@ -133,17 +145,20 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
       (assumptionsConfigured && (bucket.estimatedValueProtected || 0) > 0),
   ).length;
 
-  if (!trend.length) {
+  if (!trend.length || !hasPlotValues) {
     return (
-      <div className="bv-chart-empty">
-        <div className="bv-chart-empty-icon">
+      <div className="bv-zero-state bv-zero-state--chart">
+        <div className="bv-zero-state-icon">
           <ValueIcon name="trend" centered />
         </div>
-        <h3>No protection activity yet</h3>
-        <p>
-          BotShield will chart protection value over time as storefront security
-          activity is recorded.
-        </p>
+        <div className="bv-zero-state-copy">
+          <h3>No stopped-threat activity in this period</h3>
+          <p>
+            {threatsDetected > 0
+              ? `BotShield detected ${formatHydrationStableNumber(threatsDetected)} suspicious events, but none were blocked or challenged. Trend reporting appears after an intervention is recorded.`
+              : "Protection value over time appears when BotShield records blocked or challenged storefront activity."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -250,18 +265,28 @@ function ValueProtectionChart({ trend, currency, assumptionsConfigured }) {
   );
 }
 
+function projectionHasActivity(projection) {
+  if (!projection?.available) return false;
+  return [projection.next30Days, projection.next12Months].some(
+    (window) =>
+      (window?.threatsStopped || 0) > 0 || (window?.interventions || 0) > 0,
+  );
+}
+
 function CategoryBreakdown({ categories, currency, configured }) {
   if (!categories.length) {
     return (
-      <div className="bv-empty">
-        <div className="bv-empty-icon">
+      <div className="bv-zero-state bv-zero-state--compact">
+        <div className="bv-zero-state-icon">
           <ValueIcon name="shield" centered />
         </div>
-        <h3>No categorized protection yet</h3>
-        <p>
-          Category breakdown appears when BotShield records protection activity
-          across bot, rate, network, and page defenses.
-        </p>
+        <div className="bv-zero-state-copy">
+          <h3>No categorized value yet</h3>
+          <p>
+            Category breakdown appears when BotShield records blocked or
+            challenged protection activity across your defense modules.
+          </p>
+        </div>
       </div>
     );
   }
@@ -579,9 +604,10 @@ export default function ValuePage() {
               className={`bv-value-transition${rangeTransition ? " is-updating" : ""}`}
             >
               {payload.retentionMessage ? (
-                <BotShieldBanner tone="info" title="Retention limit">
-                  {payload.retentionMessage}
-                </BotShieldBanner>
+                <p className="bv-retention-note">
+                  <ValueIcon name="info" centered />
+                  <span>{payload.retentionMessage}</span>
+                </p>
               ) : null}
 
               {/* ── Hero ── */}
@@ -688,28 +714,32 @@ export default function ValuePage() {
               </section>
 
               {!hasActivity ? (
-                <div className="bv-empty bv-animate-enter bv-animate-enter-delay-2">
-                  <div className="bv-empty-icon">
+                <div className="bv-zero-state bv-zero-state--inline bv-animate-enter bv-animate-enter-delay-2">
+                  <div className="bv-zero-state-icon">
                     <ValueIcon name="shield" centered />
                   </div>
-                  <h3>Your value story is just getting started</h3>
-                  <p>
-                    BotShield needs protection activity before it can calculate
-                    business impact.
-                  </p>
+                  <div className="bv-zero-state-copy">
+                    <h3>Your value story is just getting started</h3>
+                    <p>
+                      BotShield needs protection activity before it can calculate
+                      business impact.
+                    </p>
+                  </div>
                 </div>
               ) : null}
 
               {!configured && hasActivity ? (
-                <div className="bv-empty bv-animate-enter bv-animate-enter-delay-2">
-                  <div className="bv-empty-icon">
+                <div className="bv-zero-state bv-zero-state--inline bv-animate-enter bv-animate-enter-delay-2">
+                  <div className="bv-zero-state-icon">
                     <ValueIcon name="settings" centered />
                   </div>
-                  <h3>Turn protection activity into business value</h3>
-                  <p>Set your assumptions to estimate the financial impact of BotShield.</p>
-                  <BotShieldPolarisButton variant="primary" onClick={openAssumptions}>
-                    Set assumptions
-                  </BotShieldPolarisButton>
+                  <div className="bv-zero-state-copy">
+                    <h3>Turn protection activity into business value</h3>
+                    <p>Set your assumptions to estimate the financial impact of BotShield.</p>
+                    <BotShieldPolarisButton variant="primary" onClick={openAssumptions}>
+                      Set assumptions
+                    </BotShieldPolarisButton>
+                  </div>
                 </div>
               ) : null}
 
@@ -805,6 +835,7 @@ export default function ValuePage() {
                 <ValueProtectionChart
                   assumptionsConfigured={configured}
                   currency={currency}
+                  threatsDetected={payload.activity.threatsDetected}
                   trend={payload.trend}
                 />
               </section>
@@ -857,7 +888,7 @@ export default function ValuePage() {
                       />
                     </span>
                   </div>
-                  <div className="bv-basis-item">
+                  <div className="bv-basis-item is-detected">
                     <span className="bv-basis-label">Detected</span>
                     <span className="bv-basis-value">
                       <AnimatedCount
@@ -882,7 +913,8 @@ export default function ValuePage() {
                   </div>
                 </div>
                 {payload.projection.available ? (
-                  <>
+                  projectionHasActivity(payload.projection) ? (
+                    <>
                     <div className="bv-projection-grid">
                       <article className="bv-projection-card">
                         <h3>Next 30 days</h3>
@@ -940,9 +972,28 @@ export default function ValuePage() {
                       </BotShieldActionButton>
                     ) : null}
                   </>
+                  ) : (
+                    <div className="bv-zero-state bv-zero-state--compact">
+                      <div className="bv-zero-state-copy">
+                        <h3>Projections are not yet meaningful</h3>
+                        <p>
+                          Forward estimates need recorded blocked or challenged
+                          activity at the current observed rate.
+                        </p>
+                        <p className="bv-projection-basis">{payload.projection.basisLabel}</p>
+                        {!configured ? (
+                          <BotShieldActionButton onClick={openAssumptions}>
+                            Set assumptions
+                          </BotShieldActionButton>
+                        ) : null}
+                      </div>
+                    </div>
+                  )
                 ) : (
-                  <div className="bv-empty" style={{ border: 0, background: "transparent", padding: "12px 0" }}>
-                    <p>{payload.projection.reason}</p>
+                  <div className="bv-zero-state bv-zero-state--compact">
+                    <div className="bv-zero-state-copy">
+                      <p>{payload.projection.reason}</p>
+                    </div>
                     {!configured ? (
                       <BotShieldActionButton onClick={openAssumptions}>
                         Set assumptions
@@ -953,9 +1004,14 @@ export default function ValuePage() {
               </section>
 
               {/* ── Methodology ── */}
-              <section className="bv-surface bv-surface-muted bv-animate-enter bv-animate-enter-delay-4">
+              <section className="bv-surface bv-surface-disclosure bv-animate-enter bv-animate-enter-delay-4">
                 <details className="bv-disclosure">
-                  <summary>How calculations work</summary>
+                  <summary>
+                    <span className="bv-disclosure-label">
+                      <ValueIcon name="info" centered />
+                      How calculations work
+                    </span>
+                  </summary>
                   <div className="bv-disclosure-body">
                     <div>
                       <h4>Observed data</h4>

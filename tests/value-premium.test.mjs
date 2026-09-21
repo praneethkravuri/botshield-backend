@@ -49,9 +49,11 @@ test("value dashboard chart legend matches rendered series logic", async () => {
     "utf8",
   );
 
+  assert.match(page, /hasPlotValues/);
   assert.match(page, /assumptionsConfigured \?/);
   assert.match(page, /Estimated value protected/);
   assert.match(page, /Threats stopped/);
+  assert.match(page, /No stopped-threat activity in this period/);
   assert.match(page, /className="is-value"/);
   assert.match(page, /className="is-blocked"/);
 });
@@ -65,6 +67,8 @@ test("value dashboard preserves truthful economics semantics", async () => {
   assert.match(page, /costPerStoppedThreat == null/);
   assert.match(page, /valueToCostRatio == null/);
   assert.match(page, /retentionMessage/);
+  assert.match(page, /is-detected/);
+  assert.match(page, /projectionHasActivity/);
   assert.match(page, /estimatedValueProtected == null/);
   assert.doesNotMatch(page, /defaultAssumptions/);
   assert.doesNotMatch(page, /fake/i);
