@@ -1918,7 +1918,6 @@ export default function Index() {
       "detection-settings": "security",
       visitors: "analytics",
       "fraud-orders": "fraud-orders",
-      value: "value",
       activity: "analytics",
       incidents: "analytics",
       blocklist: "security",
@@ -1935,7 +1934,6 @@ export default function Index() {
       "/app/analytics": "analytics",
       "/app/protection-rules": "security",
       "/app/fraud-orders": "fraud-orders",
-      "/app/value": "value",
       "/app/settings": "settings",
     };
     const legacyViewPathMap = {
@@ -1947,7 +1945,6 @@ export default function Index() {
       "detection-settings": "/app/protection-rules",
       visitors: "/app/analytics",
       "fraud-orders": "/app/fraud-orders",
-      value: "/app/value",
       activity: "/app/analytics",
       incidents: "/app/analytics",
       blocklist: "/app/protection-rules",
@@ -2809,7 +2806,6 @@ export default function Index() {
       analytics: "/app/analytics",
       security: "/app/protection-rules",
       "fraud-orders": "/app/fraud-orders",
-      value: "/app/value",
       settings: "/app/settings",
     };
     let path = pageToView[resolvedPage] || "/app";

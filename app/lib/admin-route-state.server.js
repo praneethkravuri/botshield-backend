@@ -20,7 +20,6 @@ export function resolveInitialAdminPage(pathname, search = "") {
     "detection-settings": "security",
     visitors: "analytics",
     "fraud-orders": "fraud-orders",
-    value: "value",
     activity: "analytics",
     incidents: "analytics",
     blocklist: "security",
@@ -37,7 +36,6 @@ export function resolveInitialAdminPage(pathname, search = "") {
     "/app/analytics": "analytics",
     "/app/protection-rules": "security",
     "/app/fraud-orders": "fraud-orders",
-    "/app/value": "value",
     "/app/settings": "settings",
   };
 

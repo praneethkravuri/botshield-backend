@@ -65,10 +65,6 @@ test("fraud orders premium wiring stays fraud-only", async () => {
     new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
     "utf8",
   );
-  const valuePage = await readFile(
-    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
-    "utf8",
-  );
   const analyticsPage = adminExperience.slice(
     adminExperience.indexOf("function AnalyticsPage"),
     adminExperience.indexOf("function AnalyticsKpi"),
@@ -99,7 +95,6 @@ test("fraud orders premium wiring stays fraud-only", async () => {
   assert.match(fraudPage, /riskLabel=\{riskLabel\}/);
   assert.match(fraudPage, /refreshFraudOrders/);
   assert.match(fraudPage, /botshield-fraud-review-hero/);
-  assert.doesNotMatch(valuePage, /fraud-orders-premium/);
   assert.doesNotMatch(analyticsPage, /fraud-orders-premium/);
   assert.doesNotMatch(protectionPage, /fraud-orders-premium/);
 });

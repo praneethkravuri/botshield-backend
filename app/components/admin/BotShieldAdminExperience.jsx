@@ -78,7 +78,6 @@ import "../../styles/protection-premium.css";
 import "../../styles/analytics-premium.css";
 import "../../styles/fraud-orders-premium.css";
 import "../../styles/settings-premium.css";
-import ValuePage from "./ValuePage.jsx";
 import {
   getBillingStatusModel,
   getEmailStatus,
@@ -7361,9 +7360,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
     model.page === "blocklist" ||
     model.page === "trusted"
       ? "detection"
-      : model.page === "value"
-        ? "value"
-        : model.page === "fraud-orders"
+      : model.page === "fraud-orders"
           ? "fraud-orders"
           : model.page === "settings" ||
             model.page === "policy" ||
@@ -7392,7 +7389,6 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
-      {screen === "value" ? <ValuePage /> : null}
       {screen === "fraud-orders" ? (
         <FraudOrdersPage model={model} actions={actions} />
       ) : null}

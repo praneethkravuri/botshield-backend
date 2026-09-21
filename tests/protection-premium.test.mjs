@@ -28,10 +28,6 @@ test("protection premium wiring stays protection-only", async () => {
     new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
     "utf8",
   );
-  const valuePage = await readFile(
-    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
-    "utf8",
-  );
   const protectionPage = adminExperience.slice(
     adminExperience.indexOf("function ProtectionPage"),
     adminExperience.indexOf("function IpList"),
@@ -48,7 +44,6 @@ test("protection premium wiring stays protection-only", async () => {
   assert.match(protectionPage, /showBotShieldModal\("botshield-protection-discard-modal"\)/);
   assert.match(protectionPage, /onAfterHide=\{handleProtectionModalAfterHide\}/);
 
-  assert.doesNotMatch(valuePage, /protection-premium/);
   assert.match(
     adminExperience,
     /className="botshield-overview-content botshield-overview-v2 botshield-overview-premium"/,

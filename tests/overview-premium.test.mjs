@@ -31,11 +31,6 @@ test("overview premium wiring stays overview-only", async () => {
     new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
     "utf8",
   );
-  const valuePage = await readFile(
-    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
-    "utf8",
-  );
-
   assert.match(adminExperience, /overview-premium\.css/);
   assert.match(adminExperience, /OverviewAnimatedNumber/);
   assert.match(
@@ -55,8 +50,6 @@ test("overview premium wiring stays overview-only", async () => {
     /Review protection[\s\S]*onClick=\{\(\) => actions\.setPage\("detection"\)\}/,
   );
 
-  assert.doesNotMatch(valuePage, /overview-premium/);
-  assert.doesNotMatch(valuePage, /OverviewAnimatedNumber/);
   assert.match(
     adminExperience,
     /<BotShieldPageShell className="botshield-analytics-content botshield-analytics-v2 botshield-analytics-premium">/,

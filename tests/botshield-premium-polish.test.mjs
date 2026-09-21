@@ -62,14 +62,3 @@ test("analytics layout contracts remain unchanged", async () => {
   assert.match(adminExperience, /className="botshield-analytics-split botshield-analytics-split--primary"/);
   assert.doesNotMatch(adminExperience, /key=\{`analytics-period-/);
 });
-
-test("value page remains untouched by premium polish pass", async () => {
-  const valuePage = await readFile(
-    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
-    "utf8",
-  );
-
-  assert.match(valuePage, /value-page\.css/);
-  assert.match(valuePage, /bv-hero/);
-  assert.doesNotMatch(valuePage, /botshield-premium-polish/);
-});

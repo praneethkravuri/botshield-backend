@@ -54,10 +54,6 @@ test("analytics premium wiring stays analytics-only", async () => {
     new URL("../app/components/admin/BotShieldAdminExperience.jsx", import.meta.url),
     "utf8",
   );
-  const valuePage = await readFile(
-    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
-    "utf8",
-  );
   const protectionPage = adminExperience.slice(
     adminExperience.indexOf("function ProtectionPage"),
     adminExperience.indexOf("function IpList"),
@@ -80,6 +76,5 @@ test("analytics premium wiring stays analytics-only", async () => {
   assert.match(analyticsPage, /animateNumber label="Suspicious events"/);
   assert.match(adminExperience, /OverviewAnimatedNumber value={value}/);
 
-  assert.doesNotMatch(valuePage, /analytics-premium/);
   assert.doesNotMatch(protectionPage, /analytics-premium/);
 });
