@@ -1,4 +1,4 @@
-/* BotShield Value V2 — flagship-v3 executive visual layer (isolated) */
+/* BotShield Value V2 — flagship-v4 executive visual layer (isolated) */
 
 .botshield-value-v2-content {
   width: 100%;
@@ -338,7 +338,17 @@
 
 .vv2-executive-head {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vv2-space-3);
+}
+
+.vv2-window-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 246, 248, 0.58);
 }
 
 .vv2-semantic-status {
@@ -361,31 +371,37 @@
 }
 
 .vv2-executive-main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: var(--vv2-space-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.44fr);
+  align-items: stretch;
+  gap: var(--vv2-space-6);
 }
 
 .vv2-executive-primary {
   display: grid;
   gap: var(--vv2-space-2);
-  flex: 1 1 320px;
+  align-content: center;
   min-width: 0;
-}
-
-.vv2-executive-divider {
-  width: 1px;
-  align-self: stretch;
-  min-height: 72px;
-  background: rgba(255, 255, 255, 0.12);
 }
 
 .vv2-executive-outcomes {
   display: grid;
-  gap: var(--vv2-space-3);
-  flex: 0 1 240px;
-  min-width: 180px;
+  gap: 0;
+  min-width: 0;
+  padding-left: var(--vv2-space-5);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.vv2-outcome-metric {
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: var(--vv2-space-2) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vv2-outcome-metric:last-child {
+  border-bottom: 0;
 }
 
 .vv2-outcome-metric .vv2-metric-label {
@@ -483,18 +499,16 @@
 }
 
 .vv2-value-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) 32px minmax(0, 1fr) 32px minmax(0, 1fr);
+  align-items: center;
   gap: 0;
-  padding: var(--vv2-space-2) var(--vv2-space-1);
-  border: 1px solid var(--vv2-border);
-  border-radius: 10px;
-  background: var(--vv2-surface);
+  padding: var(--vv2-space-2) 0;
+  border-top: 1px solid var(--vv2-border);
+  border-bottom: 1px solid var(--vv2-border);
 }
 
 .vv2-flow-stage {
-  flex: 1 1 140px;
   min-width: 0;
   display: grid;
   gap: var(--vv2-space-0);
@@ -535,13 +549,20 @@
 
 .vv2-flow-connector {
   position: relative;
-  flex: 0 0 32px;
   align-self: center;
+  width: 100%;
   height: 1px;
   margin-bottom: 20px;
   background: var(--vv2-border-strong);
   transform-origin: left center;
   animation: vv2-connector-draw 180ms var(--vv2-ease) both;
+}
+
+.vv2-equation-note {
+  margin: var(--vv2-space-2) 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--vv2-subtle);
 }
 
 .vv2-flow-connector::after {
@@ -637,17 +658,31 @@
 
 .vv2-chart-wrap {
   position: relative;
-  padding: var(--vv2-space-3);
-  border: 1px solid var(--vv2-border);
-  border-radius: 10px;
-  background: var(--vv2-surface);
+  min-width: 0;
+  padding: var(--vv2-space-3) var(--vv2-space-3) var(--vv2-space-2);
+  border-right: 1px solid var(--vv2-border);
 }
 
 .vv2-period-summary {
-  padding: var(--vv2-space-3) var(--vv2-space-4);
-  border: 1px solid var(--vv2-border);
-  border-radius: 10px;
-  background: var(--vv2-surface);
+  display: grid;
+  align-content: start;
+  padding: var(--vv2-space-3) 0 var(--vv2-space-3) var(--vv2-space-4);
+}
+
+.vv2-period-summary-head {
+  padding-bottom: var(--vv2-space-2);
+  border-bottom: 1px solid var(--vv2-border);
+  margin-bottom: var(--vv2-space-2);
+}
+
+.vv2-period-summary-head > span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vv2-blue);
 }
 
 .vv2-period-summary h3 {
@@ -686,11 +721,38 @@
   color: var(--vv2-ink);
 }
 
+.vv2-period-summary dd.is-estimated {
+  color: var(--vv2-green);
+}
+
+.vv2-chart-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vv2-space-3);
+  margin-bottom: var(--vv2-space-2);
+}
+
+.vv2-chart-head h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 650;
+  color: var(--vv2-ink);
+}
+
+.vv2-chart-head p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--vv2-subtle);
+}
+
 .vv2-chart-legend {
   display: flex;
   flex-wrap: wrap;
   gap: var(--vv2-space-3);
-  margin-bottom: var(--vv2-space-2);
+  margin: 0;
   font-size: 12px;
   font-weight: 500;
   color: var(--vv2-muted);
@@ -710,7 +772,6 @@
 
 .vv2-chart-legend .is-blocked { background: var(--vv2-blue); }
 .vv2-chart-legend .is-challenged { background: #64748b; }
-.vv2-chart-legend .is-estimated { background: var(--vv2-green); }
 
 .vv2-chart {
   position: relative;
@@ -746,6 +807,7 @@
 }
 
 .vv2-chart-col {
+  position: relative;
   display: flex;
   flex: 1 1 0;
   align-items: flex-end;
@@ -755,7 +817,21 @@
   padding: 0;
   border: 0;
   background: transparent;
-  cursor: default;
+  cursor: help;
+}
+
+.vv2-chart-col::after {
+  content: "";
+  position: absolute;
+  inset: 0 -1px;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  transition: background 110ms var(--vv2-ease);
+}
+
+.vv2-chart-col:hover::after,
+.vv2-chart-col:focus-visible::after {
+  background: rgba(44, 110, 203, 0.06);
 }
 
 .vv2-chart-bar-stack {
@@ -771,7 +847,48 @@
 
 .vv2-chart-bar-stack .is-blocked { background: var(--vv2-blue); min-height: 0; }
 .vv2-chart-bar-stack .is-challenged { background: #64748b; min-height: 0; }
-.vv2-chart-bar-stack .is-estimated { background: var(--vv2-green); min-height: 0; }
+.vv2-chart-tooltip {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  display: none;
+  width: 152px;
+  padding: 10px 12px;
+  border: 1px solid #303846;
+  border-radius: 8px;
+  background: #171c25;
+  color: #f8fafc;
+  box-shadow: 0 8px 20px rgba(18, 24, 36, 0.16);
+  text-align: left;
+  transform: translateX(-50%);
+}
+
+.vv2-chart-tooltip strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.vv2-chart-tooltip span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: rgba(248, 250, 252, 0.72);
+}
+
+.vv2-chart-tooltip b {
+  color: #fff;
+  font-weight: 650;
+}
+
+.vv2-chart-col:hover .vv2-chart-tooltip,
+.vv2-chart-col:focus-visible .vv2-chart-tooltip {
+  display: block;
+}
 
 @keyframes vv2-bar-rise {
   from {
@@ -964,53 +1081,67 @@
 
 /* —— Value outlook —— */
 
-.vv2-outlook-panels {
+.vv2-outlook-table {
+  border-top: 1px solid var(--vv2-border);
+  border-bottom: 1px solid var(--vv2-border);
+}
+
+.vv2-outlook-table-head,
+.vv2-outlook-row {
   display: grid;
-  gap: var(--vv2-space-3);
-}
-
-.vv2-outlook-panel {
-  padding: var(--vv2-space-3);
-  border: 1px dashed var(--vv2-border-strong);
-  border-radius: 10px;
-  background: var(--vv2-surface);
-}
-
-.vv2-outlook-panel h3 {
-  margin: 0 0 var(--vv2-space-2);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--vv2-muted);
-}
-
-.vv2-outlook-tag {
-  display: inline-block;
-  margin-bottom: var(--vv2-space-1);
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #eef2f6;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--vv2-blue);
-}
-
-.vv2-outlook-metric {
-  display: flex;
-  justify-content: space-between;
+  grid-template-columns: minmax(96px, 1.15fr) repeat(3, minmax(84px, 1fr));
   gap: var(--vv2-space-2);
-  align-items: baseline;
-  font-size: 13px;
-  color: var(--vv2-muted);
-  margin-bottom: var(--vv2-space-0);
+  align-items: center;
 }
 
-.vv2-outlook-metric strong {
-  font-size: 15px;
+.vv2-outlook-table-head {
+  padding: 8px 0;
+  font-size: 10px;
+  line-height: 1.3;
   font-weight: 700;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: var(--vv2-subtle);
+}
+
+.vv2-outlook-table-head span:not(:first-child),
+.vv2-outlook-row > div {
+  text-align: right;
+}
+
+.vv2-outlook-row {
+  min-height: 54px;
+  padding: var(--vv2-space-2) 0;
+  border-top: 1px solid var(--vv2-border);
+}
+
+.vv2-outlook-row h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 650;
+  color: var(--vv2-ink);
+}
+
+.vv2-outlook-row strong {
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--vv2-ink);
+}
+
+.vv2-outlook-cost {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--vv2-space-3);
+  padding-top: var(--vv2-space-2);
+  font-size: 12px;
+  color: var(--vv2-muted);
+}
+
+.vv2-outlook-cost strong {
+  font-size: 14px;
   color: var(--vv2-ink);
 }
 
@@ -1159,7 +1290,7 @@
   }
 
   .vv2-value-flow {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
     gap: var(--vv2-space-1);
   }
@@ -1188,18 +1319,21 @@
   }
 
   .vv2-executive-main {
-    flex-direction: column;
-  }
-
-  .vv2-executive-divider {
-    display: none;
+    grid-template-columns: 1fr;
+    gap: var(--vv2-space-3);
   }
 
   .vv2-executive-outcomes {
     width: 100%;
     padding-top: var(--vv2-space-2);
+    padding-left: 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .vv2-outcome-metric {
+    padding-right: var(--vv2-space-3);
   }
 
   .vv2-impact-rail {
@@ -1223,6 +1357,15 @@
 
   .vv2-driver-meta {
     text-align: left;
+  }
+
+  .vv2-chart-wrap {
+    border-right: 0;
+    border-bottom: 1px solid var(--vv2-border);
+  }
+
+  .vv2-period-summary {
+    padding-left: 0;
   }
 }
 
@@ -1248,6 +1391,39 @@
 
   .vv2-executive-outcomes {
     grid-template-columns: 1fr;
+  }
+
+  .vv2-executive-head,
+  .vv2-chart-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .vv2-outlook-table-head {
+    display: none;
+  }
+
+  .vv2-outlook-row {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--vv2-space-2) var(--vv2-space-3);
+    padding: var(--vv2-space-3) 0;
+  }
+
+  .vv2-outlook-row h3 {
+    grid-column: 1 / -1;
+  }
+
+  .vv2-outlook-row > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--vv2-space-2);
+    text-align: left;
+  }
+
+  .vv2-outlook-row > div::before {
+    content: attr(data-label);
+    font-size: 11px;
+    color: var(--vv2-subtle);
   }
 
   .vv2-chart-bars {

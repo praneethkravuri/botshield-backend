@@ -137,6 +137,7 @@ function ValueImpactSection({
   assumptionsConfigured,
   activity,
   economics,
+  observationLabel,
 }) {
   const hasActivity = hasTrendActivity(trend);
 
@@ -166,30 +167,29 @@ function ValueImpactSection({
       {hasActivity ? (
         <div className="vv2-impact-layout">
           <div className="vv2-chart-wrap">
-            <div className="vv2-chart-legend" aria-label="Chart legend">
-              <span>
-                <i className="is-blocked" aria-hidden="true" />
-                Blocked
-              </span>
-              <span>
-                <i className="is-challenged" aria-hidden="true" />
-                Challenged
-              </span>
-              {assumptionsConfigured ? (
+            <div className="vv2-chart-head">
+              <div>
+                <h3>Intervention history</h3>
+                <p>{observationLabel}</p>
+              </div>
+              <div className="vv2-chart-legend" aria-label="Chart legend">
                 <span>
-                  <i className="is-estimated" aria-hidden="true" />
-                  Est. protected value
+                  <i className="is-blocked" aria-hidden="true" />
+                  Blocked
                 </span>
-              ) : null}
+                <span>
+                  <i className="is-challenged" aria-hidden="true" />
+                  Challenged
+                </span>
+              </div>
             </div>
-            <ValueImpactChartBody
-              assumptionsConfigured={assumptionsConfigured}
-              currency={currency}
-              trend={trend}
-            />
+            <ValueImpactChartBody trend={trend} />
           </div>
           <aside aria-label="Period activity" className="vv2-period-summary">
-            <h3>Period activity</h3>
+            <div className="vv2-period-summary-head">
+              <span>Observed</span>
+              <h3>Period activity</h3>
+            </div>
             <dl>
               <div>
                 <dt>Blocked</dt>
@@ -205,7 +205,7 @@ function ValueImpactSection({
               </div>
               <div>
                 <dt>Estimated protected value</dt>
-                <dd>
+                <dd className="is-estimated">
                   {formatFinancial(
                     economics.estimatedValueProtected,
                     currency,
@@ -225,63 +225,39 @@ function ValueImpactSection({
   );
 }
 
-function ValueImpactChartBody({ trend, currency, assumptionsConfigured }) {
+function ValueImpactChartBody({ trend }) {
   const maximum = Math.max(
     1,
-    ...trend.map((bucket) =>
-      Math.max(
-        bucket.blocked,
-        bucket.challenged,
-        assumptionsConfigured ? bucket.estimatedValueProtected || 0 : 0,
-      ),
-    ),
+    ...trend.map((bucket) => bucket.interventions),
   );
 
   return (
-    <div className="vv2-chart" role="img" aria-label="Protection impact chart">
+    <div className="vv2-chart" role="group" aria-label="Protection impact chart">
       <div className="vv2-chart-scale" aria-hidden="true">
-        <span>
-          {assumptionsConfigured
-            ? formatValueV2Currency(maximum, currency)
-            : formatCount(maximum)}
-        </span>
-        <span>
-          {assumptionsConfigured
-            ? formatValueV2Currency(maximum / 2, currency)
-            : formatCount(Math.round(maximum / 2))}
-        </span>
-        <span>{assumptionsConfigured ? formatValueV2Currency(0, currency) : "0"}</span>
+        <span>{formatCount(maximum)}</span>
+        <span>{formatCount(Math.round(maximum / 2))}</span>
+        <span>0</span>
       </div>
       <div className="vv2-chart-bars">
         {trend.map((bucket) => {
           const blockedHeight = (bucket.blocked / maximum) * 100;
           const challengedHeight = (bucket.challenged / maximum) * 100;
-          const estimatedHeight = assumptionsConfigured
-            ? ((bucket.estimatedValueProtected || 0) / maximum) * 100
-            : 0;
-          const stackHeight = assumptionsConfigured
-            ? Math.max(estimatedHeight, blockedHeight + challengedHeight)
-            : Math.max(blockedHeight + challengedHeight, bucket.blocked > 0 ? 4 : 0);
+          const stackHeight = Math.max(
+            blockedHeight + challengedHeight,
+            bucket.interventions > 0 ? 4 : 0,
+          );
 
           return (
             <button
               type="button"
               className="vv2-chart-col"
               key={bucket.key}
-              aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged${
-                assumptionsConfigured
-                  ? `, ${formatValueV2Currency(bucket.estimatedValueProtected || 0, currency)} estimated`
-                  : ""
-              }`}
-              title={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged`}
+              aria-label={`${bucket.label}: ${bucket.blocked} blocked, ${bucket.challenged} challenged, ${bucket.interventions} interventions`}
             >
               <div
                 className="vv2-chart-bar-stack"
                 style={{ height: `${stackHeight}%` }}
               >
-                {assumptionsConfigured && estimatedHeight > 0 ? (
-                  <span className="is-estimated" style={{ flex: estimatedHeight }} />
-                ) : null}
                 {challengedHeight > 0 ? (
                   <span className="is-challenged" style={{ flex: challengedHeight }} />
                 ) : null}
@@ -289,6 +265,12 @@ function ValueImpactChartBody({ trend, currency, assumptionsConfigured }) {
                   <span className="is-blocked" style={{ flex: blockedHeight }} />
                 ) : null}
               </div>
+              <span className="vv2-chart-tooltip" role="tooltip">
+                <strong>{bucket.label}</strong>
+                <span>Blocked <b>{formatCount(bucket.blocked)}</b></span>
+                <span>Challenged <b>{formatCount(bucket.challenged)}</b></span>
+                <span>Total <b>{formatCount(bucket.interventions)}</b></span>
+              </span>
             </button>
           );
         })}
@@ -538,7 +520,8 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-ui-revision="flagship-v3"
+          data-value-layout="executive-equation-impact"
+          data-value-ui-revision="flagship-v4"
         >
           <header className="vv2-header">
             <div className="vv2-header-copy">
@@ -610,6 +593,7 @@ export default function ValuePage() {
 
               <section aria-labelledby="vv2-executive-title" className="vv2-executive vv2-enter">
                 <div className="vv2-executive-head">
+                  <span className="vv2-window-label">{payload.observationLabel}</span>
                   <span
                     className="vv2-semantic-status"
                     title="Observed protection metrics combined with configured financial assumptions."
@@ -657,7 +641,6 @@ export default function ValuePage() {
                       </button>
                     ) : null}
                   </div>
-                  <div aria-hidden="true" className="vv2-executive-divider" />
                   <div className="vv2-executive-outcomes" aria-label="Economic outcomes">
                     <div className="vv2-outcome-metric">
                       <span className="vv2-metric-label">Estimated net value</span>
@@ -757,6 +740,10 @@ export default function ValuePage() {
                     </strong>
                   </div>
                 </div>
+                <p className="vv2-equation-note">
+                  Observed subscription cost and interventions are shown alongside estimates
+                  derived from your configured assumptions.
+                </p>
               </section>
 
               <section
@@ -773,6 +760,7 @@ export default function ValuePage() {
                   assumptionsConfigured={configured}
                   currency={currency}
                   economics={economics}
+                  observationLabel={payload.observationLabel}
                   trend={payload.trend}
                 />
               </section>
@@ -852,7 +840,13 @@ export default function ValuePage() {
                   </div>
                   {payload.projection.eligible ? (
                     <>
-                      <div className="vv2-outlook-panels">
+                      <div className="vv2-outlook-table">
+                        <div className="vv2-outlook-table-head" aria-hidden="true">
+                          <span>Window</span>
+                          <span>Interventions</span>
+                          <span>Protected</span>
+                          <span>Net value</span>
+                        </div>
                         {[
                           {
                             window: payload.projection.next30Days,
@@ -865,15 +859,12 @@ export default function ValuePage() {
                             label: "Next 12 months",
                           },
                         ].map(({ window, days, label }) => (
-                          <article className="vv2-outlook-panel" key={label}>
-                            <span className="vv2-outlook-tag">Projected</span>
+                          <div className="vv2-outlook-row" key={label}>
                             <h3>{label}</h3>
-                            <div className="vv2-outlook-metric">
-                              <span>Projected interventions</span>
+                            <div data-label="Interventions">
                               <strong>{formatCount(window.projectedInterventions)}</strong>
                             </div>
-                            <div className="vv2-outlook-metric">
-                              <span>Estimated protected value</span>
+                            <div data-label="Protected">
                               <strong>
                                 {formatFinancial(
                                   window.estimatedValueProtected,
@@ -882,8 +873,7 @@ export default function ValuePage() {
                                 )}
                               </strong>
                             </div>
-                            <div className="vv2-outlook-metric">
-                              <span>Estimated net value</span>
+                            <div data-label="Net value">
                               <strong>
                                 {formatFinancial(
                                   deriveProjectionNetValue(
@@ -897,17 +887,15 @@ export default function ValuePage() {
                                 )}
                               </strong>
                             </div>
-                            {days >= 365 && monthlyPrice != null ? (
-                              <div className="vv2-outlook-metric">
-                                <span>Current-plan 12-month cost</span>
-                                <strong>
-                                  {formatValueV2Currency(monthlyPrice * 12, currency)}
-                                </strong>
-                              </div>
-                            ) : null}
-                          </article>
+                          </div>
                         ))}
                       </div>
+                      {monthlyPrice != null ? (
+                        <div className="vv2-outlook-cost">
+                          <span>Current-plan 12-month cost</span>
+                          <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
+                        </div>
+                      ) : null}
                       <p className="vv2-outlook-basis">
                         Based on eligible observed activity and configured assumptions.
                       </p>

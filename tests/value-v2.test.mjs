@@ -178,12 +178,46 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatValueToCostRatio/);
 });
 
-test("flagship-v3 build marker is present on Value root", async () => {
+test("flagship-v4 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v3"/);
+  assert.match(page, /data-value-ui-revision="flagship-v4"/);
+  assert.match(page, /data-value-layout="executive-equation-impact"/);
+});
+
+test("impact chart keeps observed event counts separate from financial estimates", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+
+  const chartBody = page.slice(
+    page.indexOf("function ValueImpactChartBody"),
+    page.indexOf("function AssumptionsModal"),
+  );
+  assert.match(chartBody, /bucket\.interventions/);
+  assert.match(chartBody, /Blocked/);
+  assert.match(chartBody, /Challenged/);
+  assert.doesNotMatch(chartBody, /estimatedValueProtected/);
+  assert.doesNotMatch(chartBody, /formatValueV2Currency/);
+});
+
+test("Value outlook uses a compact projected comparison table", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /vv2-outlook-table/);
+  assert.match(page, /Current-plan 12-month cost/);
+  assert.match(css, /\.vv2-outlook-table-head/);
+  assert.match(css, /\.vv2-outlook-row/);
 });
 
 test("interventions equal blocked plus challenged", () => {
@@ -254,7 +288,8 @@ test("projection is explicitly labeled in UI", async () => {
     "utf8",
   );
   assert.match(page, /Value outlook/);
-  assert.match(page, /vv2-outlook-tag/);
+  assert.match(page, /vv2-projected-badge/);
+  assert.match(page, /vv2-outlook-table/);
   assert.match(page, />Projected</);
 });
 
@@ -508,7 +543,8 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /vv2-driver-fill/);
   assert.match(page, /ValueInlineState/);
   assert.match(page, /deriveEstimatedRoi/);
-  assert.match(page, /data-value-ui-revision="flagship-v3"/);
+  assert.match(page, /data-value-ui-revision="flagship-v4"/);
+  assert.match(page, /data-value-layout="executive-equation-impact"/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
 });
