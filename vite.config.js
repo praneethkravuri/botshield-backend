@@ -34,9 +34,10 @@ if (host === "127.0.0.1") {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   server: {
-    allowedHosts: [host],
+    allowedHosts:
+      command === "serve" ? [host, ".trycloudflare.com"] : [host],
     cors: {
       preflightContinue: true,
     },
@@ -54,4 +55,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@shopify/app-bridge-react"],
   },
-});
+}));

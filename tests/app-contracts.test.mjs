@@ -73,7 +73,7 @@ test("every enabled admin action button has a real handler or destination", asyn
   );
 });
 
-test("active navigation exposes the five supported BotShield pages", async () => {
+test("active navigation exposes the six supported BotShield pages", async () => {
   const shell = await readFile(
     new URL("../app/components/BotShieldEmbeddedAppProvider.jsx", import.meta.url),
     "utf8",
@@ -82,16 +82,22 @@ test("active navigation exposes the five supported BotShield pages", async () =>
     new URL("../app/routes/app.fraud-orders.jsx", import.meta.url),
     "utf8",
   );
+  const valueRoute = await readFile(
+    new URL("../app/routes/app.value.jsx", import.meta.url),
+    "utf8",
+  );
 
   assert.match(shell, /Overview/);
   assert.match(shell, /href: "\/app"/);
   assert.doesNotMatch(shell, /rel:\s*["']home["']/);
   assert.doesNotMatch(shell, /rel="home"/);
-  assert.doesNotMatch(shell, /label: "Value"/);
-  assert.doesNotMatch(shell, /href: "\/app\/value"/);
+  assert.match(shell, /label: "Value"/);
+  assert.match(shell, /href: "\/app\/value"/);
   assert.match(shell, /label: "Fraud Orders"/);
   assert.match(shell, /href: "\/app\/fraud-orders"/);
+  assert.equal([...shell.matchAll(/label: "Value"/g)].length, 1);
   assert.match(fraudRoute, /export \{ default \} from "\.\/app\._index"/);
+  assert.match(valueRoute, /export \{ default \} from "\.\/app\._index"/);
 });
 
 test("production cannot expose the in-memory UI preview as a real app", async () => {

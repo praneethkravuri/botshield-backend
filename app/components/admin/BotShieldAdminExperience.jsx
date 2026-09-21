@@ -84,6 +84,7 @@ import {
   getUiStatus,
 } from "../../lib/ui-status";
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
+import ValuePage from "./ValuePage.jsx";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
 import { getThemeEmbedConnectionView } from "../../lib/theme-extension-status.js";
@@ -7360,7 +7361,9 @@ export default function BotShieldAdminExperience({ model, actions }) {
     model.page === "blocklist" ||
     model.page === "trusted"
       ? "detection"
-      : model.page === "fraud-orders"
+      : model.page === "value"
+        ? "value"
+        : model.page === "fraud-orders"
           ? "fraud-orders"
           : model.page === "settings" ||
             model.page === "policy" ||
@@ -7389,6 +7392,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />
       ) : null}
+      {screen === "value" ? <ValuePage /> : null}
       {screen === "fraud-orders" ? (
         <FraudOrdersPage model={model} actions={actions} />
       ) : null}

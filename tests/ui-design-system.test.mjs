@@ -285,14 +285,15 @@ test("new app shell keeps a simplified Shopify-native app navigation", async () 
   assert.match(source, /label: "Analytics"/);
   assert.match(source, /label: "Protection"/);
   assert.match(source, /label: "Overview"/);
-  assert.doesNotMatch(source, /label: "Value"/);
+  assert.match(source, /label: "Value"/);
   assert.match(source, /label: "Fraud Orders"/);
   assert.match(source, /label: "Settings"/);
   assert.match(source, /href: "\/app"/);
   assert.match(source, /href: "\/app\/analytics"/);
   assert.match(source, /href: "\/app\/protection-rules"/);
-  assert.doesNotMatch(source, /href: "\/app\/value"/);
+  assert.match(source, /href: "\/app\/value"/);
   assert.match(source, /href: "\/app\/fraud-orders"/);
+  assert.equal([...source.matchAll(/label: "Value"/g)].length, 1);
   assert.match(source, /href: "\/app\/settings"/);
   assert.doesNotMatch(source, /rel:\s*["']home["']/);
   assert.doesNotMatch(source, /rel="home"/);

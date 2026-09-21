@@ -103,6 +103,7 @@ const NAV_ITEMS = [
   { href: "/app", label: "Overview" },
   { href: "/app/protection-rules", label: "Protection" },
   { href: "/app/analytics", label: "Analytics" },
+  { href: "/app/value", label: "Value" },
   { href: "/app/fraud-orders", label: "Fraud Orders" },
   { href: "/app/settings", label: "Settings" },
 ];
