@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatHydrationStableNumber } from "../../lib/hydration-safe-format.js";
 import { safeFetchJson } from "../../lib/safe-fetch.js";
 import {
@@ -10,18 +10,11 @@ import {
 } from "../../lib/value-v2-calculations.js";
 import "../../styles/value-v2-page.css";
 import {
-  BotShieldPolarisButton,
-  BotShieldStack,
-} from "../design-system/BotShieldHydrationPolaris.jsx";
-import {
   BotShieldBanner,
   BotShieldLoadingState,
   BotShieldNativeModal,
   BotShieldNativePage,
   BotShieldPageShell,
-  BotShieldTextField,
-  hideBotShieldModal,
-  showBotShieldModal,
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
 
@@ -52,6 +45,23 @@ const TOOLTIPS = {
   editAssumptions:
     "Review the business assumptions used for your financial estimates.",
 };
+
+function buildAssumptionDraftFromPayload(payload) {
+  return {
+    estimatedValuePerBlockedEvent:
+      payload?.assumptions?.estimatedValuePerBlockedEvent ?? 0,
+    estimatedValuePerChallenge:
+      payload?.assumptions?.estimatedValuePerChallenge ?? 0,
+    staffMinutesSavedPerIntervention:
+      payload?.assumptions?.staffMinutesSavedPerIntervention ?? 0,
+    staffHourlyCost: payload?.assumptions?.staffHourlyCost ?? 0,
+  };
+}
+
+function isAssumptionFieldInvalid(value) {
+  const numeric = Number(value);
+  return !Number.isFinite(numeric) || numeric < 0;
+}
 
 function deriveAssumptionPreview(draft, activity, allocatedPlanCost) {
   const assumptions = sanitizeValueV2Assumptions({
@@ -974,6 +984,52 @@ function EstimateReadiness({
   );
 }
 
+function AssumptionInputField({
+  id,
+  label,
+  helper,
+  prefix,
+  suffix,
+  value,
+  onChange,
+  invalid,
+}) {
+  return (
+    <div className={`vv2-assumption-input${invalid ? " is-invalid" : ""}`}>
+      <label className="vv2-assumption-input-label" htmlFor={id}>
+        {label}
+      </label>
+      <div className="vv2-assumption-input-control">
+        {prefix ? (
+          <span aria-hidden="true" className="vv2-assumption-affix">
+            {prefix}
+          </span>
+        ) : null}
+        <input
+          aria-invalid={invalid || undefined}
+          autoComplete="off"
+          id={id}
+          inputMode="decimal"
+          min="0"
+          onChange={onChange}
+          step="any"
+          type="number"
+          value={value}
+        />
+        {suffix ? (
+          <span aria-hidden="true" className="vv2-assumption-affix">
+            {suffix}
+          </span>
+        ) : null}
+      </div>
+      {helper ? <p className="vv2-assumption-input-help">{helper}</p> : null}
+      {invalid ? (
+        <p className="vv2-assumption-input-error">Enter a valid non-negative number.</p>
+      ) : null}
+    </div>
+  );
+}
+
 function AssumptionsPreview({
   activity,
   allocatedPlanCost,
@@ -988,60 +1044,87 @@ function AssumptionsPreview({
   const { assumptions, configured, blockedValue, challengedValue, staffValue, economics } =
     preview;
   const hasInterventions = activity.interventions > 0;
+  const showBlockedRow =
+    assumptions.estimatedValuePerBlockedEvent > 0 && activity.threatsBlocked > 0;
+  const showChallengedRow =
+    assumptions.estimatedValuePerChallenge > 0 && activity.challengesIssued > 0;
+  const showStaffRow =
+    assumptions.staffMinutesSavedPerIntervention > 0 &&
+    assumptions.staffHourlyCost > 0 &&
+    activity.interventions > 0;
 
   return (
-    <aside aria-label="Estimate preview" className="vv2-assumptions-preview">
-      <span className="vv2-eyebrow">Estimate preview</span>
+    <aside aria-label="Live estimate preview" className="vv2-assumptions-preview vv2-assumptions-modal-enter-preview">
+      <span className="vv2-eyebrow">Live estimate preview</span>
       <p className="vv2-assumptions-preview-lead">
         Using your last 30 days of BotShield activity
       </p>
-      {hasInterventions ? (
-        <dl className="vv2-assumptions-preview-activity">
-          <div>
-            <dt>Blocked</dt>
-            <dd>{formatCount(activity.threatsBlocked)}</dd>
-          </div>
-          <div>
-            <dt>Challenged</dt>
-            <dd>{formatCount(activity.challengesIssued)}</dd>
-          </div>
-          <div>
-            <dt>Interventions</dt>
-            <dd>{formatCount(activity.interventions)}</dd>
-          </div>
-        </dl>
-      ) : (
-        <p className="vv2-assumptions-preview-empty">
-          No interventions recorded in the last 30 days yet.
-        </p>
-      )}
+
+      <dl className="vv2-assumptions-preview-activity">
+        <div>
+          <dt>Blocked</dt>
+          <dd>{formatCount(activity.threatsBlocked)}</dd>
+        </div>
+        <div>
+          <dt>Challenged</dt>
+          <dd>{formatCount(activity.challengesIssued)}</dd>
+        </div>
+        <div>
+          <dt>Interventions</dt>
+          <dd>{formatCount(activity.interventions)}</dd>
+        </div>
+      </dl>
+
+      {!hasInterventions ? (
+        <div className="vv2-assumptions-preview-empty-state">
+          <strong>No interventions yet</strong>
+          <p>
+            BotShield hasn&apos;t recorded an eligible intervention in the last 30 days.
+          </p>
+          <p>
+            Your assumptions can still be saved and will apply automatically as eligible
+            protection activity is recorded.
+          </p>
+        </div>
+      ) : null}
 
       {configured && hasInterventions ? (
         <div className="vv2-assumptions-preview-formula">
-          {assumptions.estimatedValuePerBlockedEvent > 0 && activity.threatsBlocked > 0 ? (
+          {showBlockedRow ? (
             <div className="vv2-preview-formula-row" key={`blocked-${previewTick}`}>
               <span>Blocked value</span>
               <strong>
                 {formatCount(activity.threatsBlocked)} ×{" "}
-                {formatValueV2Currency(assumptions.estimatedValuePerBlockedEvent, currency)} ={" "}
+                {formatValueV2Currency(assumptions.estimatedValuePerBlockedEvent, currency)}
+              </strong>
+              <strong className="vv2-preview-formula-result">
                 {formatValueV2Currency(blockedValue, currency)}
               </strong>
             </div>
           ) : null}
-          {assumptions.estimatedValuePerChallenge > 0 && activity.challengesIssued > 0 ? (
+          {showChallengedRow ? (
             <div className="vv2-preview-formula-row" key={`challenged-${previewTick}`}>
               <span>Challenged value</span>
               <strong>
                 {formatCount(activity.challengesIssued)} ×{" "}
-                {formatValueV2Currency(assumptions.estimatedValuePerChallenge, currency)} ={" "}
+                {formatValueV2Currency(assumptions.estimatedValuePerChallenge, currency)}
+              </strong>
+              <strong className="vv2-preview-formula-result">
                 {formatValueV2Currency(challengedValue, currency)}
               </strong>
             </div>
           ) : null}
-          {staffValue > 0 ? (
+          {showStaffRow ? (
             <div className="vv2-preview-formula-row" key={`staff-${previewTick}`}>
-              <span>Staff time value</span>
-              <strong>{formatValueV2Currency(staffValue, currency)}</strong>
+              <span>Staff time</span>
+              <strong>
+                {formatCount(activity.interventions)} ×{" "}
+                {formatCount(assumptions.staffMinutesSavedPerIntervention)} min @{" "}
+                {formatValueV2Currency(assumptions.staffHourlyCost, currency)}/hr
+              </strong>
+              <strong className="vv2-preview-formula-result">
+                {formatValueV2Currency(staffValue, currency)}
+              </strong>
             </div>
           ) : null}
         </div>
@@ -1053,18 +1136,14 @@ function AssumptionsPreview({
           className={`vv2-preview-value${previewTick ? " is-updating" : ""}`}
           key={`preview-total-${previewTick}`}
         >
-          {configured && economics.estimatedValueProtected != null
+          {configured && hasInterventions && economics.estimatedValueProtected != null
             ? formatValueV2Currency(economics.estimatedValueProtected, currency)
             : "—"}
         </strong>
-      </div>
-
-      {!hasInterventions ? (
         <p className="vv2-assumptions-preview-note">
-          Your assumptions will be saved and applied automatically as BotShield records
-          eligible protection activity.
+          Based on the assumptions currently entered above.
         </p>
-      ) : null}
+      </div>
     </aside>
   );
 }
@@ -1074,131 +1153,192 @@ function AssumptionsModal({
   allocatedPlanCost,
   currency,
   draft,
-  setDraft,
-  onSave,
+  open,
+  onClose,
   onReset,
+  onSave,
   saving,
+  setDraft,
 }) {
   const [previewTick, setPreviewTick] = useState(0);
+  const fieldInvalid = {
+    estimatedValuePerBlockedEvent: isAssumptionFieldInvalid(
+      draft.estimatedValuePerBlockedEvent,
+    ),
+    estimatedValuePerChallenge: isAssumptionFieldInvalid(draft.estimatedValuePerChallenge),
+    staffMinutesSavedPerIntervention: isAssumptionFieldInvalid(
+      draft.staffMinutesSavedPerIntervention,
+    ),
+    staffHourlyCost: isAssumptionFieldInvalid(draft.staffHourlyCost),
+  };
+  const hasInvalidFields = Object.values(fieldInvalid).some(Boolean);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPreviewTick((current) => current + 1);
-    }, 200);
+    }, 180);
     return () => window.clearTimeout(timer);
   }, [draft]);
 
   return (
-    <BotShieldNativeModal id={VALUE_ASSUMPTIONS_MODAL_ID} heading="Value assumptions">
-      <div className="vv2-assumptions-modal vv2-assumptions-modal-enter">
-        <div className="vv2-assumptions-modal-main">
-          <div className="vv2-assumptions-modal-intro">
+    <BotShieldNativeModal
+      accessibilityLabel="Value assumptions"
+      bodyClassName="vv2-assumptions-modal-shell"
+      heading="Value assumptions"
+      id={VALUE_ASSUMPTIONS_MODAL_ID}
+      onAfterHide={onClose}
+      open={open}
+      padding="none"
+      size="large"
+    >
+      <div className="vv2-assumptions-modal vv2-assumptions-modal-v11">
+        <p className="vv2-assumptions-modal-subtitle vv2-assumptions-modal-enter-subtitle">
+          Define how BotShield should estimate the business value of your protection activity.
+        </p>
+
+        <div
+          aria-label="Why assumptions are needed"
+          className="vv2-assumptions-trust-strip vv2-assumptions-modal-enter-trust"
+        >
+          <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 16 16" width="16">
+            <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M8 7v4M8 5.5h.01" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+          </svg>
+          <div>
+            <p>BotShield measures protection activity automatically.</p>
             <p>
-              BotShield measures protection activity automatically. These assumptions tell
-              BotShield what that activity may be worth to your business.
+              These assumptions tell BotShield what that activity may be worth to your
+              business.
             </p>
-            <p>Financial results are estimates based on the values you provide.</p>
-          </div>
-          <div className="vv2-assumptions-fields">
-            <div className="vv2-assumption-field vv2-assumption-field-1">
-              <BotShieldTextField
-                label="Estimated value of one blocked harmful event ($)"
-                min="0"
-                type="number"
-                value={String(draft.estimatedValuePerBlockedEvent ?? 0)}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    estimatedValuePerBlockedEvent: event.target.value,
-                  }))
-                }
-              />
-              <p className="vv2-assumption-field-help">
-                Your estimate of the business value protected when BotShield blocks a harmful
-                event.
-              </p>
-            </div>
-            <div className="vv2-assumption-field vv2-assumption-field-2">
-              <BotShieldTextField
-                label="Estimated value of one challenged event ($)"
-                min="0"
-                type="number"
-                value={String(draft.estimatedValuePerChallenge ?? 0)}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    estimatedValuePerChallenge: event.target.value,
-                  }))
-                }
-              />
-              <p className="vv2-assumption-field-help">
-                Your estimate of the business value associated with a suspicious event BotShield
-                challenges.
-              </p>
-            </div>
-            <div className="vv2-assumption-field vv2-assumption-field-3">
-              <BotShieldTextField
-                label="Staff minutes saved per intervention"
-                min="0"
-                type="number"
-                value={String(draft.staffMinutesSavedPerIntervention ?? 0)}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    staffMinutesSavedPerIntervention: event.target.value,
-                  }))
-                }
-              />
-              <p className="vv2-assumption-field-help">
-                Estimated manual review or response time BotShield saves when it handles an
-                intervention.
-              </p>
-            </div>
-            <div className="vv2-assumption-field vv2-assumption-field-4">
-              <BotShieldTextField
-                label="Estimated staff hourly cost ($)"
-                min="0"
-                type="number"
-                value={String(draft.staffHourlyCost ?? 0)}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    staffHourlyCost: event.target.value,
-                  }))
-                }
-              />
-              <p className="vv2-assumption-field-help">
-                Used only to estimate the value of staff time saved.
-              </p>
-            </div>
+            <small>Financial results are estimates based on the values you provide.</small>
           </div>
         </div>
 
-        <AssumptionsPreview
-          activity={activity}
-          allocatedPlanCost={allocatedPlanCost}
-          currency={currency}
-          draft={draft}
-          previewTick={previewTick}
-        />
+        <div className="vv2-assumptions-modal-body">
+          <div className="vv2-assumptions-modal-columns">
+            <div className="vv2-assumptions-modal-left">
+              <section className="vv2-assumptions-section vv2-assumptions-modal-enter-protection">
+                <h3 className="vv2-assumptions-section-title">Protection value</h3>
+                <p className="vv2-assumptions-section-lead">
+                  Estimate the business value associated with BotShield handling harmful or
+                  suspicious activity.
+                </p>
+                <div className="vv2-assumptions-field-grid">
+                  <AssumptionInputField
+                    helper="Estimated value protected when BotShield blocks one harmful event."
+                    id="vv2-assumption-blocked"
+                    invalid={fieldInvalid.estimatedValuePerBlockedEvent}
+                    label="Blocked harmful event"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        estimatedValuePerBlockedEvent: event.target.value,
+                      }))
+                    }
+                    prefix="$"
+                    value={String(draft.estimatedValuePerBlockedEvent ?? 0)}
+                  />
+                  <AssumptionInputField
+                    helper="Estimated value associated with one suspicious event BotShield challenges."
+                    id="vv2-assumption-challenged"
+                    invalid={fieldInvalid.estimatedValuePerChallenge}
+                    label="Challenged event"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        estimatedValuePerChallenge: event.target.value,
+                      }))
+                    }
+                    prefix="$"
+                    value={String(draft.estimatedValuePerChallenge ?? 0)}
+                  />
+                </div>
+              </section>
 
-        <div className="vv2-assumptions-modal-actions">
-          <BotShieldStack direction="inline" gap="base">
-            <BotShieldPolarisButton disabled={saving} onClick={onSave} variant="primary">
-              Save assumptions
-            </BotShieldPolarisButton>
-            <BotShieldPolarisButton
+              <section className="vv2-assumptions-section vv2-assumptions-modal-enter-staff">
+                <h3 className="vv2-assumptions-section-title">Staff time value</h3>
+                <p className="vv2-assumptions-section-lead">
+                  Optionally include time your team may save when BotShield handles an
+                  intervention.
+                </p>
+                <div className="vv2-assumptions-field-grid">
+                  <AssumptionInputField
+                    helper="Estimated manual review or response time avoided per intervention."
+                    id="vv2-assumption-minutes"
+                    invalid={fieldInvalid.staffMinutesSavedPerIntervention}
+                    label="Minutes saved per intervention"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        staffMinutesSavedPerIntervention: event.target.value,
+                      }))
+                    }
+                    suffix="min"
+                    value={String(draft.staffMinutesSavedPerIntervention ?? 0)}
+                  />
+                  <AssumptionInputField
+                    helper="Used only to estimate the value of staff time saved."
+                    id="vv2-assumption-hourly"
+                    invalid={fieldInvalid.staffHourlyCost}
+                    label="Staff hourly cost"
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        staffHourlyCost: event.target.value,
+                      }))
+                    }
+                    prefix="$"
+                    value={String(draft.staffHourlyCost ?? 0)}
+                  />
+                </div>
+              </section>
+            </div>
+
+            <AssumptionsPreview
+              activity={activity}
+              allocatedPlanCost={allocatedPlanCost}
+              currency={currency}
+              draft={draft}
+              previewTick={previewTick}
+            />
+          </div>
+        </div>
+
+        <footer className="vv2-assumptions-modal-footer vv2-assumptions-modal-enter-footer">
+          <button
+            className="vv2-btn vv2-btn-tertiary"
+            disabled={saving}
+            onClick={onReset}
+            type="button"
+          >
+            Reset
+          </button>
+          <div className="vv2-assumptions-modal-footer-actions">
+            <button
+              className="vv2-btn vv2-btn-secondary"
               disabled={saving}
-              onClick={() => hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID)}
-              variant="secondary"
+              onClick={onClose}
+              type="button"
             >
               Cancel
-            </BotShieldPolarisButton>
-            <BotShieldPolarisButton disabled={saving} onClick={onReset} variant="tertiary">
-              Reset
-            </BotShieldPolarisButton>
-          </BotShieldStack>
-        </div>
+            </button>
+            <button
+              className="vv2-btn vv2-btn-primary vv2-btn-save-assumptions"
+              disabled={saving || hasInvalidFields}
+              onClick={onSave}
+              type="button"
+            >
+              {saving ? (
+                <>
+                  <span aria-hidden="true" className="vv2-btn-spinner" />
+                  Saving…
+                </>
+              ) : (
+                "Save assumptions"
+              )}
+            </button>
+          </div>
+        </footer>
       </div>
     </BotShieldNativeModal>
   );
@@ -1206,11 +1346,13 @@ function AssumptionsModal({
 
 export default function ValuePage() {
   const toast = useBotShieldToast();
+  const assumptionsOpenerRef = useRef(null);
   const [horizon, setHorizon] = useState("30d");
   const [horizonPress, setHorizonPress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
+  const [assumptionsModalOpen, setAssumptionsModalOpen] = useState(false);
   const [assumptionDraft, setAssumptionDraft] = useState(null);
   const [savingAssumptions, setSavingAssumptions] = useState(false);
   const [dataSettleKey, setDataSettleKey] = useState(0);
@@ -1281,20 +1423,37 @@ export default function ValuePage() {
     ? deriveHorizonProjection(payload, horizon, configured)
     : null;
 
-  const openAssumptions = () => {
-    setAssumptionDraft({
-      estimatedValuePerBlockedEvent:
-        payload?.assumptions?.estimatedValuePerBlockedEvent ?? 0,
-      estimatedValuePerChallenge:
-        payload?.assumptions?.estimatedValuePerChallenge ?? 0,
-      staffMinutesSavedPerIntervention:
-        payload?.assumptions?.staffMinutesSavedPerIntervention ?? 0,
-      staffHourlyCost: payload?.assumptions?.staffHourlyCost ?? 0,
-    });
-    showBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
-  };
+  const closeAssumptions = useCallback(() => {
+    setAssumptionsModalOpen(false);
+    const opener = assumptionsOpenerRef.current;
+    if (opener && typeof opener.focus === "function") {
+      requestAnimationFrame(() => opener.focus());
+    }
+  }, []);
+
+  const openAssumptions = useCallback(
+    (event) => {
+      if (!payload) {
+        return;
+      }
+      assumptionsOpenerRef.current = event?.currentTarget ?? null;
+      setAssumptionDraft(buildAssumptionDraftFromPayload(payload));
+      setAssumptionsModalOpen(true);
+    },
+    [payload],
+  );
 
   const saveAssumptions = async () => {
+    if (
+      isAssumptionFieldInvalid(assumptionDraft?.estimatedValuePerBlockedEvent) ||
+      isAssumptionFieldInvalid(assumptionDraft?.estimatedValuePerChallenge) ||
+      isAssumptionFieldInvalid(assumptionDraft?.staffMinutesSavedPerIntervention) ||
+      isAssumptionFieldInvalid(assumptionDraft?.staffHourlyCost)
+    ) {
+      toast.error("Enter valid non-negative numbers for all assumption fields.");
+      return;
+    }
+
     setSavingAssumptions(true);
     try {
       const response = await safeFetchJson("/api/value", {
@@ -1316,7 +1475,7 @@ export default function ValuePage() {
       if (!response?.ok) {
         throw new Error(response?.error || "Couldn't save assumptions.");
       }
-      hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
+      closeAssumptions();
       toast.success("Value assumptions saved");
       setDataSettleKey((current) => current + 1);
       await loadValue();
@@ -1342,7 +1501,7 @@ export default function ValuePage() {
       if (!response?.ok) {
         throw new Error(response?.error || "Couldn't reset assumptions.");
       }
-      hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
+      closeAssumptions();
       toast.success("Value assumptions reset");
       await loadValue();
     } catch (resetError) {
@@ -1383,8 +1542,8 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="assumption-transparent-value"
-          data-value-ui-revision="flagship-v10"
+          data-value-layout="assumptions-experience-v11"
+          data-value-ui-revision="flagship-v11"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
@@ -2001,14 +2160,16 @@ export default function ValuePage() {
         </div>
       </BotShieldPageShell>
 
-      {assumptionDraft && payload ? (
+      {payload ? (
         <AssumptionsModal
           activity={activity}
           allocatedPlanCost={economics.allocatedPlanCost}
           currency={currency}
-          draft={assumptionDraft}
+          draft={assumptionDraft ?? buildAssumptionDraftFromPayload(payload)}
+          onClose={closeAssumptions}
           onReset={() => void resetAssumptions()}
           onSave={() => void saveAssumptions()}
+          open={assumptionsModalOpen}
           saving={savingAssumptions}
           setDraft={setAssumptionDraft}
         />
