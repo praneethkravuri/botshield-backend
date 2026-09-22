@@ -195,14 +195,14 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v15 build marker is present on Value root", async () => {
+test("flagship-v16 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v15"/);
+  assert.match(page, /data-value-ui-revision="flagship-v16"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
-  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v14"/);
+  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v15"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -773,6 +773,42 @@ test("flagship-v15 methodology disclosure stays concise and organized", async ()
   assert.match(css, /\.vv2-assumptions-used[\s\S]*border-top:/);
 });
 
+test("flagship-v16 early-data context banner explains zero-intervention state", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  const bannerBlock = page.slice(
+    page.indexOf("function EarlyDataContextBanner"),
+    page.indexOf("function CalculationMethodology"),
+  );
+  const valuePageBlock = page.slice(
+    page.indexOf("<LiveDataTrustRail"),
+    page.indexOf('aria-labelledby="vv2-command-title"'),
+  );
+
+  assert.match(bannerBlock, /configured && activity\.interventions === 0/);
+  assert.match(bannerBlock, /Gathering live protection data/);
+  assert.match(bannerBlock, /Financial estimates will update as eligible/);
+  assert.match(bannerBlock, /No eligible interventions have been recorded in the current 30-day window yet/);
+  assert.match(bannerBlock, /Early negative net value reflects plan cost/);
+  assert.match(bannerBlock, /hasDetectedOnlyActivity/);
+  assert.match(bannerBlock, /no eligible blocked or challenged interventions/);
+  assert.doesNotMatch(bannerBlock, /24.?48 hour/i);
+  assert.doesNotMatch(bannerBlock, /will get bot/i);
+  assert.doesNotMatch(bannerBlock, /within \d+ hours/i);
+  assert.match(valuePageBlock, /<LiveDataTrustRail/);
+  assert.match(valuePageBlock, /<EarlyDataContextBanner/);
+  assert.match(css, /\.vv2-early-data-context/);
+  assert.match(css, /vv2-early-data-enter/);
+  assert.match(css, /vv2-early-data-exit/);
+});
+
 test("flagship-v15 refresh confirms success only after payload update", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
@@ -989,7 +1025,7 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v15"/);
+  assert.match(page, /data-value-ui-revision="flagship-v16"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);

@@ -537,6 +537,81 @@ function ValueStatusBadge({ status }) {
   );
 }
 
+function EarlyDataContextBanner({ activity, configured }) {
+  const shouldShow = configured && activity.interventions === 0;
+  const [render, setRender] = useState(shouldShow);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    if (shouldShow) {
+      setRender(true);
+      setExiting(false);
+      return undefined;
+    }
+
+    if (render) {
+      setExiting(true);
+      const timer = window.setTimeout(() => {
+        setRender(false);
+        setExiting(false);
+      }, 150);
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [render, shouldShow]);
+
+  if (!render) {
+    return null;
+  }
+
+  const hasDetectedOnlyActivity =
+    activity.threatsDetected > 0 &&
+    activity.threatsBlocked === 0 &&
+    activity.challengesIssued === 0;
+
+  return (
+    <div
+      className={`vv2-early-data-context${exiting ? " is-exiting" : ""}`}
+      data-value-early-data-context="visible"
+    >
+      <svg
+        aria-hidden="true"
+        className="vv2-early-data-context-icon"
+        fill="none"
+        height="18"
+        viewBox="0 0 16 16"
+        width="18"
+      >
+        <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.2" />
+        <path
+          d="M8 4.5V8l2.25 2.25"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.2"
+        />
+      </svg>
+      <div className="vv2-early-data-context-copy">
+        <strong className="vv2-early-data-context-title">Gathering live protection data</strong>
+        <p className="vv2-early-data-context-body">
+          BotShield is monitoring your store. Financial estimates will update as eligible
+          protection activity is recorded.
+        </p>
+        <p className="vv2-early-data-context-secondary">
+          {hasDetectedOnlyActivity
+            ? "Activity is being observed, but no eligible blocked or challenged interventions have been recorded in the current window yet."
+            : "No eligible interventions have been recorded in the current 30-day window yet."}
+        </p>
+        <p className="vv2-early-data-context-note">
+          Early negative net value reflects plan cost before estimated protection value has been
+          attributed.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function CalculationMethodology({
   configured,
   assumptions,
@@ -1545,7 +1620,7 @@ export default function ValuePage() {
         <div
           className="botshield-value-v2"
           data-value-layout="clean-assumptions-modal"
-          data-value-ui-revision="flagship-v15"
+          data-value-ui-revision="flagship-v16"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
@@ -1633,6 +1708,8 @@ export default function ValuePage() {
                 projectionEligible={payload.projection.eligible}
                 refreshing={loading && Boolean(payload)}
               />
+
+              <EarlyDataContextBanner activity={activity} configured={configured} />
 
               <section
                 aria-labelledby="vv2-command-title"
