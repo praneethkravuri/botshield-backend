@@ -195,14 +195,14 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v13 build marker is present on Value root", async () => {
+test("flagship-v14 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v13"/);
+  assert.match(page, /data-value-ui-revision="flagship-v14"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
-  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v12"/);
+  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v13"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -370,7 +370,7 @@ test("assumptions modal v13 structure uses single-column layout and compact prev
   assert.match(page, /Based on your current assumptions/);
   assert.match(page, /isAssumptionFieldInvalid/);
   assert.match(page, /AssumptionInputField/);
-  assert.match(css, /\.vv2-assumptions-modal-footer/);
+  assert.match(css, /\.vv2-assumptions-modal-reset/);
   assert.match(css, /\.vv2-assumption-input-control/);
   assert.match(css, /\.vv2-preview-formula-row/);
   assert.match(css, /min-height: 44px/);
@@ -383,6 +383,45 @@ test("assumptions modal v13 structure uses single-column layout and compact prev
   assert.doesNotMatch(modalCss, /position:\s*sticky/);
   assert.doesNotMatch(modalCss, /min-height:\s*100%/);
   assert.doesNotMatch(modalCss, /max-height:/);
+});
+
+test("flagship-v14 assumptions modal uses native Shopify action buttons", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  const assumptionsModalBlock = page.slice(
+    page.indexOf("function AssumptionsModal"),
+    page.indexOf("export default function ValuePage"),
+  );
+
+  assert.match(assumptionsModalBlock, /BotShieldActionButton/);
+  assert.match(assumptionsModalBlock, /primaryAction=\{/);
+  assert.match(assumptionsModalBlock, /secondaryActions=\{/);
+  assert.match(assumptionsModalBlock, /slot="primary-action"/);
+  assert.match(assumptionsModalBlock, /slot="secondary-actions"/);
+  assert.match(assumptionsModalBlock, /variant="primary"/);
+  assert.match(assumptionsModalBlock, /variant="tertiary"/);
+  assert.match(assumptionsModalBlock, /Save assumptions/);
+  assert.match(assumptionsModalBlock, /Cancel/);
+  assert.match(assumptionsModalBlock, /Reset/);
+  assert.match(assumptionsModalBlock, /loading=\{saving\}/);
+  assert.match(assumptionsModalBlock, /disabled=\{hasInvalidFields\}/);
+  assert.match(assumptionsModalBlock, /onClick=\{onSave\}/);
+  assert.match(assumptionsModalBlock, /onClick=\{onClose\}/);
+  assert.match(assumptionsModalBlock, /onClick=\{onReset\}/);
+  assert.doesNotMatch(assumptionsModalBlock, /vv2-assumptions-modal-footer/);
+  assert.doesNotMatch(assumptionsModalBlock, /vv2-btn-save-assumptions/);
+  assert.doesNotMatch(assumptionsModalBlock, /<button[\s\S]*Save assumptions/);
+  assert.doesNotMatch(assumptionsModalBlock, /<button[\s\S]*Cancel/);
+  assert.doesNotMatch(assumptionsModalBlock, /<button[\s\S]*Reset/);
+  assert.doesNotMatch(css, /\.vv2-btn-save-assumptions/);
+  assert.match(css, /\.vv2-assumptions-modal-reset/);
 });
 
 test("assumptions modal one-click interaction reaches visible state on first intent", async () => {
@@ -889,7 +928,7 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v13"/);
+  assert.match(page, /data-value-ui-revision="flagship-v14"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);

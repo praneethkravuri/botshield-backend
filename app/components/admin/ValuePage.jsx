@@ -10,6 +10,7 @@ import {
 } from "../../lib/value-v2-calculations.js";
 import "../../styles/value-v2-page.css";
 import {
+  BotShieldActionButton,
   BotShieldBanner,
   BotShieldLoadingState,
   BotShieldNativeModal,
@@ -1205,6 +1206,22 @@ function AssumptionsModal({
       onAfterHide={onClose}
       open={open}
       padding="none"
+      primaryAction={
+        <BotShieldActionButton
+          disabled={hasInvalidFields}
+          loading={saving}
+          onClick={onSave}
+          slot="primary-action"
+          variant="primary"
+        >
+          Save assumptions
+        </BotShieldActionButton>
+      }
+      secondaryActions={
+        <BotShieldActionButton disabled={saving} onClick={onClose} slot="secondary-actions">
+          Cancel
+        </BotShieldActionButton>
+      }
       size="base"
     >
       <div className="vv2-assumptions-modal vv2-assumptions-modal-v13">
@@ -1313,41 +1330,11 @@ function AssumptionsModal({
           previewTick={previewTick}
         />
 
-        <footer className="vv2-assumptions-modal-footer vv2-assumptions-modal-v13-enter-footer">
-          <button
-            className="vv2-btn vv2-btn-tertiary"
-            disabled={saving}
-            onClick={onReset}
-            type="button"
-          >
+        <div className="vv2-assumptions-modal-reset vv2-assumptions-modal-v13-enter-footer">
+          <BotShieldActionButton disabled={saving} onClick={onReset} variant="tertiary">
             Reset
-          </button>
-          <div className="vv2-assumptions-modal-footer-actions">
-            <button
-              className="vv2-btn vv2-btn-secondary"
-              disabled={saving}
-              onClick={onClose}
-              type="button"
-            >
-              Cancel
-            </button>
-            <button
-              className="vv2-btn vv2-btn-primary vv2-btn-save-assumptions"
-              disabled={saving || hasInvalidFields}
-              onClick={onSave}
-              type="button"
-            >
-              {saving ? (
-                <>
-                  <span aria-hidden="true" className="vv2-btn-spinner" />
-                  Saving…
-                </>
-              ) : (
-                "Save assumptions"
-              )}
-            </button>
-          </div>
-        </footer>
+          </BotShieldActionButton>
+        </div>
       </div>
     </BotShieldNativeModal>
   );
@@ -1552,7 +1539,7 @@ export default function ValuePage() {
         <div
           className="botshield-value-v2"
           data-value-layout="clean-assumptions-modal"
-          data-value-ui-revision="flagship-v13"
+          data-value-ui-revision="flagship-v14"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
