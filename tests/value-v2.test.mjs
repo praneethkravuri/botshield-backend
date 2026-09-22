@@ -8,6 +8,7 @@ import {
   buildValueV2Trend,
   normalizeValueV2Range,
   sanitizeValueV2Assumptions,
+  VALUE_V2_ASSUMPTION_DEFAULTS,
   VALUE_V2_RANGE_OPTIONS,
 } from "../app/lib/value-v2-calculations.js";
 import {
@@ -146,6 +147,24 @@ test("assumptions unconfigured state leaves estimated values unavailable", () =>
   assert.equal(dashboard.economics.valueToCostRatio, null);
 });
 
+test("ROI and value-to-cost guards avoid Infinity and NaN", () => {
+  const dashboard = buildValueV2DashboardPayload({
+    events: [storefrontEvent({ action: "blocked" })],
+    assumptions: {
+      estimatedValuePerBlockedEvent: 25,
+      estimatedValuePerChallenge: 0,
+      staffMinutesSavedPerIntervention: 0,
+      staffHourlyCost: 0,
+      merchantConfigured: true,
+    },
+    billing: { monthlyPrice: 0, planName: "" },
+    range: "30d",
+    now: NOW,
+  });
+  assert.equal(dashboard.economics.valueToCostRatio, null);
+  assert.equal(Number.isFinite(dashboard.economics.estimatedNetValue), true);
+});
+
 test("assumptions configured state calculates estimated values", () => {
   const dashboard = buildDashboard(
     [
@@ -175,13 +194,13 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v8 build marker is present on Value root", async () => {
+test("flagship-v9 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v8"/);
-  assert.match(page, /data-value-layout="premium-roi-experience"/);
+  assert.match(page, /data-value-ui-revision="flagship-v9"/);
+  assert.match(page, /data-value-layout="live-merchant-economics"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -201,7 +220,7 @@ test("impact chart keeps observed event counts separate from financial estimates
   assert.doesNotMatch(chartBody, /formatValueV2Currency/);
 });
 
-test("flagship-v8 uses ROI command center instead of dark executive hero", async () => {
+test("flagship-v9 uses ROI command center instead of dark executive hero", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -244,7 +263,7 @@ test("Value horizon exposes 30D 6M and 1Y controls with plan spend rail", async 
   assert.match(css, /\.vv2-horizon-metrics-primary/);
 });
 
-test("flagship-v8 adds premium command center status strip and conditional snapshot", async () => {
+test("flagship-v9 adds live trust rail, value status, and transparency surfaces", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -254,14 +273,86 @@ test("flagship-v8 adds premium command center status strip and conditional snaps
     "utf8",
   );
 
-  assert.match(page, /FinancialStatusStrip/);
-  assert.match(page, /ValuePeriodSnapshot/);
-  assert.match(page, /vv2-status-strip/);
-  assert.match(page, /vv2-value-snapshot/);
+  assert.match(page, /LiveDataTrustRail/);
+  assert.match(page, /ValueStatusBadge/);
+  assert.match(page, /CalculationMethodology/);
+  assert.match(page, /resolveUnavailableReason/);
+  assert.match(page, /deriveValueStatus/);
+  assert.match(page, /vv2-trust-rail/);
+  assert.match(page, /vv2-value-status/);
+  assert.match(page, /vv2-assumptions-used/);
   assert.match(page, /is-refreshing/);
-  assert.match(css, /\.vv2-status-strip/);
-  assert.match(css, /\.vv2-value-snapshot/);
-  assert.match(css, /\.vv2-eyebrow/);
+  assert.match(css, /\.vv2-trust-rail/);
+  assert.match(css, /\.vv2-value-status/);
+  assert.match(css, /\.vv2-assumptions-used/);
+  assert.match(css, /\.vv2-calc-trace/);
+});
+
+test("Value page does not hardcode merchant plan price in component logic", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /payload\?\.currentPlan\?\.monthlyPrice/);
+  assert.match(page, /monthlyPrice \* 6/);
+  assert.match(page, /monthlyPrice \* 12/);
+  assert.doesNotMatch(page, /\$29/);
+  assert.doesNotMatch(page, /174/);
+  assert.doesNotMatch(page, /348/);
+});
+
+test("currentPlan uses live billing fields without invented plan name fallback", () => {
+  const withName = buildValueV2DashboardPayload({
+    events: [],
+    assumptions: VALUE_V2_ASSUMPTION_DEFAULTS,
+    billing: { monthlyPrice: 29, planName: "Partner Verified Plan", verified: true },
+    range: "30d",
+    now: NOW,
+  });
+  assert.equal(withName.currentPlan.name, "Partner Verified Plan");
+  assert.equal(withName.currentPlan.monthlyPrice, 29);
+
+  const withoutName = buildValueV2DashboardPayload({
+    events: [],
+    assumptions: VALUE_V2_ASSUMPTION_DEFAULTS,
+    billing: { monthlyPrice: 29, planName: "", verified: false },
+    range: "30d",
+    now: NOW,
+  });
+  assert.equal(withoutName.currentPlan.name, null);
+  assert.doesNotMatch(JSON.stringify(withoutName), /BotShield Basic/);
+});
+
+test("Value page shows Current plan fallback when plan name is unavailable", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /resolvePlanDisplayName/);
+  assert.match(page, /Current plan/);
+  assert.doesNotMatch(page, /BotShield Basic/);
+});
+
+test("value status mapping reflects assumptions, activity, and projection gates", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /needs-assumptions/);
+  assert.match(page, /projection-available/);
+  assert.match(page, /building-history/);
+  assert.match(page, /estimate-available/);
+});
+
+test("6-month horizon projection uses eligible daily-rate model, not naive 30d multiply", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /deriveProjectionBasisDays/);
+  assert.match(page, /dailyInterventions \* 180/);
+  assert.match(page, /dailyValue \* 180/);
+  assert.doesNotMatch(page, /next30Days[\s\S]{0,120}\* 6/);
 });
 
 test("interventions equal blocked plus challenged", () => {
@@ -537,7 +628,9 @@ test("value server layer queries storefront events and billing status", async ()
     "utf8",
   );
   assert.match(serverSource, /source: "storefront-proxy"/);
-  assert.match(serverSource, /readCachedBillingStatus/);
+  assert.match(serverSource, /shop: normalizedShop/);
+  assert.match(serverSource, /readCachedBillingStatus\(normalizedShop\)/);
+  assert.match(serverSource, /getValueV2Assumptions\(normalizedShop/);
   assert.match(serverSource, /buildValueV2DashboardPayload/);
   assert.match(serverSource, /BOT_EVENT_RETENTION_DAYS/);
 
@@ -599,8 +692,8 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v8"/);
-  assert.match(page, /data-value-layout="premium-roi-experience"/);
+  assert.match(page, /data-value-ui-revision="flagship-v9"/);
+  assert.match(page, /data-value-layout="live-merchant-economics"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);

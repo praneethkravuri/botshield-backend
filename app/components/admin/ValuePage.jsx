@@ -36,15 +36,136 @@ const VALUE_ASSUMPTIONS_MODAL_ID = "botshield-value-v2-assumptions-modal";
 const TOOLTIPS = {
   protectedValue:
     "Estimated protected value from BotShield interventions based on your assumptions.",
-  netValue: "Estimated protected value minus BotShield cost for the selected period.",
+  netValue: "Estimated value after BotShield cost for the selected period.",
   roi: "Estimated net value divided by selected-period BotShield cost.",
-  valuePerDollar: "Estimated protected value returned for each $1 of BotShield spend.",
+  valuePerDollar: "Estimated protected value for each $1 of BotShield cost.",
   costPerIntervention: "Selected-period BotShield cost divided by observed interventions.",
   estValuePerIntervention:
     "Estimated protected value divided by observed interventions.",
   projectedValue: "Forward-looking estimate using eligible observed activity.",
   breakEven: "Estimated interventions needed to cover BotShield cost.",
 };
+
+function resolvePlanDisplayName(planName) {
+  const trimmed = String(planName || "").trim();
+  return trimmed || "Current plan";
+}
+
+function deriveValueStatus({ configured, interventions, projectionEligible, estimateAvailable }) {
+  if (!configured) {
+    return { id: "needs-assumptions", label: "Needs assumptions" };
+  }
+  if (interventions <= 0) {
+    return { id: "observing", label: "Observing" };
+  }
+  if (!estimateAvailable && !projectionEligible) {
+    return { id: "building-history", label: "Building history" };
+  }
+  if (estimateAvailable && !projectionEligible) {
+    return { id: "estimate-available", label: "Estimate available" };
+  }
+  if (projectionEligible) {
+    return { id: "projection-available", label: "Projection available" };
+  }
+  return { id: "observing", label: "Observing" };
+}
+
+function resolveUnavailableReason(metricId, context) {
+  const {
+    configured,
+    interventions,
+    allocatedPlanCost,
+    projectionEligible,
+    horizonFinancialAvailable,
+  } = context;
+
+  switch (metricId) {
+    case "protectedValue":
+      if (!configured) {
+        return "Configure financial assumptions to estimate protected value.";
+      }
+      return "Add assumed values for blocked events, challenged events, or staff time savings.";
+    case "netValue":
+      if (!configured) {
+        return "Configure assumptions first. Net value requires an estimated protected value.";
+      }
+      return "Net value appears once estimated protected value is available.";
+    case "roi":
+      if (!configured) {
+        return "Configure assumptions to calculate ROI.";
+      }
+      if (!(allocatedPlanCost > 0)) {
+        return "ROI requires a positive selected-period BotShield cost.";
+      }
+      return "ROI appears once estimated net value is available.";
+    case "valuePerDollar":
+      if (!configured) {
+        return "Configure assumptions to calculate value per $1 spent.";
+      }
+      if (!(allocatedPlanCost > 0)) {
+        return "Value per $1 spent requires a positive selected-period BotShield cost.";
+      }
+      return "Value per $1 spent appears once estimated protected value is available.";
+    case "costPerIntervention":
+      if (interventions <= 0) {
+        return "Cost per intervention appears after at least one intervention is recorded.";
+      }
+      return "Cost per intervention requires a valid selected-period BotShield cost.";
+    case "estValuePerIntervention":
+      if (!configured) {
+        return "Configure assumptions to estimate value per intervention.";
+      }
+      if (interventions <= 0) {
+        return "Value per intervention appears after at least one intervention is recorded.";
+      }
+      return "Value per intervention requires an estimated protected value.";
+    case "breakEven":
+      if (!configured) {
+        return "Configure assumptions to estimate break-even interventions.";
+      }
+      if (interventions <= 0) {
+        return "Break-even appears after interventions and estimated value per intervention exist.";
+      }
+      return "Break-even requires a positive estimated value per intervention.";
+    case "projectedInterventions":
+      if (!projectionEligible) {
+        return "Projection unlocks after enough eligible intervention history is recorded.";
+      }
+      return "Projected interventions appear when projection is eligible.";
+    case "projectedProtectedValue":
+      if (!configured) {
+        return "Configure assumptions to unlock projected financial estimates.";
+      }
+      if (!projectionEligible) {
+        return "Projection unlocks after enough eligible intervention history is recorded.";
+      }
+      return "Projected protected value appears when projection is eligible.";
+    case "projectedNetValue":
+    case "projectedRoi":
+    case "projectedValueToCost":
+      if (!configured) {
+        return "Configure assumptions to unlock projected financial estimates.";
+      }
+      if (!horizonFinancialAvailable) {
+        return "Projected financial values appear when projection is eligible for this horizon.";
+      }
+      return "Projected value appears when enough eligible history exists.";
+    default:
+      return "This metric is unavailable until required data is present.";
+  }
+}
+
+function formatDataThrough(isoDate) {
+  if (!isoDate) return null;
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 function formatCount(value) {
   return formatHydrationStableNumber(Number(value) || 0);
@@ -227,6 +348,7 @@ function ValueMetric({
   label,
   value,
   tip,
+  unavailableTip,
   eyebrow,
   large = false,
   positive = false,
@@ -235,9 +357,11 @@ function ValueMetric({
   sublabel,
   helpText,
   align = "left",
+  settleKey,
 }) {
-  const labelNode = tip ? (
-    <ValueTooltip tip={tip}>
+  const effectiveTip = unavailable && unavailableTip ? unavailableTip : tip;
+  const labelNode = effectiveTip ? (
+    <ValueTooltip tip={effectiveTip}>
       <span className="vv2-metric-label">{label}</span>
     </ValueTooltip>
   ) : (
@@ -255,7 +379,8 @@ function ValueMetric({
       <strong
         className={`vv2-metric-value vv2-metric-reveal${positive ? " is-positive" : ""}${
           strong ? " is-strong" : ""
-        }${unavailable ? " is-unavailable" : ""}`}
+        }${unavailable ? " is-unavailable" : ""}${settleKey ? " is-settling" : ""}`}
+        key={settleKey ? `${label}-${settleKey}` : undefined}
       >
         {value}
       </strong>
@@ -265,22 +390,227 @@ function ValueMetric({
   );
 }
 
-function FinancialStatusStrip({ configured, interventions }) {
-  const items = [
-    `${OBSERVED_WINDOW_LABEL.toUpperCase()} OBSERVED WINDOW`,
-    configured ? "ASSUMPTIONS CONFIGURED" : "ESTIMATES NEED SETUP",
-    `${formatCount(interventions)} INTERVENTIONS`,
-  ];
+function LiveDataTrustRail({
+  configured,
+  interventions,
+  monthlyPrice,
+  currency,
+  projectionEligible,
+  latestObservedAt,
+  refreshing,
+}) {
+  const dataThrough = formatDataThrough(latestObservedAt);
+  const items = ["Live shop data"];
+
+  if (monthlyPrice != null) {
+    items.push(`Current plan • ${formatValueV2Currency(monthlyPrice, currency)}/mo`);
+  }
+
+  items.push("Last 30 days observed");
+  items.push(configured ? "Assumptions configured" : "Assumptions need setup");
+  items.push(`${formatCount(interventions)} interventions`);
+  items.push(projectionEligible ? "Projection ready" : "Projection building");
 
   return (
-    <div aria-label="Financial status" className="vv2-status-strip">
+    <div
+      aria-label="Live data trust rail"
+      className={`vv2-trust-rail${refreshing ? " is-refreshing" : ""}`}
+    >
       {items.map((item, index) => (
-        <span className="vv2-status-item" key={item}>
-          {index > 0 ? <span aria-hidden="true" className="vv2-status-dot" /> : null}
+        <span className="vv2-trust-item" key={item}>
+          {index > 0 ? <span aria-hidden="true" className="vv2-trust-dot" /> : null}
           {item}
         </span>
       ))}
+      {dataThrough ? (
+        <>
+          <span aria-hidden="true" className="vv2-trust-dot" />
+          <span className="vv2-trust-item">Data through {dataThrough}</span>
+        </>
+      ) : null}
     </div>
+  );
+}
+
+function ValueStatusBadge({ status }) {
+  return (
+    <span className={`vv2-value-status is-${status.id}`} data-value-status={status.id}>
+      Value status · {status.label}
+    </span>
+  );
+}
+
+function CalculationMethodology({
+  configured,
+  assumptions,
+  currency,
+  activity,
+  economics,
+  retentionDays,
+  billingVerified,
+  onEditAssumptions,
+}) {
+  const showTrace =
+    configured &&
+    economics.estimatedValueProtected != null &&
+    economics.allocatedPlanCost != null;
+
+  return (
+    <section className="vv2-methodology vv2-enter vv2-stage-5">
+      <details className="vv2-disclosure">
+        <summary>
+          <span className="vv2-disclosure-label-wrap">
+            <span aria-hidden="true" className="vv2-disclosure-icon">
+              i
+            </span>
+            <span className="vv2-disclosure-label">How Value is calculated</span>
+          </span>
+          <span aria-hidden="true" className="vv2-disclosure-chevron" />
+        </summary>
+        <div className="vv2-disclosure-body">
+          <div className="vv2-disclosure-grid">
+            <div>
+              <h4>Observed data</h4>
+              <p>What BotShield directly measured from storefront protection activity.</p>
+            </div>
+            <div>
+              <h4>Assumptions</h4>
+              <p>Merchant-configured inputs used to translate activity into estimated value.</p>
+            </div>
+            <div>
+              <h4>Estimated protected value</h4>
+              <p>
+                Blocked and challenged events multiplied by your assumed values, plus optional
+                staff time savings.
+              </p>
+            </div>
+            <div>
+              <h4>Net value</h4>
+              <p>Estimated protected value minus selected-period BotShield cost.</p>
+            </div>
+            <div>
+              <h4>ROI</h4>
+              <p>Estimated net value divided by selected-period BotShield cost.</p>
+            </div>
+            <div>
+              <h4>Value / $1</h4>
+              <p>Estimated protected value divided by selected-period BotShield cost.</p>
+            </div>
+            <div>
+              <h4>Projections</h4>
+              <p>
+                Unlock after meaningful intervention activity across at least 7 eligible days.
+                Uses normalized daily rates from observed history.
+              </p>
+            </div>
+            <div>
+              <h4>Data window</h4>
+              <p>
+                Observed BotShield activity is retained for {retentionDays} days. Value uses the
+                last 30 days.
+              </p>
+            </div>
+            <div>
+              <h4>Plan cost</h4>
+              <p>
+                {billingVerified
+                  ? "Comes from your current Shopify billing information."
+                  : "Based on configured Shopify billing pricing for your shop."}
+              </p>
+            </div>
+          </div>
+
+          <div className="vv2-assumptions-used">
+            <h4>Assumptions used</h4>
+            {configured ? (
+              <>
+                <dl className="vv2-assumptions-used-list">
+                  <div>
+                    <dt>Estimated value per blocked event</dt>
+                    <dd>
+                      {formatValueV2Currency(assumptions.estimatedValuePerBlockedEvent, currency)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Estimated value per challenged event</dt>
+                    <dd>
+                      {formatValueV2Currency(assumptions.estimatedValuePerChallenge, currency)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Staff minutes saved per intervention</dt>
+                    <dd>{formatCount(assumptions.staffMinutesSavedPerIntervention)}</dd>
+                  </div>
+                  <div>
+                    <dt>Staff hourly cost</dt>
+                    <dd>{formatValueV2Currency(assumptions.staffHourlyCost, currency)}</dd>
+                  </div>
+                </dl>
+                <button
+                  className="vv2-btn vv2-btn-secondary vv2-btn-compact"
+                  onClick={onEditAssumptions}
+                  type="button"
+                >
+                  Edit assumptions
+                </button>
+              </>
+            ) : (
+              <>
+                <p>Financial assumptions have not been configured.</p>
+                <button
+                  className="vv2-btn vv2-btn-secondary vv2-btn-compact"
+                  onClick={onEditAssumptions}
+                  type="button"
+                >
+                  Set assumptions
+                </button>
+              </>
+            )}
+          </div>
+
+          {showTrace ? (
+            <div aria-label="Calculation path" className="vv2-calc-trace">
+              <div>
+                <span className="vv2-metric-label">Observed</span>
+                <strong>{formatCount(activity.interventions)} interventions</strong>
+              </div>
+              <span aria-hidden="true" className="vv2-calc-trace-op">
+                +
+              </span>
+              <div>
+                <span className="vv2-metric-label">Your assumptions</span>
+                <strong>Configured merchant inputs</strong>
+              </div>
+              <span aria-hidden="true" className="vv2-calc-trace-op">
+                =
+              </span>
+              <div>
+                <span className="vv2-metric-label">Est. protected value</span>
+                <strong>
+                  {formatFinancial(economics.estimatedValueProtected, currency, configured)}
+                </strong>
+              </div>
+              <span aria-hidden="true" className="vv2-calc-trace-op">
+                −
+              </span>
+              <div>
+                <span className="vv2-metric-label">BotShield cost</span>
+                <strong>{formatValueV2Currency(economics.allocatedPlanCost, currency)}</strong>
+              </div>
+              <span aria-hidden="true" className="vv2-calc-trace-op">
+                =
+              </span>
+              <div>
+                <span className="vv2-metric-label">Est. net value</span>
+                <strong>{formatFinancial(economics.estimatedNetValue, currency, configured)}</strong>
+              </div>
+            </div>
+          ) : null}
+
+          <p className="vv2-disclosure-trust">Estimates are not guaranteed savings.</p>
+        </div>
+      </details>
+    </section>
   );
 }
 
@@ -467,6 +797,7 @@ function EstimateReadiness({
   observedInterventionDays,
   projectionEligible,
   onConfigure,
+  deferAssumptionsCta = false,
 }) {
   const checks = [
     {
@@ -527,13 +858,23 @@ function EstimateReadiness({
                 <span>{check.label}</span>
                 {check.detail ? <small>{check.detail}</small> : null}
                 {check.action ? (
-                  <button
-                    className="vv2-btn vv2-btn-primary vv2-btn-compact"
-                    onClick={check.action}
-                    type="button"
-                  >
-                    Set assumptions
-                  </button>
+                  deferAssumptionsCta ? (
+                    <button
+                      className="vv2-link-btn"
+                      onClick={check.action}
+                      type="button"
+                    >
+                      Set assumptions
+                    </button>
+                  ) : (
+                    <button
+                      className="vv2-btn vv2-btn-primary vv2-btn-compact"
+                      onClick={check.action}
+                      type="button"
+                    >
+                      Set assumptions
+                    </button>
+                  )
                 ) : null}
               </div>
               {index < checks.length - 1 ? (
@@ -646,11 +987,13 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
 export default function ValuePage() {
   const toast = useBotShieldToast();
   const [horizon, setHorizon] = useState("30d");
+  const [horizonPress, setHorizonPress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
   const [assumptionDraft, setAssumptionDraft] = useState(null);
   const [savingAssumptions, setSavingAssumptions] = useState(false);
+  const [dataSettleKey, setDataSettleKey] = useState(0);
 
   const loadValue = useCallback(async () => {
     setLoading(true);
@@ -755,6 +1098,7 @@ export default function ValuePage() {
       }
       hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
       toast.success("Value assumptions saved");
+      setDataSettleKey((current) => current + 1);
       await loadValue();
     } catch (saveError) {
       toast.error(
@@ -792,16 +1136,35 @@ export default function ValuePage() {
     }
   };
 
+  const planDisplayName = resolvePlanDisplayName(planName);
   const monthlyPlanLabel =
     monthlyPrice != null ? `${formatValueV2Currency(monthlyPrice, currency)} / month` : "—";
+  const estimateAvailable =
+    configured && economics?.estimatedValueProtected != null;
+  const valueStatus = payload
+    ? deriveValueStatus({
+        configured,
+        interventions: activity?.interventions || 0,
+        projectionEligible: payload.projection?.eligible,
+        estimateAvailable,
+      })
+    : null;
+  const metricContext = {
+    configured,
+    interventions: activity?.interventions || 0,
+    allocatedPlanCost: economics?.allocatedPlanCost || 0,
+    projectionEligible: payload?.projection?.eligible,
+    horizonFinancialAvailable: horizonProjection?.financialAvailable,
+  };
+  const billingVerified = payload?.currentPlan?.billingVerified;
 
   return (
     <BotShieldNativePage heading="Value">
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="premium-roi-experience"
-          data-value-ui-revision="flagship-v8"
+          data-value-layout="live-merchant-economics"
+          data-value-ui-revision="flagship-v9"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
@@ -809,7 +1172,7 @@ export default function ValuePage() {
                 <h1 className="vv2-header-enter-title">Value</h1>
                 {monthlyPrice != null ? (
                   <span className="vv2-plan-chip vv2-header-enter-chip">
-                    Current plan • {formatValueV2Currency(monthlyPrice, currency)} / month
+                    {planDisplayName} • {formatValueV2Currency(monthlyPrice, currency)} / month
                   </span>
                 ) : null}
               </div>
@@ -821,6 +1184,11 @@ export default function ValuePage() {
               <button className="vv2-btn vv2-btn-secondary" onClick={openAssumptions} type="button">
                 Edit assumptions
               </button>
+              {loading && payload ? (
+                <span aria-live="polite" className="vv2-refresh-label">
+                  Refreshing…
+                </span>
+              ) : null}
               <button
                 aria-label="Refresh Value data"
                 className={`vv2-btn vv2-btn-icon${loading ? " is-spinning" : ""}`}
@@ -862,24 +1230,39 @@ export default function ValuePage() {
             <div
               className={`vv2-page-content${
                 loading && payload ? " is-refreshing" : ""
-              }${loading && !payload ? " is-loading" : ""}`}
+              }${loading && !payload ? " is-loading" : ""}${
+                dataSettleKey ? " is-data-settling" : ""
+              }`}
             >
               {payload.retentionMessage ? (
                 <p className="vv2-retention-note">{payload.retentionMessage}</p>
               ) : null}
 
+              <LiveDataTrustRail
+                configured={configured}
+                currency={currency}
+                interventions={activity.interventions}
+                latestObservedAt={payload.latestObservedAt}
+                monthlyPrice={monthlyPrice}
+                projectionEligible={payload.projection.eligible}
+                refreshing={loading && Boolean(payload)}
+              />
+
               <section
                 aria-labelledby="vv2-command-title"
                 className="vv2-command-center vv2-enter vv2-stage-1"
               >
+                <span aria-hidden="true" className="vv2-command-accent" />
                 <div className="vv2-command-head">
                   <div>
+                    {valueStatus ? <ValueStatusBadge status={valueStatus} /> : null}
                     <h2 className="vv2-band-title" id="vv2-command-title">
                       ROI command center
                     </h2>
                     <p className="vv2-command-subtitle">
-                      {planName ? `${planName} • ` : ""}
+                      {planName?.trim() ? `${planName} • ` : ""}
                       {OBSERVED_WINDOW_LABEL} observed window
+                      {billingVerified ? " · From Shopify billing" : ""}
                     </p>
                   </div>
                   {!configured ? (
@@ -896,9 +1279,11 @@ export default function ValuePage() {
                       label="Estimated protected value"
                       large
                       positive={configured && (economics.estimatedValueProtected || 0) > 0}
+                      settleKey={dataSettleKey}
                       strong={configured && economics.estimatedValueProtected != null}
                       unavailable={!configured || economics.estimatedValueProtected == null}
                       tip={TOOLTIPS.protectedValue}
+                      unavailableTip={resolveUnavailableReason("protectedValue", metricContext)}
                       value={formatFinancial(
                         economics.estimatedValueProtected,
                         currency,
@@ -907,16 +1292,18 @@ export default function ValuePage() {
                       helpText={
                         configured
                           ? "Estimated from observed protection and configured assumptions."
-                          : "Configure assumptions to estimate financial impact."
+                          : "Configure assumptions to unlock your financial estimate."
                       }
                     />
                     <div className="vv2-command-secondary">
                       <div className="vv2-metric-col vv2-metric-col-1">
                         <ValueMetric
                           label="Estimated net value"
+                          settleKey={dataSettleKey}
                           strong={configured && economics.estimatedNetValue != null}
                           unavailable={!configured || economics.estimatedNetValue == null}
                           tip={TOOLTIPS.netValue}
+                          unavailableTip={resolveUnavailableReason("netValue", metricContext)}
                           value={formatFinancial(
                             economics.estimatedNetValue,
                             currency,
@@ -927,18 +1314,22 @@ export default function ValuePage() {
                       <div className="vv2-metric-col vv2-metric-col-2">
                         <ValueMetric
                           label="Estimated ROI"
+                          settleKey={dataSettleKey}
                           strong={configured && estimatedRoi != null}
                           unavailable={!configured || estimatedRoi == null}
                           tip={TOOLTIPS.roi}
+                          unavailableTip={resolveUnavailableReason("roi", metricContext)}
                           value={formatRoiPercent(estimatedRoi, configured)}
                         />
                       </div>
                       <div className="vv2-metric-col vv2-metric-col-3">
                         <ValueMetric
                           label="Est. value / $1 spent"
+                          settleKey={dataSettleKey}
                           strong={configured && economics.valueToCostRatio != null}
                           unavailable={!configured || economics.valueToCostRatio == null}
                           tip={TOOLTIPS.valuePerDollar}
+                          unavailableTip={resolveUnavailableReason("valuePerDollar", metricContext)}
                           value={formatValueToCostRatio(economics.valueToCostRatio, configured)}
                         />
                       </div>
@@ -949,8 +1340,9 @@ export default function ValuePage() {
                     <p className="vv2-plan-rail">Plan economics</p>
                     <ValueMetric
                       align="right"
-                      label="Current plan"
+                      label={planDisplayName}
                       strong={monthlyPrice != null}
+                      sublabel={billingVerified ? "From Shopify billing" : undefined}
                       value={monthlyPlanLabel}
                     />
                     <ValueMetric
@@ -972,22 +1364,30 @@ export default function ValuePage() {
                         strong={costPerIntervention != null}
                         unavailable={costPerIntervention == null}
                         tip={TOOLTIPS.costPerIntervention}
+                        unavailableTip={resolveUnavailableReason("costPerIntervention", metricContext)}
                         value={formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
                       />
                       <ValueMetric
                         align="right"
                         label="Est. value / intervention"
+                        settleKey={dataSettleKey}
                         strong={configured && estValuePerIntervention != null}
                         unavailable={!configured || estValuePerIntervention == null}
                         tip={TOOLTIPS.estValuePerIntervention}
+                        unavailableTip={resolveUnavailableReason(
+                          "estValuePerIntervention",
+                          metricContext,
+                        )}
                         value={formatPerUnit(estValuePerIntervention, currency, configured)}
                       />
                       <ValueMetric
                         align="right"
                         label="Break even"
+                        settleKey={dataSettleKey}
                         strong={breakEvenInterventions != null}
                         unavailable={breakEvenInterventions == null}
                         tip={TOOLTIPS.breakEven}
+                        unavailableTip={resolveUnavailableReason("breakEven", metricContext)}
                         value={
                           breakEvenInterventions != null
                             ? `${formatCount(breakEvenInterventions)} intervention${
@@ -999,10 +1399,6 @@ export default function ValuePage() {
                     </div>
                   </div>
                 </div>
-                <FinancialStatusStrip
-                  configured={configured}
-                  interventions={activity.interventions}
-                />
                 <ValuePeriodSnapshot
                   configured={configured}
                   currency={currency}
@@ -1023,9 +1419,14 @@ export default function ValuePage() {
                     {HORIZON_OPTIONS.map((option) => (
                       <button
                         aria-pressed={horizon === option.id}
-                        className={horizon === option.id ? "is-active" : ""}
+                        className={`${horizon === option.id ? "is-active" : ""}${
+                          horizonPress === option.id ? " is-pressed" : ""
+                        }`}
                         key={option.id}
                         onClick={() => setHorizon(option.id)}
+                        onPointerDown={() => setHorizonPress(option.id)}
+                        onPointerLeave={() => setHorizonPress(null)}
+                        onPointerUp={() => setHorizonPress(null)}
                         type="button"
                       >
                         {option.label}
@@ -1081,6 +1482,10 @@ export default function ValuePage() {
                         !horizonProjection?.financialAvailable ||
                         horizonProjection?.projectedInterventions == null
                       }
+                      unavailableTip={resolveUnavailableReason(
+                        "projectedInterventions",
+                        metricContext,
+                      )}
                       value={
                         horizonProjection?.financialAvailable &&
                         horizonProjection?.projectedInterventions != null
@@ -1099,6 +1504,10 @@ export default function ValuePage() {
                         horizonProjection?.estimatedValueProtected == null
                       }
                       tip={TOOLTIPS.projectedValue}
+                      unavailableTip={resolveUnavailableReason(
+                        "projectedProtectedValue",
+                        metricContext,
+                      )}
                       value={formatFinancial(
                         horizonProjection?.estimatedValueProtected,
                         currency,
@@ -1115,6 +1524,7 @@ export default function ValuePage() {
                         !horizonProjection?.financialAvailable ||
                         horizonProjection?.projectedNetValue == null
                       }
+                      unavailableTip={resolveUnavailableReason("projectedNetValue", metricContext)}
                       value={formatFinancial(
                         horizonProjection?.projectedNetValue,
                         currency,
@@ -1131,6 +1541,7 @@ export default function ValuePage() {
                         !horizonProjection?.financialAvailable ||
                         horizonProjection?.projectedRoi == null
                       }
+                      unavailableTip={resolveUnavailableReason("projectedRoi", metricContext)}
                       value={formatRoiPercent(
                         horizonProjection?.projectedRoi,
                         horizonProjection?.financialAvailable,
@@ -1148,6 +1559,10 @@ export default function ValuePage() {
                         !horizonProjection?.financialAvailable ||
                         horizonProjection?.projectedValueToCost == null
                       }
+                      unavailableTip={resolveUnavailableReason(
+                        "projectedValueToCost",
+                        metricContext,
+                      )}
                       value={formatValueToCostRatio(
                         horizonProjection?.projectedValueToCost,
                         horizonProjection?.financialAvailable,
@@ -1305,6 +1720,7 @@ export default function ValuePage() {
 
                 <EstimateReadiness
                   configured={configured}
+                  deferAssumptionsCta={!configured}
                   interventions={activity.interventions}
                   monthlyPrice={monthlyPrice}
                   observedInterventionDays={observedInterventionDays}
@@ -1313,40 +1729,16 @@ export default function ValuePage() {
                 />
               </div>
 
-              <section className="vv2-methodology vv2-enter vv2-stage-5">
-                <details className="vv2-disclosure">
-                  <summary>
-                    <span className="vv2-disclosure-label-wrap">
-                      <span aria-hidden="true" className="vv2-disclosure-icon">
-                        i
-                      </span>
-                      <span className="vv2-disclosure-label">How Value is calculated</span>
-                    </span>
-                    <span aria-hidden="true" className="vv2-disclosure-chevron" />
-                  </summary>
-                  <div className="vv2-disclosure-grid">
-                    <div>
-                      <h4>Observed</h4>
-                      <p>Actual BotShield storefront protection activity.</p>
-                    </div>
-                    <div>
-                      <h4>Estimated</h4>
-                      <p>Observed activity combined with merchant assumptions.</p>
-                    </div>
-                    <div>
-                      <h4>Projected</h4>
-                      <p>Eligible observed activity extended through the established projection model.</p>
-                    </div>
-                    <div>
-                      <h4>Plan cost</h4>
-                      <p>Current Shopify subscription pricing.</p>
-                    </div>
-                  </div>
-                  <p className="vv2-disclosure-trust">
-                    Estimates are not guaranteed savings.
-                  </p>
-                </details>
-              </section>
+              <CalculationMethodology
+                activity={activity}
+                assumptions={payload.assumptions}
+                billingVerified={billingVerified}
+                configured={configured}
+                currency={currency}
+                economics={economics}
+                onEditAssumptions={openAssumptions}
+                retentionDays={payload.retentionDays}
+              />
             </div>
           ) : null}
         </div>

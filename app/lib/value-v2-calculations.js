@@ -298,6 +298,7 @@ export function buildValueV2Projection({
     return {
       available: false,
       eligible: false,
+      observedInterventionDays,
       reason:
         "Not enough protection activity to project yet. Projections require meaningful blocked or challenged activity across the observed period.",
       basisLabel,
@@ -338,6 +339,7 @@ export function buildValueV2Projection({
   return {
     available: true,
     eligible: true,
+    observedInterventionDays,
     reason: null,
     basisLabel,
     next30Days,
@@ -391,6 +393,17 @@ export function buildValueV2DashboardPayload({
     assumptionsConfigured,
   });
 
+  let latestObservedAt = null;
+  for (const event of periodEvents) {
+    const createdAt = event?.createdAt ? new Date(event.createdAt) : null;
+    if (!createdAt) continue;
+    if (!latestObservedAt || createdAt > latestObservedAt) {
+      latestObservedAt = createdAt;
+    }
+  }
+
+  const storedPlanName = String(billing?.planName || "").trim();
+
   return {
     range: rangeId,
     observedWindowDays: effectiveDays,
@@ -398,10 +411,13 @@ export function buildValueV2DashboardPayload({
     retentionLimited: rangeDays > retentionDays,
     observationLabel: `${effectiveDays}-day observed window`,
     currency,
+    latestObservedAt: latestObservedAt ? latestObservedAt.toISOString() : null,
     currentPlan: {
-      name: billing?.planName || "BotShield Basic",
+      name: storedPlanName || null,
       currency,
       monthlyPrice: Number.isFinite(monthlyPrice) ? monthlyPrice : null,
+      billingVerified: Boolean(billing?.verified),
+      billingActive: Boolean(billing?.active),
     },
     assumptions: sanitizeValueV2Assumptions(assumptions),
     assumptionsConfigured,
