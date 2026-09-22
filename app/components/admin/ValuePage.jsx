@@ -2,10 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatHydrationStableNumber } from "../../lib/hydration-safe-format.js";
 import { safeFetchJson } from "../../lib/safe-fetch.js";
-import {
-  allocatePlanCostForPeriod,
-  formatValueV2Currency,
-} from "../../lib/value-v2-calculations.js";
+import { formatValueV2Currency } from "../../lib/value-v2-calculations.js";
 import "../../styles/value-v2-page.css";
 import {
   BotShieldParagraph,
@@ -29,8 +26,27 @@ const RANGE_OPTIONS = [
   { id: "30d", label: "30D" },
 ];
 
+const HORIZON_OPTIONS = [
+  { id: "30d", label: "30 days", shortLabel: "30D", months: 1 },
+  { id: "6m", label: "6 months", shortLabel: "6M", months: 6 },
+  { id: "1y", label: "1 year", shortLabel: "1Y", months: 12 },
+];
+
 const PROJECTION_MIN_OBSERVED_DAYS = 7;
 const VALUE_ASSUMPTIONS_MODAL_ID = "botshield-value-v2-assumptions-modal";
+
+const TOOLTIPS = {
+  protectedValue:
+    "Estimated protected value from BotShield interventions based on your assumptions.",
+  netValue: "Estimated protected value minus BotShield cost for the selected period.",
+  roi: "Estimated net value divided by selected-period BotShield cost.",
+  valuePerDollar: "Estimated protected value returned for each $1 of BotShield spend.",
+  costPerIntervention: "Selected-period BotShield cost divided by observed interventions.",
+  estValuePerIntervention:
+    "Estimated protected value divided by observed interventions.",
+  projectedValue: "Forward-looking estimate using eligible observed activity.",
+  breakEven: "Estimated interventions needed to cover BotShield cost.",
+};
 
 function formatCount(value) {
   return formatHydrationStableNumber(Number(value) || 0);
@@ -51,6 +67,18 @@ function formatRoiPercent(value, configured) {
   const rounded = Math.round(value * 10) / 10;
   const prefix = rounded < 0 ? "−" : "";
   return `${prefix}${Math.abs(rounded)}%`;
+}
+
+function formatValueToCostRatio(ratio, configured) {
+  if (!configured || ratio == null || !Number.isFinite(ratio)) return "—";
+  const rounded = Math.round(ratio * 10) / 10;
+  if (rounded >= 1000) {
+    return `${Math.round(rounded).toLocaleString("en-US")}×`;
+  }
+  if (Number.isInteger(rounded)) {
+    return `${rounded}×`;
+  }
+  return `${rounded.toFixed(1)}×`;
 }
 
 function deriveCostPerIntervention(allocatedPlanCost, interventions) {
@@ -76,29 +104,147 @@ function deriveEstimatedRoi(estimatedNetValue, allocatedPlanCost, configured) {
   return (estimatedNetValue / allocatedPlanCost) * 100;
 }
 
-function deriveProjectionNetValue(
-  estimatedValueProtected,
-  windowDays,
-  monthlyPrice,
+function deriveBreakEvenInterventions(
+  allocatedPlanCost,
+  estValuePerIntervention,
   configured,
 ) {
-  if (!configured || estimatedValueProtected == null || monthlyPrice == null) {
+  if (
+    !configured ||
+    estValuePerIntervention == null ||
+    estValuePerIntervention <= 0 ||
+    allocatedPlanCost <= 0
+  ) {
     return null;
   }
-  const windowCost =
-    windowDays >= 365
-      ? monthlyPrice * 12
-      : allocatePlanCostForPeriod(monthlyPrice, windowDays);
-  return Number((estimatedValueProtected - windowCost).toFixed(2));
+  return Math.ceil(allocatedPlanCost / estValuePerIntervention);
 }
 
 function countObservedInterventionDays(trend) {
   return trend.filter((bucket) => bucket.interventions > 0).length;
 }
 
+function deriveProjectionBasisDays(trend, rangeDays) {
+  const observedInterventionDays = countObservedInterventionDays(trend);
+  return Math.max(1, Math.min(rangeDays, observedInterventionDays || rangeDays));
+}
+
+function deriveHorizonPlanSpend(monthlyPrice, horizonId) {
+  if (monthlyPrice == null || !Number.isFinite(monthlyPrice)) return null;
+  const option = HORIZON_OPTIONS.find((entry) => entry.id === horizonId);
+  if (!option) return null;
+  return Number((monthlyPrice * option.months).toFixed(2));
+}
+
+function deriveHorizonProjection(payload, horizonId, configured) {
+  const { projection, activity, assumptions, trend, observedWindowDays } = payload;
+  const planSpend = deriveHorizonPlanSpend(payload.currentPlan?.monthlyPrice, horizonId);
+
+  if (!projection?.eligible) {
+    return {
+      planSpend,
+      financialAvailable: false,
+      buildingMessage:
+        "More eligible protection activity is needed before BotShield can project financial impact for this horizon.",
+    };
+  }
+
+  let window = null;
+  if (horizonId === "30d") {
+    window = projection.next30Days;
+  } else if (horizonId === "1y") {
+    window = projection.next12Months;
+  } else if (horizonId === "6m") {
+    const basisDays = deriveProjectionBasisDays(trend, observedWindowDays);
+    const dailyInterventions = activity.interventions / basisDays;
+    const dailyValue = configured
+      ? (activity.threatsBlocked / basisDays) * assumptions.estimatedValuePerBlockedEvent +
+        (activity.challengesIssued / basisDays) * assumptions.estimatedValuePerChallenge
+      : null;
+    window = {
+      projectedInterventions: Math.round(dailyInterventions * 180),
+      estimatedValueProtected:
+        configured && dailyValue != null
+          ? Number((dailyValue * 180).toFixed(2))
+          : null,
+    };
+  }
+
+  const estimatedValueProtected = configured ? window?.estimatedValueProtected ?? null : null;
+  const projectedNetValue =
+    configured && estimatedValueProtected != null && planSpend != null
+      ? Number((estimatedValueProtected - planSpend).toFixed(2))
+      : null;
+  const projectedRoi =
+    configured && projectedNetValue != null && planSpend > 0
+      ? (projectedNetValue / planSpend) * 100
+      : null;
+  const projectedValueToCost =
+    configured && estimatedValueProtected != null && planSpend > 0
+      ? Number((estimatedValueProtected / planSpend).toFixed(2))
+      : null;
+
+  return {
+    planSpend,
+    financialAvailable: configured && estimatedValueProtected != null,
+    buildingMessage: configured
+      ? null
+      : "Configure assumptions to unlock projected financial estimates.",
+    projectedInterventions: window?.projectedInterventions ?? null,
+    estimatedValueProtected,
+    projectedNetValue,
+    projectedRoi,
+    projectedValueToCost,
+  };
+}
+
 function hasObservedChartActivity(trend) {
   return trend.some(
     (bucket) => bucket.blocked > 0 || bucket.challenged > 0 || bucket.interventions > 0,
+  );
+}
+
+function ValueTooltip({ tip, children }) {
+  return (
+    <span className="vv2-tooltip-wrap">
+      {children}
+      <button className="vv2-tooltip-trigger" type="button" title={tip}>
+        ?
+      </button>
+    </span>
+  );
+}
+
+function ValueMetric({
+  label,
+  value,
+  tip,
+  large = false,
+  positive = false,
+  strong = false,
+  unavailable = false,
+  sublabel,
+}) {
+  const labelNode = tip ? (
+    <ValueTooltip tip={tip}>
+      <span className="vv2-metric-label">{label}</span>
+    </ValueTooltip>
+  ) : (
+    <span className="vv2-metric-label">{label}</span>
+  );
+
+  return (
+    <div className={`vv2-metric${large ? " is-large" : ""}`}>
+      {labelNode}
+      <strong
+        className={`vv2-metric-value vv2-metric-reveal${positive ? " is-positive" : ""}${
+          strong ? " is-strong" : ""
+        }${unavailable ? " is-unavailable" : ""}`}
+      >
+        {value}
+      </strong>
+      {sublabel ? <span className="vv2-metric-sublabel">{sublabel}</span> : null}
+    </div>
   );
 }
 
@@ -116,7 +262,28 @@ function ValueInlineState({ icon, title, children }) {
   );
 }
 
-function ValueObservedChart({ trend, observationLabel }) {
+function ValueObservedChart({ trend, observationLabel, empty = false }) {
+  if (empty) {
+    return (
+      <div className="vv2-observed-chart vv2-chart-inactive">
+        <div className="vv2-chart-head">
+          <div>
+            <h3>Protection activity</h3>
+            <p>{observationLabel}</p>
+          </div>
+        </div>
+        <div className="vv2-chart-inactive-body" aria-hidden="true">
+          <div className="vv2-chart-inactive-grid" />
+          <div className="vv2-chart-inactive-line" />
+          {trend.slice(0, 7).map((bucket) => (
+            <span className="vv2-chart-inactive-dot" key={bucket.key} />
+          ))}
+        </div>
+        <p className="vv2-chart-inactive-copy">No interventions recorded</p>
+      </div>
+    );
+  }
+
   const maximum = Math.max(1, ...trend.map((bucket) => bucket.interventions));
 
   return (
@@ -205,13 +372,11 @@ function ValueObservedSection({ trend, activity, observationLabel }) {
 
   return (
     <div className="vv2-analytics-layout">
-      {hasActivity ? (
-        <ValueObservedChart observationLabel={observationLabel} trend={trend} />
-      ) : (
-        <div className="vv2-chart-empty">
-          <p>No intervention activity to chart for this period.</p>
-        </div>
-      )}
+      <ValueObservedChart
+        empty={!hasActivity}
+        observationLabel={observationLabel}
+        trend={trend}
+      />
       <aside aria-label="Observed summary" className="vv2-observed-summary">
         <h3>Observed summary</h3>
         <dl>
@@ -237,6 +402,76 @@ function ValueObservedSection({ trend, activity, observationLabel }) {
         </p>
       </aside>
     </div>
+  );
+}
+
+function EstimateReadiness({
+  monthlyPrice,
+  configured,
+  interventions,
+  observedInterventionDays,
+  projectionEligible,
+  onConfigure,
+}) {
+  const checks = [
+    {
+      id: "plan",
+      label: "BotShield plan detected",
+      complete: monthlyPrice != null,
+    },
+    {
+      id: "assumptions",
+      label: "Configure financial assumptions",
+      complete: configured,
+      action: !configured ? onConfigure : null,
+    },
+    {
+      id: "activity",
+      label: "Record intervention activity",
+      complete: interventions > 0,
+    },
+    {
+      id: "history",
+      label: `Build ${PROJECTION_MIN_OBSERVED_DAYS} days of eligible history`,
+      complete: observedInterventionDays >= PROJECTION_MIN_OBSERVED_DAYS,
+      detail:
+        observedInterventionDays > 0 &&
+        observedInterventionDays < PROJECTION_MIN_OBSERVED_DAYS
+          ? `${observedInterventionDays} of ${PROJECTION_MIN_OBSERVED_DAYS} days`
+          : null,
+    },
+    {
+      id: "projection",
+      label: "Projection eligible",
+      complete: projectionEligible,
+      detail: projectionEligible ? null : "Building estimate",
+    },
+  ];
+
+  return (
+    <section aria-labelledby="vv2-readiness-title" className="vv2-readiness">
+      <h2 className="vv2-band-title" id="vv2-readiness-title">
+        Estimate readiness
+      </h2>
+      <ul className="vv2-readiness-list">
+        {checks.map((check) => (
+          <li className={check.complete ? "is-complete" : "is-pending"} key={check.id}>
+            <span aria-hidden="true" className="vv2-readiness-mark">
+              {check.complete ? "✓" : "○"}
+            </span>
+            <div>
+              <span>{check.label}</span>
+              {check.detail ? <small>{check.detail}</small> : null}
+              {check.action ? (
+                <button className="vv2-btn vv2-btn-primary vv2-btn-compact" onClick={check.action} type="button">
+                  Set assumptions
+                </button>
+              ) : null}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -339,6 +574,7 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
 export default function ValuePage() {
   const toast = useBotShieldToast();
   const [range, setRange] = useState("30d");
+  const [horizon, setHorizon] = useState("30d");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [payload, setPayload] = useState(null);
@@ -375,6 +611,7 @@ export default function ValuePage() {
   const economics = payload?.economics;
   const activity = payload?.activity;
   const monthlyPrice = payload?.currentPlan?.monthlyPrice;
+  const planName = payload?.currentPlan?.name;
   const observedInterventionDays = payload
     ? countObservedInterventionDays(payload.trend)
     : 0;
@@ -395,6 +632,17 @@ export default function ValuePage() {
         economics.allocatedPlanCost,
         configured,
       )
+    : null;
+  const breakEvenInterventions = economics
+    ? deriveBreakEvenInterventions(
+        economics.allocatedPlanCost,
+        estValuePerIntervention,
+        configured,
+      )
+    : null;
+
+  const horizonProjection = payload
+    ? deriveHorizonProjection(payload, horizon, configured)
     : null;
 
   const openAssumptions = () => {
@@ -471,21 +719,32 @@ export default function ValuePage() {
     }
   };
 
+  const monthlyPlanLabel =
+    monthlyPrice != null ? `${formatValueV2Currency(monthlyPrice, currency)} / month` : "—";
+
   return (
     <BotShieldNativePage heading="Value">
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="light-financial-dashboard"
-          data-value-ui-revision="flagship-v5"
+          data-value-layout="roi-command-center"
+          data-value-ui-revision="flagship-v6"
         >
           <header className="vv2-header">
             <div className="vv2-header-copy">
-              <h1>Value</h1>
-              <p>Understand the business impact of BotShield protection.</p>
+              <div className="vv2-header-title-row">
+                <h1>Value</h1>
+                {monthlyPrice != null ? (
+                  <span className="vv2-plan-chip">
+                    Current plan • {formatValueV2Currency(monthlyPrice, currency)} / month
+                  </span>
+                ) : null}
+              </div>
+              <p>Understand the financial impact of BotShield protection.</p>
             </div>
             <div className="vv2-header-actions">
               <div className="vv2-period" aria-label="Observed period">
+                <span className="vv2-period-label">Observed</span>
                 {RANGE_OPTIONS.map((option) => (
                   <button
                     aria-pressed={range === option.id}
@@ -547,123 +806,150 @@ export default function ValuePage() {
                 <p className="vv2-retention-note">{payload.retentionMessage}</p>
               ) : null}
 
-              {activity.interventions === 0 ? (
-                <div className="vv2-zero-band vv2-enter">
-                  <p className="vv2-zero-band-message">
-                    No protection interventions recorded in this period.
-                  </p>
-                  <div className="vv2-zero-band-grid">
-                    <div className="vv2-zero-band-item">
-                      <span className="vv2-metric-label">BotShield cost</span>
-                      <strong>
-                        {formatValueV2Currency(economics.allocatedPlanCost, currency)}
-                      </strong>
-                    </div>
+              <section
+                aria-labelledby="vv2-command-title"
+                className="vv2-command-center vv2-enter"
+              >
+                <div className="vv2-command-head">
+                  <div>
+                    <h2 className="vv2-band-title" id="vv2-command-title">
+                      ROI command center
+                    </h2>
+                    <p className="vv2-command-subtitle">
+                      {planName ? `${planName} • ` : ""}
+                      Selected period {payload.observationLabel.toLowerCase()}
+                    </p>
+                  </div>
+                  <div className="vv2-assumptions-status">
+                    <span className="vv2-metric-label">Assumptions</span>
+                    <strong>{configured ? "Configured" : "Needs setup"}</strong>
                     {!configured ? (
-                      <div className="vv2-zero-band-item">
-                        <span className="vv2-metric-label">Financial estimates</span>
-                        <button
-                          className="vv2-btn vv2-btn-primary vv2-btn-compact"
-                          onClick={openAssumptions}
-                          type="button"
-                        >
-                          Set assumptions
-                        </button>
-                      </div>
+                      <button className="vv2-btn vv2-btn-primary vv2-btn-compact" onClick={openAssumptions} type="button">
+                        Set assumptions
+                      </button>
                     ) : null}
                   </div>
                 </div>
-              ) : null}
 
-              <section
-                aria-labelledby="vv2-financial-title"
-                className="vv2-viewport-split vv2-enter"
-              >
-                <div className="vv2-financial-panel">
-                  <p className="vv2-metric-label" id="vv2-financial-title">
-                    Estimated protected value
-                  </p>
-                  <p
-                    className={`vv2-hero-amount vv2-metric-reveal${
-                      configured &&
-                      (economics.estimatedValueProtected || 0) > 0
-                        ? " is-positive"
-                        : ""
-                    }`}
-                    aria-live="polite"
-                  >
-                    {formatFinancial(
-                      economics.estimatedValueProtected,
-                      currency,
-                      configured,
-                    )}
-                  </p>
-                  <div className="vv2-financial-secondary">
-                    <div className="vv2-financial-secondary-item">
-                      <span className="vv2-metric-label">Estimated net value</span>
-                      <strong className="vv2-metric-reveal">
-                        {formatFinancial(economics.estimatedNetValue, currency, configured)}
-                      </strong>
-                    </div>
-                    <div className="vv2-financial-secondary-item">
-                      <span className="vv2-metric-label">Estimated ROI</span>
-                      <strong className="vv2-metric-reveal">
-                        {formatRoiPercent(estimatedRoi, configured)}
-                      </strong>
+                <div className="vv2-command-grid">
+                  <div className="vv2-command-primary">
+                    <ValueMetric
+                      label="Estimated protected value"
+                      large
+                      positive={configured && (economics.estimatedValueProtected || 0) > 0}
+                      strong={configured && economics.estimatedValueProtected != null}
+                      unavailable={!configured || economics.estimatedValueProtected == null}
+                      tip={TOOLTIPS.protectedValue}
+                      value={formatFinancial(
+                        economics.estimatedValueProtected,
+                        currency,
+                        configured,
+                      )}
+                      sublabel="Estimated protected value from BotShield interventions."
+                    />
+                    <div className="vv2-command-secondary">
+                      <ValueMetric
+                        label="Estimated net value"
+                        strong={configured && economics.estimatedNetValue != null}
+                        unavailable={!configured || economics.estimatedNetValue == null}
+                        tip={TOOLTIPS.netValue}
+                        value={formatFinancial(
+                          economics.estimatedNetValue,
+                          currency,
+                          configured,
+                        )}
+                        sublabel="Estimated value after BotShield cost."
+                      />
+                      <ValueMetric
+                        label="Estimated ROI"
+                        strong={configured && estimatedRoi != null}
+                        unavailable={!configured || estimatedRoi == null}
+                        tip={TOOLTIPS.roi}
+                        value={formatRoiPercent(estimatedRoi, configured)}
+                      />
+                      <ValueMetric
+                        label="Est. value / $1 spent"
+                        strong={configured && economics.valueToCostRatio != null}
+                        unavailable={!configured || economics.valueToCostRatio == null}
+                        tip={TOOLTIPS.valuePerDollar}
+                        value={formatValueToCostRatio(economics.valueToCostRatio, configured)}
+                      />
                     </div>
                   </div>
-                </div>
-                <div aria-label="BotShield economics" className="vv2-economics-panel">
-                  <p className="vv2-metric-label">BotShield cost</p>
-                  <p className="vv2-cost-amount">
-                    {formatValueV2Currency(economics.allocatedPlanCost, currency)}
-                  </p>
-                  <dl className="vv2-economics-stats">
-                    <div>
-                      <dt>Interventions</dt>
-                      <dd>{formatCount(activity.interventions)}</dd>
-                    </div>
-                    <div>
-                      <dt>Cost / intervention</dt>
-                      <dd>
-                        {formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Est. value / intervention</dt>
-                      <dd>
-                        {formatPerUnit(estValuePerIntervention, currency, configured)}
-                      </dd>
-                    </div>
-                  </dl>
+
+                  <div aria-label="Plan economics" className="vv2-command-plan">
+                    <ValueMetric
+                      label="Current plan"
+                      strong={monthlyPrice != null}
+                      value={monthlyPlanLabel}
+                    />
+                    <ValueMetric
+                      label="Selected period cost"
+                      strong
+                      value={formatValueV2Currency(economics.allocatedPlanCost, currency)}
+                    />
+                    <ValueMetric
+                      label="Interventions"
+                      strong
+                      value={formatCount(activity.interventions)}
+                    />
+                    <ValueMetric
+                      label="Cost / intervention"
+                      strong={costPerIntervention != null}
+                      unavailable={costPerIntervention == null}
+                      tip={TOOLTIPS.costPerIntervention}
+                      value={formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
+                    />
+                    <ValueMetric
+                      label="Est. value / intervention"
+                      strong={configured && estValuePerIntervention != null}
+                      unavailable={!configured || estValuePerIntervention == null}
+                      tip={TOOLTIPS.estValuePerIntervention}
+                      value={formatPerUnit(estValuePerIntervention, currency, configured)}
+                    />
+                    <ValueMetric
+                      label="Break even"
+                      strong={breakEvenInterventions != null}
+                      unavailable={breakEvenInterventions == null}
+                      tip={TOOLTIPS.breakEven}
+                      value={
+                        breakEvenInterventions != null
+                          ? `${formatCount(breakEvenInterventions)} intervention${
+                              breakEvenInterventions === 1 ? "" : "s"
+                            }`
+                          : "—"
+                      }
+                      sublabel={
+                        breakEvenInterventions == null
+                          ? "Configure assumptions to estimate."
+                          : "Estimated interventions needed to cover BotShield cost."
+                      }
+                    />
+                  </div>
                 </div>
               </section>
 
-              <section
-                aria-label="Business value equation"
-                className="vv2-business-equation vv2-enter"
-              >
-                <div className="vv2-equation-track" key={`equation-${range}`}>
-                  <div className="vv2-equation-cell vv2-eq-step-1">
-                    <span className="vv2-metric-label">BotShield cost</span>
-                    <strong>{formatValueV2Currency(economics.allocatedPlanCost, currency)}</strong>
+              <section aria-labelledby="vv2-plan-value-title" className="vv2-plan-value vv2-enter">
+                <h2 className="vv2-band-title" id="vv2-plan-value-title">
+                  Plan vs value
+                </h2>
+                <div className="vv2-pv-flow" key={`pv-${range}-${configured}`}>
+                  <div className="vv2-pv-node vv2-pv-step-1">
+                    <span className="vv2-metric-label">BotShield plan</span>
+                    <strong>{monthlyPlanLabel}</strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-equation-op vv2-eq-step-2">
-                    +
-                  </span>
-                  <div className="vv2-equation-cell vv2-eq-step-3">
-                    <span className="vv2-metric-label">Protection activity</span>
-                    <strong>
-                      {formatCount(activity.interventions)}{" "}
-                      {activity.interventions === 1 ? "intervention" : "interventions"}
-                    </strong>
-                  </div>
-                  <span aria-hidden="true" className="vv2-equation-op vv2-equation-arrow vv2-eq-step-4">
+                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-step-2">
                     →
                   </span>
-                  <div className="vv2-equation-cell vv2-eq-step-5">
+                  <div className="vv2-pv-node vv2-pv-step-3">
                     <span className="vv2-metric-label">Estimated protected value</span>
-                    <strong>
+                    <strong
+                      className={
+                        configured && economics.estimatedValueProtected != null
+                          ? "is-strong"
+                          : "is-unavailable"
+                      }
+                    >
                       {formatFinancial(
                         economics.estimatedValueProtected,
                         currency,
@@ -671,15 +957,186 @@ export default function ValuePage() {
                       )}
                     </strong>
                   </div>
-                  <span aria-hidden="true" className="vv2-equation-op vv2-equation-arrow vv2-eq-step-6">
-                    →
+                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-down vv2-pv-step-4">
+                    ↓
                   </span>
-                  <div className="vv2-equation-cell is-outcome vv2-eq-step-7">
+                  <div className="vv2-pv-node is-outcome vv2-pv-step-5">
                     <span className="vv2-metric-label">Estimated net value</span>
-                    <strong>
+                    <strong
+                      className={
+                        configured && economics.estimatedNetValue != null
+                          ? "is-strong"
+                          : "is-unavailable"
+                      }
+                    >
                       {formatFinancial(economics.estimatedNetValue, currency, configured)}
                     </strong>
                   </div>
+                  <div className="vv2-pv-node vv2-pv-step-6">
+                    <span className="vv2-metric-label">Value / cost</span>
+                    <strong
+                      className={
+                        configured && economics.valueToCostRatio != null
+                          ? "is-strong"
+                          : "is-unavailable"
+                      }
+                    >
+                      {formatValueToCostRatio(economics.valueToCostRatio, configured)}
+                    </strong>
+                  </div>
+                </div>
+              </section>
+
+              <section aria-labelledby="vv2-horizon-title" className="vv2-horizon vv2-enter">
+                <div className="vv2-horizon-head">
+                  <div>
+                    <h2 className="vv2-band-title" id="vv2-horizon-title">
+                      Value horizon
+                    </h2>
+                    <p>Forward-looking plan spend and projected protection value.</p>
+                  </div>
+                  <div className="vv2-horizon-tabs" aria-label="Value projection horizon">
+                    {HORIZON_OPTIONS.map((option) => (
+                      <button
+                        aria-pressed={horizon === option.id}
+                        className={horizon === option.id ? "is-active" : ""}
+                        key={option.id}
+                        onClick={() => setHorizon(option.id)}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                    <span
+                      aria-hidden="true"
+                      className="vv2-horizon-indicator"
+                      style={{
+                        transform: `translateX(${
+                          HORIZON_OPTIONS.findIndex((option) => option.id === horizon) * 100
+                        }%)`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {monthlyPrice != null ? (
+                  <div aria-label="Plan spend" className="vv2-plan-spend-strip">
+                    <span className="vv2-metric-label">Plan spend</span>
+                    <div className="vv2-plan-spend-items">
+                      <div>
+                        <span>Monthly</span>
+                        <strong>{formatValueV2Currency(monthlyPrice, currency)}</strong>
+                      </div>
+                      <div>
+                        <span>6 months</span>
+                        <strong>{formatValueV2Currency(monthlyPrice * 6, currency)}</strong>
+                      </div>
+                      <div>
+                        <span>12 months</span>
+                        <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="vv2-horizon-body" key={`horizon-${horizon}-${range}`}>
+                  <div className="vv2-horizon-metrics">
+                    <ValueMetric
+                      label="Plan spend"
+                      strong={horizonProjection?.planSpend != null}
+                      value={
+                        horizonProjection?.planSpend != null
+                          ? formatValueV2Currency(horizonProjection.planSpend, currency)
+                          : "—"
+                      }
+                    />
+                    <ValueMetric
+                      label="Projected interventions"
+                      strong={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.projectedInterventions != null
+                      }
+                      unavailable={
+                        !horizonProjection?.financialAvailable ||
+                        horizonProjection?.projectedInterventions == null
+                      }
+                      value={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.projectedInterventions != null
+                          ? formatCount(horizonProjection.projectedInterventions)
+                          : "—"
+                      }
+                    />
+                    <ValueMetric
+                      label="Est. protected value"
+                      strong={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.estimatedValueProtected != null
+                      }
+                      unavailable={
+                        !horizonProjection?.financialAvailable ||
+                        horizonProjection?.estimatedValueProtected == null
+                      }
+                      tip={TOOLTIPS.projectedValue}
+                      value={formatFinancial(
+                        horizonProjection?.estimatedValueProtected,
+                        currency,
+                        horizonProjection?.financialAvailable,
+                      )}
+                    />
+                    <ValueMetric
+                      label="Est. net value"
+                      strong={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.projectedNetValue != null
+                      }
+                      unavailable={
+                        !horizonProjection?.financialAvailable ||
+                        horizonProjection?.projectedNetValue == null
+                      }
+                      value={formatFinancial(
+                        horizonProjection?.projectedNetValue,
+                        currency,
+                        horizonProjection?.financialAvailable,
+                      )}
+                    />
+                    <ValueMetric
+                      label="Est. ROI"
+                      strong={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.projectedRoi != null
+                      }
+                      unavailable={
+                        !horizonProjection?.financialAvailable ||
+                        horizonProjection?.projectedRoi == null
+                      }
+                      value={formatRoiPercent(
+                        horizonProjection?.projectedRoi,
+                        horizonProjection?.financialAvailable,
+                      )}
+                    />
+                    <ValueMetric
+                      label="Value / cost"
+                      strong={
+                        horizonProjection?.financialAvailable &&
+                        horizonProjection?.projectedValueToCost != null
+                      }
+                      unavailable={
+                        !horizonProjection?.financialAvailable ||
+                        horizonProjection?.projectedValueToCost == null
+                      }
+                      value={formatValueToCostRatio(
+                        horizonProjection?.projectedValueToCost,
+                        horizonProjection?.financialAvailable,
+                      )}
+                    />
+                  </div>
+                  {!horizonProjection?.financialAvailable && horizonProjection?.buildingMessage ? (
+                    <div className="vv2-horizon-building">
+                      <strong>Building estimate</strong>
+                      <p>{horizonProjection.buildingMessage}</p>
+                    </div>
+                  ) : null}
                 </div>
               </section>
 
@@ -706,7 +1163,7 @@ export default function ValuePage() {
                     <h2 className="vv2-band-title" id="vv2-drivers-title">
                       Value drivers
                     </h2>
-                    <p>Estimated contribution by intervention category.</p>
+                    <p>Intervention categories ranked by observed activity.</p>
                   </div>
                   {payload.drivers.length ? (
                     <div className="vv2-drivers-grid">
@@ -722,7 +1179,7 @@ export default function ValuePage() {
                           >
                             <div className="vv2-driver-main">
                               <strong>{row.label}</strong>
-                              <span>{formatCount(row.interventions)}</span>
+                              <span>{formatCount(row.interventions)} interventions</span>
                             </div>
                             <div className="vv2-driver-bar-wrap">
                               <div aria-hidden="true" className="vv2-driver-track">
@@ -733,13 +1190,15 @@ export default function ValuePage() {
                               </div>
                               <span className="vv2-driver-share">{share}%</span>
                             </div>
-                            <strong className="vv2-driver-value">
-                              {formatFinancial(
-                                row.estimatedValueProtected,
-                                currency,
-                                configured,
-                              )}
-                            </strong>
+                            {configured ? (
+                              <strong className="vv2-driver-value">
+                                {formatFinancial(
+                                  row.estimatedValueProtected,
+                                  currency,
+                                  configured,
+                                )}
+                              </strong>
+                            ) : null}
                           </div>
                         );
                       })}
@@ -753,94 +1212,14 @@ export default function ValuePage() {
                   )}
                 </section>
 
-                <section aria-labelledby="vv2-outlook-title" className="vv2-outlook-pane">
-                  <div className="vv2-pane-head">
-                    <div>
-                      <h2 className="vv2-band-title" id="vv2-outlook-title">
-                        Projected outlook
-                      </h2>
-                      <p>Forward-looking estimates only.</p>
-                    </div>
-                    <span className="vv2-projected-badge">Projected</span>
-                  </div>
-                  {payload.projection.eligible ? (
-                    <>
-                      <div className="vv2-outlook-table">
-                        <div className="vv2-outlook-table-head" aria-hidden="true">
-                          <span>Window</span>
-                          <span>Interventions</span>
-                          <span>Protected</span>
-                          <span>Net value</span>
-                        </div>
-                        {[
-                          {
-                            window: payload.projection.next30Days,
-                            days: 30,
-                            label: "Next 30 days",
-                          },
-                          {
-                            window: payload.projection.next12Months,
-                            days: 365,
-                            label: "Next 12 months",
-                          },
-                        ].map(({ window, days, label }) => (
-                          <div className="vv2-outlook-row" key={label}>
-                            <h3>{label}</h3>
-                            <div data-label="Interventions">
-                              <strong>{formatCount(window.projectedInterventions)}</strong>
-                            </div>
-                            <div data-label="Protected">
-                              <strong>
-                                {formatFinancial(
-                                  window.estimatedValueProtected,
-                                  currency,
-                                  configured,
-                                )}
-                              </strong>
-                            </div>
-                            <div data-label="Net value">
-                              <strong>
-                                {formatFinancial(
-                                  deriveProjectionNetValue(
-                                    window.estimatedValueProtected,
-                                    days,
-                                    monthlyPrice,
-                                    configured,
-                                  ),
-                                  currency,
-                                  configured,
-                                )}
-                              </strong>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {monthlyPrice != null ? (
-                        <div className="vv2-outlook-cost">
-                          <span>Current-plan 12-month cost</span>
-                          <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
-                        </div>
-                      ) : null}
-                      <p className="vv2-outlook-basis">
-                        Based on eligible observed activity and configured assumptions.
-                      </p>
-                    </>
-                  ) : (
-                    <ValueInlineState icon="→" title="Building your outlook">
-                      <p>
-                        More intervention history is needed before BotShield can estimate
-                        future value.
-                      </p>
-                      {observedInterventionDays > 0 &&
-                      observedInterventionDays < PROJECTION_MIN_OBSERVED_DAYS ? (
-                        <p className="vv2-inline-context">
-                          {observedInterventionDays} of {PROJECTION_MIN_OBSERVED_DAYS} observed
-                          days with intervention activity.
-                        </p>
-                      ) : null}
-                    </ValueInlineState>
-                  )}
-                </section>
+                <EstimateReadiness
+                  configured={configured}
+                  interventions={activity.interventions}
+                  monthlyPrice={monthlyPrice}
+                  observedInterventionDays={observedInterventionDays}
+                  onConfigure={openAssumptions}
+                  projectionEligible={payload.projection.eligible}
+                />
               </div>
 
               <section className="vv2-methodology vv2-enter">
@@ -857,29 +1236,33 @@ export default function ValuePage() {
                   <div className="vv2-disclosure-body">
                     <div>
                       <h4>Observed</h4>
-                      <p>BotShield directly measured these protection events.</p>
+                      <p>Actual BotShield storefront protection activity.</p>
                     </div>
                     <div>
                       <h4>Estimated</h4>
                       <p>
-                        Financial values use observed activity plus the merchant&apos;s configured
-                        assumptions.
+                        Observed activity combined with merchant assumptions.
                       </p>
                     </div>
                     <div>
                       <h4>Projected</h4>
                       <p>
-                        Forward-looking values appear only when enough eligible intervention
-                        history exists.
+                        Eligible observed activity extended through the established projection model.
                       </p>
+                    </div>
+                    <div>
+                      <h4>Plan cost</h4>
+                      <p>Current Shopify subscription pricing.</p>
                     </div>
                     <div>
                       <h4>Data window</h4>
                       <p>
-                        Raw BotEvent history is constrained by the existing 30-day retention
-                        policy.
+                        Observed raw activity constrained by BotShield&apos;s retention window.
                       </p>
                     </div>
+                    <p className="vv2-disclosure-trust">
+                      Estimates are not guaranteed savings.
+                    </p>
                   </div>
                 </details>
               </section>
