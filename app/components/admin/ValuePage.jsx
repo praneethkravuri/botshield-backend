@@ -566,52 +566,51 @@ function CalculationMethodology({
         </summary>
         <div className="vv2-disclosure-body">
           <div className="vv2-disclosure-grid">
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Observed data</h4>
-              <p>What BotShield directly measured from storefront protection activity.</p>
+              <p>Protection activity measured directly by BotShield.</p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Assumptions</h4>
-              <p>Merchant-configured inputs used to translate activity into estimated value.</p>
+              <p>Your saved inputs used to estimate financial value.</p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Estimated protected value</h4>
               <p>
-                Blocked and challenged events multiplied by your assumed values, plus optional
-                staff time savings.
+                Blocked and challenged activity × your assumptions, plus eligible staff time
+                value.
               </p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Net value</h4>
-              <p>Estimated protected value minus selected-period BotShield cost.</p>
+              <p>Estimated protected value minus BotShield cost.</p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>ROI</h4>
-              <p>Estimated net value divided by selected-period BotShield cost.</p>
+              <p>Estimated net value ÷ BotShield cost.</p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Value / $1</h4>
-              <p>Estimated protected value divided by selected-period BotShield cost.</p>
+              <p>Estimated protected value per $1 of BotShield cost.</p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Projections</h4>
               <p>
-                Unlock after meaningful intervention activity across at least 7 eligible days.
-                Uses normalized daily rates from observed history.
+                Available after enough eligible intervention history is recorded (7+ active
+                days).
               </p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Data window</h4>
               <p>
-                Observed BotShield activity is retained for {retentionDays} days. Value uses the
-                last 30 days.
+                Observed activity uses the last 30 days (retained up to {retentionDays} days).
               </p>
             </div>
-            <div>
+            <div className="vv2-disclosure-cell">
               <h4>Plan cost</h4>
               <p>
                 {billingVerified
-                  ? "Comes from your current Shopify billing information."
+                  ? "Pulled from the current Shopify billing information."
                   : "Based on configured Shopify billing pricing for your shop."}
               </p>
             </div>
@@ -1353,28 +1352,35 @@ export default function ValuePage() {
   const [savingAssumptions, setSavingAssumptions] = useState(false);
   const [dataSettleKey, setDataSettleKey] = useState(0);
 
-  const loadValue = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const data = await safeFetchJson(
-        `/api/value?range=${encodeURIComponent(OBSERVED_RANGE)}`,
-      );
-      if (!data?.ok || !data.value) {
-        throw new Error(data?.error || "Couldn't load Value dashboard.");
+  const loadValue = useCallback(
+    async ({ announceRefresh = false } = {}) => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await safeFetchJson(
+          `/api/value?range=${encodeURIComponent(OBSERVED_RANGE)}`,
+        );
+        if (!data?.ok || !data.value) {
+          throw new Error(data?.error || "Couldn't load Value dashboard.");
+        }
+        setPayload(data.value);
+        if (announceRefresh) {
+          setDataSettleKey((current) => current + 1);
+          toast.success("Value data refreshed");
+        }
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Couldn't load Value dashboard.",
+        );
+        setPayload(null);
+      } finally {
+        setLoading(false);
       }
-      setPayload(data.value);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Couldn't load Value dashboard.",
-      );
-      setPayload(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [toast],
+  );
 
   useEffect(() => {
     void loadValue();
@@ -1539,7 +1545,7 @@ export default function ValuePage() {
         <div
           className="botshield-value-v2"
           data-value-layout="clean-assumptions-modal"
-          data-value-ui-revision="flagship-v14"
+          data-value-ui-revision="flagship-v15"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
@@ -1573,7 +1579,7 @@ export default function ValuePage() {
                 aria-label="Refresh Value data"
                 className={`vv2-btn vv2-btn-icon${loading ? " is-spinning" : ""}`}
                 disabled={loading}
-                onClick={() => loadValue()}
+                onClick={() => void loadValue({ announceRefresh: true })}
                 title="Refresh Value data"
                 type="button"
               >

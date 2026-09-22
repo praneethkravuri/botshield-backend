@@ -195,14 +195,14 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v14 build marker is present on Value root", async () => {
+test("flagship-v15 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v14"/);
+  assert.match(page, /data-value-ui-revision="flagship-v15"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
-  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v13"/);
+  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v14"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -736,11 +736,72 @@ test("horizon switching and refresh are wired in Value UI", async () => {
   assert.match(page, /HORIZON_OPTIONS/);
   assert.match(page, /setHorizon\(option\.id\)/);
   assert.match(page, /OBSERVED_RANGE/);
-  assert.match(page, /loadValue\(\)/);
+  assert.match(page, /loadValue\(\{ announceRefresh: true \}\)/);
   assert.match(page, /aria-label="Refresh Value data"/);
   assert.doesNotMatch(page, /RANGE_OPTIONS/);
   assert.doesNotMatch(page, /setRange/);
   assert.doesNotMatch(page, /aria-label="Observed period"/);
+});
+
+test("flagship-v15 methodology disclosure stays concise and organized", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  const methodologyBlock = page.slice(
+    page.indexOf("function CalculationMethodology"),
+    page.indexOf("function ValuePeriodSnapshot"),
+  );
+
+  assert.match(methodologyBlock, /<details className="vv2-disclosure">/);
+  assert.match(methodologyBlock, /How Value is calculated/);
+  assert.match(methodologyBlock, /Observed data/);
+  assert.match(methodologyBlock, /Assumptions used/);
+  assert.match(methodologyBlock, /Edit assumptions/);
+  assert.match(methodologyBlock, /Protection activity measured directly by BotShield/);
+  assert.match(methodologyBlock, /Estimated net value ÷ BotShield cost/);
+  assert.match(methodologyBlock, /Estimated protected value per \$1 of BotShield cost/);
+  assert.match(methodologyBlock, /Observed activity uses the last 30 days/);
+  assert.match(css, /\.vv2-methodology[\s\S]*margin-top:/);
+  assert.match(css, /\.vv2-disclosure[\s\S]*border:/);
+  assert.match(css, /\.vv2-disclosure-grid[\s\S]*grid-template-columns: repeat\(3/);
+  assert.match(css, /\.vv2-assumptions-used[\s\S]*border-top:/);
+});
+
+test("flagship-v15 refresh confirms success only after payload update", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+
+  const loadValueBlock = page.slice(
+    page.indexOf("const loadValue = useCallback"),
+    page.indexOf("const currency = payload?.currency"),
+  );
+
+  const loadTryBlock = loadValueBlock.slice(
+    loadValueBlock.indexOf("try {"),
+    loadValueBlock.indexOf("} catch"),
+  );
+
+  assert.match(loadValueBlock, /announceRefresh = false/);
+  assert.match(loadValueBlock, /\/api\/value\?range=/);
+  assert.match(loadTryBlock, /setPayload\(data\.value\)/);
+  assert.match(loadTryBlock, /if \(announceRefresh\)/);
+  assert.match(loadTryBlock, /toast\.success\("Value data refreshed"\)/);
+  assert.ok(
+    loadTryBlock.indexOf("setPayload(data.value)") <
+      loadTryBlock.indexOf('toast.success("Value data refreshed")'),
+  );
+  assert.doesNotMatch(loadTryBlock, /toast\.success\("Value data refreshed"\)[\s\S]*setPayload\(data\.value\)/);
+  assert.match(page, /void loadValue\(\{ announceRefresh: true \}\)/);
+  assert.match(page, /disabled=\{loading\}/);
+  assert.match(page, /useBotShieldToast/);
 });
 
 test("API error and recovery states are handled in Value UI", async () => {
@@ -928,7 +989,7 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v14"/);
+  assert.match(page, /data-value-ui-revision="flagship-v15"/);
   assert.match(page, /data-value-layout="clean-assumptions-modal"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
