@@ -21,10 +21,8 @@ import {
   useBotShieldToast,
 } from "../design-system/BotShieldDesignSystem";
 
-const RANGE_OPTIONS = [
-  { id: "7d", label: "7D" },
-  { id: "30d", label: "30D" },
-];
+const OBSERVED_RANGE = "30d";
+const OBSERVED_WINDOW_LABEL = "Last 30 days";
 
 const HORIZON_OPTIONS = [
   { id: "30d", label: "30 days", shortLabel: "30D", months: 1 },
@@ -208,9 +206,19 @@ function ValueTooltip({ tip, children }) {
   return (
     <span className="vv2-tooltip-wrap">
       {children}
-      <button className="vv2-tooltip-trigger" type="button" title={tip}>
-        ?
+      <button
+        aria-label={tip}
+        className="vv2-tooltip-trigger"
+        type="button"
+      >
+        <svg aria-hidden="true" fill="none" height="12" viewBox="0 0 12 12" width="12">
+          <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M6 5.2v3.3M6 3.6h.01" stroke="currentColor" strokeLinecap="round" strokeWidth="1.2" />
+        </svg>
       </button>
+      <span className="vv2-tooltip-bubble" role="tooltip">
+        {tip}
+      </span>
     </span>
   );
 }
@@ -248,20 +256,6 @@ function ValueMetric({
   );
 }
 
-function ValueInlineState({ icon, title, children }) {
-  return (
-    <div className="vv2-inline-state">
-      <span aria-hidden="true" className="vv2-inline-icon">
-        {icon}
-      </span>
-      <div>
-        <strong>{title}</strong>
-        {children}
-      </div>
-    </div>
-  );
-}
-
 function ValueObservedChart({ trend, observationLabel, empty = false }) {
   if (empty) {
     return (
@@ -279,7 +273,9 @@ function ValueObservedChart({ trend, observationLabel, empty = false }) {
             <span className="vv2-chart-inactive-dot" key={bucket.key} />
           ))}
         </div>
-        <p className="vv2-chart-inactive-copy">No interventions recorded</p>
+        <p className="vv2-chart-inactive-copy">
+          No interventions recorded in the last 30 days.
+        </p>
       </div>
     );
   }
@@ -416,12 +412,12 @@ function EstimateReadiness({
   const checks = [
     {
       id: "plan",
-      label: "BotShield plan detected",
+      label: "Plan detected",
       complete: monthlyPrice != null,
     },
     {
       id: "assumptions",
-      label: "Configure financial assumptions",
+      label: "Configure assumptions",
       complete: configured,
       action: !configured ? onConfigure : null,
     },
@@ -442,35 +438,51 @@ function EstimateReadiness({
     },
     {
       id: "projection",
-      label: "Projection eligible",
+      label: "Projection ready",
       complete: projectionEligible,
       detail: projectionEligible ? null : "Building estimate",
     },
   ];
+
+  const currentIndex = checks.findIndex((check) => !check.complete);
 
   return (
     <section aria-labelledby="vv2-readiness-title" className="vv2-readiness">
       <h2 className="vv2-band-title" id="vv2-readiness-title">
         Estimate readiness
       </h2>
-      <ul className="vv2-readiness-list">
-        {checks.map((check) => (
-          <li className={check.complete ? "is-complete" : "is-pending"} key={check.id}>
-            <span aria-hidden="true" className="vv2-readiness-mark">
-              {check.complete ? "✓" : "○"}
-            </span>
-            <div>
-              <span>{check.label}</span>
-              {check.detail ? <small>{check.detail}</small> : null}
-              {check.action ? (
-                <button className="vv2-btn vv2-btn-primary vv2-btn-compact" onClick={check.action} type="button">
-                  Set assumptions
-                </button>
+      <ol className="vv2-readiness-path">
+        {checks.map((check, index) => {
+          const state = check.complete
+            ? "is-complete"
+            : index === currentIndex
+              ? "is-current"
+              : "is-pending";
+          return (
+            <li className={`vv2-readiness-step ${state}`} key={check.id}>
+              <span aria-hidden="true" className="vv2-readiness-node">
+                {check.complete ? "✓" : index === currentIndex ? "●" : "○"}
+              </span>
+              <div className="vv2-readiness-copy">
+                <span>{check.label}</span>
+                {check.detail ? <small>{check.detail}</small> : null}
+                {check.action ? (
+                  <button
+                    className="vv2-btn vv2-btn-primary vv2-btn-compact"
+                    onClick={check.action}
+                    type="button"
+                  >
+                    Set assumptions
+                  </button>
+                ) : null}
+              </div>
+              {index < checks.length - 1 ? (
+                <span aria-hidden="true" className="vv2-readiness-connector" />
               ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
@@ -573,7 +585,6 @@ function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
 
 export default function ValuePage() {
   const toast = useBotShieldToast();
-  const [range, setRange] = useState("30d");
   const [horizon, setHorizon] = useState("30d");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -581,11 +592,13 @@ export default function ValuePage() {
   const [assumptionDraft, setAssumptionDraft] = useState(null);
   const [savingAssumptions, setSavingAssumptions] = useState(false);
 
-  const loadValue = useCallback(async (nextRange = range) => {
+  const loadValue = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const data = await safeFetchJson(`/api/value?range=${encodeURIComponent(nextRange)}`);
+      const data = await safeFetchJson(
+        `/api/value?range=${encodeURIComponent(OBSERVED_RANGE)}`,
+      );
       if (!data?.ok || !data.value) {
         throw new Error(data?.error || "Couldn't load Value dashboard.");
       }
@@ -600,11 +613,11 @@ export default function ValuePage() {
     } finally {
       setLoading(false);
     }
-  }, [range]);
+  }, []);
 
   useEffect(() => {
-    void loadValue(range);
-  }, [loadValue, range]);
+    void loadValue();
+  }, [loadValue]);
 
   const currency = payload?.currency || "USD";
   const configured = payload?.assumptionsConfigured;
@@ -682,7 +695,7 @@ export default function ValuePage() {
       }
       hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
       toast.success("Value assumptions saved");
-      await loadValue(range);
+      await loadValue();
     } catch (saveError) {
       toast.error(
         saveError instanceof Error
@@ -707,7 +720,7 @@ export default function ValuePage() {
       }
       hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID);
       toast.success("Value assumptions reset");
-      await loadValue(range);
+      await loadValue();
     } catch (resetError) {
       toast.error(
         resetError instanceof Error
@@ -727,8 +740,8 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="roi-command-center"
-          data-value-ui-revision="flagship-v6"
+          data-value-layout="executive-spatial-roi"
+          data-value-ui-revision="flagship-v7"
         >
           <header className="vv2-header">
             <div className="vv2-header-copy">
@@ -743,20 +756,6 @@ export default function ValuePage() {
               <p>Understand the financial impact of BotShield protection.</p>
             </div>
             <div className="vv2-header-actions">
-              <div className="vv2-period" aria-label="Observed period">
-                <span className="vv2-period-label">Observed</span>
-                {RANGE_OPTIONS.map((option) => (
-                  <button
-                    aria-pressed={range === option.id}
-                    className={range === option.id ? "is-active" : ""}
-                    key={option.id}
-                    onClick={() => setRange(option.id)}
-                    type="button"
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
               <button className="vv2-btn vv2-btn-secondary" onClick={openAssumptions} type="button">
                 Edit assumptions
               </button>
@@ -764,7 +763,7 @@ export default function ValuePage() {
                 aria-label="Refresh Value data"
                 className={`vv2-btn vv2-btn-icon${loading ? " is-spinning" : ""}`}
                 disabled={loading}
-                onClick={() => loadValue(range)}
+                onClick={() => loadValue()}
                 title="Refresh Value data"
                 type="button"
               >
@@ -798,17 +797,14 @@ export default function ValuePage() {
           ) : null}
 
           {payload ? (
-            <div
-              className={`vv2-page-content${loading ? " is-loading" : ""}`}
-              key={range}
-            >
+            <div className={`vv2-page-content${loading ? " is-loading" : ""}`}>
               {payload.retentionMessage ? (
                 <p className="vv2-retention-note">{payload.retentionMessage}</p>
               ) : null}
 
               <section
                 aria-labelledby="vv2-command-title"
-                className="vv2-command-center vv2-enter"
+                className="vv2-command-center vv2-enter vv2-stage-1"
               >
                 <div className="vv2-command-head">
                   <div>
@@ -817,18 +813,14 @@ export default function ValuePage() {
                     </h2>
                     <p className="vv2-command-subtitle">
                       {planName ? `${planName} • ` : ""}
-                      Selected period {payload.observationLabel.toLowerCase()}
+                      {OBSERVED_WINDOW_LABEL} observed window
                     </p>
                   </div>
-                  <div className="vv2-assumptions-status">
-                    <span className="vv2-metric-label">Assumptions</span>
-                    <strong>{configured ? "Configured" : "Needs setup"}</strong>
-                    {!configured ? (
-                      <button className="vv2-btn vv2-btn-primary vv2-btn-compact" onClick={openAssumptions} type="button">
-                        Set assumptions
-                      </button>
-                    ) : null}
-                  </div>
+                  {!configured ? (
+                    <button className="vv2-btn vv2-btn-primary" onClick={openAssumptions} type="button">
+                      Set assumptions
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="vv2-command-grid">
@@ -845,7 +837,6 @@ export default function ValuePage() {
                         currency,
                         configured,
                       )}
-                      sublabel="Estimated protected value from BotShield interventions."
                     />
                     <div className="vv2-command-secondary">
                       <ValueMetric
@@ -858,7 +849,6 @@ export default function ValuePage() {
                           currency,
                           configured,
                         )}
-                        sublabel="Estimated value after BotShield cost."
                       />
                       <ValueMetric
                         label="Estimated ROI"
@@ -878,6 +868,7 @@ export default function ValuePage() {
                   </div>
 
                   <div aria-label="Plan economics" className="vv2-command-plan">
+                    <p className="vv2-plan-rail">Plan economics</p>
                     <ValueMetric
                       label="Current plan"
                       strong={monthlyPrice != null}
@@ -893,107 +884,46 @@ export default function ValuePage() {
                       strong
                       value={formatCount(activity.interventions)}
                     />
-                    <ValueMetric
-                      label="Cost / intervention"
-                      strong={costPerIntervention != null}
-                      unavailable={costPerIntervention == null}
-                      tip={TOOLTIPS.costPerIntervention}
-                      value={formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
-                    />
-                    <ValueMetric
-                      label="Est. value / intervention"
-                      strong={configured && estValuePerIntervention != null}
-                      unavailable={!configured || estValuePerIntervention == null}
-                      tip={TOOLTIPS.estValuePerIntervention}
-                      value={formatPerUnit(estValuePerIntervention, currency, configured)}
-                    />
-                    <ValueMetric
-                      label="Break even"
-                      strong={breakEvenInterventions != null}
-                      unavailable={breakEvenInterventions == null}
-                      tip={TOOLTIPS.breakEven}
-                      value={
-                        breakEvenInterventions != null
-                          ? `${formatCount(breakEvenInterventions)} intervention${
-                              breakEvenInterventions === 1 ? "" : "s"
-                            }`
-                          : "—"
-                      }
-                      sublabel={
-                        breakEvenInterventions == null
-                          ? "Configure assumptions to estimate."
-                          : "Estimated interventions needed to cover BotShield cost."
-                      }
-                    />
+                    <div className="vv2-plan-compact">
+                      <ValueMetric
+                        label="Cost / intervention"
+                        strong={costPerIntervention != null}
+                        unavailable={costPerIntervention == null}
+                        tip={TOOLTIPS.costPerIntervention}
+                        value={formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
+                      />
+                      <ValueMetric
+                        label="Est. value / intervention"
+                        strong={configured && estValuePerIntervention != null}
+                        unavailable={!configured || estValuePerIntervention == null}
+                        tip={TOOLTIPS.estValuePerIntervention}
+                        value={formatPerUnit(estValuePerIntervention, currency, configured)}
+                      />
+                      <ValueMetric
+                        label="Break even"
+                        strong={breakEvenInterventions != null}
+                        unavailable={breakEvenInterventions == null}
+                        tip={TOOLTIPS.breakEven}
+                        value={
+                          breakEvenInterventions != null
+                            ? `${formatCount(breakEvenInterventions)} intervention${
+                                breakEvenInterventions === 1 ? "" : "s"
+                              }`
+                            : "—"
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </section>
 
-              <section aria-labelledby="vv2-plan-value-title" className="vv2-plan-value vv2-enter">
-                <h2 className="vv2-band-title" id="vv2-plan-value-title">
-                  Plan vs value
-                </h2>
-                <div className="vv2-pv-flow" key={`pv-${range}-${configured}`}>
-                  <div className="vv2-pv-node vv2-pv-step-1">
-                    <span className="vv2-metric-label">BotShield plan</span>
-                    <strong>{monthlyPlanLabel}</strong>
-                  </div>
-                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-step-2">
-                    →
-                  </span>
-                  <div className="vv2-pv-node vv2-pv-step-3">
-                    <span className="vv2-metric-label">Estimated protected value</span>
-                    <strong
-                      className={
-                        configured && economics.estimatedValueProtected != null
-                          ? "is-strong"
-                          : "is-unavailable"
-                      }
-                    >
-                      {formatFinancial(
-                        economics.estimatedValueProtected,
-                        currency,
-                        configured,
-                      )}
-                    </strong>
-                  </div>
-                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-down vv2-pv-step-4">
-                    ↓
-                  </span>
-                  <div className="vv2-pv-node is-outcome vv2-pv-step-5">
-                    <span className="vv2-metric-label">Estimated net value</span>
-                    <strong
-                      className={
-                        configured && economics.estimatedNetValue != null
-                          ? "is-strong"
-                          : "is-unavailable"
-                      }
-                    >
-                      {formatFinancial(economics.estimatedNetValue, currency, configured)}
-                    </strong>
-                  </div>
-                  <div className="vv2-pv-node vv2-pv-step-6">
-                    <span className="vv2-metric-label">Value / cost</span>
-                    <strong
-                      className={
-                        configured && economics.valueToCostRatio != null
-                          ? "is-strong"
-                          : "is-unavailable"
-                      }
-                    >
-                      {formatValueToCostRatio(economics.valueToCostRatio, configured)}
-                    </strong>
-                  </div>
-                </div>
-              </section>
-
-              <section aria-labelledby="vv2-horizon-title" className="vv2-horizon vv2-enter">
+              <section aria-labelledby="vv2-horizon-title" className="vv2-horizon vv2-enter vv2-stage-2">
                 <div className="vv2-horizon-head">
                   <div>
                     <h2 className="vv2-band-title" id="vv2-horizon-title">
                       Value horizon
                     </h2>
-                    <p>Forward-looking plan spend and projected protection value.</p>
+                    <p>See plan spend and eligible projected value over time.</p>
                   </div>
                   <div className="vv2-horizon-tabs" aria-label="Value projection horizon">
                     {HORIZON_OPTIONS.map((option) => (
@@ -1023,15 +953,15 @@ export default function ValuePage() {
                   <div aria-label="Plan spend" className="vv2-plan-spend-strip">
                     <span className="vv2-metric-label">Plan spend</span>
                     <div className="vv2-plan-spend-items">
-                      <div>
+                      <div className={horizon === "30d" ? "is-active" : ""}>
                         <span>Monthly</span>
                         <strong>{formatValueV2Currency(monthlyPrice, currency)}</strong>
                       </div>
-                      <div>
+                      <div className={horizon === "6m" ? "is-active" : ""}>
                         <span>6 months</span>
                         <strong>{formatValueV2Currency(monthlyPrice * 6, currency)}</strong>
                       </div>
-                      <div>
+                      <div className={horizon === "1y" ? "is-active" : ""}>
                         <span>12 months</span>
                         <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
                       </div>
@@ -1039,7 +969,8 @@ export default function ValuePage() {
                   </div>
                 ) : null}
 
-                <div className="vv2-horizon-body" key={`horizon-${horizon}-${range}`}>
+                <p className="vv2-horizon-summary-label">Selected horizon summary</p>
+                <div className="vv2-horizon-body vv2-horizon-swap" key={`horizon-${horizon}`}>
                   <div className="vv2-horizon-metrics">
                     <ValueMetric
                       label="Plan spend"
@@ -1140,24 +1071,78 @@ export default function ValuePage() {
                 </div>
               </section>
 
+              <section aria-labelledby="vv2-plan-value-title" className="vv2-plan-value vv2-enter vv2-stage-3">
+                <h2 className="vv2-band-title" id="vv2-plan-value-title">
+                  Plan vs value
+                </h2>
+                <div className="vv2-pv-flow" key={`pv-${configured}-${economics.estimatedValueProtected ?? "na"}`}>
+                  <div className="vv2-pv-node vv2-pv-step-1">
+                    <span className="vv2-metric-label">Plan spend</span>
+                    <strong className="is-strong">{monthlyPlanLabel}</strong>
+                  </div>
+                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-line vv2-pv-step-2" />
+                  <div className="vv2-pv-node vv2-pv-step-3">
+                    <span className="vv2-metric-label">Est. protected value</span>
+                    <strong
+                      className={
+                        configured && economics.estimatedValueProtected != null
+                          ? "is-strong is-positive"
+                          : "is-unavailable"
+                      }
+                    >
+                      {formatFinancial(
+                        economics.estimatedValueProtected,
+                        currency,
+                        configured,
+                      )}
+                    </strong>
+                  </div>
+                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-line vv2-pv-step-4" />
+                  <div className="vv2-pv-node is-outcome vv2-pv-step-5">
+                    <span className="vv2-metric-label">Est. net value</span>
+                    <strong
+                      className={
+                        configured && economics.estimatedNetValue != null
+                          ? "is-strong"
+                          : "is-unavailable"
+                      }
+                    >
+                      {formatFinancial(economics.estimatedNetValue, currency, configured)}
+                    </strong>
+                  </div>
+                  <div className="vv2-pv-ratio vv2-pv-step-6">
+                    <span className="vv2-metric-label">Value / cost</span>
+                    <strong
+                      className={
+                        configured && economics.valueToCostRatio != null
+                          ? "is-strong"
+                          : "is-unavailable"
+                      }
+                    >
+                      {formatValueToCostRatio(economics.valueToCostRatio, configured)}
+                    </strong>
+                  </div>
+                </div>
+              </section>
+
               <section
                 aria-labelledby="vv2-observed-title"
-                className="vv2-analytics-band vv2-enter"
+                className="vv2-analytics-band vv2-enter vv2-stage-4"
               >
                 <div className="vv2-band-head">
                   <h2 className="vv2-band-title" id="vv2-observed-title">
                     Observed protection
                   </h2>
-                  <span className="vv2-window-label">{payload.observationLabel}</span>
+                  <span className="vv2-window-label">{OBSERVED_WINDOW_LABEL}</span>
                 </div>
                 <ValueObservedSection
                   activity={activity}
-                  observationLabel={payload.observationLabel}
+                  observationLabel={OBSERVED_WINDOW_LABEL}
                   trend={payload.trend}
                 />
               </section>
 
-              <div className="vv2-lower-band vv2-enter">
+              <div className="vv2-lower-band vv2-enter vv2-stage-5">
                 <section aria-labelledby="vv2-drivers-title" className="vv2-drivers-pane">
                   <div className="vv2-pane-head">
                     <h2 className="vv2-band-title" id="vv2-drivers-title">
@@ -1204,11 +1189,15 @@ export default function ValuePage() {
                       })}
                     </div>
                   ) : (
-                    <ValueInlineState icon="·" title="No value drivers yet">
-                      <p>
-                        Drivers appear after BotShield records intervention activity.
-                      </p>
-                    </ValueInlineState>
+                    <div className="vv2-drivers-empty">
+                      <strong>No value drivers yet</strong>
+                      <p>Drivers appear after BotShield records intervention activity.</p>
+                      <div aria-hidden="true" className="vv2-drivers-placeholder">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
                   )}
                 </section>
 
@@ -1222,7 +1211,7 @@ export default function ValuePage() {
                 />
               </div>
 
-              <section className="vv2-methodology vv2-enter">
+              <section className="vv2-methodology vv2-enter vv2-stage-5">
                 <details className="vv2-disclosure">
                   <summary>
                     <span className="vv2-disclosure-label-wrap">
@@ -1233,37 +1222,27 @@ export default function ValuePage() {
                     </span>
                     <span aria-hidden="true" className="vv2-disclosure-chevron" />
                   </summary>
-                  <div className="vv2-disclosure-body">
+                  <div className="vv2-disclosure-grid">
                     <div>
                       <h4>Observed</h4>
                       <p>Actual BotShield storefront protection activity.</p>
                     </div>
                     <div>
                       <h4>Estimated</h4>
-                      <p>
-                        Observed activity combined with merchant assumptions.
-                      </p>
+                      <p>Observed activity combined with merchant assumptions.</p>
                     </div>
                     <div>
                       <h4>Projected</h4>
-                      <p>
-                        Eligible observed activity extended through the established projection model.
-                      </p>
+                      <p>Eligible observed activity extended through the established projection model.</p>
                     </div>
                     <div>
                       <h4>Plan cost</h4>
                       <p>Current Shopify subscription pricing.</p>
                     </div>
-                    <div>
-                      <h4>Data window</h4>
-                      <p>
-                        Observed raw activity constrained by BotShield&apos;s retention window.
-                      </p>
-                    </div>
-                    <p className="vv2-disclosure-trust">
-                      Estimates are not guaranteed savings.
-                    </p>
                   </div>
+                  <p className="vv2-disclosure-trust">
+                    Estimates are not guaranteed savings.
+                  </p>
                 </details>
               </section>
             </div>

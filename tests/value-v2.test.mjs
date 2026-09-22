@@ -84,7 +84,7 @@ test("Value page renders independently via dedicated component", async () => {
   );
 
   assert.match(page, /export default function ValuePage/);
-  assert.match(page, /safeFetchJson\(`\/api\/value/);
+  assert.match(page, /safeFetchJson\([\s\S]*?\/api\/value/);
   assert.match(adminExperience, /import ValuePage from "\.\/ValuePage\.jsx"/);
   assert.match(adminExperience, /screen === "value" \? <ValuePage \/>/);
 });
@@ -175,13 +175,13 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v6 build marker is present on Value root", async () => {
+test("flagship-v7 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v6"/);
-  assert.match(page, /data-value-layout="roi-command-center"/);
+  assert.match(page, /data-value-ui-revision="flagship-v7"/);
+  assert.match(page, /data-value-layout="executive-spatial-roi"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -201,7 +201,7 @@ test("impact chart keeps observed event counts separate from financial estimates
   assert.doesNotMatch(chartBody, /formatValueV2Currency/);
 });
 
-test("flagship-v6 uses ROI command center instead of dark executive hero", async () => {
+test("flagship-v7 uses ROI command center instead of dark executive hero", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -313,7 +313,7 @@ test("projection is explicitly labeled in Value horizon UI", async () => {
   assert.match(page, /Value horizon/);
   assert.match(page, /Building estimate/);
   assert.match(page, /Projected interventions/);
-  assert.match(page, /Forward-looking plan spend and projected protection value/);
+  assert.match(page, /See plan spend and eligible projected value over time/);
 });
 
 test("observed ranges are limited to 7d and 30d without fake long history", () => {
@@ -380,15 +380,19 @@ test("assumptions save and reset persist through app settings", async () => {
   assert.equal(reset.merchantConfigured, false);
 });
 
-test("period switching and refresh are wired in Value UI", async () => {
+test("horizon switching and refresh are wired in Value UI", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /RANGE_OPTIONS/);
-  assert.match(page, /setRange\(option\.id\)/);
-  assert.match(page, /loadValue\(range\)/);
+  assert.match(page, /HORIZON_OPTIONS/);
+  assert.match(page, /setHorizon\(option\.id\)/);
+  assert.match(page, /OBSERVED_RANGE/);
+  assert.match(page, /loadValue\(\)/);
   assert.match(page, /aria-label="Refresh Value data"/);
+  assert.doesNotMatch(page, /RANGE_OPTIONS/);
+  assert.doesNotMatch(page, /setRange/);
+  assert.doesNotMatch(page, /aria-label="Observed period"/);
 });
 
 test("API error and recovery states are handled in Value UI", async () => {
@@ -423,7 +427,7 @@ test("responsive and accessibility contracts exist in Value CSS and UI", async (
   assert.match(css, /prefers-reduced-motion/);
   assert.match(page, /aria-labelledby/);
   assert.match(page, /aria-pressed/);
-  assert.match(page, /aria-label="Observed period"/);
+  assert.match(page, /Last 30 days/);
 });
 
 test("Value CSS is isolated from locked page styles", async () => {
@@ -553,13 +557,15 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
     "utf8",
   );
 
-  assert.match(css, /max-width: 1260px/);
+  assert.match(css, /max-width: 1280px/);
   assert.match(css, /\.vv2-command-center/);
   assert.match(css, /\.vv2-horizon/);
   assert.match(css, /\.vv2-plan-value/);
   assert.match(css, /\.vv2-analytics-layout/);
   assert.match(css, /\.vv2-lower-band/);
-  assert.match(css, /\.vv2-readiness/);
+  assert.match(css, /\.vv2-readiness-path/);
+  assert.match(css, /\.vv2-tooltip-bubble/);
+  assert.match(css, /\.vv2-stage-1/);
   assert.doesNotMatch(css, /backdrop-filter/);
   assert.doesNotMatch(css, /glassmorphism/);
   assert.doesNotMatch(css, /\.vv2-executive/);
@@ -567,15 +573,27 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(css, /\.vv2-enter/);
   assert.match(page, /Understand the financial impact of BotShield protection/);
   assert.match(page, /vv2-driver-fill/);
-  assert.match(page, /ValueInlineState/);
+  assert.match(page, /vv2-drivers-empty/);
   assert.match(page, /deriveEstimatedRoi/);
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v6"/);
-  assert.match(page, /data-value-layout="roi-command-center"/);
+  assert.match(page, /data-value-ui-revision="flagship-v7"/);
+  assert.match(page, /data-value-layout="executive-spatial-roi"/);
+  assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
+});
+
+test("Value page fixes observed window to 30 days without merchant range selector", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /const OBSERVED_RANGE = "30d"/);
+  assert.match(page, /encodeURIComponent\(OBSERVED_RANGE\)/);
+  assert.match(page, /OBSERVED_WINDOW_LABEL/);
+  assert.doesNotMatch(page, /vv2-period/);
 });
 
 test("observed chart inactive state avoids large empty placeholder box", async () => {
