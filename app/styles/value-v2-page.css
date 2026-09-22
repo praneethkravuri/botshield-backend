@@ -1,4 +1,4 @@
-/* BotShield Value V2 — flagship-v12 premium assumptions workspace (isolated) */
+/* BotShield Value V2 — flagship-v13 clean assumptions modal (isolated) */
 
 .botshield-value-v2-content {
   width: 100%;
@@ -559,49 +559,31 @@
 
 .vv2-assumptions-modal-shell {
   padding: 0 !important;
-  background: #f3f2ef;
 }
 
-.vv2-assumptions-modal-v12 {
-  display: flex;
-  flex-direction: column;
-  width: min(calc(100vw - 28px), 960px);
-  max-height: min(80vh, 680px);
+.vv2-assumptions-modal-v13 {
+  display: block;
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 0 2px;
   color: var(--vv2-ink);
-  background: #f3f2ef;
 }
 
 .vv2-assumptions-modal-subtitle {
-  flex-shrink: 0;
   margin: 0;
-  padding: 2px 20px 10px;
+  padding: 0 22px 10px;
   font-size: 14px;
   line-height: 1.4;
   color: #3d4348;
-}
-
-.vv2-assumptions-modal-main {
-  display: grid;
-  flex: 1;
-  min-height: 0;
-  gap: 0;
-  padding: 0 20px;
-}
-
-.vv2-assumptions-workspace {
-  display: grid;
-  gap: 22px;
-  padding: 14px 16px 16px;
-  border: 1px solid #d5d9dd;
-  border-radius: 10px;
-  background: #ffffff;
 }
 
 .vv2-assumptions-trust-note {
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  padding-bottom: 2px;
+  margin: 0 0 18px;
+  padding: 0 22px;
 }
 
 .vv2-assumptions-trust-note svg {
@@ -625,8 +607,9 @@
   color: #5c6770;
 }
 
-.vv2-assumptions-workspace-section + .vv2-assumptions-workspace-section {
-  padding-top: 2px;
+.vv2-assumptions-section {
+  margin: 0 0 20px;
+  padding: 0 22px;
 }
 
 .vv2-assumptions-section-title {
@@ -660,9 +643,9 @@
 .vv2-assumption-input-control {
   display: flex;
   align-items: stretch;
-  min-height: 46px;
+  min-height: 44px;
   border: 1px solid #b8bcc0;
-  border-radius: 9px;
+  border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
   transition:
@@ -688,7 +671,7 @@
   background: transparent;
   color: #121314;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   outline: none;
@@ -709,11 +692,11 @@
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  padding: 0 11px;
+  padding: 0 10px;
   border-inline: 1px solid #c8ccd0;
-  background: #f0f2f4;
+  background: #f4f5f7;
   color: #5c6770;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   transition: color 110ms var(--vv2-ease), background 110ms var(--vv2-ease);
 }
@@ -750,14 +733,12 @@
   box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.12);
 }
 
-.vv2-assumptions-preview-v12 {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-  padding: 14px 16px 16px;
-  border: 1px solid #c5cad0;
-  border-radius: 10px;
-  background: #e8eaed;
+.vv2-assumptions-preview-v13 {
+  margin: 0 22px 16px;
+  padding: 14px 16px;
+  border: 1px solid #d0d4d9;
+  border-radius: 8px;
+  background: #f4f5f7;
 }
 
 .vv2-preview-eyebrow {
@@ -765,7 +746,7 @@
   margin-bottom: 2px;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #5c6770;
 }
@@ -785,7 +766,7 @@
   padding: 0;
   border: 1px solid #d0d4d9;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: #ffffff;
   overflow: hidden;
 }
 
@@ -802,14 +783,14 @@
   margin: 0;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #5c6770;
 }
 
 .vv2-preview-stats dd {
   margin: 2px 0 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #121314;
 }
@@ -819,7 +800,7 @@
   gap: 6px;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #c5cad0;
+  border-bottom: 1px solid #d0d4d9;
 }
 
 .vv2-preview-formula-row {
@@ -827,8 +808,8 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 12px;
   align-items: end;
-  padding: 4px 0;
-  transition: background 160ms var(--vv2-ease);
+  padding: 2px 0;
+  transition: opacity 160ms var(--vv2-ease), transform 160ms var(--vv2-ease);
 }
 
 .vv2-preview-formula-copy {
@@ -859,7 +840,6 @@
 }
 
 .vv2-preview-total-block {
-  margin-top: auto;
   padding-top: 2px;
 }
 
@@ -875,7 +855,7 @@
 .vv2-preview-value {
   display: block;
   margin-top: 4px;
-  font-size: clamp(26px, 3vw, 32px);
+  font-size: clamp(24px, 4vw, 28px);
   font-weight: 720;
   line-height: 1.05;
   letter-spacing: -0.03em;
@@ -890,37 +870,22 @@
   color: #5c6770;
 }
 
-.vv2-preview-zero {
-  margin-top: 10px;
+.vv2-preview-zero-note {
+  margin: 10px 0 0;
   padding-top: 10px;
-  border-top: 1px solid #c5cad0;
-}
-
-.vv2-preview-zero strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 13px;
-  color: #2f3438;
-}
-
-.vv2-preview-zero p {
-  margin: 0 0 4px;
+  border-top: 1px solid #d0d4d9;
   font-size: 12px;
-  line-height: 1.4;
+  line-height: 1.45;
   color: #505659;
-}
-
-.vv2-preview-zero-quiet {
-  color: #5c6770 !important;
 }
 
 .vv2-assumptions-modal-footer {
   display: flex;
-  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 20px 14px;
+  margin-top: 0;
+  padding: 14px 22px 16px;
   border-top: 1px solid #d5d9dd;
   background: #ffffff;
 }
@@ -932,31 +897,29 @@
   justify-content: flex-end;
 }
 
-.vv2-assumptions-modal-v12-enter-header {
-  animation: vv2-modal-v12-fade 120ms var(--vv2-ease) both;
+.vv2-assumptions-modal-v13-enter,
+.vv2-assumptions-modal-v13-enter-preview,
+.vv2-assumptions-modal-v13-enter-footer {
+  animation: vv2-modal-v13-fade 150ms var(--vv2-ease) both;
 }
 
-.vv2-assumptions-modal-v12-enter-workspace {
-  animation: vv2-modal-v12-rise 160ms var(--vv2-ease) both;
+.vv2-assumptions-modal-v13-enter-preview {
+  animation: vv2-modal-v13-rise 160ms var(--vv2-ease) both;
 }
 
-.vv2-assumptions-modal-v12-enter-preview {
-  animation: vv2-modal-v12-slide 180ms var(--vv2-ease) both;
+.vv2-assumptions-modal-v13-enter-footer {
+  animation-delay: 20ms;
 }
 
-.vv2-assumptions-modal-v12-enter-footer {
-  animation: vv2-modal-v12-fade 180ms var(--vv2-ease) both;
-}
-
-@keyframes vv2-modal-v12-fade {
+@keyframes vv2-modal-v13-fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes vv2-modal-v12-rise {
+@keyframes vv2-modal-v13-rise {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
@@ -964,23 +927,8 @@
   }
 }
 
-@keyframes vv2-modal-v12-slide {
-  from {
-    opacity: 0;
-    transform: translateX(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 .vv2-preview-value.is-updating {
   animation: vv2-preview-value 170ms var(--vv2-ease) both;
-}
-
-.vv2-preview-formula-row:has(.vv2-preview-formula-amount) {
-  animation: vv2-preview-row 160ms var(--vv2-ease) both;
 }
 
 @keyframes vv2-preview-value {
@@ -994,42 +942,13 @@
   }
 }
 
-@keyframes vv2-preview-row {
-  from {
-    background: rgba(44, 110, 203, 0.06);
-  }
-  to {
-    background: transparent;
-  }
-}
-
-@media (min-width: 900px) {
-  .vv2-assumptions-modal-main {
-    grid-template-columns: minmax(0, 0.58fr) minmax(0, 0.42fr);
-    gap: 22px;
-    align-items: stretch;
-  }
-
+@media (min-width: 700px) {
   .vv2-assumptions-field-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 899px) {
-  .vv2-assumptions-modal-v12 {
-    max-height: min(88vh, 760px);
-  }
-
-  .vv2-assumptions-modal-main {
-    overflow-y: auto;
-    padding-bottom: 8px;
-    scrollbar-width: thin;
-  }
-
-  .vv2-assumptions-preview-v12 {
-    min-height: auto;
-  }
-
+@media (max-width: 699px) {
   .vv2-assumptions-field-grid {
     grid-template-columns: 1fr;
   }
@@ -2567,10 +2486,9 @@
   .vv2-readiness-step.is-current .vv2-readiness-node,
   .vv2-metric-value.is-settling,
   .vv2-disclosure-body,
-  .vv2-assumptions-modal-v12-enter-header,
-  .vv2-assumptions-modal-v12-enter-workspace,
-  .vv2-assumptions-modal-v12-enter-preview,
-  .vv2-assumptions-modal-v12-enter-footer,
+  .vv2-assumptions-modal-v13-enter,
+  .vv2-assumptions-modal-v13-enter-preview,
+  .vv2-assumptions-modal-v13-enter-footer,
   .vv2-assumptions-preview,
   .vv2-preview-formula-row,
   .vv2-preview-value.is-updating,
