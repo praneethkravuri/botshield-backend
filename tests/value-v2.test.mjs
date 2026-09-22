@@ -797,6 +797,9 @@ test("flagship-v16 early-data context banner explains zero-intervention state", 
   assert.match(bannerBlock, /Financial estimates will update as eligible/);
   assert.match(bannerBlock, /No eligible interventions have been recorded in the current 30-day window yet/);
   assert.match(bannerBlock, /Early negative net value reflects plan cost/);
+  assert.match(bannerBlock, /blocks or challenges its first bot/);
+  assert.match(bannerBlock, /Dismiss/);
+  assert.match(bannerBlock, /sessionStorage/);
   assert.match(bannerBlock, /hasDetectedOnlyActivity/);
   assert.match(bannerBlock, /no eligible blocked or challenged interventions/);
   assert.doesNotMatch(bannerBlock, /24.?48 hour/i);

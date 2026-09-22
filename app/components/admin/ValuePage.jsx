@@ -537,10 +537,21 @@ function ValueStatusBadge({ status }) {
   );
 }
 
+const VALUE_EARLY_DATA_DISMISS_KEY = "botshield-value-early-data-dismissed";
+
 function EarlyDataContextBanner({ activity, configured }) {
-  const shouldShow = configured && activity.interventions === 0;
+  const [dismissed, setDismissed] = useState(false);
+  const shouldShow = configured && activity.interventions === 0 && !dismissed;
   const [render, setRender] = useState(shouldShow);
   const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    try {
+      setDismissed(window.sessionStorage.getItem(VALUE_EARLY_DATA_DISMISS_KEY) === "1");
+    } catch {
+      setDismissed(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (shouldShow) {
@@ -560,6 +571,15 @@ function EarlyDataContextBanner({ activity, configured }) {
 
     return undefined;
   }, [render, shouldShow]);
+
+  const dismissBanner = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(VALUE_EARLY_DATA_DISMISS_KEY, "1");
+    } catch {
+      // Ignore storage failures and still hide for this session.
+    }
+    setDismissed(true);
+  }, []);
 
   if (!render) {
     return null;
@@ -607,6 +627,19 @@ function EarlyDataContextBanner({ activity, configured }) {
           Early negative net value reflects plan cost before estimated protection value has been
           attributed.
         </p>
+        <div className="vv2-early-data-context-footer">
+          <p className="vv2-early-data-context-auto-hide">
+            This goes away automatically after BotShield blocks or challenges its first bot on
+            your store.
+          </p>
+          <button
+            className="vv2-early-data-context-dismiss"
+            onClick={dismissBanner}
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
       </div>
     </div>
   );
