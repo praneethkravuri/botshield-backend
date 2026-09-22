@@ -227,11 +227,14 @@ function ValueMetric({
   label,
   value,
   tip,
+  eyebrow,
   large = false,
   positive = false,
   strong = false,
   unavailable = false,
   sublabel,
+  helpText,
+  align = "left",
 }) {
   const labelNode = tip ? (
     <ValueTooltip tip={tip}>
@@ -242,7 +245,12 @@ function ValueMetric({
   );
 
   return (
-    <div className={`vv2-metric${large ? " is-large" : ""}`}>
+    <div
+      className={`vv2-metric${large ? " is-large" : ""}${
+        align === "right" ? " is-align-right" : ""
+      }`}
+    >
+      {eyebrow ? <span className="vv2-eyebrow">{eyebrow}</span> : null}
       {labelNode}
       <strong
         className={`vv2-metric-value vv2-metric-reveal${positive ? " is-positive" : ""}${
@@ -251,7 +259,57 @@ function ValueMetric({
       >
         {value}
       </strong>
+      {helpText ? <span className="vv2-metric-help">{helpText}</span> : null}
       {sublabel ? <span className="vv2-metric-sublabel">{sublabel}</span> : null}
+    </div>
+  );
+}
+
+function FinancialStatusStrip({ configured, interventions }) {
+  const items = [
+    `${OBSERVED_WINDOW_LABEL.toUpperCase()} OBSERVED WINDOW`,
+    configured ? "ASSUMPTIONS CONFIGURED" : "ESTIMATES NEED SETUP",
+    `${formatCount(interventions)} INTERVENTIONS`,
+  ];
+
+  return (
+    <div aria-label="Financial status" className="vv2-status-strip">
+      {items.map((item, index) => (
+        <span className="vv2-status-item" key={item}>
+          {index > 0 ? <span aria-hidden="true" className="vv2-status-dot" /> : null}
+          {item}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ValuePeriodSnapshot({ economics, currency, configured }) {
+  if (!configured || economics.estimatedValueProtected == null) {
+    return null;
+  }
+
+  return (
+    <div aria-label="Value snapshot for this period" className="vv2-value-snapshot">
+      <span className="vv2-eyebrow">This period</span>
+      <div className="vv2-value-snapshot-row">
+        <div>
+          <span className="vv2-metric-label">BotShield cost</span>
+          <strong>{formatValueV2Currency(economics.allocatedPlanCost, currency)}</strong>
+        </div>
+        <div>
+          <span className="vv2-metric-label">Estimated protected value</span>
+          <strong className="is-positive">
+            {formatFinancial(economics.estimatedValueProtected, currency, configured)}
+          </strong>
+        </div>
+        <div>
+          <span className="vv2-metric-label">Estimated net value</span>
+          <strong>
+            {formatFinancial(economics.estimatedNetValue, currency, configured)}
+          </strong>
+        </div>
+      </div>
     </div>
   );
 }
@@ -374,21 +432,22 @@ function ValueObservedSection({ trend, activity, observationLabel }) {
         trend={trend}
       />
       <aside aria-label="Observed summary" className="vv2-observed-summary">
+        <span className="vv2-eyebrow">Observed</span>
         <h3>Observed summary</h3>
         <dl>
           <div className="is-detected">
             <dt>Detected</dt>
             <dd>{formatCount(activity.threatsDetected)}</dd>
           </div>
-          <div>
+          <div className="is-blocked">
             <dt>Blocked</dt>
             <dd>{formatCount(activity.threatsBlocked)}</dd>
           </div>
-          <div>
+          <div className="is-challenged">
             <dt>Challenged</dt>
             <dd>{formatCount(activity.challengesIssued)}</dd>
           </div>
-          <div>
+          <div className="is-interventions">
             <dt>Interventions</dt>
             <dd>{formatCount(activity.interventions)}</dd>
           </div>
@@ -448,6 +507,7 @@ function EstimateReadiness({
 
   return (
     <section aria-labelledby="vv2-readiness-title" className="vv2-readiness">
+      <span className="vv2-eyebrow">Readiness</span>
       <h2 className="vv2-band-title" id="vv2-readiness-title">
         Estimate readiness
       </h2>
@@ -740,22 +800,24 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="executive-spatial-roi"
-          data-value-ui-revision="flagship-v7"
+          data-value-layout="premium-roi-experience"
+          data-value-ui-revision="flagship-v8"
         >
-          <header className="vv2-header">
-            <div className="vv2-header-copy">
+          <header className="vv2-header vv2-header-enter">
+            <div className="vv2-header-copy vv2-header-enter-copy">
               <div className="vv2-header-title-row">
-                <h1>Value</h1>
+                <h1 className="vv2-header-enter-title">Value</h1>
                 {monthlyPrice != null ? (
-                  <span className="vv2-plan-chip">
+                  <span className="vv2-plan-chip vv2-header-enter-chip">
                     Current plan • {formatValueV2Currency(monthlyPrice, currency)} / month
                   </span>
                 ) : null}
               </div>
-              <p>Understand the financial impact of BotShield protection.</p>
+              <p className="vv2-header-enter-subtitle">
+                Understand the financial impact of BotShield protection.
+              </p>
             </div>
-            <div className="vv2-header-actions">
+            <div className="vv2-header-actions vv2-header-enter-actions">
               <button className="vv2-btn vv2-btn-secondary" onClick={openAssumptions} type="button">
                 Edit assumptions
               </button>
@@ -797,7 +859,11 @@ export default function ValuePage() {
           ) : null}
 
           {payload ? (
-            <div className={`vv2-page-content${loading ? " is-loading" : ""}`}>
+            <div
+              className={`vv2-page-content${
+                loading && payload ? " is-refreshing" : ""
+              }${loading && !payload ? " is-loading" : ""}`}
+            >
               {payload.retentionMessage ? (
                 <p className="vv2-retention-note">{payload.retentionMessage}</p>
               ) : null}
@@ -826,6 +892,7 @@ export default function ValuePage() {
                 <div className="vv2-command-grid">
                   <div className="vv2-command-primary">
                     <ValueMetric
+                      eyebrow="Financial outcome"
                       label="Estimated protected value"
                       large
                       positive={configured && (economics.estimatedValueProtected || 0) > 0}
@@ -837,55 +904,70 @@ export default function ValuePage() {
                         currency,
                         configured,
                       )}
+                      helpText={
+                        configured
+                          ? "Estimated from observed protection and configured assumptions."
+                          : "Configure assumptions to estimate financial impact."
+                      }
                     />
                     <div className="vv2-command-secondary">
-                      <ValueMetric
-                        label="Estimated net value"
-                        strong={configured && economics.estimatedNetValue != null}
-                        unavailable={!configured || economics.estimatedNetValue == null}
-                        tip={TOOLTIPS.netValue}
-                        value={formatFinancial(
-                          economics.estimatedNetValue,
-                          currency,
-                          configured,
-                        )}
-                      />
-                      <ValueMetric
-                        label="Estimated ROI"
-                        strong={configured && estimatedRoi != null}
-                        unavailable={!configured || estimatedRoi == null}
-                        tip={TOOLTIPS.roi}
-                        value={formatRoiPercent(estimatedRoi, configured)}
-                      />
-                      <ValueMetric
-                        label="Est. value / $1 spent"
-                        strong={configured && economics.valueToCostRatio != null}
-                        unavailable={!configured || economics.valueToCostRatio == null}
-                        tip={TOOLTIPS.valuePerDollar}
-                        value={formatValueToCostRatio(economics.valueToCostRatio, configured)}
-                      />
+                      <div className="vv2-metric-col vv2-metric-col-1">
+                        <ValueMetric
+                          label="Estimated net value"
+                          strong={configured && economics.estimatedNetValue != null}
+                          unavailable={!configured || economics.estimatedNetValue == null}
+                          tip={TOOLTIPS.netValue}
+                          value={formatFinancial(
+                            economics.estimatedNetValue,
+                            currency,
+                            configured,
+                          )}
+                        />
+                      </div>
+                      <div className="vv2-metric-col vv2-metric-col-2">
+                        <ValueMetric
+                          label="Estimated ROI"
+                          strong={configured && estimatedRoi != null}
+                          unavailable={!configured || estimatedRoi == null}
+                          tip={TOOLTIPS.roi}
+                          value={formatRoiPercent(estimatedRoi, configured)}
+                        />
+                      </div>
+                      <div className="vv2-metric-col vv2-metric-col-3">
+                        <ValueMetric
+                          label="Est. value / $1 spent"
+                          strong={configured && economics.valueToCostRatio != null}
+                          unavailable={!configured || economics.valueToCostRatio == null}
+                          tip={TOOLTIPS.valuePerDollar}
+                          value={formatValueToCostRatio(economics.valueToCostRatio, configured)}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div aria-label="Plan economics" className="vv2-command-plan">
+                  <div aria-label="Plan economics" className="vv2-command-plan vv2-command-plan-enter">
                     <p className="vv2-plan-rail">Plan economics</p>
                     <ValueMetric
+                      align="right"
                       label="Current plan"
                       strong={monthlyPrice != null}
                       value={monthlyPlanLabel}
                     />
                     <ValueMetric
+                      align="right"
                       label="Selected period cost"
                       strong
                       value={formatValueV2Currency(economics.allocatedPlanCost, currency)}
                     />
                     <ValueMetric
+                      align="right"
                       label="Interventions"
                       strong
                       value={formatCount(activity.interventions)}
                     />
                     <div className="vv2-plan-compact">
                       <ValueMetric
+                        align="right"
                         label="Cost / intervention"
                         strong={costPerIntervention != null}
                         unavailable={costPerIntervention == null}
@@ -893,6 +975,7 @@ export default function ValuePage() {
                         value={formatPerUnit(costPerIntervention, currency, costPerIntervention != null)}
                       />
                       <ValueMetric
+                        align="right"
                         label="Est. value / intervention"
                         strong={configured && estValuePerIntervention != null}
                         unavailable={!configured || estValuePerIntervention == null}
@@ -900,6 +983,7 @@ export default function ValuePage() {
                         value={formatPerUnit(estValuePerIntervention, currency, configured)}
                       />
                       <ValueMetric
+                        align="right"
                         label="Break even"
                         strong={breakEvenInterventions != null}
                         unavailable={breakEvenInterventions == null}
@@ -915,15 +999,25 @@ export default function ValuePage() {
                     </div>
                   </div>
                 </div>
+                <FinancialStatusStrip
+                  configured={configured}
+                  interventions={activity.interventions}
+                />
+                <ValuePeriodSnapshot
+                  configured={configured}
+                  currency={currency}
+                  economics={economics}
+                />
               </section>
 
               <section aria-labelledby="vv2-horizon-title" className="vv2-horizon vv2-enter vv2-stage-2">
                 <div className="vv2-horizon-head">
                   <div>
+                    <span className="vv2-eyebrow">Forward view</span>
                     <h2 className="vv2-band-title" id="vv2-horizon-title">
                       Value horizon
                     </h2>
-                    <p>See plan spend and eligible projected value over time.</p>
+                    <p>Compare plan spend with eligible projected protection value.</p>
                   </div>
                   <div className="vv2-horizon-tabs" aria-label="Value projection horizon">
                     {HORIZON_OPTIONS.map((option) => (
@@ -950,28 +1044,24 @@ export default function ValuePage() {
                 </div>
 
                 {monthlyPrice != null ? (
-                  <div aria-label="Plan spend" className="vv2-plan-spend-strip">
-                    <span className="vv2-metric-label">Plan spend</span>
-                    <div className="vv2-plan-spend-items">
-                      <div className={horizon === "30d" ? "is-active" : ""}>
-                        <span>Monthly</span>
-                        <strong>{formatValueV2Currency(monthlyPrice, currency)}</strong>
-                      </div>
-                      <div className={horizon === "6m" ? "is-active" : ""}>
-                        <span>6 months</span>
-                        <strong>{formatValueV2Currency(monthlyPrice * 6, currency)}</strong>
-                      </div>
-                      <div className={horizon === "1y" ? "is-active" : ""}>
-                        <span>12 months</span>
-                        <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
-                      </div>
+                  <div aria-label="Plan spend rail" className="vv2-plan-spend-rail">
+                    <div className={horizon === "30d" ? "is-active" : ""}>
+                      <span>Monthly</span>
+                      <strong>{formatValueV2Currency(monthlyPrice, currency)}</strong>
+                    </div>
+                    <div className={horizon === "6m" ? "is-active" : ""}>
+                      <span>6 months</span>
+                      <strong>{formatValueV2Currency(monthlyPrice * 6, currency)}</strong>
+                    </div>
+                    <div className={horizon === "1y" ? "is-active" : ""}>
+                      <span>1 year</span>
+                      <strong>{formatValueV2Currency(monthlyPrice * 12, currency)}</strong>
                     </div>
                   </div>
                 ) : null}
 
-                <p className="vv2-horizon-summary-label">Selected horizon summary</p>
                 <div className="vv2-horizon-body vv2-horizon-swap" key={`horizon-${horizon}`}>
-                  <div className="vv2-horizon-metrics">
+                  <div className="vv2-horizon-metrics-primary">
                     <ValueMetric
                       label="Plan spend"
                       strong={horizonProjection?.planSpend != null}
@@ -1046,6 +1136,8 @@ export default function ValuePage() {
                         horizonProjection?.financialAvailable,
                       )}
                     />
+                  </div>
+                  <div className="vv2-horizon-metrics-secondary">
                     <ValueMetric
                       label="Value / cost"
                       strong={
@@ -1064,8 +1156,11 @@ export default function ValuePage() {
                   </div>
                   {!horizonProjection?.financialAvailable && horizonProjection?.buildingMessage ? (
                     <div className="vv2-horizon-building">
-                      <strong>Building estimate</strong>
-                      <p>{horizonProjection.buildingMessage}</p>
+                      <span aria-hidden="true" className="vv2-horizon-building-icon" />
+                      <div>
+                        <strong>Building estimate</strong>
+                        <p>{horizonProjection.buildingMessage}</p>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -1075,6 +1170,9 @@ export default function ValuePage() {
                 <h2 className="vv2-band-title" id="vv2-plan-value-title">
                   Plan vs value
                 </h2>
+                <p className="vv2-plan-value-subtitle">
+                  What you pay compared with eligible estimated protection value.
+                </p>
                 <div className="vv2-pv-flow" key={`pv-${configured}-${economics.estimatedValueProtected ?? "na"}`}>
                   <div className="vv2-pv-node vv2-pv-step-1">
                     <span className="vv2-metric-label">Plan spend</span>
@@ -1110,7 +1208,8 @@ export default function ValuePage() {
                       {formatFinancial(economics.estimatedNetValue, currency, configured)}
                     </strong>
                   </div>
-                  <div className="vv2-pv-ratio vv2-pv-step-6">
+                  <span aria-hidden="true" className="vv2-pv-connector vv2-pv-line vv2-pv-step-6" />
+                  <div className="vv2-pv-node vv2-pv-ratio vv2-pv-step-7">
                     <span className="vv2-metric-label">Value / cost</span>
                     <strong
                       className={
@@ -1130,9 +1229,12 @@ export default function ValuePage() {
                 className="vv2-analytics-band vv2-enter vv2-stage-4"
               >
                 <div className="vv2-band-head">
-                  <h2 className="vv2-band-title" id="vv2-observed-title">
-                    Observed protection
-                  </h2>
+                  <div>
+                    <span className="vv2-eyebrow">Observed</span>
+                    <h2 className="vv2-band-title" id="vv2-observed-title">
+                      Observed protection
+                    </h2>
+                  </div>
                   <span className="vv2-window-label">{OBSERVED_WINDOW_LABEL}</span>
                 </div>
                 <ValueObservedSection

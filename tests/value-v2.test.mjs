@@ -175,13 +175,13 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v7 build marker is present on Value root", async () => {
+test("flagship-v8 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v7"/);
-  assert.match(page, /data-value-layout="executive-spatial-roi"/);
+  assert.match(page, /data-value-ui-revision="flagship-v8"/);
+  assert.match(page, /data-value-layout="premium-roi-experience"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -201,7 +201,7 @@ test("impact chart keeps observed event counts separate from financial estimates
   assert.doesNotMatch(chartBody, /formatValueV2Currency/);
 });
 
-test("flagship-v7 uses ROI command center instead of dark executive hero", async () => {
+test("flagship-v8 uses ROI command center instead of dark executive hero", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -223,7 +223,7 @@ test("flagship-v7 uses ROI command center instead of dark executive hero", async
   assert.doesNotMatch(css, /\.vv2-executive/);
 });
 
-test("Value horizon exposes 30D 6M and 1Y controls with plan spend strip", async () => {
+test("Value horizon exposes 30D 6M and 1Y controls with plan spend rail", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -240,7 +240,28 @@ test("Value horizon exposes 30D 6M and 1Y controls with plan spend strip", async
   assert.match(page, /monthlyPrice \* 12/);
   assert.match(page, /deriveHorizonProjection/);
   assert.match(css, /\.vv2-horizon-tabs/);
-  assert.match(css, /\.vv2-plan-spend-strip/);
+  assert.match(css, /\.vv2-plan-spend-rail/);
+  assert.match(css, /\.vv2-horizon-metrics-primary/);
+});
+
+test("flagship-v8 adds premium command center status strip and conditional snapshot", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /FinancialStatusStrip/);
+  assert.match(page, /ValuePeriodSnapshot/);
+  assert.match(page, /vv2-status-strip/);
+  assert.match(page, /vv2-value-snapshot/);
+  assert.match(page, /is-refreshing/);
+  assert.match(css, /\.vv2-status-strip/);
+  assert.match(css, /\.vv2-value-snapshot/);
+  assert.match(css, /\.vv2-eyebrow/);
 });
 
 test("interventions equal blocked plus challenged", () => {
@@ -313,7 +334,7 @@ test("projection is explicitly labeled in Value horizon UI", async () => {
   assert.match(page, /Value horizon/);
   assert.match(page, /Building estimate/);
   assert.match(page, /Projected interventions/);
-  assert.match(page, /See plan spend and eligible projected value over time/);
+  assert.match(page, /Compare plan spend with eligible projected protection value/);
 });
 
 test("observed ranges are limited to 7d and 30d without fake long history", () => {
@@ -557,7 +578,7 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
     "utf8",
   );
 
-  assert.match(css, /max-width: 1280px/);
+  assert.match(css, /max-width: 1320px/);
   assert.match(css, /\.vv2-command-center/);
   assert.match(css, /\.vv2-horizon/);
   assert.match(css, /\.vv2-plan-value/);
@@ -578,8 +599,8 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v7"/);
-  assert.match(page, /data-value-layout="executive-spatial-roi"/);
+  assert.match(page, /data-value-ui-revision="flagship-v8"/);
+  assert.match(page, /data-value-layout="premium-roi-experience"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
