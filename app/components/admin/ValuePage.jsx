@@ -1,11 +1,15 @@
 /* eslint-disable react/prop-types */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatHydrationStableNumber } from "../../lib/hydration-safe-format.js";
 import { safeFetchJson } from "../../lib/safe-fetch.js";
-import { formatValueV2Currency } from "../../lib/value-v2-calculations.js";
+import {
+  assumptionsAreConfigured,
+  calculateValueV2Economics,
+  formatValueV2Currency,
+  sanitizeValueV2Assumptions,
+} from "../../lib/value-v2-calculations.js";
 import "../../styles/value-v2-page.css";
 import {
-  BotShieldParagraph,
   BotShieldPolarisButton,
   BotShieldStack,
 } from "../design-system/BotShieldHydrationPolaris.jsx";
@@ -35,16 +39,59 @@ const VALUE_ASSUMPTIONS_MODAL_ID = "botshield-value-v2-assumptions-modal";
 
 const TOOLTIPS = {
   protectedValue:
-    "Estimated protected value from BotShield interventions based on your assumptions.",
-  netValue: "Estimated value after BotShield cost for the selected period.",
-  roi: "Estimated net value divided by selected-period BotShield cost.",
-  valuePerDollar: "Estimated protected value for each $1 of BotShield cost.",
+    "Estimated protected value from your saved assumptions applied to observed BotShield activity.",
+  netValue: "Estimated protected value minus BotShield cost for the selected period.",
+  roi: "Estimated ROI uses your saved assumptions and BotShield's selected-period cost.",
+  valuePerDollar: "Estimated protected value per $1 of BotShield cost.",
   costPerIntervention: "Selected-period BotShield cost divided by observed interventions.",
   estValuePerIntervention:
     "Estimated protected value divided by observed interventions.",
-  projectedValue: "Forward-looking estimate using eligible observed activity.",
-  breakEven: "Estimated interventions needed to cover BotShield cost.",
+  projectedValue: "Forward-looking estimate using eligible observed activity and your assumptions.",
+  breakEven:
+    "Estimated interventions required for protected value to equal BotShield cost, based on your assumptions.",
+  editAssumptions:
+    "Review the business assumptions used for your financial estimates.",
 };
+
+function deriveAssumptionPreview(draft, activity, allocatedPlanCost) {
+  const assumptions = sanitizeValueV2Assumptions({
+    estimatedValuePerBlockedEvent: Number(draft?.estimatedValuePerBlockedEvent || 0),
+    estimatedValuePerChallenge: Number(draft?.estimatedValuePerChallenge || 0),
+    staffMinutesSavedPerIntervention: Number(
+      draft?.staffMinutesSavedPerIntervention || 0,
+    ),
+    staffHourlyCost: Number(draft?.staffHourlyCost || 0),
+    merchantConfigured: true,
+  });
+  const configured = assumptionsAreConfigured(assumptions);
+  const blockedValue =
+    activity.threatsBlocked * assumptions.estimatedValuePerBlockedEvent;
+  const challengedValue =
+    activity.challengesIssued * assumptions.estimatedValuePerChallenge;
+  const staffValue =
+    assumptions.staffMinutesSavedPerIntervention > 0 &&
+    assumptions.staffHourlyCost > 0 &&
+    activity.interventions > 0
+      ? ((activity.interventions * assumptions.staffMinutesSavedPerIntervention) /
+          60) *
+        assumptions.staffHourlyCost
+      : 0;
+  const economics = calculateValueV2Economics({
+    activity,
+    assumptions,
+    allocatedPlanCost,
+    assumptionsConfigured: configured,
+  });
+
+  return {
+    assumptions,
+    configured,
+    blockedValue,
+    challengedValue,
+    staffValue,
+    economics,
+  };
+}
 
 function resolvePlanDisplayName(planName) {
   const trimmed = String(planName || "").trim();
@@ -350,8 +397,10 @@ function ValueMetric({
   tip,
   unavailableTip,
   eyebrow,
+  provenanceChip,
   large = false,
   positive = false,
+  negative = false,
   strong = false,
   unavailable = false,
   sublabel,
@@ -372,20 +421,56 @@ function ValueMetric({
     <div
       className={`vv2-metric${large ? " is-large" : ""}${
         align === "right" ? " is-align-right" : ""
-      }`}
+      }${effectiveTip ? " has-tooltip" : ""}`}
     >
       {eyebrow ? <span className="vv2-eyebrow">{eyebrow}</span> : null}
-      {labelNode}
+      <div className="vv2-metric-label-row">
+        {labelNode}
+        {provenanceChip ? (
+          <span className="vv2-provenance-chip">{provenanceChip}</span>
+        ) : null}
+      </div>
       <strong
         className={`vv2-metric-value vv2-metric-reveal${positive ? " is-positive" : ""}${
-          strong ? " is-strong" : ""
-        }${unavailable ? " is-unavailable" : ""}${settleKey ? " is-settling" : ""}`}
+          negative ? " is-negative" : ""
+        }${strong ? " is-strong" : ""}${
+          unavailable ? " is-unavailable" : ""
+        }${settleKey ? " is-settling" : ""}`}
         key={settleKey ? `${label}-${settleKey}` : undefined}
       >
         {value}
       </strong>
       {helpText ? <span className="vv2-metric-help">{helpText}</span> : null}
       {sublabel ? <span className="vv2-metric-sublabel">{sublabel}</span> : null}
+    </div>
+  );
+}
+
+function ProtectionDeliveredStrip({ activity }) {
+  return (
+    <div aria-label="Protection delivered" className="vv2-protection-delivered">
+      <span className="vv2-eyebrow">Protection delivered</span>
+      <div className="vv2-protection-delivered-row">
+        <div>
+          <span className="vv2-metric-label">Detected</span>
+          <strong>{formatCount(activity.threatsDetected)}</strong>
+        </div>
+        <div>
+          <span className="vv2-metric-label">Blocked</span>
+          <strong>{formatCount(activity.threatsBlocked)}</strong>
+        </div>
+        <div>
+          <span className="vv2-metric-label">Challenged</span>
+          <strong>{formatCount(activity.challengesIssued)}</strong>
+        </div>
+        <div>
+          <span className="vv2-metric-label">Interventions</span>
+          <strong>{formatCount(activity.interventions)}</strong>
+        </div>
+      </div>
+      <p className="vv2-metric-help">
+        Observed BotShield activity in the last 30 days — separate from estimated financial impact.
+      </p>
     </div>
   );
 }
@@ -435,6 +520,7 @@ function LiveDataTrustRail({
 function ValueStatusBadge({ status }) {
   return (
     <span className={`vv2-value-status is-${status.id}`} data-value-status={status.id}>
+      <span aria-hidden="true" className="vv2-value-status-dot" />
       Value status · {status.label}
     </span>
   );
@@ -888,98 +974,232 @@ function EstimateReadiness({
   );
 }
 
-function AssumptionsModal({ draft, setDraft, onSave, onReset, saving }) {
+function AssumptionsPreview({
+  activity,
+  allocatedPlanCost,
+  currency,
+  draft,
+  previewTick,
+}) {
+  const preview = useMemo(
+    () => deriveAssumptionPreview(draft, activity, allocatedPlanCost),
+    [activity, allocatedPlanCost, draft],
+  );
+  const { assumptions, configured, blockedValue, challengedValue, staffValue, economics } =
+    preview;
+  const hasInterventions = activity.interventions > 0;
+
+  return (
+    <aside aria-label="Estimate preview" className="vv2-assumptions-preview">
+      <span className="vv2-eyebrow">Estimate preview</span>
+      <p className="vv2-assumptions-preview-lead">
+        Using your last 30 days of BotShield activity
+      </p>
+      {hasInterventions ? (
+        <dl className="vv2-assumptions-preview-activity">
+          <div>
+            <dt>Blocked</dt>
+            <dd>{formatCount(activity.threatsBlocked)}</dd>
+          </div>
+          <div>
+            <dt>Challenged</dt>
+            <dd>{formatCount(activity.challengesIssued)}</dd>
+          </div>
+          <div>
+            <dt>Interventions</dt>
+            <dd>{formatCount(activity.interventions)}</dd>
+          </div>
+        </dl>
+      ) : (
+        <p className="vv2-assumptions-preview-empty">
+          No interventions recorded in the last 30 days yet.
+        </p>
+      )}
+
+      {configured && hasInterventions ? (
+        <div className="vv2-assumptions-preview-formula">
+          {assumptions.estimatedValuePerBlockedEvent > 0 && activity.threatsBlocked > 0 ? (
+            <div className="vv2-preview-formula-row" key={`blocked-${previewTick}`}>
+              <span>Blocked value</span>
+              <strong>
+                {formatCount(activity.threatsBlocked)} ×{" "}
+                {formatValueV2Currency(assumptions.estimatedValuePerBlockedEvent, currency)} ={" "}
+                {formatValueV2Currency(blockedValue, currency)}
+              </strong>
+            </div>
+          ) : null}
+          {assumptions.estimatedValuePerChallenge > 0 && activity.challengesIssued > 0 ? (
+            <div className="vv2-preview-formula-row" key={`challenged-${previewTick}`}>
+              <span>Challenged value</span>
+              <strong>
+                {formatCount(activity.challengesIssued)} ×{" "}
+                {formatValueV2Currency(assumptions.estimatedValuePerChallenge, currency)} ={" "}
+                {formatValueV2Currency(challengedValue, currency)}
+              </strong>
+            </div>
+          ) : null}
+          {staffValue > 0 ? (
+            <div className="vv2-preview-formula-row" key={`staff-${previewTick}`}>
+              <span>Staff time value</span>
+              <strong>{formatValueV2Currency(staffValue, currency)}</strong>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="vv2-assumptions-preview-total">
+        <span className="vv2-metric-label">Estimated protected value</span>
+        <strong
+          className={`vv2-preview-value${previewTick ? " is-updating" : ""}`}
+          key={`preview-total-${previewTick}`}
+        >
+          {configured && economics.estimatedValueProtected != null
+            ? formatValueV2Currency(economics.estimatedValueProtected, currency)
+            : "—"}
+        </strong>
+      </div>
+
+      {!hasInterventions ? (
+        <p className="vv2-assumptions-preview-note">
+          Your assumptions will be saved and applied automatically as BotShield records
+          eligible protection activity.
+        </p>
+      ) : null}
+    </aside>
+  );
+}
+
+function AssumptionsModal({
+  activity,
+  allocatedPlanCost,
+  currency,
+  draft,
+  setDraft,
+  onSave,
+  onReset,
+  saving,
+}) {
+  const [previewTick, setPreviewTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPreviewTick((current) => current + 1);
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [draft]);
+
   return (
     <BotShieldNativeModal id={VALUE_ASSUMPTIONS_MODAL_ID} heading="Value assumptions">
-      <BotShieldStack gap="base">
-        <BotShieldParagraph color="subdued">
-          These assumptions are used only to estimate business value. They do
-          not change how BotShield protects your store.
-        </BotShieldParagraph>
-        <div>
-          <BotShieldTextField
-            label="Estimated value per blocked event ($)"
-            type="number"
-            min="0"
-            value={String(draft.estimatedValuePerBlockedEvent ?? 0)}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                estimatedValuePerBlockedEvent: event.target.value,
-              }))
-            }
-          />
-          <p className="vv2-assumption-field-help">
-            Dollar value you assign to each blocked harmful event.
-          </p>
+      <div className="vv2-assumptions-modal vv2-assumptions-modal-enter">
+        <div className="vv2-assumptions-modal-main">
+          <div className="vv2-assumptions-modal-intro">
+            <p>
+              BotShield measures protection activity automatically. These assumptions tell
+              BotShield what that activity may be worth to your business.
+            </p>
+            <p>Financial results are estimates based on the values you provide.</p>
+          </div>
+          <div className="vv2-assumptions-fields">
+            <div className="vv2-assumption-field vv2-assumption-field-1">
+              <BotShieldTextField
+                label="Estimated value of one blocked harmful event ($)"
+                min="0"
+                type="number"
+                value={String(draft.estimatedValuePerBlockedEvent ?? 0)}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    estimatedValuePerBlockedEvent: event.target.value,
+                  }))
+                }
+              />
+              <p className="vv2-assumption-field-help">
+                Your estimate of the business value protected when BotShield blocks a harmful
+                event.
+              </p>
+            </div>
+            <div className="vv2-assumption-field vv2-assumption-field-2">
+              <BotShieldTextField
+                label="Estimated value of one challenged event ($)"
+                min="0"
+                type="number"
+                value={String(draft.estimatedValuePerChallenge ?? 0)}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    estimatedValuePerChallenge: event.target.value,
+                  }))
+                }
+              />
+              <p className="vv2-assumption-field-help">
+                Your estimate of the business value associated with a suspicious event BotShield
+                challenges.
+              </p>
+            </div>
+            <div className="vv2-assumption-field vv2-assumption-field-3">
+              <BotShieldTextField
+                label="Staff minutes saved per intervention"
+                min="0"
+                type="number"
+                value={String(draft.staffMinutesSavedPerIntervention ?? 0)}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    staffMinutesSavedPerIntervention: event.target.value,
+                  }))
+                }
+              />
+              <p className="vv2-assumption-field-help">
+                Estimated manual review or response time BotShield saves when it handles an
+                intervention.
+              </p>
+            </div>
+            <div className="vv2-assumption-field vv2-assumption-field-4">
+              <BotShieldTextField
+                label="Estimated staff hourly cost ($)"
+                min="0"
+                type="number"
+                value={String(draft.staffHourlyCost ?? 0)}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    staffHourlyCost: event.target.value,
+                  }))
+                }
+              />
+              <p className="vv2-assumption-field-help">
+                Used only to estimate the value of staff time saved.
+              </p>
+            </div>
+          </div>
         </div>
-        <div>
-          <BotShieldTextField
-            label="Estimated value per challenged event ($)"
-            type="number"
-            min="0"
-            value={String(draft.estimatedValuePerChallenge ?? 0)}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                estimatedValuePerChallenge: event.target.value,
-              }))
-            }
-          />
-          <p className="vv2-assumption-field-help">
-            Estimated benefit when BotShield challenges suspicious visitors.
-          </p>
+
+        <AssumptionsPreview
+          activity={activity}
+          allocatedPlanCost={allocatedPlanCost}
+          currency={currency}
+          draft={draft}
+          previewTick={previewTick}
+        />
+
+        <div className="vv2-assumptions-modal-actions">
+          <BotShieldStack direction="inline" gap="base">
+            <BotShieldPolarisButton disabled={saving} onClick={onSave} variant="primary">
+              Save assumptions
+            </BotShieldPolarisButton>
+            <BotShieldPolarisButton
+              disabled={saving}
+              onClick={() => hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID)}
+              variant="secondary"
+            >
+              Cancel
+            </BotShieldPolarisButton>
+            <BotShieldPolarisButton disabled={saving} onClick={onReset} variant="tertiary">
+              Reset
+            </BotShieldPolarisButton>
+          </BotShieldStack>
         </div>
-        <div>
-          <BotShieldTextField
-            label="Staff minutes saved per intervention"
-            type="number"
-            min="0"
-            value={String(draft.staffMinutesSavedPerIntervention ?? 0)}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                staffMinutesSavedPerIntervention: event.target.value,
-              }))
-            }
-          />
-          <p className="vv2-assumption-field-help">
-            Time your team would spend handling each protection event manually.
-          </p>
-        </div>
-        <div>
-          <BotShieldTextField
-            label="Estimated staff hourly cost ($)"
-            type="number"
-            min="0"
-            value={String(draft.staffHourlyCost ?? 0)}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                staffHourlyCost: event.target.value,
-              }))
-            }
-          />
-          <p className="vv2-assumption-field-help">
-            Blended hourly cost used to estimate staff time savings.
-          </p>
-        </div>
-        <BotShieldStack direction="inline" gap="base">
-          <BotShieldPolarisButton variant="primary" disabled={saving} onClick={onSave}>
-            Save assumptions
-          </BotShieldPolarisButton>
-          <BotShieldPolarisButton
-            variant="secondary"
-            disabled={saving}
-            onClick={() => hideBotShieldModal(VALUE_ASSUMPTIONS_MODAL_ID)}
-          >
-            Cancel
-          </BotShieldPolarisButton>
-          <BotShieldPolarisButton variant="tertiary" disabled={saving} onClick={onReset}>
-            Reset
-          </BotShieldPolarisButton>
-        </BotShieldStack>
-      </BotShieldStack>
+      </div>
     </BotShieldNativeModal>
   );
 }
@@ -1163,8 +1383,8 @@ export default function ValuePage() {
       <BotShieldPageShell className="botshield-value-v2-content">
         <div
           className="botshield-value-v2"
-          data-value-layout="live-merchant-economics"
-          data-value-ui-revision="flagship-v9"
+          data-value-layout="assumption-transparent-value"
+          data-value-ui-revision="flagship-v10"
         >
           <header className="vv2-header vv2-header-enter">
             <div className="vv2-header-copy vv2-header-enter-copy">
@@ -1181,7 +1401,12 @@ export default function ValuePage() {
               </p>
             </div>
             <div className="vv2-header-actions vv2-header-enter-actions">
-              <button className="vv2-btn vv2-btn-secondary" onClick={openAssumptions} type="button">
+              <button
+                className="vv2-btn vv2-btn-secondary"
+                onClick={openAssumptions}
+                title={TOOLTIPS.editAssumptions}
+                type="button"
+              >
                 Edit assumptions
               </button>
               {loading && payload ? (
@@ -1272,13 +1497,18 @@ export default function ValuePage() {
                   ) : null}
                 </div>
 
+                <ProtectionDeliveredStrip activity={activity} />
+
                 <div className="vv2-command-grid">
-                  <div className="vv2-command-primary">
+                  <div className="vv2-command-primary vv2-financial-impact">
                     <ValueMetric
-                      eyebrow="Financial outcome"
+                      eyebrow="Estimated financial impact"
                       label="Estimated protected value"
                       large
-                      positive={configured && (economics.estimatedValueProtected || 0) > 0}
+                      positive={false}
+                      provenanceChip={
+                        configured ? "Based on your assumptions" : undefined
+                      }
                       settleKey={dataSettleKey}
                       strong={configured && economics.estimatedValueProtected != null}
                       unavailable={!configured || economics.estimatedValueProtected == null}
@@ -1291,14 +1521,36 @@ export default function ValuePage() {
                       )}
                       helpText={
                         configured
-                          ? "Estimated from observed protection and configured assumptions."
-                          : "Configure assumptions to unlock your financial estimate."
+                          ? activity.interventions > 0
+                            ? `Calculated from your saved assumptions and ${formatCount(activity.interventions)} recorded interventions.`
+                            : "Calculated from your saved assumptions and current observed activity."
+                          : "Set your business assumptions to estimate the financial impact of BotShield's recorded protection activity."
                       }
                     />
+                    {configured && economics.estimatedValueProtected != null ? (
+                      <>
+                        <p className="vv2-assumption-disclaimer">
+                          Your estimate reflects the business values you&apos;ve provided. It
+                          does not represent the total value of BotShield protection.
+                        </p>
+                        <button
+                          className="vv2-link-btn vv2-edit-assumptions-link"
+                          onClick={openAssumptions}
+                          type="button"
+                        >
+                          Edit assumptions
+                        </button>
+                      </>
+                    ) : null}
                     <div className="vv2-command-secondary">
                       <div className="vv2-metric-col vv2-metric-col-1">
                         <ValueMetric
                           label="Estimated net value"
+                          negative={
+                            configured &&
+                            economics.estimatedNetValue != null &&
+                            economics.estimatedNetValue < 0
+                          }
                           settleKey={dataSettleKey}
                           strong={configured && economics.estimatedNetValue != null}
                           unavailable={!configured || economics.estimatedNetValue == null}
@@ -1309,6 +1561,11 @@ export default function ValuePage() {
                             currency,
                             configured,
                           )}
+                          helpText={
+                            configured && economics.estimatedNetValue != null
+                              ? "Calculated from your assumptions and BotShield cost."
+                              : undefined
+                          }
                         />
                       </div>
                       <div className="vv2-metric-col vv2-metric-col-2">
@@ -1744,8 +2001,11 @@ export default function ValuePage() {
         </div>
       </BotShieldPageShell>
 
-      {assumptionDraft ? (
+      {assumptionDraft && payload ? (
         <AssumptionsModal
+          activity={activity}
+          allocatedPlanCost={economics.allocatedPlanCost}
+          currency={currency}
           draft={assumptionDraft}
           onReset={() => void resetAssumptions()}
           onSave={() => void saveAssumptions()}

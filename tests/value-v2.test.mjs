@@ -6,6 +6,7 @@ import {
   buildValueV2DashboardPayload,
   buildValueV2Projection,
   buildValueV2Trend,
+  calculateValueV2Economics,
   normalizeValueV2Range,
   sanitizeValueV2Assumptions,
   VALUE_V2_ASSUMPTION_DEFAULTS,
@@ -194,13 +195,13 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v9 build marker is present on Value root", async () => {
+test("flagship-v10 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v9"/);
-  assert.match(page, /data-value-layout="live-merchant-economics"/);
+  assert.match(page, /data-value-ui-revision="flagship-v10"/);
+  assert.match(page, /data-value-layout="assumption-transparent-value"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -220,7 +221,7 @@ test("impact chart keeps observed event counts separate from financial estimates
   assert.doesNotMatch(chartBody, /formatValueV2Currency/);
 });
 
-test("flagship-v9 uses ROI command center instead of dark executive hero", async () => {
+test("flagship-v10 uses ROI command center instead of dark executive hero", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -263,7 +264,7 @@ test("Value horizon exposes 30D 6M and 1Y controls with plan spend rail", async 
   assert.match(css, /\.vv2-horizon-metrics-primary/);
 });
 
-test("flagship-v9 adds live trust rail, value status, and transparency surfaces", async () => {
+test("flagship-v10 adds assumption transparency surfaces and live preview", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -275,17 +276,67 @@ test("flagship-v9 adds live trust rail, value status, and transparency surfaces"
 
   assert.match(page, /LiveDataTrustRail/);
   assert.match(page, /ValueStatusBadge/);
-  assert.match(page, /CalculationMethodology/);
-  assert.match(page, /resolveUnavailableReason/);
-  assert.match(page, /deriveValueStatus/);
-  assert.match(page, /vv2-trust-rail/);
-  assert.match(page, /vv2-value-status/);
-  assert.match(page, /vv2-assumptions-used/);
-  assert.match(page, /is-refreshing/);
-  assert.match(css, /\.vv2-trust-rail/);
-  assert.match(css, /\.vv2-value-status/);
-  assert.match(css, /\.vv2-assumptions-used/);
-  assert.match(css, /\.vv2-calc-trace/);
+  assert.match(page, /ProtectionDeliveredStrip/);
+  assert.match(page, /AssumptionsPreview/);
+  assert.match(page, /deriveAssumptionPreview/);
+  assert.match(page, /Based on your assumptions/);
+  assert.match(page, /Estimated financial impact/);
+  assert.match(page, /Protection delivered/);
+  assert.match(page, /does not represent the total value of BotShield protection/);
+  assert.match(page, /calculateValueV2Economics/);
+  assert.match(page, /vv2-provenance-chip/);
+  assert.match(page, /vv2-assumptions-preview/);
+  assert.match(page, /is-negative/);
+  assert.match(css, /\.vv2-protection-delivered/);
+  assert.match(css, /\.vv2-assumptions-preview/);
+  assert.match(css, /\.vv2-provenance-chip/);
+});
+
+test("assumption preview uses audited economics formula without persisting draft", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /function deriveAssumptionPreview/);
+  assert.match(page, /calculateValueV2Economics/);
+  assert.doesNotMatch(page, /safeFetchJson[\s\S]{0,120}assumptionDraft/);
+
+  const activity = {
+    threatsDetected: 100,
+    threatsBlocked: 100,
+    challengesIssued: 20,
+    interventions: 120,
+    threatsStopped: 100,
+  };
+  const assumptions = sanitizeValueV2Assumptions({
+    estimatedValuePerBlockedEvent: 0.02,
+    estimatedValuePerChallenge: 0,
+    staffMinutesSavedPerIntervention: 0,
+    staffHourlyCost: 0,
+    merchantConfigured: true,
+  });
+  const economics = calculateValueV2Economics({
+    activity,
+    assumptions,
+    allocatedPlanCost: 28.6,
+    assumptionsConfigured: true,
+  });
+  assert.equal(economics.estimatedValueProtected, 2);
+  assert.equal(economics.estimatedNetValue, -26.6);
+  assert.ok(economics.estimatedNetValue < 0);
+});
+
+test("low assumption scenario remains truthful in UI copy", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /vv2-assumption-disclaimer/);
+  assert.match(page, /Calculated from your assumptions and BotShield cost/);
+  assert.match(page, /Estimated ROI uses your saved assumptions/);
+  assert.match(page, /Estimates are not guaranteed savings/);
+  assert.doesNotMatch(page, /increase your assumption/i);
+  assert.doesNotMatch(page, /Money saved/i);
 });
 
 test("Value page does not hardcode merchant plan price in component logic", async () => {
@@ -692,8 +743,8 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v9"/);
-  assert.match(page, /data-value-layout="live-merchant-economics"/);
+  assert.match(page, /data-value-ui-revision="flagship-v10"/);
+  assert.match(page, /data-value-layout="assumption-transparent-value"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
