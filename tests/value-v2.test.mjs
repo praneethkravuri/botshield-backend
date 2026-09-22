@@ -195,14 +195,14 @@ test("estimated values are clearly distinguished in Value UI", async () => {
   assert.match(page, /formatFinancial/);
 });
 
-test("flagship-v11 build marker is present on Value root", async () => {
+test("flagship-v12 build marker is present on Value root", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
   );
-  assert.match(page, /data-value-ui-revision="flagship-v11"/);
-  assert.match(page, /data-value-layout="assumptions-experience-v11"/);
-  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v10"/);
+  assert.match(page, /data-value-ui-revision="flagship-v12"/);
+  assert.match(page, /data-value-layout="premium-assumptions-workspace"/);
+  assert.doesNotMatch(page, /data-value-ui-revision="flagship-v11"/);
 });
 
 test("impact chart keeps observed event counts separate from financial estimates", async () => {
@@ -265,7 +265,7 @@ test("Value horizon exposes 30D 6M and 1Y controls with plan spend rail", async 
   assert.match(css, /\.vv2-horizon-metrics-primary/);
 });
 
-test("flagship-v11 adds assumption transparency surfaces and live preview", async () => {
+test("flagship-v12 adds assumption transparency surfaces and live preview", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -287,12 +287,39 @@ test("flagship-v11 adds assumption transparency surfaces and live preview", asyn
   assert.match(page, /calculateValueV2Economics/);
   assert.match(page, /vv2-provenance-chip/);
   assert.match(page, /vv2-assumptions-preview/);
-  assert.match(page, /Live estimate preview/);
+  assert.match(page, /Live value preview/);
   assert.match(page, /is-negative/);
   assert.match(css, /\.vv2-protection-delivered/);
-  assert.match(css, /\.vv2-assumptions-preview/);
+  assert.match(css, /\.vv2-assumptions-preview-v12/);
   assert.match(css, /\.vv2-provenance-chip/);
-  assert.match(css, /\.vv2-assumptions-modal-v11/);
+  assert.match(css, /\.vv2-assumptions-modal-v12/);
+  assert.match(css, /\.vv2-assumptions-workspace/);
+  assert.match(css, /\.vv2-preview-stats/);
+});
+
+test("flagship-v12 premium assumptions workspace preserves one-click modal architecture", async () => {
+  const page = await readFile(
+    new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
+    "utf8",
+  );
+  const css = await readFile(
+    new URL("../app/styles/value-v2-page.css", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(page, /const \[assumptionsModalOpen, setAssumptionsModalOpen\]/);
+  assert.match(page, /open=\{assumptionsModalOpen\}/);
+  assert.match(page, /assumptionsOpenerRef/);
+  assert.match(page, /vv2-assumptions-workspace/);
+  assert.match(page, /vv2-assumptions-trust-note/);
+  assert.match(page, /vv2-preview-total-block/);
+  assert.match(page, /Based on your current assumptions/);
+  assert.match(page, /No interventions yet/);
+  assert.doesNotMatch(page, /vv2-assumptions-trust-strip/);
+  assert.doesNotMatch(page, /showBotShieldModal/);
+  assert.match(css, /\.vv2-assumptions-modal-v12/);
+  assert.match(css, /\.vv2-assumptions-preview-v12/);
+  assert.match(css, /max-height: min\(80vh/);
 });
 
 test("assumptions modal opens on first click via persistent mount and open state", async () => {
@@ -316,7 +343,7 @@ test("assumptions modal opens on first click via persistent mount and open state
   assert.match(page, /\{payload \?[\s\S]*<AssumptionsModal/);
 });
 
-test("assumptions modal v11 structure uses grouped sections and designed preview panel", async () => {
+test("assumptions modal v12 structure uses workspace panel and financial preview", async () => {
   const page = await readFile(
     new URL("../app/components/admin/ValuePage.jsx", import.meta.url),
     "utf8",
@@ -331,15 +358,16 @@ test("assumptions modal v11 structure uses grouped sections and designed preview
   assert.match(page, /Blocked harmful event/);
   assert.match(page, /Challenged event/);
   assert.match(page, /Minutes saved per intervention/);
-  assert.match(page, /vv2-assumptions-trust-strip/);
+  assert.match(page, /vv2-assumptions-trust-note/);
   assert.match(page, /No interventions yet/);
-  assert.match(page, /Based on the assumptions currently entered above/);
+  assert.match(page, /Based on your current assumptions/);
   assert.match(page, /isAssumptionFieldInvalid/);
   assert.match(page, /AssumptionInputField/);
-  assert.match(css, /\.vv2-assumptions-modal-body/);
+  assert.match(css, /\.vv2-assumptions-modal-main/);
   assert.match(css, /\.vv2-assumptions-modal-footer/);
   assert.match(css, /\.vv2-assumption-input-control/);
-  assert.match(css, /max-height: min\(88vh/);
+  assert.match(css, /\.vv2-preview-formula-row/);
+  assert.match(css, /min-height: 46px/);
 });
 
 test("assumptions modal one-click interaction reaches visible state on first intent", async () => {
@@ -846,8 +874,8 @@ test("Value premium visual layer keeps isolated styling contracts", async () => 
   assert.match(page, /deriveBreakEvenInterventions/);
   assert.match(page, /formatValueToCostRatio/);
   assert.match(page, /economics\.valueToCostRatio/);
-  assert.match(page, /data-value-ui-revision="flagship-v11"/);
-  assert.match(page, /data-value-layout="assumptions-experience-v11"/);
+  assert.match(page, /data-value-ui-revision="flagship-v12"/);
+  assert.match(page, /data-value-layout="premium-assumptions-workspace"/);
   assert.match(page, /vv2-readiness-path/);
   assert.doesNotMatch(page, /Value economics/);
   assert.doesNotMatch(page, /deriveAnnualizedEstimates/);
