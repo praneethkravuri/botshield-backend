@@ -12,16 +12,6 @@
   background: rgba(18, 19, 20, 0.42);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  animation: botshield-challenge-overlay-enter 260ms ease-out;
-}
-
-@keyframes botshield-challenge-overlay-enter {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 .botshield-challenge-card {
@@ -149,10 +139,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #botshield-challenge-overlay {
-    animation: none;
-  }
-
   .botshield-challenge-button {
     transition: none;
   }

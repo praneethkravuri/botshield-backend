@@ -1,4 +1,4 @@
-/* BotShield storefront bundle botshield-9 */
+/* BotShield storefront bundle botshield-10 (ede65cb challenge UI) */
 (function () {
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;

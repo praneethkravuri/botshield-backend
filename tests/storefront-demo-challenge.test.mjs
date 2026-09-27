@@ -17,7 +17,8 @@ test("demo store can schedule a one-time delayed challenge presentation", async 
   assert.match(js, /scheduleDemoChallengePresentation/);
   assert.match(js, /demoPresentation: true/);
   assert.match(js, /Continue shopping/);
-  assert.doesNotMatch(js, /Continue to store/);
+  assert.doesNotMatch(js, /Continue to store/i);
+  assert.match(js, /botshield-challenge-brand/);
 
   assert.match(js, /window\.location\.hostname === demoStoreHost/);
   assert.match(js, /cancelDemoChallengePresentation\(\)/);
