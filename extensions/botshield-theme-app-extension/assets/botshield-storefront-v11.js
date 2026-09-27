@@ -1,4 +1,4 @@
-/* BotShield storefront bundle botshield-10 (ede65cb challenge UI) */
+/* BotShield storefront bundle botshield-11 */
 (function () {
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;
@@ -114,6 +114,7 @@
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
+    overlay.setAttribute("data-botshield-challenge-build", "botshield-11");
 
     overlay.innerHTML =
       '<div class="botshield-challenge-card">' +

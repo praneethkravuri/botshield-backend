@@ -5,14 +5,14 @@ import test from "node:test";
 test("storefront challenge UI matches approved ede65cb premium experience", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.js",
       import.meta.url,
     ),
     "utf8",
   );
   const css = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield.css",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.css",
       import.meta.url,
     ),
     "utf8",
@@ -21,7 +21,7 @@ test("storefront challenge UI matches approved ede65cb premium experience", asyn
   assert.match(js, /Quick security check/);
   assert.match(js, /Please confirm you're a shopper to continue/);
   assert.match(js, /Continue shopping/);
-  assert.match(js, /BotShield storefront bundle botshield-10 \(ede65cb challenge UI\)/);
+  assert.match(js, /BotShield storefront bundle botshield-11/);
   assert.doesNotMatch(js, /Continue to store/i);
 
   const liquid = await readFile(
@@ -31,7 +31,12 @@ test("storefront challenge UI matches approved ede65cb premium experience", asyn
     ),
     "utf8",
   );
-  assert.match(liquid, /data-storefront-build="botshield-10"/);
+  assert.match(liquid, /data-storefront-build="botshield-11"/);
+  assert.match(liquid, /botshield-storefront-v11\.js/);
+  assert.match(liquid, /botshield-storefront-v11\.css/);
+  assert.doesNotMatch(liquid, /"javascript": "botshield\.js"/);
+  assert.doesNotMatch(liquid, /"stylesheet": "botshield\.css"/);
+  assert.match(js, /data-botshield-challenge-build", "botshield-11"/);
   assert.match(js, /Leave store/);
   assert.match(js, /Protected by BotShield/);
   assert.match(js, /botshield-challenge-brand/);

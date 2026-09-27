@@ -5,7 +5,7 @@ import test from "node:test";
 test("demo store can schedule a one-time delayed challenge presentation", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.js",
       import.meta.url,
     ),
     "utf8",
@@ -36,7 +36,7 @@ test("demo store can schedule a one-time delayed challenge presentation", async 
 test("real challenge flow remains separate from demo presentation flag", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.js",
       import.meta.url,
     ),
     "utf8",
