@@ -20,7 +20,8 @@ test("storefront challenge UI uses reassuring premium copy and preserved actions
 
   assert.match(js, /Quick security check/);
   assert.match(js, /Please confirm you're a shopper to continue/);
-  assert.match(js, /Continue to store/);
+  assert.match(js, /Continue shopping/);
+  assert.doesNotMatch(js, /Continue to store/);
   assert.match(js, /Leave store/);
   assert.match(js, /Protected by BotShield/);
   assert.match(js, /sessionStorage\.setItem\(challengeStorageKey, payload\.challengeToken\)/);

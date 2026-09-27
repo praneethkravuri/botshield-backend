@@ -6,12 +6,55 @@
   if (currentPath.indexOf("/apps/botshield/blocked") === 0) return;
 
   var challengeStorageKey = "botshield_challenge_token";
+  var demoChallengeSeenKey = "botshield_demo_challenge_seen";
+  var demoStoreHost = "botshield-demo.myshopify.com";
+  var demoChallengeDelayMs = 2000;
   var challengeToken = "";
+  var demoChallengeTimer = null;
 
   try {
     challengeToken = window.sessionStorage.getItem(challengeStorageKey) || "";
   } catch (error) {
     challengeToken = "";
+  }
+
+  function isDemoStore() {
+    return window.location.hostname === demoStoreHost;
+  }
+
+  function hasSeenDemoChallenge() {
+    try {
+      return window.sessionStorage.getItem(demoChallengeSeenKey) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function markDemoChallengeSeen() {
+    try {
+      window.sessionStorage.setItem(demoChallengeSeenKey, "1");
+    } catch (error) {
+      console.warn("[botshield] unable to persist demo challenge flag", error);
+    }
+  }
+
+  function cancelDemoChallengePresentation() {
+    if (demoChallengeTimer) {
+      window.clearTimeout(demoChallengeTimer);
+      demoChallengeTimer = null;
+    }
+  }
+
+  function scheduleDemoChallengePresentation() {
+    if (!isDemoStore() || hasSeenDemoChallenge()) return;
+    if (demoChallengeTimer) return;
+
+    demoChallengeTimer = window.setTimeout(function () {
+      demoChallengeTimer = null;
+      if (document.getElementById("botshield-challenge-overlay")) return;
+      if (hasSeenDemoChallenge()) return;
+      renderChallenge({ demoPresentation: true });
+    }, demoChallengeDelayMs);
   }
 
   var params = new URLSearchParams();
@@ -41,12 +84,19 @@
         (payload.decision === "block" || payload.action === "blocked") &&
         payload.blockPageUrl
       ) {
+        cancelDemoChallengePresentation();
         window.location.assign(payload.blockPageUrl);
         return;
       }
 
       if (payload.decision === "challenge" || payload.action === "challenged") {
+        cancelDemoChallengePresentation();
         renderChallenge(payload);
+        return;
+      }
+
+      if (isDemoStore()) {
+        scheduleDemoChallengePresentation();
       }
     })
     .catch(function (error) {
@@ -55,6 +105,8 @@
 
   function renderChallenge(payload) {
     if (document.getElementById("botshield-challenge-overlay")) return;
+
+    var isDemoPresentation = Boolean(payload && payload.demoPresentation);
 
     var overlay = document.createElement("div");
     overlay.id = "botshield-challenge-overlay";
@@ -73,7 +125,7 @@
       '<h2 id="botshield-challenge-title">Quick security check</h2>' +
       "<p class=\"botshield-challenge-body\">Please confirm you're a shopper to continue.</p>" +
       '<div class="botshield-challenge-actions">' +
-      '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue to store</button>' +
+      '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue shopping</button>' +
       '<button type="button" class="botshield-challenge-button botshield-challenge-button--secondary" id="botshield-leave-button">Leave store</button>' +
       "</div>" +
       '<p class="botshield-challenge-footer">Protected by BotShield</p>' +
@@ -89,6 +141,12 @@
     }
 
     continueButton.addEventListener("click", function () {
+      if (isDemoPresentation) {
+        markDemoChallengeSeen();
+        overlay.remove();
+        return;
+      }
+
       if (payload.challengeToken) {
         try {
           window.sessionStorage.setItem(challengeStorageKey, payload.challengeToken);
@@ -100,6 +158,9 @@
     });
 
     leaveButton.addEventListener("click", function () {
+      if (isDemoPresentation) {
+        markDemoChallengeSeen();
+      }
       window.location.assign("/");
     });
   }
