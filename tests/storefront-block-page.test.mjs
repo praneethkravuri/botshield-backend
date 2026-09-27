@@ -43,6 +43,8 @@ test("storefront block page uses full-page Access Denied layout without bypass c
   assert.match(html, /228px/);
   assert.match(html, /#2C6ECB|#2c6ecb/i);
   assert.match(html, /min-height: 100vh/);
+  assert.match(html, /max-height: 860px/);
+  assert.match(html, /overflow-y: auto/);
   assert.match(html, /prefers-reduced-motion: reduce/);
   assert.match(html, /<meta name="robots" content="noindex, nofollow" \/>/);
 

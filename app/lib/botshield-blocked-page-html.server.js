@@ -111,6 +111,7 @@ const BOTSHIELD_BLOCKED_PAGE_STYLE = `
   }
   body {
     min-height: 100vh;
+    min-height: 100dvh;
     font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -119,12 +120,16 @@ const BOTSHIELD_BLOCKED_PAGE_STYLE = `
     position: relative;
     isolation: isolate;
     min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
+    max-width: 100vw;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(24px, 5vw, 56px) clamp(20px, 4vw, 32px);
-    overflow: hidden;
+    padding: clamp(20px, 3.5vh, 56px) clamp(20px, 4vw, 32px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
   }
   .bs-block-bg {
     position: absolute;
@@ -195,7 +200,7 @@ const BOTSHIELD_BLOCKED_PAGE_STYLE = `
     justify-content: center;
     margin: 0 auto clamp(24px, 4.5vw, 32px);
     width: min(100%, 380px);
-    min-height: clamp(160px, 28vw, 300px);
+    min-height: clamp(140px, min(28vw, 24vh), 300px);
     animation: bs-block-logo-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .bs-block-rings {
@@ -365,6 +370,68 @@ const BOTSHIELD_BLOCKED_PAGE_STYLE = `
     .bs-block-back-button {
       min-height: 46px;
       padding: 12px 28px;
+    }
+  }
+  @media (max-height: 860px) and (min-width: 641px) {
+    .bs-block-page {
+      align-items: center;
+      padding-top: clamp(12px, 2.2vh, 28px);
+      padding-bottom: clamp(16px, 2.8vh, 32px);
+    }
+    .bs-block-logo-shell {
+      margin-bottom: clamp(12px, 2vh, 22px);
+      min-height: clamp(112px, 20vh, 240px);
+      width: min(100%, 340px);
+    }
+    .bs-block-logo--hero {
+      width: clamp(128px, min(20vw, 18vh), 200px);
+      max-height: min(200px, 22vh);
+    }
+    .bs-block-glow {
+      width: clamp(150px, min(36vw, 34vh), 280px);
+    }
+    .bs-block-rings {
+      width: min(90%, 320px);
+    }
+    .bs-block-eyebrow {
+      margin-bottom: clamp(10px, 1.6vh, 16px);
+      gap: 10px;
+    }
+    .bs-block-title {
+      margin-bottom: clamp(10px, 1.6vh, 16px);
+      font-size: clamp(32px, min(5.2vw, 6.2vh), 56px);
+    }
+    .bs-block-description {
+      margin-bottom: clamp(16px, 2.4vh, 24px);
+      font-size: clamp(15px, 2.2vw, 18px);
+      line-height: 1.55;
+    }
+    .bs-block-actions {
+      margin-bottom: clamp(16px, 2.6vh, 26px);
+    }
+    .bs-block-divider {
+      margin-bottom: clamp(12px, 2vh, 18px);
+    }
+    .bs-block-brand {
+      gap: 10px;
+    }
+    .bs-block-edge {
+      height: min(78vh, 640px);
+    }
+  }
+  @media (max-height: 720px) and (min-width: 641px) {
+    .bs-block-logo-shell {
+      min-height: clamp(96px, 17vh, 200px);
+    }
+    .bs-block-logo--hero {
+      width: clamp(112px, min(18vw, 16vh), 172px);
+      max-height: min(172px, 19vh);
+    }
+    .bs-block-title {
+      font-size: clamp(28px, min(4.8vw, 5.4vh), 48px);
+    }
+    .bs-block-actions {
+      margin-bottom: clamp(12px, 2vh, 20px);
     }
   }
   @keyframes bs-block-grid-drift {
