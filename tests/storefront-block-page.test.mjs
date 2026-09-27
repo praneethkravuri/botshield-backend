@@ -64,6 +64,8 @@ test("storefront block page uses full-page Access Denied layout without bypass c
   assert.match(js, /blockPageUrl/);
   assert.match(js, /window\.location\.assign\(payload\.blockPageUrl\)/);
   assert.match(enforcement, /\/apps\/botshield\/blocked/);
+  assert.match(enforcement, /return "\/apps\/botshield\/blocked"/);
+  assert.doesNotMatch(enforcement, /searchParams\.set\(\s*"ip"/);
   assert.match(proxyRoute, /buildBotShieldBlockedPageHtml/);
   assert.match(proxyRoute, /authenticate\.public\.appProxy/);
 });

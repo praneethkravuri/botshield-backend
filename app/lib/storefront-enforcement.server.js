@@ -14,7 +14,6 @@ import {
   getStorefrontActionForLog,
   resolveStorefrontDecision,
 } from "./storefront-decision.server";
-import { maskIpAddress } from "./security-events";
 import { lookupNetworkIntelligence } from "./network-intelligence.server";
 import { maybeSendDueWeeklyReport } from "./weekly-reports.server";
 
@@ -256,17 +255,8 @@ async function upsertBlockedIp({ shop, ipAddress, reasons }) {
   });
 }
 
-function buildBlockedProxyUrl(request, { reason, eventId, ipAddress }) {
-  const url = new URL(request.url);
-  url.pathname = "/apps/botshield/blocked";
-  url.search = "";
-  url.searchParams.set(
-    "reason",
-    reason || "Suspicious traffic was detected from this session.",
-  );
-  url.searchParams.set("ref", `BS-${String(eventId).padStart(6, "0")}`);
-  url.searchParams.set("ip", maskIpAddress(ipAddress));
-  return `${url.pathname}?${url.searchParams.toString()}`;
+function buildBlockedProxyUrl() {
+  return "/apps/botshield/blocked";
 }
 
 export async function evaluateStorefrontRequest(request, shop) {
@@ -465,13 +455,6 @@ export async function evaluateStorefrontRequest(request, shop) {
             pathVisited,
           })
         : null,
-    blockPageUrl:
-      decision === "block"
-        ? buildBlockedProxyUrl(request, {
-            reason: detection.reasons[0],
-            eventId: event.id,
-            ipAddress,
-          })
-        : null,
+    blockPageUrl: decision === "block" ? buildBlockedProxyUrl() : null,
   };
 }

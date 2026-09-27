@@ -163,7 +163,14 @@ test("public storefront decisions do not expose merchant settings", async () => 
     publicResponse,
     /\n {4}(?:ipAddress|riskScore|threatLevel|reasonCodes|networkIntelligence|alertDelivery|referer)[,:]/,
   );
-  assert.match(source, /set\("ip", maskIpAddress\(ipAddress\)\)/);
+  const blockedUrlBuilder = source.slice(
+    source.indexOf("function buildBlockedProxyUrl"),
+    source.indexOf("export async function evaluateStorefrontRequest"),
+  );
+  assert.match(blockedUrlBuilder, /return "\/apps\/botshield\/blocked"/);
+  assert.doesNotMatch(blockedUrlBuilder, /searchParams\.set\(\s*"reason"/);
+  assert.doesNotMatch(blockedUrlBuilder, /searchParams\.set\(\s*"ref"/);
+  assert.doesNotMatch(blockedUrlBuilder, /searchParams\.set\(\s*"ip"/);
 });
 
 test("storefront script sends only fields required for enforcement", async () => {
