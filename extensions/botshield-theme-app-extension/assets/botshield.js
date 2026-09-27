@@ -58,22 +58,35 @@
 
     var overlay = document.createElement("div");
     overlay.id = "botshield-challenge-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
 
     overlay.innerHTML =
       '<div class="botshield-challenge-card">' +
-      '<div class="botshield-challenge-badge">BotShield Verification</div>' +
-      "<h2>We need a quick verification</h2>" +
-      "<p>This session showed signals that look unusual for a normal shopper. Confirm you want to continue to the storefront.</p>" +
-      '<div class="botshield-challenge-actions">' +
-      '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue to Store</button>' +
-      '<button type="button" class="botshield-challenge-button botshield-challenge-button--secondary" id="botshield-leave-button">Leave Page</button>' +
+      '<div class="botshield-challenge-brand">' +
+      '<svg class="botshield-challenge-mark" aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" focusable="false">' +
+      '<path d="M12 2.25 4.5 5.25v5.25c0 5.003 3.456 9.666 7.5 10.875 4.044-1.209 7.5-5.872 7.5-10.875V5.25L12 2.25Z" fill="currentColor"/>' +
+      "</svg>" +
+      '<span class="botshield-challenge-brand-name">BotShield</span>' +
       "</div>" +
+      '<h2 id="botshield-challenge-title">Quick security check</h2>' +
+      "<p class=\"botshield-challenge-body\">Please confirm you're a shopper to continue.</p>" +
+      '<div class="botshield-challenge-actions">' +
+      '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue to store</button>' +
+      '<button type="button" class="botshield-challenge-button botshield-challenge-button--secondary" id="botshield-leave-button">Leave store</button>' +
+      "</div>" +
+      '<p class="botshield-challenge-footer">Protected by BotShield</p>' +
       "</div>";
 
     document.body.appendChild(overlay);
 
     var continueButton = document.getElementById("botshield-continue-button");
     var leaveButton = document.getElementById("botshield-leave-button");
+
+    if (continueButton && typeof continueButton.focus === "function") {
+      continueButton.focus();
+    }
 
     continueButton.addEventListener("click", function () {
       if (payload.challengeToken) {
