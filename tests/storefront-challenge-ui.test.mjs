@@ -21,7 +21,17 @@ test("storefront challenge UI uses reassuring premium copy and preserved actions
   assert.match(js, /Quick security check/);
   assert.match(js, /Please confirm you're a shopper to continue/);
   assert.match(js, /Continue shopping/);
+  assert.match(js, /BotShield storefront bundle botshield-9/);
   assert.doesNotMatch(js, /Continue to store/);
+
+  const liquid = await readFile(
+    new URL(
+      "../extensions/botshield-theme-app-extension/blocks/botshield-embed.liquid",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(liquid, /data-storefront-build="botshield-9"/);
   assert.match(js, /Leave store/);
   assert.match(js, /Protected by BotShield/);
   assert.match(js, /sessionStorage\.setItem\(challengeStorageKey, payload\.challengeToken\)/);

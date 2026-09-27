@@ -1,3 +1,4 @@
+/* BotShield storefront bundle botshield-9 */
 (function () {
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;
