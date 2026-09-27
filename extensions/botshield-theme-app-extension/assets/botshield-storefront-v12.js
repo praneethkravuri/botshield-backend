@@ -12,6 +12,7 @@
   var demoChallengeDelayMs = 2000;
   var challengeToken = "";
   var demoChallengeTimer = null;
+  var realEnforcementResolved = false;
   var officialLogoUrl = root.dataset.officialLogoUrl || "";
 
   try {
@@ -47,16 +48,28 @@
     }
   }
 
+  function removeDemoOverlayIfPresent() {
+    var overlay = document.getElementById("botshield-challenge-overlay");
+    if (overlay && overlay.getAttribute("data-demo-presentation") === "true") {
+      overlay.remove();
+    }
+  }
+
   function scheduleDemoChallengePresentation() {
     if (!isDemoStore() || hasSeenDemoChallenge()) return;
     if (demoChallengeTimer) return;
 
     demoChallengeTimer = window.setTimeout(function () {
       demoChallengeTimer = null;
+      if (realEnforcementResolved) return;
       if (document.getElementById("botshield-challenge-overlay")) return;
       if (hasSeenDemoChallenge()) return;
       renderChallenge({ demoPresentation: true });
     }, demoChallengeDelayMs);
+  }
+
+  if (isDemoStore()) {
+    scheduleDemoChallengePresentation();
   }
 
   var params = new URLSearchParams();
@@ -86,19 +99,22 @@
         (payload.decision === "block" || payload.action === "blocked") &&
         payload.blockPageUrl
       ) {
+        realEnforcementResolved = true;
         cancelDemoChallengePresentation();
+        removeDemoOverlayIfPresent();
         window.location.assign(payload.blockPageUrl);
         return;
       }
 
       if (payload.decision === "challenge" || payload.action === "challenged") {
+        realEnforcementResolved = true;
         cancelDemoChallengePresentation();
+        var existingOverlay = document.getElementById("botshield-challenge-overlay");
+        if (existingOverlay) {
+          existingOverlay.remove();
+        }
         renderChallenge(payload);
         return;
-      }
-
-      if (isDemoStore()) {
-        scheduleDemoChallengePresentation();
       }
     })
     .catch(function (error) {
@@ -145,6 +161,9 @@
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
     overlay.setAttribute("data-botshield-challenge-build", "botshield-12");
+    if (isDemoPresentation) {
+      overlay.setAttribute("data-demo-presentation", "true");
+    }
 
     var logoMarkup = officialLogoUrl
       ? '<img class="bs-challenge-logo" src="' +
