@@ -39,6 +39,8 @@ test("storefront block page uses full-page Access Denied layout without bypass c
   assert.match(html, /alt="BotShield"/);
   assert.match(html, /data:image\/png;base64,/);
   assert.match(html, /bs-block-logo--hero/);
+  assert.match(html, /bs-block-edge/);
+  assert.match(html, /228px/);
   assert.match(html, /#2C6ECB|#2c6ecb/i);
   assert.match(html, /min-height: 100vh/);
   assert.match(html, /prefers-reduced-motion: reduce/);
