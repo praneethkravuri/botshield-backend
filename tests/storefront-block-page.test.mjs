@@ -7,7 +7,7 @@ test("storefront block page uses full-page Access Denied layout without bypass c
   const html = buildBotShieldBlockedPageHtml();
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
       import.meta.url,
     ),
     "utf8",
@@ -75,7 +75,7 @@ test("storefront block page uses full-page Access Denied layout without bypass c
 test("challenge overlay remains separate from hard block page", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v11.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
       import.meta.url,
     ),
     "utf8",

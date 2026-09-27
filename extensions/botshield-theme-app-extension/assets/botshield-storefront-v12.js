@@ -1,4 +1,4 @@
-/* BotShield storefront bundle botshield-11 */
+/* BotShield storefront bundle botshield-12 (premium challenge UI) */
 (function () {
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;
@@ -12,6 +12,7 @@
   var demoChallengeDelayMs = 2000;
   var challengeToken = "";
   var demoChallengeTimer = null;
+  var officialLogoUrl = root.dataset.officialLogoUrl || "";
 
   try {
     challengeToken = window.sessionStorage.getItem(challengeStorageKey) || "";
@@ -104,6 +105,35 @@
       console.error("[botshield]", error);
     });
 
+  function challengeNetworkGraphic() {
+    return (
+      '<svg class="bs-challenge-network" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">' +
+      '<g stroke="#2C6ECB" stroke-width="1" fill="none" opacity="0.22">' +
+      '<path d="M0 200 L220 260 L480 220 L720 280 L980 240 L1200 300" />' +
+      '<path d="M0 540 L240 500 L520 580 L760 520 L1020 600 L1200 560" />' +
+      '<path d="M120 360 L360 320 L600 380 L840 340" opacity="0.65" />' +
+      "</g>" +
+      '<g fill="#2C6ECB">' +
+      '<circle cx="220" cy="260" r="2.5" opacity="0.38" />' +
+      '<circle cx="480" cy="220" r="2" opacity="0.32" />' +
+      '<circle cx="720" cy="280" r="2.5" opacity="0.36" />' +
+      '<circle cx="520" cy="580" r="2" opacity="0.28" />' +
+      "</g>" +
+      "</svg>"
+    );
+  }
+
+  function challengeLogoRings() {
+    return (
+      '<svg class="bs-challenge-rings" viewBox="0 0 360 360" aria-hidden="true" focusable="false">' +
+      '<circle cx="180" cy="180" r="118" fill="none" stroke="#2C6ECB" stroke-width="1" opacity="0.22" stroke-dasharray="4 10" />' +
+      '<circle cx="180" cy="180" r="96" fill="none" stroke="#2C6ECB" stroke-width="1" opacity="0.16" />' +
+      '<circle cx="180" cy="180" r="74" fill="none" stroke="#121314" stroke-width="1" opacity="0.1" />' +
+      '<path d="M72 180 H128 M232 180 H288" stroke="#2C6ECB" stroke-width="1" opacity="0.28" />' +
+      "</svg>"
+    );
+  }
+
   function renderChallenge(payload) {
     if (document.getElementById("botshield-challenge-overlay")) return;
 
@@ -114,23 +144,40 @@
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
-    overlay.setAttribute("data-botshield-challenge-build", "botshield-11");
+    overlay.setAttribute("data-botshield-challenge-build", "botshield-12");
+
+    var logoMarkup = officialLogoUrl
+      ? '<img class="bs-challenge-logo" src="' +
+        officialLogoUrl +
+        '" alt="BotShield" width="64" height="64" decoding="async" />'
+      : "";
 
     overlay.innerHTML =
-      '<div class="botshield-challenge-card">' +
-      '<div class="botshield-challenge-brand">' +
-      '<svg class="botshield-challenge-mark" aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" focusable="false">' +
-      '<path d="M12 2.25 4.5 5.25v5.25c0 5.003 3.456 9.666 7.5 10.875 4.044-1.209 7.5-5.872 7.5-10.875V5.25L12 2.25Z" fill="currentColor"/>' +
-      "</svg>" +
-      '<span class="botshield-challenge-brand-name">BotShield</span>' +
+      '<div class="bs-challenge-backdrop">' +
+      challengeNetworkGraphic() +
+      "</div>" +
+      '<div class="bs-challenge-card">' +
+      '<div class="bs-challenge-decor">' +
+      '<div class="bs-challenge-glow"></div>' +
+      challengeLogoRings() +
+      "</div>" +
+      '<div class="bs-challenge-logo-shell">' +
+      logoMarkup +
+      "</div>" +
+      '<p class="bs-challenge-brand-name">BotShield</p>' +
+      '<div class="bs-challenge-eyebrow">' +
+      '<span class="bs-challenge-eyebrow-line"></span>' +
+      "<span>PROTECTION IN ACTION.</span>" +
+      '<span class="bs-challenge-eyebrow-line"></span>' +
       "</div>" +
       '<h2 id="botshield-challenge-title">Quick security check</h2>' +
-      "<p class=\"botshield-challenge-body\">Please confirm you're a shopper to continue.</p>" +
-      '<div class="botshield-challenge-actions">' +
-      '<button type="button" class="botshield-challenge-button botshield-challenge-button--primary" id="botshield-continue-button">Continue shopping</button>' +
-      '<button type="button" class="botshield-challenge-button botshield-challenge-button--secondary" id="botshield-leave-button">Leave store</button>' +
+      "<p class=\"bs-challenge-body\">Please confirm you're a shopper to continue.</p>" +
+      '<div class="bs-challenge-actions">' +
+      '<button type="button" class="bs-challenge-button bs-challenge-button--primary" id="botshield-continue-button">Continue shopping</button>' +
+      '<button type="button" class="bs-challenge-button bs-challenge-button--secondary" id="botshield-leave-button">Leave store</button>' +
       "</div>" +
-      '<p class="botshield-challenge-footer">Protected by BotShield</p>' +
+      '<div class="bs-challenge-footer-divider"></div>' +
+      '<p class="bs-challenge-footer">Protected by BotShield</p>' +
       "</div>";
 
     document.body.appendChild(overlay);
@@ -166,5 +213,4 @@
       window.location.assign("/");
     });
   }
-
 })();
