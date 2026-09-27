@@ -5,7 +5,7 @@ import test from "node:test";
 test("demo store can schedule a one-time delayed challenge presentation", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
@@ -37,7 +37,7 @@ test("demo store can schedule a one-time delayed challenge presentation", async 
 test("demo timer starts at embed init, not after ALLOW decision response", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
@@ -73,7 +73,7 @@ test("demo timer starts at embed init, not after ALLOW decision response", async
 test("real enforcement cancels demo timer and overrides demo overlay", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
@@ -96,7 +96,7 @@ test("real enforcement cancels demo timer and overrides demo overlay", async () 
 test("challenge overlay cannot duplicate and non-demo stores skip demo timer init", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
@@ -121,7 +121,7 @@ test("challenge overlay cannot duplicate and non-demo stores skip demo timer ini
 test("real challenge flow remains separate from demo presentation flag", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",

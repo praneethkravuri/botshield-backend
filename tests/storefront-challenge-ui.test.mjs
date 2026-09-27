@@ -5,14 +5,14 @@ import test from "node:test";
 test("storefront challenge UI matches BotShield premium block-page design language", async () => {
   const js = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
   );
   const css = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.css",
+      "../extensions/botshield-theme-app-extension/assets/botshield.css",
       import.meta.url,
     ),
     "utf8",
@@ -22,7 +22,7 @@ test("storefront challenge UI matches BotShield premium block-page design langua
   assert.match(js, /Quick security check/);
   assert.match(js, /Please confirm you're a shopper to continue/);
   assert.match(js, /Continue shopping/);
-  assert.match(js, /BotShield storefront bundle botshield-12 \(premium challenge UI\)/);
+  assert.match(js, /BotShield storefront bundle botshield-14 — premium canonical asset/);
   assert.doesNotMatch(js, /Continue to store/i);
 
   const liquid = await readFile(
@@ -32,15 +32,15 @@ test("storefront challenge UI matches BotShield premium block-page design langua
     ),
     "utf8",
   );
-  assert.match(liquid, /data-storefront-build="botshield-12"/);
-  assert.match(liquid, /botshield-storefront-v12\.js/);
-  assert.match(liquid, /botshield-storefront-v12\.css/);
+  assert.match(liquid, /data-storefront-build="botshield-14"/);
+  assert.match(liquid, /"javascript": "botshield\.js"/);
+  assert.match(liquid, /"stylesheet": "botshield\.css"/);
   assert.match(liquid, /botshield-official-logo-transparent\.png/);
   assert.match(liquid, /data-official-logo-url=/);
   assert.doesNotMatch(liquid, /botshield-storefront-v11/);
-  assert.doesNotMatch(liquid, /"javascript": "botshield\.js"/);
+  assert.doesNotMatch(liquid, /botshield-storefront-v12/);
 
-  assert.match(js, /data-botshield-challenge-build", "botshield-12"/);
+  assert.match(js, /data-botshield-challenge-build", "botshield-14"/);
   assert.match(js, /bs-challenge-logo/);
   assert.match(js, /officialLogoUrl/);
   assert.match(js, /bs-challenge-rings/);

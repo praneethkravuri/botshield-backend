@@ -1,4 +1,4 @@
-/* BotShield storefront bundle botshield-12 (premium challenge UI) */
+/* BotShield storefront bundle botshield-14 — premium canonical asset */
 (function () {
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;
@@ -160,7 +160,7 @@
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
-    overlay.setAttribute("data-botshield-challenge-build", "botshield-12");
+    overlay.setAttribute("data-botshield-challenge-build", "botshield-14");
     if (isDemoPresentation) {
       overlay.setAttribute("data-demo-presentation", "true");
     }

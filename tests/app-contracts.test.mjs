@@ -176,7 +176,7 @@ test("public storefront decisions do not expose merchant settings", async () => 
 test("storefront script sends only fields required for enforcement", async () => {
   const source = await readFile(
     new URL(
-      "../extensions/botshield-theme-app-extension/assets/botshield-storefront-v12.js",
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
       import.meta.url,
     ),
     "utf8",
