@@ -7,11 +7,11 @@
   if (currentPath.indexOf("/apps/botshield/blocked") === 0) return;
 
   var challengeStorageKey = "botshield_challenge_token";
-  var demoChallengeSeenKey = "botshield_demo_challenge_seen";
   var demoStoreHost = "botshield-demo.myshopify.com";
-  var demoChallengeDelayMs = 2000;
+  var demoBlockShowcaseDelayMs = 2000;
+  var demoBlockedPageUrl = root.dataset.blockedUrl || "/apps/botshield/blocked";
   var challengeToken = "";
-  var demoChallengeTimer = null;
+  var demoBlockShowcaseTimer = null;
   var realEnforcementResolved = false;
   var officialLogoUrl = root.dataset.officialLogoUrl || "";
 
@@ -25,51 +25,26 @@
     return window.location.hostname === demoStoreHost;
   }
 
-  function hasSeenDemoChallenge() {
-    try {
-      return window.sessionStorage.getItem(demoChallengeSeenKey) === "1";
-    } catch (error) {
-      return false;
+  function cancelDemoBlockShowcase() {
+    if (demoBlockShowcaseTimer) {
+      window.clearTimeout(demoBlockShowcaseTimer);
+      demoBlockShowcaseTimer = null;
     }
   }
 
-  function markDemoChallengeSeen() {
-    try {
-      window.sessionStorage.setItem(demoChallengeSeenKey, "1");
-    } catch (error) {
-      console.warn("[botshield] unable to persist demo challenge flag", error);
-    }
-  }
+  function scheduleDemoBlockShowcase() {
+    if (!isDemoStore()) return;
+    if (demoBlockShowcaseTimer) return;
 
-  function cancelDemoChallengePresentation() {
-    if (demoChallengeTimer) {
-      window.clearTimeout(demoChallengeTimer);
-      demoChallengeTimer = null;
-    }
-  }
-
-  function removeDemoOverlayIfPresent() {
-    var overlay = document.getElementById("botshield-challenge-overlay");
-    if (overlay && overlay.getAttribute("data-demo-presentation") === "true") {
-      overlay.remove();
-    }
-  }
-
-  function scheduleDemoChallengePresentation() {
-    if (!isDemoStore() || hasSeenDemoChallenge()) return;
-    if (demoChallengeTimer) return;
-
-    demoChallengeTimer = window.setTimeout(function () {
-      demoChallengeTimer = null;
+    demoBlockShowcaseTimer = window.setTimeout(function () {
+      demoBlockShowcaseTimer = null;
       if (realEnforcementResolved) return;
-      if (document.getElementById("botshield-challenge-overlay")) return;
-      if (hasSeenDemoChallenge()) return;
-      renderChallenge({ demoPresentation: true });
-    }, demoChallengeDelayMs);
+      window.location.assign(demoBlockedPageUrl);
+    }, demoBlockShowcaseDelayMs);
   }
 
   if (isDemoStore()) {
-    scheduleDemoChallengePresentation();
+    scheduleDemoBlockShowcase();
   }
 
   var params = new URLSearchParams();
@@ -100,15 +75,17 @@
         payload.blockPageUrl
       ) {
         realEnforcementResolved = true;
-        cancelDemoChallengePresentation();
-        removeDemoOverlayIfPresent();
+        cancelDemoBlockShowcase();
         window.location.assign(payload.blockPageUrl);
         return;
       }
 
       if (payload.decision === "challenge" || payload.action === "challenged") {
+        if (isDemoStore()) {
+          return;
+        }
         realEnforcementResolved = true;
-        cancelDemoChallengePresentation();
+        cancelDemoBlockShowcase();
         var existingOverlay = document.getElementById("botshield-challenge-overlay");
         if (existingOverlay) {
           existingOverlay.remove();
@@ -153,17 +130,12 @@
   function renderChallenge(payload) {
     if (document.getElementById("botshield-challenge-overlay")) return;
 
-    var isDemoPresentation = Boolean(payload && payload.demoPresentation);
-
     var overlay = document.createElement("div");
     overlay.id = "botshield-challenge-overlay";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "botshield-challenge-title");
     overlay.setAttribute("data-botshield-challenge-build", "botshield-14");
-    if (isDemoPresentation) {
-      overlay.setAttribute("data-demo-presentation", "true");
-    }
 
     var logoMarkup = officialLogoUrl
       ? '<img class="bs-challenge-logo" src="' +
@@ -209,12 +181,6 @@
     }
 
     continueButton.addEventListener("click", function () {
-      if (isDemoPresentation) {
-        markDemoChallengeSeen();
-        overlay.remove();
-        return;
-      }
-
       if (payload.challengeToken) {
         try {
           window.sessionStorage.setItem(challengeStorageKey, payload.challengeToken);
@@ -226,9 +192,6 @@
     });
 
     leaveButton.addEventListener("click", function () {
-      if (isDemoPresentation) {
-        markDemoChallengeSeen();
-      }
       window.location.assign("/");
     });
   }

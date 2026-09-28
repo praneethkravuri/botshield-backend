@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("demo store can schedule a one-time delayed challenge presentation", async () => {
+test("demo store schedules delayed redirect to the real blocked page", async () => {
   const js = await readFile(
     new URL(
       "../extensions/botshield-theme-app-extension/assets/botshield.js",
@@ -12,26 +12,17 @@ test("demo store can schedule a one-time delayed challenge presentation", async 
   );
 
   assert.match(js, /botshield-demo\.myshopify\.com/);
-  assert.match(js, /demoChallengeDelayMs = 2000/);
-  assert.match(js, /botshield_demo_challenge_seen/);
-  assert.match(js, /scheduleDemoChallengePresentation/);
-  assert.match(js, /demoPresentation: true/);
-  assert.match(js, /Continue shopping/);
-  assert.doesNotMatch(js, /Continue to store/i);
-  assert.match(js, /bs-challenge-logo/);
-  assert.match(js, /PROTECTION IN ACTION\./);
+  assert.match(js, /demoBlockShowcaseDelayMs = 2000/);
+  assert.match(js, /scheduleDemoBlockShowcase/);
+  assert.match(js, /window\.location\.assign\(demoBlockedPageUrl\)/);
+  assert.match(js, /dataset\.blockedUrl \|\| "\/apps\/botshield\/blocked"/);
+  assert.doesNotMatch(js, /botshield_demo_challenge_seen/);
+  assert.doesNotMatch(js, /demoPresentation:\s*true/);
+  assert.doesNotMatch(js, /renderChallenge\(\{\s*demoPresentation/);
 
   assert.match(js, /window\.location\.hostname === demoStoreHost/);
-  assert.match(js, /cancelDemoChallengePresentation\(\)/);
+  assert.match(js, /cancelDemoBlockShowcase\(\)/);
   assert.match(js, /payload\.blockPageUrl/);
-
-  const demoContinuePath = js.slice(js.indexOf("isDemoPresentation"));
-  assert.match(demoContinuePath, /markDemoChallengeSeen\(\)/);
-  assert.match(demoContinuePath, /overlay\.remove\(\)/);
-  assert.doesNotMatch(
-    demoContinuePath.slice(0, demoContinuePath.indexOf("if (payload.challengeToken)")),
-    /sessionStorage\.setItem\(challengeStorageKey/,
-  );
 });
 
 test("demo timer starts at embed init, not after ALLOW decision response", async () => {
@@ -46,12 +37,9 @@ test("demo timer starts at embed init, not after ALLOW decision response", async
   const fetchIndex = js.indexOf("fetch(decisionUrl");
   assert.ok(fetchIndex > 0, "decision fetch must exist");
 
-  assert.match(
-    js,
-    /if \(isDemoStore\(\)\) \{\s*scheduleDemoChallengePresentation\(\);\s*\}/,
-  );
+  assert.match(js, /if \(isDemoStore\(\)\) \{\s*scheduleDemoBlockShowcase\(\);\s*\}/);
   const initScheduleIndex = js.search(
-    /if \(isDemoStore\(\)\) \{\s*scheduleDemoChallengePresentation\(\);\s*\}/,
+    /if \(isDemoStore\(\)\) \{\s*scheduleDemoBlockShowcase\(\);\s*\}/,
   );
   assert.ok(initScheduleIndex > 0, "demo timer must be scheduled at storefront init");
   assert.ok(
@@ -62,7 +50,7 @@ test("demo timer starts at embed init, not after ALLOW decision response", async
   const decisionThen = js.slice(fetchIndex);
   assert.doesNotMatch(
     decisionThen,
-    /if \(isDemoStore\(\)\) \{\s*scheduleDemoChallengePresentation\(\);\s*\}/,
+    /if \(isDemoStore\(\)\) \{\s*scheduleDemoBlockShowcase\(\);\s*\}/,
     "demo timer must not be deferred until after decision resolves",
   );
 
@@ -70,7 +58,7 @@ test("demo timer starts at embed init, not after ALLOW decision response", async
   assert.match(js, /if \(realEnforcementResolved\) return;/);
 });
 
-test("real enforcement cancels demo timer and overrides demo overlay", async () => {
+test("demo store ignores CHALLENGE decisions so the block showcase timer can finish", async () => {
   const js = await readFile(
     new URL(
       "../extensions/botshield-theme-app-extension/assets/botshield.js",
@@ -79,21 +67,33 @@ test("real enforcement cancels demo timer and overrides demo overlay", async () 
     "utf8",
   );
 
-  assert.match(js, /removeDemoOverlayIfPresent/);
+  const challengePath = js.slice(js.indexOf('payload.decision === "challenge"'));
+  const demoGuard = challengePath.slice(0, challengePath.indexOf("renderChallenge(payload)"));
+  assert.match(demoGuard, /if \(isDemoStore\(\)\) \{\s*return;\s*\}/);
+  assert.doesNotMatch(demoGuard, /renderChallenge\(\{\s*demoPresentation/);
+});
+
+test("real enforcement cancels demo block showcase timer", async () => {
+  const js = await readFile(
+    new URL(
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
   assert.match(js, /realEnforcementResolved = true/);
-  assert.match(js, /removeDemoOverlayIfPresent\(\)/);
-  assert.match(js, /data-demo-presentation", "true"/);
 
   const blockPath = js.slice(js.indexOf('payload.decision === "block"'));
-  assert.match(blockPath, /cancelDemoChallengePresentation\(\)/);
-  assert.match(blockPath, /removeDemoOverlayIfPresent\(\)/);
+  assert.match(blockPath, /cancelDemoBlockShowcase\(\)/);
 
   const challengePath = js.slice(js.indexOf('payload.decision === "challenge"'));
-  assert.match(challengePath, /existingOverlay\.remove\(\)/);
+  assert.match(challengePath, /if \(isDemoStore\(\)\)/);
+  assert.match(challengePath, /cancelDemoBlockShowcase\(\)/);
   assert.match(challengePath, /renderChallenge\(payload\)/);
 });
 
-test("challenge overlay cannot duplicate and non-demo stores skip demo timer init", async () => {
+test("non-demo stores still render real challenge decisions", async () => {
   const js = await readFile(
     new URL(
       "../extensions/botshield-theme-app-extension/assets/botshield.js",
@@ -102,10 +102,21 @@ test("challenge overlay cannot duplicate and non-demo stores skip demo timer ini
     "utf8",
   );
 
-  assert.match(js, /if \(document\.getElementById\("botshield-challenge-overlay"\)\) return;/);
+  assert.match(js, /renderChallenge\(payload\)/);
+  assert.match(js, /payload\.decision === "challenge"/);
+});
+
+test("non-demo stores skip demo block showcase init", async () => {
+  const js = await readFile(
+    new URL(
+      "../extensions/botshield-theme-app-extension/assets/botshield.js",
+      import.meta.url,
+    ),
+    "utf8",
+  );
 
   const scheduleBody = js.slice(
-    js.indexOf("function scheduleDemoChallengePresentation"),
+    js.indexOf("function scheduleDemoBlockShowcase"),
     js.indexOf("if (isDemoStore()) {"),
   );
   assert.match(scheduleBody, /if \(!isDemoStore\(\)/);
@@ -114,11 +125,11 @@ test("challenge overlay cannot duplicate and non-demo stores skip demo timer ini
     js.indexOf("if (isDemoStore()) {"),
     js.indexOf("var params = new URLSearchParams"),
   );
-  assert.match(initBlock, /scheduleDemoChallengePresentation\(\)/);
+  assert.match(initBlock, /scheduleDemoBlockShowcase\(\)/);
   assert.doesNotMatch(initBlock, /fetch\(/);
 });
 
-test("real challenge flow remains separate from demo presentation flag", async () => {
+test("real challenge flow remains available for genuine security decisions", async () => {
   const js = await readFile(
     new URL(
       "../extensions/botshield-theme-app-extension/assets/botshield.js",
@@ -133,6 +144,6 @@ test("real challenge flow remains separate from demo presentation flag", async (
   );
   assert.match(js, /payload\.decision === "challenge"/);
   assert.match(js, /window\.location\.reload\(\)/);
-  assert.match(js, /setItem\(demoChallengeSeenKey/);
-  assert.match(js, /setItem\(challengeStorageKey, payload\.challengeToken\)/);
+  assert.match(js, /Quick security check/);
+  assert.match(js, /Continue shopping/);
 });
