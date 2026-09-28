@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  BOTSHIELD_DEMO_STORE_HOST,
   buildBlockedPageGoBackScript,
   getExternalReferrerTarget,
   isSafeHttpUrl,
@@ -8,6 +9,7 @@ import {
 } from "../app/lib/botshield-blocked-page-go-back.js";
 
 const STORE = "https://botshield-demo.myshopify.com";
+const MERCHANT_STORE = "https://example-merchant.myshopify.com";
 
 test("isSafeHttpUrl accepts http/https and rejects unsafe protocols", () => {
   assert.equal(isSafeHttpUrl("https://www.google.com/"), true);
@@ -36,7 +38,7 @@ test("valid external HTTP/HTTPS referrer resolves to external navigation", () =>
   });
 });
 
-test("same-origin storefront referrer is ignored to avoid redirect loops", () => {
+test("demo store same-origin referrer uses history.back to return to storefront", () => {
   assert.equal(
     getExternalReferrerTarget(`${STORE}/products/widget`, STORE),
     null,
@@ -46,6 +48,17 @@ test("same-origin storefront referrer is ignored to avoid redirect loops", () =>
     referrer: `${STORE}/collections/all`,
     origin: STORE,
     historyLength: 3,
+    hostname: BOTSHIELD_DEMO_STORE_HOST,
+  });
+  assert.deepEqual(action, { type: "historyBack" });
+});
+
+test("normal merchant same-origin referrer remains a safe noop", () => {
+  const action = resolveBlockedPageGoBack({
+    referrer: `${MERCHANT_STORE}/collections/all`,
+    origin: MERCHANT_STORE,
+    historyLength: 3,
+    hostname: "example-merchant.myshopify.com",
   });
   assert.deepEqual(action, { type: "noop" });
 });
@@ -86,6 +99,8 @@ test("inline Go Back script is navigation-only and does not bypass enforcement",
   assert.match(script, /document\.referrer/);
   assert.match(script, /window\.location\.assign\(external\)/);
   assert.match(script, /window\.history\.back\(\)/);
+  assert.match(script, /botshield-demo\.myshopify\.com/);
+  assert.match(script, /window\.location\.hostname === DEMO_STORE_HOST/);
   assert.doesNotMatch(script, /location\.assign\("\/"\)/);
   assert.doesNotMatch(script, /fetch\s*\(/);
   assert.doesNotMatch(script, /whitelist/i);

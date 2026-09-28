@@ -3,6 +3,8 @@
  * Navigation only — never changes enforcement, trust, or blocklist state.
  */
 
+export const BOTSHIELD_DEMO_STORE_HOST = "botshield-demo.myshopify.com";
+
 export function isSafeHttpUrl(urlString) {
   if (typeof urlString !== "string" || !urlString.trim()) {
     return false;
@@ -53,16 +55,41 @@ export function isSameOriginReferrer(referrer, pageOrigin) {
   }
 }
 
+export function getSameOriginReferrerTarget(referrer, pageOrigin) {
+  if (!isSameOriginReferrer(referrer, pageOrigin)) {
+    return null;
+  }
+  try {
+    return new URL(referrer).href;
+  } catch {
+    return null;
+  }
+}
+
 /**
- * @param {{ referrer?: string | null, origin: string, historyLength: number }} options
- * @returns {{ type: "external", href: string } | { type: "historyBack" } | { type: "noop" }}
+ * @param {{ referrer?: string | null, origin: string, historyLength: number, hostname?: string }} options
+ * @returns {{ type: "external", href: string } | { type: "sameOriginReferrer", href: string } | { type: "historyBack" } | { type: "noop" }}
  */
-export function resolveBlockedPageGoBack({ referrer, origin, historyLength }) {
+export function resolveBlockedPageGoBack({
+  referrer,
+  origin,
+  historyLength,
+  hostname = "",
+}) {
   const external = getExternalReferrerTarget(referrer, origin);
   if (external) {
     return { type: "external", href: external };
   }
   if (isSameOriginReferrer(referrer, origin)) {
+    if (hostname === BOTSHIELD_DEMO_STORE_HOST) {
+      if (typeof historyLength === "number" && historyLength > 1) {
+        return { type: "historyBack" };
+      }
+      const sameOriginHref = getSameOriginReferrerTarget(referrer, origin);
+      if (sameOriginHref) {
+        return { type: "sameOriginReferrer", href: sameOriginHref };
+      }
+    }
     return { type: "noop" };
   }
   if (typeof historyLength === "number" && historyLength > 1) {
@@ -116,6 +143,7 @@ export function buildBlockedPageGoBackScript() {
       return false;
     }
   }
+  var DEMO_STORE_HOST = "botshield-demo.myshopify.com";
   function goBack() {
     var external = getExternalReferrerTarget(
       document.referrer,
@@ -131,6 +159,21 @@ export function buildBlockedPageGoBackScript() {
         window.location.origin
       )
     ) {
+      if (window.location.hostname === DEMO_STORE_HOST) {
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+        if (isSafeHttpUrl(document.referrer)) {
+          try {
+            var sameOriginRef = new URL(document.referrer);
+            if (sameOriginRef.origin === window.location.origin) {
+              window.location.assign(sameOriginRef.href);
+              return;
+            }
+          } catch (e) {}
+        }
+      }
       return;
     }
     if (window.history.length > 1) {

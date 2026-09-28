@@ -8,6 +8,7 @@
 
   var challengeStorageKey = "botshield_challenge_token";
   var demoStoreHost = "botshield-demo.myshopify.com";
+  var demoBlockShowcaseSeenKey = "botshield_demo_block_showcase_seen";
   var demoBlockShowcaseDelayMs = 2000;
   var demoBlockedPageUrl = root.dataset.blockedUrl || "/apps/botshield/blocked";
   var challengeToken = "";
@@ -25,6 +26,22 @@
     return window.location.hostname === demoStoreHost;
   }
 
+  function hasSeenDemoBlockShowcase() {
+    try {
+      return window.sessionStorage.getItem(demoBlockShowcaseSeenKey) === "1";
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function markDemoBlockShowcaseSeen() {
+    try {
+      window.sessionStorage.setItem(demoBlockShowcaseSeenKey, "1");
+    } catch (error) {
+      console.warn("[botshield] unable to persist demo block showcase flag", error);
+    }
+  }
+
   function cancelDemoBlockShowcase() {
     if (demoBlockShowcaseTimer) {
       window.clearTimeout(demoBlockShowcaseTimer);
@@ -34,11 +51,14 @@
 
   function scheduleDemoBlockShowcase() {
     if (!isDemoStore()) return;
+    if (hasSeenDemoBlockShowcase()) return;
     if (demoBlockShowcaseTimer) return;
 
     demoBlockShowcaseTimer = window.setTimeout(function () {
       demoBlockShowcaseTimer = null;
       if (realEnforcementResolved) return;
+      if (hasSeenDemoBlockShowcase()) return;
+      markDemoBlockShowcaseSeen();
       window.location.assign(demoBlockedPageUrl);
     }, demoBlockShowcaseDelayMs);
   }
