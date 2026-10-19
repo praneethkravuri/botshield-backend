@@ -72,7 +72,14 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
       <div className="public-legal-shell">
         <header className="public-legal-header">
           <Link className="public-legal-brand" to="/privacy">
-            <span className="public-legal-brand-mark" aria-hidden="true" />
+            <img
+              className="public-legal-brand-logo"
+              src={publicInfo.logoUrl}
+              alt=""
+              width={publicInfo.logoWidth}
+              height={publicInfo.logoHeight}
+              decoding="async"
+            />
             <span className="public-legal-brand-text">{publicInfo.appName}</span>
           </Link>
           <nav className="public-legal-nav" aria-label={`${publicInfo.appName} trust and legal pages`}>
@@ -87,8 +94,20 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
         <main className="public-legal-main" id="main-content" tabIndex={-1}>
           <div className="public-legal-frame">
             <header className="public-legal-page-header">
-              <p className="public-legal-kicker">Trust &amp; Legal</p>
-              <h1 className="public-legal-title">{title}</h1>
+              <div className="public-legal-title-row">
+                <img
+                  className="public-legal-page-logo"
+                  src={publicInfo.logoUrl}
+                  alt=""
+                  width={44}
+                  height={44}
+                  decoding="async"
+                />
+                <div className="public-legal-title-copy">
+                  <p className="public-legal-kicker">Trust &amp; Legal</p>
+                  <h1 className="public-legal-title">{title}</h1>
+                </div>
+              </div>
               {summary ? <p className="public-legal-summary">{summary}</p> : null}
               <div className="public-legal-dates">
                 <span>Effective date: {publicInfo.effectiveDate}</span>
@@ -110,7 +129,17 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
 
             <footer className="public-legal-frame-footer">
               <div className="public-legal-frame-footer-brand">
-                <p className="public-legal-footer-name">{publicInfo.appName}</p>
+                <div className="public-legal-footer-brand-row">
+                  <img
+                    className="public-legal-footer-logo"
+                    src={publicInfo.logoUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    decoding="async"
+                  />
+                  <p className="public-legal-footer-name">{publicInfo.appName}</p>
+                </div>
                 <p className="public-legal-footer-copy">
                   Trust, privacy, and data documentation for merchants using BotShield on Shopify.
                 </p>

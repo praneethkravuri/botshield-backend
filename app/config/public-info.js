@@ -1,6 +1,9 @@
 export const publicInfo = {
   appName: "BotShield",
   companyName: "BotShield",
+  logoUrl: "/botshield-official-logo-transparent.png",
+  logoWidth: 36,
+  logoHeight: 36,
   supportEmail:
     import.meta.env.VITE_SUPPORT_EMAIL || "SUPPORT_EMAIL_NOT_CONFIGURED",
   supportUrl: "/support",

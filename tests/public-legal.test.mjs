@@ -57,6 +57,10 @@ test("public legal shell exposes premium navigation, metadata, and footer", asyn
 
   assert.match(shell, /usePublicLegalScrollSpy/);
   assert.match(shell, /public-legal-skip-link/);
+  assert.match(shell, /public-legal-brand-logo/);
+  assert.match(shell, /public-legal-page-logo/);
+  assert.match(shell, /publicInfo\.logoUrl/);
+  assert.match(publicInfo, /logoUrl: "\/botshield-official-logo-transparent\.png"/);
   assert.match(shell, /Trust &amp; Legal/);
   assert.match(shell, /public-legal-nav-link/);
   assert.match(shell, /public-legal-toc/);

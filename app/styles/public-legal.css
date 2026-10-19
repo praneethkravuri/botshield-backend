@@ -62,13 +62,51 @@
   text-decoration: none;
 }
 
-.public-legal-brand-mark {
-  width: 11px;
-  height: 11px;
-  border-radius: 2px;
-  background: #111111;
-  box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.08);
+.public-legal-brand-logo,
+.public-legal-page-logo,
+.public-legal-footer-logo {
+  display: block;
   flex-shrink: 0;
+  object-fit: contain;
+}
+
+.public-legal-brand-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.public-legal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.public-legal-page-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.public-legal-title-copy {
+  min-width: 0;
+}
+
+.public-legal-title-copy .public-legal-kicker {
+  margin: 0 0 6px;
+}
+
+.public-legal-title-copy .public-legal-title {
+  margin: 0;
+}
+
+.public-legal-footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.public-legal-footer-logo {
+  width: 28px;
+  height: 28px;
 }
 
 .public-legal-brand-text {
