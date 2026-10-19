@@ -6,7 +6,7 @@ export function PublicLegalWordmark({
   textClassName = "public-legal-wordmark-text",
   size = "header",
 }) {
-  const iconSize = size === "footer" ? 26 : size === "page" ? 40 : 34;
+  const iconSize = size === "footer" ? 26 : 32;
 
   return (
     <span className={`public-legal-wordmark public-legal-wordmark--${size}`}>

@@ -54,7 +54,7 @@
 .public-legal-brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
   color: #111111;
   font-size: 15px;
   font-weight: 700;
@@ -77,12 +77,11 @@
 .public-legal-wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .public-legal-brand-icon,
-.public-legal-page-icon,
 .public-legal-wordmark img {
   display: block;
   flex-shrink: 0;
@@ -90,31 +89,18 @@
 }
 
 .public-legal-brand-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
 }
 
-.public-legal-page-icon {
-  width: 40px;
-  height: 40px;
-}
-
-.public-legal-wordmark-text,
-.public-legal-page-wordmark-text {
+.public-legal-wordmark-text {
   display: inline-flex;
   align-items: baseline;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
   white-space: nowrap;
-}
-
-.public-legal-wordmark-text {
   font-size: 1.12rem;
-}
-
-.public-legal-page-wordmark-text {
-  font-size: 1.35rem;
 }
 
 .public-legal-wordmark--footer .public-legal-wordmark-text {
@@ -127,25 +113,6 @@
 
 .public-legal-wordmark-shield {
   color: #2c6ecb;
-}
-
-.public-legal-title-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.public-legal-title-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.public-legal-title-copy .public-legal-kicker {
-  margin: 0 0 6px;
-}
-
-.public-legal-title-copy .public-legal-title {
-  margin: 0;
 }
 
 .public-legal-footer-brand-row {

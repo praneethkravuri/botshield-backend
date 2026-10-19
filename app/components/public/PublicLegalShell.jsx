@@ -93,17 +93,8 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
         <main className="public-legal-main" id="main-content" tabIndex={-1}>
           <div className="public-legal-frame">
             <header className="public-legal-page-header">
-              <div className="public-legal-title-row">
-                <PublicLegalWordmark
-                  size="page"
-                  iconClassName="public-legal-page-icon"
-                  textClassName="public-legal-page-wordmark-text"
-                />
-                <div className="public-legal-title-copy">
-                  <p className="public-legal-kicker">Trust &amp; Legal</p>
-                  <h1 className="public-legal-title">{title}</h1>
-                </div>
-              </div>
+              <p className="public-legal-kicker">Trust &amp; Legal</p>
+              <h1 className="public-legal-title">{title}</h1>
               {summary ? <p className="public-legal-summary">{summary}</p> : null}
               <div className="public-legal-dates">
                 <span>Effective date: {publicInfo.effectiveDate}</span>
