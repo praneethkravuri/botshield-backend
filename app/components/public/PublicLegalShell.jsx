@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router";
 import { usePublicLegalScrollSpy } from "../../hooks/usePublicLegalScrollSpy";
 import { publicInfo } from "../../config/public-info";
+import { PublicLegalBrandLink, PublicLegalWordmark } from "./PublicLegalBrand.jsx";
 import "../../styles/public-legal.css";
 
 const headerNavItems = [
@@ -34,7 +35,7 @@ function PublicLegalNavLink({ to, children }) {
   );
 }
 
-function PublicLegalTableOfContents({ sections, activeId }) {
+function PublicLegalTableOfContents({ sections, activeId, onSelectSection }) {
   if (!sections.length) return null;
 
   return (
@@ -48,6 +49,14 @@ function PublicLegalTableOfContents({ sections, activeId }) {
                 href={`#${section.id}`}
                 className={activeId === section.id ? "is-active" : undefined}
                 aria-current={activeId === section.id ? "location" : undefined}
+                onClick={(event) => {
+                  const target = document.getElementById(section.id);
+                  if (!target) return;
+                  event.preventDefault();
+                  onSelectSection(section.id);
+                  target.scrollIntoView({ behavior: "smooth", block: "start" });
+                  window.history.replaceState(null, "", `#${section.id}`);
+                }}
               >
                 {section.label}
               </a>
@@ -61,7 +70,7 @@ function PublicLegalTableOfContents({ sections, activeId }) {
 
 export function PublicLegalShell({ title, summary, sections = [], children }) {
   const sectionIds = sections.map((section) => section.id);
-  const activeId = usePublicLegalScrollSpy(sectionIds);
+  const { activeId, selectSection } = usePublicLegalScrollSpy(sectionIds);
   const hasToc = sections.length > 0;
 
   return (
@@ -71,17 +80,7 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
       </a>
       <div className="public-legal-shell">
         <header className="public-legal-header">
-          <Link className="public-legal-brand" to="/privacy">
-            <img
-              className="public-legal-brand-logo"
-              src={publicInfo.logoUrl}
-              alt=""
-              width={publicInfo.logoWidth}
-              height={publicInfo.logoHeight}
-              decoding="async"
-            />
-            <span className="public-legal-brand-text">{publicInfo.appName}</span>
-          </Link>
+          <PublicLegalBrandLink to="/privacy" />
           <nav className="public-legal-nav" aria-label={`${publicInfo.appName} trust and legal pages`}>
             {headerNavItems.map((item) => (
               <PublicLegalNavLink key={item.to} to={item.to}>
@@ -95,13 +94,10 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
           <div className="public-legal-frame">
             <header className="public-legal-page-header">
               <div className="public-legal-title-row">
-                <img
-                  className="public-legal-page-logo"
-                  src={publicInfo.logoUrl}
-                  alt=""
-                  width={44}
-                  height={44}
-                  decoding="async"
+                <PublicLegalWordmark
+                  size="page"
+                  iconClassName="public-legal-page-icon"
+                  textClassName="public-legal-page-wordmark-text"
                 />
                 <div className="public-legal-title-copy">
                   <p className="public-legal-kicker">Trust &amp; Legal</p>
@@ -119,7 +115,11 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
 
             <div className={`public-legal-layout${hasToc ? " has-toc" : ""}`}>
               {hasToc ? (
-                <PublicLegalTableOfContents sections={sections} activeId={activeId} />
+                <PublicLegalTableOfContents
+                  sections={sections}
+                  activeId={activeId}
+                  onSelectSection={selectSection}
+                />
               ) : null}
 
               <article className="public-legal-article">
@@ -130,15 +130,7 @@ export function PublicLegalShell({ title, summary, sections = [], children }) {
             <footer className="public-legal-frame-footer">
               <div className="public-legal-frame-footer-brand">
                 <div className="public-legal-footer-brand-row">
-                  <img
-                    className="public-legal-footer-logo"
-                    src={publicInfo.logoUrl}
-                    alt=""
-                    width={28}
-                    height={28}
-                    decoding="async"
-                  />
-                  <p className="public-legal-footer-name">{publicInfo.appName}</p>
+                  <PublicLegalWordmark size="footer" />
                 </div>
                 <p className="public-legal-footer-copy">
                   Trust, privacy, and data documentation for merchants using BotShield on Shopify.

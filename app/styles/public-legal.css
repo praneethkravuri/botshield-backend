@@ -62,17 +62,71 @@
   text-decoration: none;
 }
 
-.public-legal-brand-logo,
-.public-legal-page-logo,
-.public-legal-footer-logo {
+.public-legal-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.public-legal-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.public-legal-brand-icon,
+.public-legal-page-icon,
+.public-legal-wordmark img {
   display: block;
   flex-shrink: 0;
   object-fit: contain;
 }
 
-.public-legal-brand-logo {
-  width: 36px;
-  height: 36px;
+.public-legal-brand-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.public-legal-page-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.public-legal-wordmark-text,
+.public-legal-page-wordmark-text {
+  display: inline-flex;
+  align-items: baseline;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.public-legal-wordmark-text {
+  font-size: 1.12rem;
+}
+
+.public-legal-page-wordmark-text {
+  font-size: 1.35rem;
+}
+
+.public-legal-wordmark--footer .public-legal-wordmark-text {
+  font-size: 0.98rem;
+}
+
+.public-legal-wordmark-bot {
+  color: #111111;
+}
+
+.public-legal-wordmark-shield {
+  color: #2c6ecb;
 }
 
 .public-legal-title-row {
@@ -81,13 +135,9 @@
   gap: 14px;
 }
 
-.public-legal-page-logo {
-  width: 44px;
-  height: 44px;
-}
-
 .public-legal-title-copy {
   min-width: 0;
+  flex: 1;
 }
 
 .public-legal-title-copy .public-legal-kicker {
@@ -102,15 +152,6 @@
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.public-legal-footer-logo {
-  width: 28px;
-  height: 28px;
-}
-
-.public-legal-brand-text {
-  line-height: 1;
 }
 
 .public-legal-brand:focus-visible,
@@ -168,7 +209,6 @@
 }
 
 .public-legal-frame {
-  overflow: hidden;
   border: 1px solid #dedede;
   border-radius: 18px;
   background: #ffffff;
@@ -180,6 +220,7 @@
 .public-legal-page-header {
   padding: 44px 44px 30px;
   border-bottom: 1px solid #ececec;
+  border-radius: 18px 18px 0 0;
   background: #fbfbfb;
 }
 
@@ -277,8 +318,9 @@
 
 .public-legal-toc nav a.is-active {
   color: #111111;
-  background: #ececec;
-  box-shadow: inset 2px 0 0 #111111;
+  background: #e8eef8;
+  box-shadow: inset 3px 0 0 #2c6ecb;
+  font-weight: 650;
 }
 
 .public-legal-article {
@@ -302,7 +344,7 @@
 }
 
 .public-legal-section {
-  scroll-margin-top: 24px;
+  scroll-margin-top: 96px;
   padding-top: 8px;
 }
 

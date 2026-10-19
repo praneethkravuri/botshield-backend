@@ -27,7 +27,11 @@ await sharp(data, {
     channels: 4,
   },
 })
-  .resize(256, 256, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .trim()
+  .resize(256, 256, {
+    fit: "inside",
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  })
   .png({ compressionLevel: 9 })
   .toFile(target);
 

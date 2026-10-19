@@ -1,10 +1,33 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-export function usePublicLegalScrollSpy(sectionIds, { rootMargin = "-20% 0px -65% 0px" } = {}) {
-  const [activeId, setActiveId] = useState(sectionIds[0] || "");
+export function usePublicLegalScrollSpy(
+  sectionIds,
+  { rootMargin = "-12% 0px -55% 0px" } = {},
+) {
+  const [activeId, setActiveId] = useState(() => sectionIds[0] || "");
+
+  const selectSection = useCallback((sectionId) => {
+    if (!sectionId) return;
+    setActiveId(sectionId);
+  }, []);
+
+  useEffect(() => {
+    if (!sectionIds.length) {
+      setActiveId("");
+      return;
+    }
+    setActiveId((current) =>
+      sectionIds.includes(current) ? current : sectionIds[0],
+    );
+  }, [sectionIds]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !sectionIds.length) return undefined;
+
+    const hashId = window.location.hash.replace(/^#/, "");
+    if (hashId && sectionIds.includes(hashId)) {
+      setActiveId(hashId);
+    }
 
     const visible = new Map();
 
@@ -29,7 +52,7 @@ export function usePublicLegalScrollSpy(sectionIds, { rootMargin = "-20% 0px -65
 
         if (nextActive) setActiveId(nextActive);
       },
-      { rootMargin, threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] },
+      { rootMargin, threshold: [0, 0.12, 0.25, 0.5, 0.75, 1] },
     );
 
     sectionIds.forEach((id) => {
@@ -40,5 +63,5 @@ export function usePublicLegalScrollSpy(sectionIds, { rootMargin = "-20% 0px -65
     return () => observer.disconnect();
   }, [rootMargin, sectionIds]);
 
-  return activeId;
+  return { activeId, selectSection };
 }
