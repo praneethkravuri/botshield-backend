@@ -19,8 +19,12 @@ const level1Exclusion =
 
 test("public legal routes render through the shared legal shell", async () => {
   for (const routeName of publicRoutes) {
+    const documentName = {
+      "data-use.jsx": "DataUseDocument.jsx",
+      "data-retention.jsx": "DataRetentionDocument.jsx",
+    }[routeName];
     const source = await readFile(
-      new URL(`../app/routes/${routeName}`, import.meta.url),
+      new URL(documentName ? `../app/components/information/${documentName}` : `../app/routes/${routeName}`, import.meta.url),
       "utf8",
     );
     assert.match(
@@ -159,11 +163,11 @@ test("privacy policy stays merchant-readable and compliance-safe", async () => {
 
 test("data-use, retention, and deletion pages stay aligned with implemented behavior", async () => {
   const dataUse = await readFile(
-    new URL("../app/routes/data-use.jsx", import.meta.url),
+    new URL("../app/components/information/DataUseDocument.jsx", import.meta.url),
     "utf8",
   );
   const dataRetention = await readFile(
-    new URL("../app/routes/data-retention.jsx", import.meta.url),
+    new URL("../app/components/information/DataRetentionDocument.jsx", import.meta.url),
     "utf8",
   );
   const dataDeletion = await readFile(
@@ -199,7 +203,7 @@ test("public legal pages do not introduce new Shopify scopes or Level 2 fields",
     "utf8",
   );
   const dataUse = await readFile(
-    new URL("../app/routes/data-use.jsx", import.meta.url),
+    new URL("../app/components/information/DataUseDocument.jsx", import.meta.url),
     "utf8",
   );
 

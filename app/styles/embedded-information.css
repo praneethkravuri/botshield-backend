@@ -1,0 +1,48 @@
+.botshield-information,
+.botshield-information * {
+  box-sizing: border-box;
+}
+
+.botshield-information .public-legal-shell {
+  max-width: 960px;
+}
+
+.botshield-information-back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: #303030;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.botshield-information-contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #dedede;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.botshield-information-contents a {
+  color: #303030;
+  text-underline-offset: 3px;
+}
+
+.botshield-information a:focus-visible,
+.botshield-information h1:focus-visible {
+  outline: 2px solid #005bd3;
+  outline-offset: 4px;
+}
+
+.botshield-information .public-legal-article {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .botshield-information .public-legal-shell {
+    padding: 20px 16px 40px;
+  }
+}

@@ -88,6 +88,7 @@ import ValuePage from "./ValuePage.jsx";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
 import { getThemeEmbedConnectionView } from "../../lib/theme-extension-status.js";
+import SettingsInformationLink from "../information/SettingsInformationLink.jsx";
 
 const CLEAR_SIMULATION_DATA_DESCRIPTION =
   "Delete simulation and test activity from BotShield. Live storefront activity and your protection settings, blocked visitors, and trusted visitors are not affected.";
@@ -5983,14 +5984,12 @@ function SettingsHubFixedAction({ children }) {
 
 function SettingsHubLegalLink({ href, children }) {
   return (
-    <a
+    <SettingsInformationLink
       className="botshield-settings-hub-legal-link"
       href={href}
-      rel="noopener noreferrer"
-      target="_blank"
     >
       {children}
-    </a>
+    </SettingsInformationLink>
   );
 }
 

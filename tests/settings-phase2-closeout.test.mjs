@@ -114,7 +114,7 @@ test("Settings navigation does not route merchants to retired in-app pages", () 
   }
 });
 
-test("Settings legal links stay on approved public policy routes", () => {
+test("Settings information controls use approved document identifiers", () => {
   const legalLinks = [
     "/data-retention",
     "/data-use",
