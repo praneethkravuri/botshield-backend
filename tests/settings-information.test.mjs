@@ -79,6 +79,11 @@ test("all five Settings controls choose internal app routes or established publi
     assert.ok(link.textContent.includes(label));
     assert.ok(!link.href.includes("onrender.com"));
     if (SETTINGS_INFORMATION_PATHS[href]) {
+      assert.equal(
+        link.querySelector(".botshield-information-link-destination")
+          .textContent,
+        "Inside BotShield",
+      );
       const url = new URL(link.href, "https://app.test");
       assert.equal(url.pathname, SETTINGS_INFORMATION_PATHS[href]);
       for (const key of ["shop", "host", "embedded"]) {
@@ -89,6 +94,11 @@ test("all five Settings controls choose internal app routes or established publi
       }
       assert.equal(link.getAttribute("target"), null);
     } else {
+      assert.equal(
+        link.querySelector(".botshield-information-link-destination")
+          .textContent,
+        "Official BotShield website",
+      );
       assert.equal(link.href, PUBLIC_LEGAL_URLS[href]);
       assert.equal(link.target, "_blank");
       assert.match(link.rel, /noopener/);
@@ -112,6 +122,7 @@ test("internal documents preserve public policy content, provide back navigation
     for (const selector of [
       ".public-legal-section",
       ".public-legal-data-grid",
+      ".public-legal-content > p",
     ]) {
       assert.deepEqual(
         [...internal.querySelectorAll(selector)].map(
@@ -132,7 +143,7 @@ test("internal documents preserve public policy content, provide back navigation
     assert.equal(back.searchParams.get("view"), "settings");
     assert.equal(back.searchParams.get("host"), "encoded-admin-host");
     for (const anchor of internal.querySelectorAll(
-      ".botshield-information-contents a",
+      ".botshield-information-section-links a",
     )) {
       assert.ok(internal.getElementById(anchor.getAttribute("href").slice(1)));
     }
@@ -218,15 +229,13 @@ test("direct route loads, client navigation, document changes, and back to Setti
         "privacy",
       );
       await act(async () => {
-        dom.window.document
-          .querySelector("a")
-          .dispatchEvent(
-            new dom.window.MouseEvent("click", {
-              bubbles: true,
-              cancelable: true,
-              button: 0,
-            }),
-          );
+        dom.window.document.querySelector("a").dispatchEvent(
+          new dom.window.MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+          }),
+        );
       });
       assert.equal(router.state.location.pathname, "/app/information/data-use");
       assert.equal(
@@ -235,7 +244,11 @@ test("direct route loads, client navigation, document changes, and back to Setti
       );
       const retention = [
         ...dom.window.document.querySelectorAll(".public-legal-related a"),
-      ].find((a) => a.textContent === "Data retention");
+      ].find(
+        (a) =>
+          a.querySelector(".botshield-information-link-label")?.textContent ===
+          "Data retention",
+      );
       await act(async () => {
         retention.dispatchEvent(
           new dom.window.MouseEvent("click", {
@@ -263,6 +276,149 @@ test("direct route loads, client navigation, document changes, and back to Setti
     router?.dispose();
     globalThis.window = saved.window;
     globalThis.document = saved.document;
+    globalThis.IS_REACT_ACT_ENVIRONMENT = saved.act;
+    dom.window.close();
+  }
+});
+
+test("section navigation supports hash entry, nested scroll roots, reduced motion, active states and observer cleanup", async () => {
+  const dom = new JSDOM(
+    '<div id="scroll-shell" style="height:500px;overflow-y:auto"><div id="root"></div></div>',
+    {
+      url: "https://app.test/app/information/data-retention#network-intelligence",
+    },
+  );
+  const saved = {
+    window: globalThis.window,
+    document: globalThis.document,
+    observer: globalThis.IntersectionObserver,
+    act: globalThis.IS_REACT_ACT_ENVIRONMENT,
+  };
+  globalThis.window = dom.window;
+  globalThis.document = dom.window.document;
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  dom.window.shopify = { toast: { show() {} } };
+  dom.window.matchMedia = () => ({ matches: true });
+  const scrolls = [];
+  dom.window.HTMLElement.prototype.scrollIntoView = function (options) {
+    scrolls.push({ id: this.id, ...options });
+  };
+  dom.window.HTMLElement.prototype.scrollTo = () => {};
+  const observers = [];
+  globalThis.IntersectionObserver = class {
+    constructor(callback, options) {
+      this.callback = callback;
+      this.options = options;
+      this.targets = [];
+      this.disconnected = false;
+      observers.push(this);
+    }
+    observe(element) {
+      this.targets.push(element);
+    }
+    disconnect() {
+      this.disconnected = true;
+    }
+  };
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/app/information/data-retention",
+        element: React.createElement(pages["data-retention"].internal),
+      },
+    ],
+    {
+      initialEntries: [
+        `/app/information/data-retention${embeddedSearch}#network-intelligence`,
+      ],
+    },
+  );
+  const root = createRoot(dom.window.document.getElementById("root"));
+  try {
+    await act(async () => {
+      root.render(React.createElement(RouterProvider, { router }));
+    });
+    assert.equal(router.state.errors, null);
+    assert.equal(
+      dom.window.document.activeElement.id,
+      "network-intelligence-heading",
+    );
+    assert.equal(scrolls.at(-1).behavior, "instant");
+    assert.equal(scrolls.at(-1).id, "network-intelligence");
+    const observer = observers.at(-1);
+    assert.equal(observer.options.root.id, "scroll-shell");
+    assert.ok(observer.targets.some((target) => target.id === "notifications"));
+    await act(async () => {
+      observer.callback(
+        observer.targets.map((target) => ({
+          target,
+          isIntersecting: target.id === "simulation",
+        })),
+      );
+    });
+    assert.equal(
+      dom.window.document
+        .querySelector(
+          '.botshield-information-sidebar [aria-current="location"]',
+        )
+        .getAttribute("href"),
+      "#simulation",
+    );
+    const menu = dom.window.document.querySelector("details");
+    menu.open = true;
+    const link = menu.querySelector('a[href="#fraud-orders"]');
+    await act(async () => {
+      link.dispatchEvent(
+        new dom.window.MouseEvent("click", {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+        }),
+      );
+    });
+    assert.equal(menu.open, false);
+    assert.equal(router.state.location.hash, "#fraud-orders");
+    assert.equal(
+      new URLSearchParams(router.state.location.search).get("host"),
+      "encoded-admin-host",
+    );
+    assert.equal(dom.window.document.activeElement.id, "fraud-orders-heading");
+    assert.equal(scrolls.at(-1).behavior, "instant");
+    // An explicit selection stays active when its predecessor is also visible.
+    await act(async () =>
+      observer.callback(
+        observer.targets.map((target) => ({
+          target,
+          isIntersecting: ["simulation", "fraud-orders"].includes(target.id),
+        })),
+      ),
+    );
+    assert.equal(
+      menu.querySelector('[aria-current="location"]').getAttribute("href"),
+      "#fraud-orders",
+    );
+    dom.window.document
+      .getElementById("scroll-shell")
+      .dispatchEvent(new dom.window.WheelEvent("wheel"));
+    await act(async () =>
+      observer.callback(
+        observer.targets.map((target) => ({
+          target,
+          isIntersecting: target.id === "sessions",
+        })),
+      ),
+    );
+    assert.equal(
+      menu.querySelector('[aria-current="location"]').getAttribute("href"),
+      "#sessions",
+    );
+  } finally {
+    await act(async () => root.unmount());
+    router.dispose();
+    assert.ok(observers.every((observer) => observer.disconnected));
+    globalThis.window = saved.window;
+    globalThis.document = saved.document;
+    globalThis.IntersectionObserver = saved.observer;
     globalThis.IS_REACT_ACT_ENVIRONMENT = saved.act;
     dom.window.close();
   }

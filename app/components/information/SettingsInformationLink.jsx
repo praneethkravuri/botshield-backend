@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { Link, useLocation } from "react-router";
+import InformationIcon from "./InformationIcon.jsx";
 import "../../styles/public-legal.css";
 import { mergeEmbeddedAppSearch } from "../../lib/embedded-app-navigation.js";
 import {
@@ -10,14 +11,26 @@ import {
 export default function SettingsInformationLink({ href, children, className }) {
   const { search } = useLocation();
   const internalPath = SETTINGS_INFORMATION_PATHS[href];
+  const content = (
+    <>
+      <span className="botshield-information-link-copy">
+        <span className="botshield-information-link-label">{children}</span>
+        <span className="botshield-information-link-destination">
+          {internalPath ? "Inside BotShield" : "Official BotShield website"}
+        </span>
+      </span>
+      <InformationIcon name={internalPath ? "arrow" : "external"} />
+    </>
+  );
 
   if (internalPath) {
     return (
       <Link
         className={className}
+        data-information-destination="internal"
         to={mergeEmbeddedAppSearch(internalPath, search)}
       >
-        {children}
+        {content}
       </Link>
     );
   }
@@ -29,11 +42,12 @@ export default function SettingsInformationLink({ href, children, className }) {
   return (
     <a
       className={className}
+      data-information-destination="external"
       href={publicUrl}
       target="_blank"
       rel="noopener noreferrer"
     >
-      {children}
+      {content}
       <span className="public-legal-sr-only"> (opens in a new tab)</span>
     </a>
   );

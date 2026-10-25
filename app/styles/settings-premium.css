@@ -468,3 +468,71 @@
     transform: none !important;
   }
 }
+
+/* Information actions: explicit destinations, scoped to Data & privacy. */
+.botshield-settings-premium .is-privacy .botshield-settings-hub-legal-link {
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 62px;
+  padding: 10px 14px;
+  text-align: left;
+  border-color: #dfe3e8;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgb(16 20 26 / 3%);
+  transform: none;
+}
+.botshield-settings-premium .is-privacy .botshield-information-link-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.botshield-settings-premium .is-privacy .botshield-information-link-label {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.botshield-settings-premium
+  .is-privacy
+  .botshield-information-link-destination {
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #5c6166;
+}
+.botshield-settings-premium .is-privacy .botshield-information-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: #59779a;
+}
+.botshield-settings-premium
+  .is-privacy
+  a[data-information-destination="internal"] {
+  border-color: #d5e3f5;
+  background: #f6f9fe;
+  color: #1f5199;
+}
+.botshield-settings-premium
+  .is-privacy
+  .botshield-settings-hub-legal-link:hover {
+  transform: none;
+  border-color: #aec7e9;
+  background: #edf4fb;
+}
+.botshield-settings-premium
+  .is-privacy
+  .botshield-settings-hub-legal-link:focus-visible {
+  outline: 2px solid #2c6ecb;
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .botshield-settings-premium .is-privacy .botshield-settings-hub-row-control {
+    grid-column: 2;
+    min-width: 0;
+    width: 100%;
+  }
+  .botshield-settings-premium .is-privacy .botshield-settings-hub-row-copy {
+    grid-column: 2;
+    min-width: 0;
+  }
+}
