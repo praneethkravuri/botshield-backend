@@ -7,9 +7,10 @@ import {
 } from "../app/lib/onboarding.js";
 import {
   buildThemeEditorDeepLink,
-  isPublishedThemeEmbedActive,
+  resolveThemeAppEmbedStatus,
+  getThemeEmbedConnectionView,
 } from "../app/lib/theme-extension-status.js";
-import { readPublishedTheme } from "../app/lib/published-theme.server.js";
+import { readThemeAppEmbedStatus } from "../app/lib/theme-extension-status.client.js";
 import { mergeEmbeddedAppSearch } from "../app/lib/embedded-app-navigation.js";
 
 const needsSetup = {
@@ -18,7 +19,7 @@ const needsSetup = {
   state: "inactive",
   checking: false,
 };
-for (const state of ["inactive", "missing"]) {
+for (const state of ["inactive", "missing", "unusable"]) {
   test(`first authenticated Overview visit offers setup for ${state}`, () => {
     assert.equal(shouldOfferInitialOnboarding({ ...needsSetup, state }), true);
   });
@@ -107,106 +108,109 @@ test("Theme Editor rejects unsafe shops and handles and safely encodes app IDs",
     "key&context=evil/botshield-embed",
   );
 });
-const themeId = "gid://shopify/OnlineStoreTheme/123";
-const extension = (status, themeIds = [themeId]) => [
+const extension = (status) => [
   {
     type: "theme_app_extension",
-    activations: [
-      {
-        handle: "botshield-embed",
-        status,
-        activations: themeIds.map((themeId) => ({ themeId, target: "body" })),
-      },
-    ],
+    activations: [{ handle: "botshield-embed", status }],
   },
 ];
-test("success requires the correct active embed's placement on the identified published theme", () => {
-  assert.equal(isPublishedThemeEmbedActive(extension("active"), themeId), true);
+test("documented published-theme active status verifies without theme IDs or additional scopes", () => {
+  const result = resolveThemeAppEmbedStatus(extension("active"));
+  assert.equal(result.themeAppEmbedActive, true);
+  assert.equal(result.themeAppEmbedConnectionState, "active");
+  assert.equal(getThemeEmbedConnectionView(result).connected, true);
+});
+test("available means the published embed has not been activated", () => {
+  const result = resolveThemeAppEmbedStatus(extension("available"));
+  assert.equal(result.themeAppEmbedActive, false);
+  assert.equal(result.themeAppEmbedConnectionState, "inactive");
+  assert.equal(result.themeAppEmbedStatus, "available");
+});
+test("Shopify's unavailable embed is unusable, distinct from a failed verification call", () => {
+  const result = resolveThemeAppEmbedStatus(extension("unavailable"));
+  assert.equal(result.themeAppEmbedActive, false);
+  assert.equal(result.themeAppEmbedConnectionState, "unusable");
+  assert.equal(getThemeEmbedConnectionView(result).label, "Embed unavailable");
+  assert.notEqual(
+    result.themeAppEmbedConnectionState,
+    resolveThemeAppEmbedStatus(null).themeAppEmbedConnectionState,
+  );
+});
+test("a different embed, extension type, or unknown status can never verify BotShield", () => {
   assert.equal(
-    isPublishedThemeEmbedActive(extension("active", ["draft-theme"]), themeId),
+    resolveThemeAppEmbedStatus([
+      {
+        type: "theme_app_extension",
+        activations: [{ handle: "another-embed", status: "active" }],
+      },
+    ]).themeAppEmbedActive,
     false,
   );
-  assert.equal(isPublishedThemeEmbedActive(extension("active"), null), false);
   assert.equal(
-    isPublishedThemeEmbedActive(extension("available"), themeId),
+    resolveThemeAppEmbedStatus([
+      {
+        type: "ui_extension",
+        activations: [{ handle: "botshield-embed", status: "active" }],
+      },
+    ]).themeAppEmbedActive,
     false,
   );
   assert.equal(
-    isPublishedThemeEmbedActive(extension("unavailable"), themeId),
-    false,
+    resolveThemeAppEmbedStatus(extension("unknown"))
+      .themeAppEmbedConnectionState,
+    "unavailable",
   );
-  assert.equal(
-    isPublishedThemeEmbedActive(extension("active", []), themeId),
-    false,
-  );
-  assert.equal(isPublishedThemeEmbedActive(null, themeId), false);
-  assert.equal(
-    isPublishedThemeEmbedActive(
-      [
-        {
-          type: "theme_app_extension",
-          activations: [
-            {
-              handle: "another-embed",
-              status: "active",
-              activations: [{ themeId }],
-            },
-          ],
+});
+test("missing and malformed activation data remain safe and unverified", () => {
+  for (const data of [
+    null,
+    {},
+    [],
+    [{ type: "theme_app_extension", activations: {} }],
+  ]) {
+    assert.equal(resolveThemeAppEmbedStatus(data).themeAppEmbedActive, false);
+  }
+});
+test("the client uses only App Bridge and preserves its API receiver", async () => {
+  const previous = global.window;
+  const api = {
+    async extensions() {
+      assert.equal(this, api);
+      return extension("active");
+    },
+  };
+  global.window = { shopify: { app: api } };
+  try {
+    assert.equal((await readThemeAppEmbedStatus()).themeAppEmbedActive, true);
+  } finally {
+    if (previous === undefined) delete global.window;
+    else global.window = previous;
+  }
+});
+test("a rejected App Bridge call is unable to verify, never an unusable embed or success", async () => {
+  const previous = global.window;
+  const originalError = console.error;
+  global.window = {
+    shopify: {
+      app: {
+        extensions: async () => {
+          throw new Error("Synthetic failure");
         },
-      ],
-      themeId,
-    ),
-    false,
-  );
-});
-test("missing theme permission produces an honest limitation without requesting extra scopes", async () => {
-  let called = false;
-  const result = await readPublishedTheme({
-    session: { scope: "write_app_proxy" },
-    admin: {
-      graphql() {
-        called = true;
       },
     },
-  });
-  assert.equal(called, false);
-  assert.equal(result.publishedTheme, null);
-  assert.match(result.publishedThemeError, /theme access/);
+  };
+  console.error = () => {};
+  try {
+    assert.equal(
+      (await readThemeAppEmbedStatus()).themeAppEmbedConnectionState,
+      "unavailable",
+    );
+  } finally {
+    console.error = originalError;
+    if (previous === undefined) delete global.window;
+    else global.window = previous;
+  }
 });
-test("published-theme query uses only MAIN, with minimal merchant profile data", async () => {
-  const result = await readPublishedTheme({
-    session: { scope: "write_app_proxy,read_themes" },
-    admin: {
-      async graphql(query) {
-        assert.match(query, /roles: \[MAIN\]/);
-        return Response.json({
-          data: {
-            themes: {
-              nodes: [{ id: themeId, name: "Test theme", role: "MAIN" }],
-            },
-          },
-        });
-      },
-    },
-  });
-  assert.deepEqual(result, {
-    publishedTheme: { id: themeId, name: "Test theme" },
-    publishedThemeError: "",
-  });
-});
-for (const result of [
-  { errors: [{ message: "denied" }] },
-  { data: { themes: { nodes: [] } } },
-  { data: { themes: { nodes: [{ id: themeId, role: "UNPUBLISHED" }] } } },
-]) {
-  test("theme query failures and unpublished themes cannot verify the published storefront", async () => {
-    const response = await readPublishedTheme({
-      session: { scope: "read_themes" },
-      admin: { graphql: async () => Response.json(result) },
-    });
-    assert.equal(response.publishedTheme, null);
-  });
-}
 test("bounded activation checks report timeout and ignore a late resolution", async () => {
   let resolve;
   const pending = new Promise((r) => {

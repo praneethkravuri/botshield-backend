@@ -1,4 +1,3 @@
-import { readPublishedTheme } from "../lib/published-theme.server.js";
 import { authenticate } from "../shopify.server";
 import {
   acknowledgeGuide,
@@ -6,13 +5,10 @@ import {
 } from "../lib/onboarding.server.js";
 
 export async function loader({ request }) {
-  const { session, admin } = await authenticate.admin(request);
-  const [acknowledged, theme] = await Promise.all([
-    readGuideAcknowledgment(session.shop),
-    readPublishedTheme({ session, admin }),
-  ]);
+  const { session } = await authenticate.admin(request);
+  const acknowledged = await readGuideAcknowledgment(session.shop);
   return Response.json(
-    { shop: session.shop, acknowledged, ...theme },
+    { shop: session.shop, acknowledged },
     {
       headers: { "Cache-Control": "no-store" },
     },

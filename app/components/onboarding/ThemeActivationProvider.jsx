@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useLocation } from "react-router";
 import { readThemeAppEmbedStatus } from "../../lib/theme-extension-status.client.js";
+import { THEME_EMBED_CONNECTION_STATE } from "../../lib/theme-extension-status.js";
 import { checkActivationWithTimeout } from "../../lib/onboarding.js";
 import { safeFetchJson } from "../../lib/safe-fetch.js";
 
@@ -43,7 +44,13 @@ export function ThemeActivationProvider({ children, merchantShop }) {
     setProfile((current) => ({ ...current, loading: true }));
     const current = () => mounted.current && version === generation.current;
     const request = (async () => {
-      // Read the published theme on every check; merchants can switch themes in the editor.
+      // Activation is independent of guide metadata. The documented App API is
+      // already limited to the published theme and requires no extra scopes.
+      const activationRequest = checkActivationWithTimeout(() =>
+        readThemeAppEmbedStatus(),
+      ).catch(() => ({
+        themeAppEmbedConnectionState: THEME_EMBED_CONNECTION_STATE.UNAVAILABLE,
+      }));
       let data = null;
       try {
         data = await safeFetchJson("/api/onboarding", {
@@ -70,24 +77,22 @@ export function ThemeActivationProvider({ children, merchantShop }) {
         if (current())
           setProfile((previous) => ({
             ...previous,
-            publishedTheme: null,
             loading: false,
             error:
               "Store setup details couldn't be loaded. You can still use BotShield.",
           }));
       }
-      if (!current()) return;
-      const result = await checkActivationWithTimeout(() =>
-        readThemeAppEmbedStatus(data?.publishedTheme?.id),
-      ).catch(() => ({ themeAppEmbedConnectionState: "unavailable" }));
-      if (!current()) return;
+      const result = await activationRequest;
+      if (!current()) return result;
       const state = result.themeAppEmbedConnectionState;
       setStatus((previous) => ({
         state,
         checking: false,
-        verified: result.publishedThemeVerified === true,
+        verified: state === THEME_EMBED_CONNECTION_STATE.ACTIVE,
         lastVerifiedState:
-          state === "unavailable" ? previous.lastVerifiedState : state,
+          state === THEME_EMBED_CONNECTION_STATE.UNAVAILABLE
+            ? previous.lastVerifiedState
+            : state,
       }));
       return result;
     })().finally(() => {
@@ -130,10 +135,34 @@ export function ThemeActivationProvider({ children, merchantShop }) {
     // Billing return owns its bootstrap; don't introduce requests into that flow.
     if (location.pathname === "/app/billing-return") return undefined;
     check();
+    let returnTimer;
+    let queued = false;
+    let disposed = false;
     const onReturn = () => {
-      if (document.visibilityState !== "hidden") check();
+      if (document.visibilityState === "hidden") return;
+      clearTimeout(returnTimer);
+      // Coalesce focus + visibility events, and keep one fresh check if the
+      // merchant returned while an older verification was still in flight.
+      returnTimer = setTimeout(() => {
+        const pending = inFlight.current;
+        if (!pending) {
+          check();
+          return;
+        }
+        if (queued) return;
+        queued = true;
+        pending.then(() => {
+          queued = false;
+          if (
+            !disposed &&
+            mounted.current &&
+            document.visibilityState !== "hidden"
+          )
+            check();
+        });
+      }, 100);
     };
-    const onBridgeReady = () => check();
+    const onBridgeReady = onReturn;
     const bridge = document.querySelector(
       'script[src="https://cdn.shopify.com/shopifycloud/app-bridge.js"]',
     );
@@ -141,6 +170,8 @@ export function ThemeActivationProvider({ children, merchantShop }) {
     window.addEventListener("focus", onReturn);
     document.addEventListener("visibilitychange", onReturn);
     return () => {
+      disposed = true;
+      clearTimeout(returnTimer);
       bridge?.removeEventListener("load", onBridgeReady);
       window.removeEventListener("focus", onReturn);
       document.removeEventListener("visibilitychange", onReturn);

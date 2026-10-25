@@ -25,7 +25,6 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--no-sandbox"],
 });
-const themeId = "gid://shopify/OnlineStoreTheme/123";
 const query = "?shop=onboarding-test.myshopify.com&host=dGVzdA&embedded=1";
 const failures = [];
 let checks = 0;
@@ -46,7 +45,6 @@ async function scenario(name, run) {
 async function setup({
   state = "inactive",
   acknowledged = false,
-  themeAccess = true,
   reducedMotion = "no-preference",
   delay = 0,
 } = {}) {
@@ -57,16 +55,13 @@ async function setup({
   const model = {
     state,
     acknowledged,
-    themeAccess,
     delay,
     requests: 0,
     posts: 0,
-    placements: [themeId],
   };
   await context.addInitScript(
-    ({ state, themeId }) => {
+    ({ state }) => {
       window.__activationState = state;
-      window.__placements = [themeId];
       window.__activationDelay = 0;
       window.__activationCalls = 0;
       window.shopify = {
@@ -82,7 +77,6 @@ async function setup({
           extensions: async () => {
             window.__activationCalls += 1;
             const state = window.__activationState;
-            const placements = [...window.__placements];
             if (window.__activationDelay)
               await new Promise((resolve) =>
                 setTimeout(resolve, window.__activationDelay),
@@ -98,11 +92,12 @@ async function setup({
                       {
                         handle: "botshield-embed",
                         target: "body",
-                        status: state === "active" ? "active" : "available",
-                        activations: placements.map((themeId) => ({
-                          themeId,
-                          target: "body",
-                        })),
+                        status:
+                          state === "active"
+                            ? "active"
+                            : state === "unusable"
+                              ? "unavailable"
+                              : "available",
                       },
                     ],
                   },
@@ -111,7 +106,7 @@ async function setup({
         },
       };
     },
-    { state, themeId },
+    { state },
   );
   await context.route("https://**/*", (route) =>
     route.fulfill({
@@ -139,12 +134,6 @@ async function setup({
               "shop",
             ) || "onboarding-test.myshopify.com",
           acknowledged: model.acknowledged,
-          publishedTheme: model.themeAccess
-            ? { id: themeId, name: "Horizon (test theme)" }
-            : null,
-          publishedThemeError: model.themeAccess
-            ? ""
-            : "Published-theme verification needs Shopify theme access. You can still follow the guide and explore your dashboard.",
         };
       }
     } else if (pathname === "/api/status")
@@ -169,15 +158,12 @@ async function setup({
   page.on("pageerror", (error) => errors.push(error.message));
   return { context, page, model, errors };
 }
-async function state(page, value, placements = [themeId]) {
-  await page.evaluate(
-    ({ value, placements }) => {
-      window.__activationState = value;
-      window.__placements = placements;
-    },
-    { value, placements },
-  );
+async function state(page, value) {
+  await page.evaluate((value) => {
+    window.__activationState = value;
+  }, value);
 }
+
 async function selectStep(page, index) {
   await page.locator(".ob-progress button").nth(index).click();
   await page.waitForFunction(
@@ -288,21 +274,23 @@ try {
         })
         .first()
         .waitFor();
-      await state(page, "active", ["gid://shopify/OnlineStoreTheme/draft"]);
+      await state(page, "unusable");
       await page
         .getByRole("button", { name: "Check activation", exact: true })
         .click();
       await page
-        .getByText("BotShield is enabled in a theme.", { exact: true })
+        .getByText(
+          "Shopify reports that the BotShield app embed is not currently usable.",
+          { exact: true },
+        )
+        .first()
         .waitFor();
-      assert.equal(
-        await page.locator(".ob-success").count(),
-        0,
-        "Draft activation is not success",
-      );
-      await screenshot(page, "draft-theme-not-complete");
+      assert.equal(await page.locator(".ob-success").count(), 0);
+      await screenshot(page, "verify-unusable-desktop");
       await state(page, "active");
-      model.delay = 700;
+      await page.evaluate(() => {
+        window.__activationDelay = 1000;
+      });
       await page
         .getByRole("button", { name: "Check activation", exact: true })
         .click();
@@ -407,28 +395,90 @@ try {
       await context.close();
     },
   );
-  await scenario("scope limitation never falsely completes setup", async () => {
-    const { context, page } = await setup({
-      state: "active",
-      themeAccess: false,
-    });
-    await page.goto(`${base}/app/onboarding${query}`);
-    await selectStep(page, 2);
-    await page
-      .getByRole("button", { name: "Check activation", exact: true })
-      .click();
-    await page
-      .getByText("BotShield is enabled in a theme.", { exact: true })
-      .waitFor();
-    assert.match(
-      await page.locator(".ob-inline-error").innerText(),
-      /theme access/,
-    );
-    await page.waitForTimeout(2700);
-    assert.equal(await page.locator(".ob-success").count(), 0);
-    await screenshot(page, "theme-access-limitation");
-    await context.close();
-  });
+  await scenario(
+    "return during an in-flight check schedules a fresh scope-free result",
+    async () => {
+      const { context, page, errors } = await setup({ acknowledged: true });
+      await page.goto(`${base}/app/onboarding${query}`);
+      await selectStep(page, 2);
+      await waitIdle(page);
+      const beforeCalls = await page.evaluate(() => window.__activationCalls);
+      await page.evaluate(() => {
+        window.__activationDelay = 700;
+      });
+      await page
+        .getByRole("button", { name: "Check activation", exact: true })
+        .click();
+      await page.waitForFunction(
+        (count) => window.__activationCalls > count,
+        beforeCalls,
+      );
+      await state(page, "active");
+      await page.evaluate(() => {
+        window.dispatchEvent(new Event("focus"));
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.locator(".ob-success").waitFor();
+      assert.ok(
+        await page.evaluate(
+          (count) => window.__activationCalls >= count + 2,
+          beforeCalls,
+        ),
+      );
+      assert.deepEqual(errors, []);
+      await context.close();
+    },
+  );
+  await scenario(
+    "App Bridge readiness after the initial unavailable read triggers a fresh check",
+    async () => {
+      const { context, page } = await setup({
+        state: "unavailable",
+        acknowledged: true,
+        delay: 600,
+      });
+      await page.goto(`${base}/app/onboarding${query}`);
+      await page.waitForFunction(() => window.__activationCalls >= 1);
+      await state(page, "active");
+      await page.evaluate(() =>
+        document
+          .querySelector(
+            'script[src="https://cdn.shopify.com/shopifycloud/app-bridge.js"]',
+          )
+          .dispatchEvent(new Event("load")),
+      );
+      await page.locator(".ob-already-active").waitFor();
+      assert.ok(await page.evaluate(() => window.__activationCalls >= 2));
+      await context.close();
+    },
+  );
+  await scenario(
+    "scope-free App Bridge activation completes without theme IDs or permission prompts",
+    async () => {
+      const { context, page } = await setup({ state: "inactive" });
+      const unexpectedRequests = [];
+      page.on("request", (request) => {
+        if (/graphql|oauth|request.*scope|themes\.json/.test(request.url()))
+          unexpectedRequests.push(request.url());
+      });
+      await page.goto(`${base}/app/onboarding${query}`);
+      await selectStep(page, 2);
+      await waitIdle(page);
+      await state(page, "active");
+      await page
+        .getByRole("button", { name: "Check activation", exact: true })
+        .click();
+      await page.locator(".ob-success").waitFor();
+      assert.deepEqual(unexpectedRequests, []);
+      assert.doesNotMatch(
+        await page.locator("main").innerText(),
+        /theme access|permission/,
+      );
+      await screenshot(page, "scope-free-activation-success");
+      await page.waitForURL((url) => url.pathname === "/app");
+      await context.close();
+    },
+  );
   await scenario(
     "profile save failure allows dashboard exit without a redirect loop",
     async () => {

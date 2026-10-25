@@ -81,7 +81,7 @@ export default function OnboardingPage() {
     }
   }, [profile.shop]);
   useEffect(() => {
-    if (!checking && ["inactive", "missing"].includes(state))
+    if (!checking && ["inactive", "missing", "unusable"].includes(state))
       setNeededSetup(true);
   }, [checking, state]);
   useEffect(() => {
@@ -234,11 +234,7 @@ export default function OnboardingPage() {
                             ? "Loading your store…"
                             : "Your Shopify storefront"}
                       </strong>
-                      <span>
-                        {profile.publishedTheme?.name
-                          ? `Published theme: ${profile.publishedTheme.name}`
-                          : "Theme target: current published theme"}
-                      </span>
+                      <span>Theme target: current published theme</span>
                     </div>
                   </div>
                 </div>
@@ -297,10 +293,7 @@ export default function OnboardingPage() {
                           ▤
                         </span>
                         <div>
-                          <strong>
-                            {profile.publishedTheme?.name ||
-                              "Current published theme"}
-                          </strong>
+                          <strong>Current published theme</strong>
                           <p>Your live storefront theme</p>
                         </div>
                         <span className="ob-published">Published</span>
@@ -372,9 +365,7 @@ export default function OnboardingPage() {
                           <strong>
                             {checking
                               ? "Checking your theme activation..."
-                              : state === "active" && !verified
-                                ? "BotShield is enabled in a theme."
-                                : ACTIVATION_MESSAGES[state]}
+                              : ACTIVATION_MESSAGES[state]}
                           </strong>
                           {state === "unavailable" &&
                           activation.lastVerifiedState ? (
@@ -382,12 +373,6 @@ export default function OnboardingPage() {
                               Last verified result:{" "}
                               {activation.lastVerifiedState}. This is not a
                               current confirmation.
-                            </p>
-                          ) : null}
-                          {state === "active" && !verified && !checking ? (
-                            <p>
-                              The embed is enabled in a theme. We still need to
-                              confirm that it’s your published theme.
                             </p>
                           ) : null}
                         </div>
@@ -429,11 +414,6 @@ export default function OnboardingPage() {
                         </BotShieldActionButton>
                       ) : null}
                     </>
-                  ) : null}
-                  {profile.publishedThemeError ? (
-                    <div className="ob-inline-error" role="status">
-                      <p>{profile.publishedThemeError}</p>
-                    </div>
                   ) : null}
                   {profile.loading ? (
                     <p role="status">Loading store details…</p>

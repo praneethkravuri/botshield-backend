@@ -75,7 +75,6 @@ globalThis.fetch = async () =>
   Response.json({
     shop: "ssr-test.myshopify.com",
     acknowledged: false,
-    publishedTheme: null,
   });
 console.error = (...args) =>
   errors.push(args.map((value) => value?.message || String(value)).join(" "));

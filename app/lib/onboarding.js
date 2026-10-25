@@ -15,7 +15,7 @@ export function shouldOfferInitialOnboarding({
     !params.has("charge_id") &&
     acknowledged === false &&
     !checking &&
-    ["inactive", "missing"].includes(state)
+    ["inactive", "missing", "unusable"].includes(state)
   );
 }
 
@@ -24,6 +24,8 @@ export const ACTIVATION_MESSAGES = {
   inactive: "BotShield is not yet enabled on your published theme.",
   missing: "Shopify could not find the BotShield app embed.",
   unavailable: "We couldn't verify your theme activation right now.",
+  unusable:
+    "Shopify reports that the BotShield app embed is not currently usable.",
 };
 
 // Bound an unavailable App Bridge call; a late resolution cannot overwrite a newer check.

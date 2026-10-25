@@ -7,7 +7,7 @@ export default function SetupReminder() {
   const activation = useThemeActivation();
   const location = useLocation();
   if (!activation || activation.checking || activation.verified) return null;
-  const unavailable = ["active", "unavailable"].includes(activation.state);
+  const unavailable = activation.state === "unavailable";
   return (
     <aside className="botshield-setup-reminder" aria-label="Theme activation">
       <div>
@@ -19,7 +19,9 @@ export default function SetupReminder() {
         <p>
           {unavailable
             ? "Shopify activation status is unavailable. Review your setup or try checking again."
-            : "Enable the app embed in your published theme to start monitoring storefront activity."}
+            : activation.state === "unusable"
+              ? "Shopify reports that the BotShield embed is not currently usable. Review the setup guide for help."
+              : "Enable the app embed in your published theme to start monitoring storefront activity."}
         </p>
       </div>
       <Link to={mergeEmbeddedAppSearch("/app/onboarding", location.search)}>

@@ -1,17 +1,15 @@
 import {
   BOTSHIELD_THEME_EMBED_HANDLE,
   resolveThemeAppEmbedStatus,
-  isPublishedThemeEmbedActive,
   THEME_EMBED_CONNECTION_STATE,
 } from "./theme-extension-status.js";
 
 export { BOTSHIELD_THEME_EMBED_HANDLE, THEME_EMBED_CONNECTION_STATE };
 
-/**
- * Reads Shopify App Bridge embed status and placements. When supplied, the
- * independently identified published theme ID is required for verification.
+/** Shopify's App API reports activation for the published theme without extra scopes.
+ * https://shopify.dev/docs/api/app-home/latest/apis/authentication-and-data/app-api
  */
-export async function readThemeAppEmbedStatus(publishedThemeId = null) {
+export async function readThemeAppEmbedStatus() {
   if (typeof window === "undefined") {
     return resolveThemeAppEmbedStatus(null);
   }
@@ -22,10 +20,8 @@ export async function readThemeAppEmbedStatus(publishedThemeId = null) {
   }
 
   try {
-    const extensions = await extensionsApi();
-    return { ...resolveThemeAppEmbedStatus(extensions),
-      publishedThemeVerified: isPublishedThemeEmbedActive(extensions, publishedThemeId),
-    };
+    const extensions = await extensionsApi.call(window.shopify.app);
+    return resolveThemeAppEmbedStatus(extensions);
   } catch (error) {
     console.error("Failed to read theme app embed status", error);
     return {
