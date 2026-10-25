@@ -927,30 +927,18 @@
 
 /* Empty states */
 .botshield-analytics-premium .botshield-analytics-empty {
-  min-height: 118px;
+  min-height: 96px;
   padding: 20px;
   border: 0;
   border-radius: 14px;
   background: transparent;
 }
-.botshield-analytics-premium .botshield-analytics-empty::before {
-  content: "";
-  display: block;
-  width: 24px;
-  height: 3px;
-  margin: 0 auto 10px;
-  border-radius: 50%;
-  background: var(--ba-border-cool);
-}
-.botshield-analytics-premium .botshield-analytics-empty strong {
-  color: #4a4f55;
-  font-size: 14px;
-  font-weight: 650;
-}
 .botshield-analytics-premium .botshield-analytics-empty span {
   color: var(--ba-muted);
   font-size: 13px;
   line-height: 1.5;
+  max-width: 52ch;
+  margin-inline: auto;
 }
 
 /* Insight + summary — tertiary */
@@ -980,6 +968,7 @@
   gap: 20px;
   padding: var(--ba-panel-padding);
 }
+.botshield-analytics-premium .botshield-analytics-summary h2 { margin: 0; }
 .botshield-analytics-premium .botshield-analytics-summary dl { gap: 20px; }
 .botshield-analytics-premium .botshield-analytics-summary dd {
   white-space: normal;

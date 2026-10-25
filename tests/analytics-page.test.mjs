@@ -117,7 +117,7 @@ test("Analytics preserves truthful zero values and explicit analytical context",
 });
 
 test("Analytics supplies deliberate low-data and filtered empty states", () => {
-  assert.match(analyticsSource, /No recurring suspicious visitors matched this period and filter selection/);
+  assert.match(analyticsSource, /No recurring suspicious visitors match the selected period and filters/);
   assert.match(analyticsSource, /No multi-signal event combinations were recorded during this period/);
   assert.match(analyticsSource, /No events match these filters\. Clear filters or choose a wider date range/);
 });
