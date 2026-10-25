@@ -121,10 +121,17 @@ export function buildThemeEditorDeepLink(
 ) {
   const normalizedShop = String(shop || "").trim();
   const normalizedApiKey = String(apiKey || "").trim();
-  if (!normalizedShop || !normalizedApiKey) return "";
+  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/i.test(normalizedShop) || !normalizedApiKey) return "";
+  if (!/^[a-zA-Z0-9_-]+$/.test(handle)) return "";
 
-  return `https://${normalizedShop}/admin/themes/current/editor?context=apps&activateAppId=${buildThemeEditorActivateAppId(
-    normalizedApiKey,
-    handle,
-  )}`;
+  return `https://${normalizedShop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(normalizedApiKey)}/${encodeURIComponent(handle)}`;
+}
+
+/** Require an activation placement matching the independently identified published theme. */
+export function isPublishedThemeEmbedActive(extensions, publishedThemeId) {
+  if (!publishedThemeId || !Array.isArray(extensions)) return false;
+  return extensions.some(extension => extension?.type === "theme_app_extension" &&
+    Array.isArray(extension.activations) && extension.activations.some(block =>
+      block?.handle === BOTSHIELD_THEME_EMBED_HANDLE && block.status === "active" &&
+      Array.isArray(block.activations) && block.activations.some(placement => placement?.themeId === publishedThemeId)));
 }

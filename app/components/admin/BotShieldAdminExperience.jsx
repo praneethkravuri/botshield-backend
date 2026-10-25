@@ -84,6 +84,7 @@ import {
   getUiStatus,
 } from "../../lib/ui-status";
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
+import SetupReminder from "../onboarding/SetupReminder.jsx";
 import ValuePage from "./ValuePage.jsx";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
@@ -1620,10 +1621,10 @@ function OverviewPage({ model, actions }) {
                       void handleRefreshStoreHealth();
                       return;
                     }
-                    actions.openThemeEditor?.();
+                    actions.setPage?.("onboarding");
                   }}
                 >
-                  {storefrontSensorActive ? "Refresh status" : "Verify connection"}
+                  {storefrontSensorActive ? "Refresh status" : "Complete setup"}
                 </BotShieldActionButton>
               </span>
             </div>
@@ -1834,10 +1835,10 @@ function OverviewPage({ model, actions }) {
                         void handleRefreshStoreHealth();
                         return;
                       }
-                      actions.openThemeEditor?.();
+                      actions.setPage?.("onboarding");
                     }}
                   >
-                    {storefrontSensorActive ? "Refresh data" : "Verify connection"}
+                    {storefrontSensorActive ? "Refresh data" : "Complete setup"}
                   </BotShieldActionButton>
                   {lastStorefrontDecisionAt ? (
                     <small>Last decision received <BotShieldHydrationRelativeTime value={lastStorefrontDecisionAt} /></small>
@@ -6334,7 +6335,6 @@ function SettingsPage({ model, actions }) {
 
   const responseMode = getResponseMode(model);
   const protectionProfile = getProtectionProfile(model);
-  const storefrontConnected = hasStorefrontConnection(model);
   const emailStatus = getEmailStatus({
     configured: model.emailProviderConfigured,
     lastStatus: model.lastAlertStatus,
@@ -6913,15 +6913,14 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <BotShieldActionButton
-                disabled={!model.protectionStatus?.shop}
-                onClick={actions.openThemeEditor}
+                onClick={() => actions.setPage("onboarding")}
               >
-                {storefrontConnected ? "Open theme editor" : "Connect storefront"}
+                Setup guide
               </BotShieldActionButton>
             }
             description="Review or enable the BotShield theme app embed in Shopify."
             icon="connection"
-            title="Theme editor"
+            title="Theme activation"
             variant="action"
           />
         </SettingsHubSection>
@@ -7403,7 +7402,10 @@ export default function BotShieldAdminExperience({ model, actions }) {
   const routeContent = (
     <div key={screen}>
       {screen === "dashboard" ? (
-        <OverviewPage model={model} actions={actions} />
+        <>
+          <SetupReminder />
+          <OverviewPage model={model} actions={actions} />
+        </>
       ) : null}
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />

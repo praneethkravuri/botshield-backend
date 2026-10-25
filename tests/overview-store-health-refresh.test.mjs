@@ -52,8 +52,8 @@ test("Threat activity verify connection refreshes live data when embed is active
   assert.match(threatEmptySection, /storefrontSensorActive/);
   assert.match(threatEmptySection, /handleRefreshStoreHealth/);
   assert.match(threatEmptySection, /Refresh data/);
-  assert.match(threatEmptySection, /Verify connection/);
-  assert.match(threatEmptySection, /actions\.openThemeEditor/);
+  assert.match(threatEmptySection, /Complete setup/);
+  assert.match(threatEmptySection, /actions\.setPage\?\.\("onboarding"\)/);
   assert.doesNotMatch(
     threatEmptySection,
     /<BotShieldActionButton onClick=\{actions\.openThemeEditor\}>/,

@@ -8,6 +8,7 @@ import {
   resolveInitialSettingsSection,
 } from "../lib/admin-route-state.server";
 import { isBillingReturnRequest } from "../lib/billing-return.server";
+import { ThemeActivationProvider } from "../components/onboarding/ThemeActivationProvider.jsx";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
@@ -15,8 +16,8 @@ export const loader = async ({ request }) => {
 
   if (isBillingReturnRequest(request)) {
     // Billing return performs its own embedded bootstrap + authenticate flow.
-    // eslint-disable-next-line no-undef
     return {
+      // eslint-disable-next-line no-undef
       apiKey: process.env.SHOPIFY_API_KEY || "",
       initialAdminPage: resolveInitialAdminPage(url.pathname, url.search),
       initialSettingsSection: resolveInitialSettingsSection(url.search),
@@ -24,11 +25,12 @@ export const loader = async ({ request }) => {
     };
   }
 
-  await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
 
-  // eslint-disable-next-line no-undef
   return {
+    // eslint-disable-next-line no-undef
     apiKey: process.env.SHOPIFY_API_KEY || "",
+    merchantShop: session.shop,
     initialAdminPage: resolveInitialAdminPage(url.pathname, url.search),
     initialSettingsSection: resolveInitialSettingsSection(url.search),
     renderAnchorMs: Date.now(),
@@ -36,12 +38,14 @@ export const loader = async ({ request }) => {
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData();
+  const { apiKey, merchantShop } = useLoaderData();
 
   return (
     <BotShieldEmbeddedAppProvider apiKey={apiKey}>
       <BotShieldAppNavigation />
-      <Outlet />
+      <ThemeActivationProvider key={merchantShop || "billing-return"} merchantShop={merchantShop}>
+        <Outlet />
+      </ThemeActivationProvider>
     </BotShieldEmbeddedAppProvider>
   );
 }
