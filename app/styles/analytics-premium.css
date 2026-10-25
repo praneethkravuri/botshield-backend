@@ -15,25 +15,25 @@
   --ba-red: #b54708;
   --ba-red-soft: #fdf3f0;
   --ba-surface: #ffffff;
-  --ba-surface-muted: #f7f8f9;
-  --ba-surface-cool: #f3f5f7;
-  --ba-surface-workspace: #f3f5f7;
+  --ba-surface-muted: #fafbfc;
+  --ba-surface-cool: #f8fafc;
+  --ba-surface-workspace: #fbfcfe;
   --ba-surface-elevated: #ffffff;
   --ba-surface-control: #f8f9fa;
   --ba-border: #dce0e4;
   --ba-border-cool: #e2e5e9;
-  --ba-border-quiet: #eaeced;
+  --ba-border-quiet: #e1e6ed;
   --ba-border-strong: #cdd2d8;
   --ba-ink: #181b1f;
   --ba-muted: #5c6166;
-  --ba-muted-cool: #72787d;
+  --ba-muted-cool: #606a75;
   --ba-workspace-max: min(100%, 1440px);
   --ba-gutter: 24px;
   --ba-panel-padding: 24px;
   --ba-radius-panel: 16px;
   --ba-radius-control: 10px;
-  --ba-shadow-soft: 0 1px 2px rgba(16, 20, 26, 0.04), 0 6px 20px rgba(16, 20, 26, 0.04);
-  --ba-shadow-elevated: 0 1px 2px rgba(16, 20, 26, 0.05), 0 8px 24px rgba(16, 20, 26, 0.05);
+  --ba-shadow-soft: 0 2px 4px rgba(24, 39, 58, 0.03), 0 8px 24px rgba(24, 39, 58, 0.045);
+  --ba-shadow-elevated: var(--ba-shadow-soft);
   --ba-enter: 340ms;
   --ba-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ba-fast: 140ms;
@@ -101,11 +101,11 @@
   max-width: var(--ba-workspace-max);
   min-width: 0;
   margin-inline: auto;
-  gap: 32px;
+  gap: 24px;
   padding-bottom: 56px;
   color: var(--ba-ink);
   background: var(--ba-surface-workspace);
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .botshield-analytics-premium.botshield-analytics-v2 > .ba-page-intro,
@@ -140,14 +140,14 @@
   overflow: hidden;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px 20px;
   margin-bottom: 0;
   padding: var(--ba-panel-padding);
   border: 1px solid var(--ba-border-quiet);
   border-radius: var(--ba-radius-panel);
-  background: linear-gradient(180deg, #fafbfc 0%, #f6f8fa 100%);
+  background: var(--ba-surface);
   box-shadow: var(--ba-shadow-soft);
 }
 .botshield-analytics-premium .ba-page-intro-copy {
@@ -265,10 +265,10 @@
   display: grid;
   gap: 6px;
   color: #5a6168;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .botshield-analytics-premium .botshield-analytics-search {
   width: 100%;
@@ -317,6 +317,12 @@
   box-shadow: 0 0 0 3px var(--ba-teal-ring);
 }
 
+/* Keep search balanced when an empty dataset has no signal selector. */
+.botshield-analytics-premium .botshield-analytics-filter-row:not(:has(#analytics-signal-filter)) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr) auto;
+}
+.botshield-analytics-premium .botshield-analytics-toolbar-actions:empty { display: none; }
+
 /* Dataset context — integrated readout, not a nested box */
 .botshield-analytics-premium .botshield-analytics-filter-context {
   display: flex;
@@ -324,8 +330,8 @@
   align-items: center;
   gap: 10px;
   margin: 16px 0 0;
-  padding: 0;
-  border-top: none;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--ba-border-quiet);
   background: transparent;
   color: var(--ba-muted);
   font-size: 13px;
@@ -360,25 +366,30 @@
   transform: translateY(1px);
 }
 
-/* ── KPI region — modern airy metric zones ── */
+/* Independent metric cards on an unboxed grid */
 .botshield-analytics-premium > .botshield-analytics-kpis {
   margin-top: 0;
-  border: 1px solid var(--ba-border-quiet);
+  border: 0;
   border-radius: var(--ba-radius-panel);
-  background: var(--ba-surface);
-  box-shadow: var(--ba-shadow-soft);
-  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
 }
 .botshield-analytics-premium .botshield-analytics-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 .botshield-analytics-premium .botshield-analytics-kpi {
   position: relative;
+  align-content: start;
   min-width: 0;
-  min-height: 0;
-  padding: var(--ba-panel-padding);
-  border-right: none;
+  min-height: 164px;
+  padding: 22px 20px;
+  border: 1px solid var(--ba-border-quiet);
+  border-radius: var(--ba-radius-panel);
+  background: var(--ba-surface);
+  box-shadow: var(--ba-shadow-soft);
   box-sizing: border-box;
   transition: background-color var(--ba-mid) ease;
 }
@@ -386,21 +397,21 @@
   display: none;
 }
 .botshield-analytics-premium .botshield-analytics-kpi:last-child {
-  border-right: 0;
+  border-right: 1px solid var(--ba-border-quiet);
 }
 .botshield-analytics-premium .botshield-analytics-kpi:hover {
-  background: rgba(248, 249, 250, 0.9);
-  box-shadow: none;
+  background: var(--ba-surface);
+  box-shadow: var(--ba-shadow-soft);
 }
 .botshield-analytics-premium .botshield-analytics-kpi > span {
   display: flex;
   align-items: center;
   gap: 8px;
   color: #5a6168;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .botshield-analytics-premium .botshield-analytics-kpi > span::before {
   content: "";
@@ -426,7 +437,7 @@
   margin-top: 10px;
   min-width: 0;
   color: var(--ba-ink);
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: -0.035em;
@@ -437,24 +448,22 @@
   font-weight: 650;
   letter-spacing: -0.015em;
   line-height: 1.3;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  display: block;
+  overflow-wrap: anywhere;
   white-space: normal;
 }
 .botshield-analytics-premium .botshield-analytics-kpi > small {
   display: block;
   margin-top: 8px;
   color: var(--ba-muted-cool);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
 /* Section labels — modern technical eyebrows */
 .botshield-analytics-premium > .botshield-analytics-section-label {
-  margin-top: 0;
-  margin-bottom: 12px;
+  margin-top: 6px;
+  margin-bottom: -12px;
   color: #5a6168;
   font-size: 11px;
   font-weight: 700;
@@ -483,7 +492,7 @@
     box-shadow var(--ba-mid) ease;
 }
 .botshield-analytics-premium .botshield-analytics-panel > header {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 .botshield-analytics-premium .botshield-analytics-panel > header h2 {
   margin: 0;
@@ -512,7 +521,7 @@
   box-shadow: var(--ba-shadow-elevated);
 }
 .botshield-analytics-premium .ba-primary-chart > header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   padding-bottom: 0;
   border-bottom: none;
 }
@@ -532,8 +541,8 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px 28px;
   margin-bottom: 22px;
-  padding-bottom: 0;
-  border-bottom: none;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--ba-border-quiet);
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity-facts > div {
   padding: 0;
@@ -541,13 +550,13 @@
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity-facts span {
   color: var(--ba-muted-cool);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity-facts strong {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 650;
   color: var(--ba-ink);
   line-height: 1.35;
@@ -555,7 +564,7 @@
 
 /* Chart plot area */
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-histogram {
-  height: 128px;
+  height: 160px;
   padding: 14px 12px 0;
   border: none;
   border-radius: 12px;
@@ -572,7 +581,7 @@
   max-width: none;
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-activity.is-sparse .botshield-analytics-histogram {
-  height: 96px;
+  height: 120px;
   padding: 12px 16px 0;
   background-image: repeating-linear-gradient(
     to bottom,
@@ -583,7 +592,7 @@
   );
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-histogram > span {
-  min-width: 10px;
+  min-width: 0;
   max-width: 56px;
 }
 .botshield-analytics-premium .ba-primary-chart .botshield-analytics-histogram i {
@@ -780,6 +789,13 @@
   line-height: 1.45;
 }
 
+/* Keep tabular data readable while retaining local table scrolling. */
+.botshield-analytics-premium .botshield-analytics-table td,
+.botshield-analytics-premium .botshield-analytics-table tbody th {
+  height: 48px;
+  padding: 12px 14px;
+}
+
 /* Outcome badges */
 .botshield-analytics-premium .botshield-analytics-outcome-number.is-blocked {
   color: #9a3412;
@@ -821,8 +837,8 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  border: 1px solid var(--ba-border-quiet);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 8px;
   background: var(--ba-surface);
   overflow-x: auto;
   overflow-y: hidden;
@@ -832,16 +848,16 @@
   min-width: 0;
 }
 .botshield-analytics-premium .botshield-analytics-table thead th {
-  height: 36px;
+  height: 42px;
   padding-top: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--ba-border-quiet);
   background: var(--ba-surface-muted);
   color: #5c6369;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 .botshield-analytics-premium .botshield-analytics-event-table tbody tr {
   transition: background-color var(--ba-fast) ease;
@@ -913,15 +929,15 @@
 .botshield-analytics-premium .botshield-analytics-empty {
   min-height: 118px;
   padding: 20px;
-  border: 1px dashed var(--ba-border-cool);
+  border: 0;
   border-radius: 14px;
-  background: var(--ba-surface-muted);
+  background: transparent;
 }
 .botshield-analytics-premium .botshield-analytics-empty::before {
   content: "";
   display: block;
-  width: 6px;
-  height: 6px;
+  width: 24px;
+  height: 3px;
   margin: 0 auto 10px;
   border-radius: 50%;
   background: var(--ba-border-cool);
@@ -944,18 +960,40 @@
   border: 1px solid var(--ba-border-quiet);
   border-left: 3px solid rgba(74, 102, 122, 0.45);
   border-radius: 6px 14px 14px 6px;
-  background: var(--ba-surface-muted);
-  box-shadow: none;
+  background: var(--ba-surface);
+  box-shadow: var(--ba-shadow-soft);
   box-sizing: border-box;
 }
 .botshield-analytics-premium .botshield-analytics-summary {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--ba-border-quiet);
-  background: var(--ba-surface-muted);
+  background: var(--ba-surface);
   border-radius: 14px;
-  box-shadow: none;
+  box-shadow: var(--ba-shadow-soft);
   box-sizing: border-box;
+}
+
+/* Summary details are a reading surface, rather than a narrow status strip. */
+.botshield-analytics-premium .botshield-analytics-summary {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  padding: var(--ba-panel-padding);
+}
+.botshield-analytics-premium .botshield-analytics-summary dl { gap: 20px; }
+.botshield-analytics-premium .botshield-analytics-summary dd {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+}
+.botshield-analytics-premium .botshield-analytics-insight { padding: 20px 24px; }
+.botshield-analytics-premium .botshield-analytics-loading {
+  min-height: 180px;
+  padding: 20px;
+  border: 1px solid var(--ba-border-quiet);
+  border-radius: var(--ba-radius-panel);
+  background: var(--ba-surface);
+  box-shadow: var(--ba-shadow-soft);
 }
 
 /* Path / network compact ranking — stable 3-row hierarchy */
@@ -1101,6 +1139,7 @@
 }
 
 /* Focus language */
+.botshield-analytics-premium .botshield-analytics-table-wrap:focus-visible,
 .botshield-analytics-premium button:focus-visible,
 .botshield-analytics-premium .botshield-analytics-detail-button:focus-visible {
   outline: 2px solid var(--ba-blue);
@@ -1108,6 +1147,12 @@
 }
 
 @media (max-width: 980px) {
+  .botshield-analytics-premium .ba-page-intro-copy { flex: 0 1 auto; max-width: none; }
+  .botshield-analytics-premium .botshield-analytics-summary dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-split,
+  .botshield-analytics-premium.botshield-analytics-v2 > .botshield-analytics-split--primary {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .botshield-analytics-premium.botshield-analytics-v2 {
     gap: 28px;
   }
@@ -1127,6 +1172,9 @@
     padding: var(--ba-panel-padding);
   }
   .botshield-analytics-premium .botshield-analytics-filter-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .botshield-analytics-premium .botshield-analytics-filter-row:not(:has(#analytics-signal-filter)) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .botshield-analytics-premium .botshield-analytics-search {
@@ -1170,6 +1218,13 @@
   .botshield-analytics-premium.botshield-analytics-v2 {
     gap: 24px;
   }
+  .botshield-analytics-premium .botshield-analytics-filter-row select,
+  .botshield-analytics-premium .botshield-analytics-filter-row input,
+  .botshield-analytics-premium .botshield-analytics-period button,
+  .botshield-analytics-premium .ba-page-intro-actions .botshield-action-button,
+  .botshield-analytics-premium .botshield-analytics-clear,
+  .botshield-analytics-premium .botshield-analytics-detail-button,
+  .botshield-analytics-premium .botshield-analytics-pagination button { min-height: 44px; }
   .botshield-analytics-premium .ba-page-intro-actions {
     flex-direction: column;
     align-items: stretch;
@@ -1181,11 +1236,13 @@
   .botshield-analytics-premium .botshield-analytics-period button {
     flex: 1;
   }
-  .botshield-analytics-premium .botshield-analytics-filter-row {
+  .botshield-analytics-premium .botshield-analytics-filter-row,
+  .botshield-analytics-premium .botshield-analytics-filter-row:not(:has(#analytics-signal-filter)) {
     grid-template-columns: 1fr;
   }
   .botshield-analytics-premium .botshield-analytics-kpis {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
   .botshield-analytics-premium .botshield-analytics-kpi {
     padding: var(--ba-panel-padding);
@@ -1195,7 +1252,7 @@
     gap: 16px;
   }
   .botshield-analytics-premium .ba-primary-chart .botshield-analytics-histogram {
-    height: 104px;
+    height: 140px;
   }
   .botshield-analytics-premium .botshield-analytics-compact-ranking > div {
     grid-template-columns: minmax(0, 1fr) auto;
