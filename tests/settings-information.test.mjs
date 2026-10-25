@@ -82,7 +82,7 @@ test("all five Settings controls choose internal app routes or established publi
       assert.equal(
         link.querySelector(".botshield-information-link-destination")
           .textContent,
-        "Inside BotShield",
+        "Opens in BotShield",
       );
       const url = new URL(link.href, "https://app.test");
       assert.equal(url.pathname, SETTINGS_INFORMATION_PATHS[href]);
@@ -97,7 +97,7 @@ test("all five Settings controls choose internal app routes or established publi
       assert.equal(
         link.querySelector(".botshield-information-link-destination")
           .textContent,
-        "Official BotShield website",
+        "Opens on our website (new tab)",
       );
       assert.equal(link.href, PUBLIC_LEGAL_URLS[href]);
       assert.equal(link.target, "_blank");
@@ -149,6 +149,12 @@ test("internal documents preserve public policy content, provide back navigation
     }
     for (const link of internal.querySelectorAll(".public-legal-related a")) {
       const url = new URL(link.href, "https://app.test");
+      assert.equal(
+        link.querySelector(".botshield-information-link-destination").textContent,
+        url.hostname === "botshieldapp.com"
+          ? "Opens on our website (new tab)"
+          : "Opens in BotShield",
+      );
       assert.ok(
         url.pathname.startsWith("/app/") || url.hostname === "botshieldapp.com",
       );

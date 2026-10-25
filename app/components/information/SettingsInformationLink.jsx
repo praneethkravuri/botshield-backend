@@ -16,7 +16,7 @@ export default function SettingsInformationLink({ href, children, className }) {
       <span className="botshield-information-link-copy">
         <span className="botshield-information-link-label">{children}</span>
         <span className="botshield-information-link-destination">
-          {internalPath ? "Inside BotShield" : "Official BotShield website"}
+          {internalPath ? "Opens in BotShield" : "Opens on our website (new tab)"}
         </span>
       </span>
       <InformationIcon name={internalPath ? "arrow" : "external"} />
