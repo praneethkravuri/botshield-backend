@@ -47,10 +47,12 @@ async function setup({
   acknowledged = false,
   reducedMotion = "no-preference",
   delay = 0,
+  deviceScaleFactor = 1,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 1000 },
     reducedMotion,
+    deviceScaleFactor,
   });
   const model = {
     state,
@@ -177,6 +179,56 @@ async function waitIdle(page) {
       !document.querySelector(".is-checking"),
   );
 }
+async function assertOfficialLogos(page) {
+  await page.waitForFunction(() => {
+    const logos = [...document.querySelectorAll(".ob-official-logo")];
+    return (
+      logos.length > 0 &&
+      logos.every(
+        (logo) =>
+          logo.complete &&
+          logo.naturalWidth === 208 &&
+          logo.naturalHeight === 256,
+      )
+    );
+  });
+  const logos = await page.locator(".ob-official-logo").evaluateAll((images) =>
+    images.map((image) => {
+      const bounds = image.getBoundingClientRect();
+      const style = getComputedStyle(image);
+      return {
+        source: new URL(image.currentSrc).pathname,
+        width: bounds.width,
+        height: bounds.height,
+        filter: style.filter,
+        blend: style.mixBlendMode,
+        nativeWidth: image.naturalWidth,
+        nativeHeight: image.naturalHeight,
+        dpr: devicePixelRatio,
+      };
+    }),
+  );
+  for (const logo of logos) {
+    assert.equal(logo.source, "/botshield-official-logo-transparent.png");
+    assert.equal(logo.filter, "none");
+    assert.equal(logo.blend, "normal");
+    if (logo.width && logo.height) {
+      assert.ok(
+        Math.abs(logo.width / logo.height - 208 / 256) < 0.005,
+        "Official logo retains native proportions",
+      );
+      assert.ok(
+        logo.nativeWidth >= logo.width * logo.dpr - 1,
+        "Native artwork resolves horizontal device pixels",
+      );
+      assert.ok(
+        logo.nativeHeight >= logo.height * logo.dpr - 1,
+        "Native artwork resolves vertical device pixels",
+      );
+    }
+  }
+}
+
 async function screenshot(page, name) {
   await page.addStyleTag({ content: "s-app-nav { display: none; }" });
   await page.screenshot({
@@ -198,6 +250,8 @@ try {
           .querySelector(".ob-profile strong")
           ?.textContent.includes("onboarding-test"),
       );
+      await assertOfficialLogos(page);
+      assert.equal(await page.locator(".ob-official-logo").count(), 5);
       await screenshot(page, "welcome-desktop");
       assert.equal(new URL(page.url()).searchParams.get("host"), "dGVzdA");
       assert.equal(await page.locator(".ob-success").count(), 0);
@@ -208,6 +262,14 @@ try {
         await page
           .locator(".ob-demo-toggle")
           .evaluate((node) => getComputedStyle(node).animationPlayState),
+        "paused",
+      );
+      assert.equal(
+        await page
+          .locator(".ob-welcome-logo")
+          .evaluate(
+            (node) => getComputedStyle(node, "::before").animationPlayState,
+          ),
         "paused",
       );
       await page.getByRole("button", { name: "Replay", exact: true }).click();
@@ -297,6 +359,11 @@ try {
       await page.locator(".is-checking").waitFor();
       await screenshot(page, "verification-checking");
       await page.locator(".ob-success").waitFor();
+      await assertOfficialLogos(page);
+      assert.equal(
+        await page.locator(".ob-success .ob-official-logo").count(),
+        1,
+      );
       await screenshot(page, "verified-success");
       await page.waitForURL((url) => url.pathname === "/app");
       assert.equal(new URL(page.url()).searchParams.get("host"), "dGVzdA");
@@ -557,6 +624,37 @@ try {
     },
   );
   await scenario(
+    "official transparent logo stays sharp and undistorted at 3x device pixel ratio",
+    async () => {
+      const { context, page, errors } = await setup({
+        acknowledged: true,
+        deviceScaleFactor: 3,
+        reducedMotion: "reduce",
+      });
+      await page.goto(`${base}/app/onboarding${query}`);
+      await assertOfficialLogos(page);
+      await screenshot(page, "official-brand-desktop-3x");
+      await page.setViewportSize({ width: 390, height: 950 });
+      await assertOfficialLogos(page);
+      assert.ok(await page.locator(".ob-welcome-logo img").isVisible());
+      await screenshot(page, "official-brand-mobile-3x");
+      await selectStep(page, 2);
+      await waitIdle(page);
+      await state(page, "active");
+      await page
+        .getByRole("button", { name: "Check activation", exact: true })
+        .click();
+      await page.locator(".ob-success").waitFor();
+      await page
+        .getByRole("button", { name: "Stay on this page", exact: true })
+        .click();
+      await assertOfficialLogos(page);
+      await screenshot(page, "official-brand-success-3x");
+      assert.deepEqual(errors, []);
+      await context.close();
+    },
+  );
+  await scenario(
     "all required viewport widths and reduced motion, keyboard, accessibility",
     async () => {
       const { context, page, errors } = await setup({
@@ -587,6 +685,7 @@ try {
           );
         }
         await selectStep(page, 0);
+        await assertOfficialLogos(page);
         await screenshot(page, `onboarding-${width}-reduced-motion`);
         if (width === 390) {
           await selectStep(page, 1);

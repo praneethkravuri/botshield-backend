@@ -6,9 +6,19 @@
 
 The authenticated embedded route **`/app/onboarding`** presents one guide with three steps: open the Theme Editor, enable and save the embed, and verify activation. It uses the existing embedded provider, React Router, query-preserving navigation, app frame and action buttons. No frontend dependency was added.
 
-The welcome illustration is an original lightweight SVG storefront and shield, with ambient nodes and a scanning line. Cards enter with restrained staggered motion. The ten-second tutorial illustrates the Theme Editor entry, App embeds panel, toggle, and Save action. Pause also pauses the hero's ambient motion; replay restarts the tutorial. Written instructions are always available. Reduced motion disables decorative animations and shows static instructions. The verified completion screen draws a checkmark, adds a small particle burst, and offers immediate Overview navigation, a pause action, and instruction review. Normal automatic continuation takes 2.5 seconds. Intentional visits by already-configured merchants stay open for review.
+The welcome illustration combines an original lightweight SVG storefront with BotShield’s existing official transparent logo, ambient nodes and a scanning line. Cards enter with restrained staggered motion. The ten-second tutorial illustrates the Theme Editor entry, App embeds panel, toggle, and Save action. Pause also pauses the hero's ambient motion; replay restarts the tutorial. Written instructions are always available. Reduced motion disables decorative animations and shows static instructions. The verified completion screen reveals the official logo with a separate animated verification checkmark, adds a small particle burst, and offers immediate Overview navigation, a pause action, and instruction review. Normal automatic continuation takes 2.5 seconds. Intentional visits by already-configured merchants stay open for review.
 
 Overview has one setup reminder and routes its incomplete connection actions to the guide. Settings → Connections → Theme activation → Setup guide reopens it. Existing Protection controls can still open Shopify's editor directly. No dashboard, pricing, policy, detection, reporting, webhook or database schema logic changed.
+
+## Official BotShield branding
+
+The onboarding reuses **`public/botshield-official-logo-transparent.png`** through the existing `publicInfo.logoUrl`, the same official asset used by the public information pages. The storefront theme extension also contains this angular blue-and-black mark. It matches the owner’s supplied logo; the older robot illustration in `botshield-logo-transparent.png` is not used.
+
+The existing official PNG has genuine RGBA transparency, native dimensions **208 × 256**, and is reused byte-for-byte. No logo was generated, redrawn, recolored, cropped, background-removed again or replaced. It appears in the header, prominent welcome lockup, setup profile badge, storefront illustration, animated Theme Editor tutorial and success celebration. The success checkmark is a separate status badge, not an alteration of the logo.
+
+CSS preserves the image’s intrinsic proportions with `height: auto` / `object-fit: contain`. Entrance motion uses a small translation and fade on wrappers; soft aura motion runs behind the logo. The artwork has no color filters or blend effects. Reduced-motion and pause controls cover the decorative effects. The largest logo is 68 CSS pixels wide, so the native artwork supplies enough pixels at **3× device pixel ratio** without upscaling. Browser checks verify image loading, the shared official URL, native dimensions, unchanged proportions, no filters/blending and device-pixel coverage at desktop and mobile sizes.
+
+The official-brand update touches presentation, browser assertions and evidence only. Shopify activation parsing, authentication, billing, guide persistence, and automatic Overview navigation are unchanged. The tutorial recording and screenshots have been refreshed to show the official mark.
 
 ## Technical correction: scope-free published-theme verification
 
@@ -75,6 +85,7 @@ Baseline captures come from an archive of `ac2e90ddd84b2265c010bef82aa32aeaaa1c1
 | Completion / destination | [Success](screenshots/merchant-onboarding/verified-success.png), [Overview](screenshots/merchant-onboarding/overview-after-onboarding.png) |
 | Required viewport widths, reduced motion | [1440](screenshots/merchant-onboarding/onboarding-1440-reduced-motion.png), [1280](screenshots/merchant-onboarding/onboarding-1280-reduced-motion.png), [1024](screenshots/merchant-onboarding/onboarding-1024-reduced-motion.png), [768](screenshots/merchant-onboarding/onboarding-768-reduced-motion.png), [390](screenshots/merchant-onboarding/onboarding-390-reduced-motion.png), [360](screenshots/merchant-onboarding/onboarding-360-reduced-motion.png) |
 | Simulated iframe / mobile verification | [Content area](screenshots/merchant-onboarding/simulated-shopify-admin-content-area.png), [mobile verification](screenshots/merchant-onboarding/verify-activation-mobile.png) |
+| Official artwork at high density | [Desktop at 3×](screenshots/merchant-onboarding/official-brand-desktop-3x.png), [mobile at 3×](screenshots/merchant-onboarding/official-brand-mobile-3x.png), [success at 3×](screenshots/merchant-onboarding/official-brand-success-3x.png) |
 | Tutorial motion | [10-second recording](screenshots/merchant-onboarding/tutorial-motion.mp4) (silent, sampled from actual rendered frames) |
 
 ![Desktop onboarding](screenshots/merchant-onboarding/welcome-desktop.png)
@@ -87,7 +98,7 @@ Baseline captures come from an archive of `ac2e90ddd84b2265c010bef82aa32aeaaa1c1
 - `npx vite-node app/dev/onboarding-ssr-probe.mjs`: actual onboarding SSR/hydration passed with a synthetic session and reduced motion. Existing React Router SSR development warnings remain; no hydration mismatch was reported by the probe.
 - Targeted lint for all new modules, route changes, browser script and focused tests: passed. The two large pre-existing admin files retain their original diagnostics (87 errors / 3 warnings in the index route, 21 errors / 2 warnings in the admin component). Full lint reports **190 errors and 6 warnings**, down from 192 / 6 because the touched parent route now correctly places its two existing `process` directives. Repository-wide lint is not passing.
 - Local PostgreSQL: acknowledgment persisted through independent Prisma clients, remained isolated between two synthetic shops, and was idempotent. Only those temporary test keys were cleaned up. No production database or migration was used.
-- All **eleven browser acceptance scenarios passed**. Browser checks cover first-visit routing, editor URL, instructions, keyboard focus, pause/replay, manual checks, missing/inactive/unavailable statuses, unusable embed status, scope-free completion, in-flight-return and App Bridge readiness checks, current success invalidation, request deduplication, Overview continuation, intentional review, Settings entry, back/refresh, exit after failed save, all requested viewport widths and reduced motion.
+- All **twelve browser acceptance scenarios passed**. Browser checks cover first-visit routing, editor URL, instructions, keyboard focus, pause/replay, manual checks, missing/inactive/unavailable statuses, unusable embed status, scope-free completion, in-flight-return and App Bridge readiness checks, current success invalidation, request deduplication, Overview continuation, intentional review, Settings entry, back/refresh, exit after failed save, all requested viewport widths, reduced motion, and official-logo fidelity at 3× device pixel ratio.
 - The simulated Shopify Admin content-frame layout check passed using a local-only test CSP adjustment. A real Shopify frame remains unverified.
 - Axe WCAG 2 A/AA and 2.1 AA: zero reported violations across all three steps at 1280 and 360 widths after fixing observed contrast issues. This automated scan is not a complete accessibility certification.
 - Real local server with synthetic credentials: `/health` returned 200 with the local database connected; public `/data-use`, `/data-retention`, `/privacy`, `/terms`, `/data-deletion` returned 200. Unauthenticated `/app/onboarding`, existing `/app/settings` and `/api/onboarding` all returned Shopify's existing 410 handling response with these fake credentials. This confirms protected routes did not become public; it does not prove authenticated Shopify login works.
@@ -153,7 +164,7 @@ If release verification fails, stop rollout and use Render's rollback to the las
 ## Changed-file inventory
 
 - `app/components/onboarding/OnboardingPage.jsx`: guide steps, merchant context, review/completion/navigation and written instructions.
-- `app/components/onboarding/OnboardingIllustrations.jsx`: original SVG and illustrative editor motion.
+- `app/components/onboarding/OnboardingIllustrations.jsx`: official transparent logo reuse, original storefront SVG, verification checkmark and illustrative editor motion.
 - `app/components/onboarding/ThemeActivationProvider.jsx`: shared current verification and profile lifecycle.
 - `app/components/onboarding/OnboardingGate.jsx`: scoped initial-visit routing and loading.
 - `app/components/onboarding/SetupReminder.jsx`: Overview setup entry.

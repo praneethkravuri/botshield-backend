@@ -10,7 +10,8 @@ import { buildThemeEditorDeepLink } from "../../lib/theme-extension-status.js";
 import { mergeEmbeddedAppSearch } from "../../lib/embedded-app-navigation.js";
 import {
   SecurityIllustration,
-  ShieldMark,
+  OfficialBotShieldLogo,
+  ActivationCheckmark,
   ThemeEditorTutorial,
 } from "./OnboardingIllustrations.jsx";
 import "../../styles/onboarding-premium.css";
@@ -132,7 +133,7 @@ export default function OnboardingPage() {
           <header className="ob-topline">
             <Link className="ob-brand" to={overviewPath}>
               <span>
-                <ShieldMark />
+                <OfficialBotShieldLogo />
               </span>
               BotShield
               <span className="ob-brand-divider" />
@@ -149,7 +150,12 @@ export default function OnboardingPage() {
             >
               <div className="ob-success-art" aria-hidden="true">
                 <div className="ob-success-halo" />
-                <ShieldMark success />
+                <div className="ob-success-logo">
+                  <OfficialBotShieldLogo />
+                </div>
+                <span className="ob-success-check">
+                  <ActivationCheckmark />
+                </span>
                 <span className="ob-particle p1" />
                 <span className="ob-particle p2" />
                 <span className="ob-particle p3" />
@@ -209,9 +215,12 @@ export default function OnboardingPage() {
             <>
               <section className="ob-hero" aria-labelledby="ob-title">
                 <div className="ob-hero-copy">
-                  <span className="ob-eyebrow">
-                    <i /> WELCOME TO BOTSHIELD
-                  </span>
+                  <div className="ob-welcome-brand">
+                    <span className="ob-welcome-logo" aria-hidden="true">
+                      <OfficialBotShieldLogo />
+                    </span>
+                    <span className="ob-eyebrow">WELCOME TO BOTSHIELD</span>
+                  </div>
                   <h1 id="ob-title">
                     Let’s get your store
                     <br className="ob-desktop-break" /> protected
@@ -222,9 +231,7 @@ export default function OnboardingPage() {
                   </p>
                   <div className="ob-profile">
                     <span className="ob-profile-avatar" aria-hidden="true">
-                      {profile.shop
-                        ? profile.shop.slice(0, 1).toUpperCase()
-                        : "B"}
+                      <OfficialBotShieldLogo />
                     </span>
                     <div>
                       <strong>

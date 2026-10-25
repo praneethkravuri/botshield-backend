@@ -1,43 +1,32 @@
 /* eslint-disable react/prop-types */
-export function ShieldMark({ success = false }) {
+import { publicInfo } from "../../config/public-info.js";
+
+// Use the existing, transparent official artwork unchanged. Native dimensions
+// reserve the correct aspect ratio; all motion belongs to surrounding elements.
+export function OfficialBotShieldLogo() {
   return (
-    <svg viewBox="0 0 80 88" fill="none" aria-hidden="true">
+    <img
+      className="ob-official-logo"
+      src={publicInfo.logoUrl}
+      width="208"
+      height="256"
+      alt=""
+      decoding="async"
+    />
+  );
+}
+
+export function ActivationCheckmark() {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <path
-        className="ob-shield-outline"
-        d="M40 5 70 17v23c0 20-14 33-30 42C24 73 10 60 10 40V17L40 5Z"
-        fill="currentColor"
-        fillOpacity=".07"
+        className="ob-check"
+        d="m8 16 5 5 11-12"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      {success ? (
-        <path
-          className="ob-check"
-          d="m25 43 10 10 21-24"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <>
-          <path
-            d="M29 39v-7a11 11 0 0 1 22 0v7"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          />
-          <rect
-            x="24"
-            y="38"
-            width="32"
-            height="25"
-            rx="7"
-            fill="currentColor"
-          />
-          <circle cx="40" cy="49" r="3" fill="white" />
-          <path d="M40 51v5" stroke="white" strokeWidth="2" />
-        </>
-      )}
     </svg>
   );
 }
@@ -71,8 +60,8 @@ export function SecurityIllustration() {
         <circle cx="204" cy="146" r="2" fill="#8ca8d7" />
       </svg>
       <div className="ob-scan-line" />
-      <div className="ob-hero-shield">
-        <ShieldMark />
+      <div className="ob-hero-logo">
+        <OfficialBotShieldLogo />
       </div>
       <span className="ob-art-caption">
         <i /> Built for your storefront
@@ -129,8 +118,8 @@ export function ThemeEditorTutorial({ step, paused, replayKey }) {
             ◇ &nbsp; App embeds
           </span>
           <div className="ob-demo-embed">
-            <div className="ob-mini-shield">
-              <ShieldMark />
+            <div className="ob-tutorial-logo">
+              <OfficialBotShieldLogo />
             </div>
             <strong>BotShield</strong>
             <span className="ob-demo-toggle">
