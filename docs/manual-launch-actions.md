@@ -11,7 +11,7 @@ These steps cannot be completed safely by application code.
    is not required, or allow only trusted operator IP ranges.
 5. Configure:
    - `RESEND_API_KEY`
-   - optional `ALERT_FROM_EMAIL` sender override
+   - optional `ALERT_FROM_EMAIL=BotShield Reports <reports@botshieldapp.com>` sender override
    - `VITE_SUPPORT_EMAIL`
    - `SHOPIFY_APP_HANDLE`
    - `SHOPIFY_PUBLIC_PLAN_HANDLE=basic`
@@ -24,14 +24,22 @@ These steps cannot be completed safely by application code.
 
 ## Resend
 
-1. Add a sending domain.
-2. Publish Resend's SPF and DKIM DNS records exactly as shown.
-3. Wait for the domain to show Verified.
-4. Create a restricted production API key.
-5. Verify `botshieldapp.com` in Resend. BotShield defaults to
-   `BotShield <support@botshieldapp.com>`.
-6. Optionally set `ALERT_FROM_EMAIL` to another sender on the verified domain.
-7. Redeploy and send both a test alert and weekly report.
+1. Keep the existing verified `botshieldapp.com` sending domain. This sender
+   change needs no DNS records or separate mailbox.
+2. Keep the existing `RESEND_API_KEY` unchanged; do not share it in reports or PRs.
+3. Automated weekly reports (scheduled and manual), security alerts, and test
+   alerts default to `BotShield Reports <reports@botshieldapp.com>`, with
+   `Reply-To: support@botshieldapp.com`. Customer support remains at that address.
+4. Check Render's existing `ALERT_FROM_EMAIL` value privately. A valid override
+   still takes precedence. If it is set to the old sender or another value,
+   update it to `BotShield Reports <reports@botshieldapp.com>` when the release
+   is approved, or remove the override to use the new default. If absent, empty,
+   invalid, or already matching the new sender, no environment update is needed.
+   Reply-To is set by the shared helper and needs no new environment variable.
+5. After configuration/release approval, deploy and send an authorized test alert
+   and manual weekly report, checking From, Reply-To, recipient, and delivery in
+   Resend. Automated tests mock Resend; they do not establish live deliverability.
+   Do not send test emails or change live configuration as part of PR review.
 
 ## Shopify Partner Dashboard
 
