@@ -2,6 +2,7 @@
 /* global globalThis */
 import assert from "node:assert/strict";
 import test from "node:test";
+import { buildWeeklyReportFromEvents } from "../app/lib/security-posture.js";
 import { sendEmail } from "../app/lib/email.server.js";
 import {
   sendIncidentEmail,
@@ -53,8 +54,9 @@ test("scheduled/manual weekly report email uses reports sender and support repli
   assertHeaders(body);
   assert.equal(body.subject, "[BotShield] Weekly security report for example.myshopify.com");
   assert.match(body.html, /Requests analyzed/);
-  assert.match(body.html, /<strong>20<\/strong>/);
-  assert.match(body.html, /<strong>Known bot<\/strong>: 4/);
+  assert.match(body.html, /data-email-template="weekly"/);
+  assert.match(body.text, /Requests analyzed: 20/);
+  assert.match(body.text, /Known bot: 4/);
 });
 
 test("security incident alert uses reports sender without changing its destination or subject", async () => {
@@ -67,11 +69,13 @@ test("security incident alert uses reports sender without changing its destinati
   assert.match(body.html, /event-1/);
 });
 
-test("test notification uses the same sender and Reply-To without a separate delivery path", async () => {
+test("test notification uses the same transport with a distinct test-only presentation", async () => {
   const body = await captureDelivery(() => sendTestIncidentEmail({ shop: "example.myshopify.com", alertEmail: "merchant@example.com" }));
   assertHeaders(body);
-  assert.equal(body.subject, "[BotShield] TEST incident on example.myshopify.com");
-  assert.match(body.html, /TEST_ALERT/);
+  assert.equal(body.subject, "[BotShield] Test notification for example.myshopify.com");
+  assert.match(body.html, /Your BotShield notifications are working/);
+  assert.doesNotMatch(body.html, /TEST_ALERT|IP address|Risk score|Event ID/);
+  assert.match(body.text, /This is a test notification/);
 });
 
 test("valid sender override remains supported while replies always go to support", async () => {
@@ -87,4 +91,45 @@ test("valid sender override remains supported while replies always go to support
 test("invalid sender override still falls back safely to the reports sender", async () => {
   const body = await captureDelivery(() => sendEmail({ to: "merchant@example.com", subject: "Test", html: "<p>Test</p>" }), "not-an-email");
   assertHeaders(body);
+});
+
+
+test("outgoing weekly and incident emails omit unverified CTAs even with a configured Dev handle", async () => {
+  const originalHandle = process.env.SHOPIFY_APP_HANDLE;
+  process.env.SHOPIFY_APP_HANDLE = "botshield-dev";
+  const unverifiedUrl = "https://admin.shopify.com/store/example/apps/botshield-dev/app";
+  try {
+    const weekly = await captureDelivery(() => sendWeeklySecurityReportEmail({
+      shop: "example.myshopify.com", alertEmail: "merchant@example.com", report: {}, dashboardUrl: unverifiedUrl,
+    }));
+    const incident = await captureDelivery(() => sendIncidentEmail({
+      shop: "example.myshopify.com", alertEmail: "merchant@example.com", decision: "challenge", dashboardUrl: unverifiedUrl,
+    }));
+    for (const body of [weekly, incident]) {
+      assertHeaders(body);
+      assert.doesNotMatch(body.html, /admin\.shopify\.com|botshield-dev|Open BotShield Overview/);
+      assert.doesNotMatch(body.text, /admin\.shopify\.com|botshield-dev|Open BotShield Overview/);
+    }
+    assert.equal(weekly.subject, "[BotShield] Weekly security report for example.myshopify.com");
+    assert.equal(incident.subject, "[BotShield] CHALLENGE incident on example.myshopify.com");
+  } finally {
+    if (originalHandle === undefined) delete process.env.SHOPIFY_APP_HANDLE;
+    else process.env.SHOPIFY_APP_HANDLE = originalHandle;
+  }
+});
+
+test("the existing report builder's exact period reaches the common weekly email renderer", async () => {
+  const report = buildWeeklyReportFromEvents({
+    events: [], status: { protectionActive: true },
+    settings: { emailAlerts: true, emailProvider: { configured: true }, alertEmail: "merchant@example.com" },
+    start: new Date("2026-10-19T15:23:45.000Z"), end: new Date("2026-10-26T15:23:45.000Z"),
+  });
+  assert.equal(report.periodStart, "2026-10-19T15:23:45.000Z");
+  assert.equal(report.periodEnd, "2026-10-26T15:23:45.000Z");
+  const body = await captureDelivery(() => sendWeeklySecurityReportEmail({ shop: "example.myshopify.com", alertEmail: "merchant@example.com", report }));
+  const period = "Oct 19, 2026, 15:23:45 UTC — Oct 26, 2026, 15:23:45 UTC (end exclusive)";
+  assert.ok(body.html.includes(period));
+  assert.ok(body.text.includes(period));
+  assert.equal(report.periodStart, "2026-10-19T15:23:45.000Z");
+  assert.equal(report.periodEnd, "2026-10-26T15:23:45.000Z");
 });

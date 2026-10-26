@@ -1,0 +1,32 @@
+PREVIEW ONLY — Fictional sample data. Not sent.
+
+BotShield | Weekly Security Report
+
+Your week in security.
+
+Store: cedar-and-wick-preview.myshopify.com
+
+Reporting window: Oct 19, 2026, 00:00:00 UTC — Oct 26, 2026, 00:00:00 UTC (end exclusive)
+
+A summary of recorded storefront activity.
+
+Requests analyzed: 18,420
+
+Blocked events: 386
+
+Challenged events: 72
+
+Allowed events: 17,962
+
+Protection: Active
+
+Top recorded reasons (one event may have multiple reasons):
+Known bot user agent: 214
+Repeated activity: 172
+Challenge required: 72
+
+BotShield Reports
+
+Based on recorded storefront-proxy activity. Simulation events are excluded.
+
+Questions? Reply to this email or contact support@botshieldapp.com

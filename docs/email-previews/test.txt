@@ -1,0 +1,17 @@
+PREVIEW ONLY — Fictional sample data. Not sent.
+
+BotShield | Test Notification
+
+Your BotShield notifications are working.
+
+Store: cedar-and-wick-preview.myshopify.com
+
+This is a test notification from BotShield. It checks email delivery only; it does not represent a security incident or affect your store's security metrics.
+
+Delivery check: This message is a test.
+
+BotShield Reports
+
+A delivery test only. Your existing notification preferences and protection settings are unchanged.
+
+Questions? Reply to this email or contact support@botshieldapp.com

@@ -1,0 +1,33 @@
+PREVIEW ONLY — Fictional sample data. Not sent.
+
+BotShield | Security Alert
+
+A request needs verification.
+
+Store: cedar-and-wick-preview.myshopify.com
+
+Review the recorded decision and its supporting details below.
+
+Recorded action: Challenged
+
+Threat level: medium
+
+Risk score: 58/100
+
+IP address: 203.0.113.42
+
+Path: /collections/new-arrivals
+
+Recorded at: Oct 26, 2026, 14:32:10 UTC
+
+Event ID: preview-event-0042
+
+Recorded reasons:
+RATE_PATTERN
+CHALLENGE_REQUIRED
+
+BotShield Reports
+
+Recorded security telemetry only. This notification does not estimate financial impact.
+
+Questions? Reply to this email or contact support@botshieldapp.com

@@ -1,18 +1,10 @@
 import { getEmailProviderStatus, sendEmail } from "./email.server.js";
+import { renderSecurityAlertEmail, renderTestNotificationEmail, renderWeeklyReportEmail } from "./merchant-email-templates.js";
 
 const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 export { getEmailProviderStatus };
@@ -69,98 +61,37 @@ export function shouldSendIncidentAlert({
   return { send: true, reason: "INCIDENT_ALERT_REQUIRED" };
 }
 
-function buildIncidentHtml({
-  shop,
-  ipAddress,
-  pathVisited,
-  decision,
-  threatLevel,
-  riskScore,
-  reasonCodes,
-  eventId,
-  createdAt,
-}) {
-  return `<!doctype html>
-<html>
-  <body style="font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;padding:24px">
-    <div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px">
-      <h1 style="margin-top:0">BotShield security incident</h1>
-      <p>BotShield recorded a high-risk storefront decision for <strong>${escapeHtml(shop)}</strong>.</p>
-      <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:8px 0;color:#64748b">Decision</td><td><strong>${escapeHtml(decision)}</strong></td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Threat level</td><td>${escapeHtml(threatLevel)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Risk score</td><td>${escapeHtml(riskScore)}/100</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">IP address</td><td>${escapeHtml(ipAddress)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Path</td><td>${escapeHtml(pathVisited)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Reason codes</td><td>${escapeHtml(reasonCodes.join(", "))}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Event ID</td><td>${escapeHtml(eventId)}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Time</td><td>${escapeHtml(createdAt)}</td></tr>
-      </table>
-      <p style="margin-bottom:0;color:#64748b;font-size:13px">This alert contains observed security telemetry only. It does not estimate revenue impact.</p>
-    </div>
-  </body>
-</html>`;
-}
-
 export async function sendIncidentEmail(input) {
+  const content = renderSecurityAlertEmail({
+    ...input,
+    // No outgoing dashboard link until the production Admin destination is verified.
+    dashboardUrl: "",
+  });
   return sendEmail({
     to: input.alertEmail,
     subject: `[BotShield] ${input.decision.toUpperCase()} incident on ${input.shop}`,
-    html: buildIncidentHtml(input),
+    ...content,
   });
 }
 
-export async function sendWeeklySecurityReportEmail({
-  shop,
-  alertEmail,
-  report,
-}) {
-  const threatRows = report.topReasonCodes.length
-    ? report.topReasonCodes
-        .map(
-          (item) =>
-            `<li><strong>${escapeHtml(item.label)}</strong>: ${escapeHtml(item.count)}</li>`,
-        )
-        .join("")
-    : "<li>No threat reason codes recorded this week.</li>";
-  const html = `<!doctype html>
-<html>
-  <body style="font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a;padding:24px">
-    <div style="max-width:640px;margin:auto;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:24px">
-      <h1 style="margin-top:0">BotShield weekly security report</h1>
-      <p>Real storefront activity for <strong>${escapeHtml(shop)}</strong>.</p>
-      <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:8px 0;color:#64748b">Requests analyzed</td><td><strong>${report.requestsAnalyzed}</strong></td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Allowed</td><td>${report.allowed}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Challenged</td><td>${report.challenged}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Blocked</td><td>${report.blocked}</td></tr>
-        <tr><td style="padding:8px 0;color:#64748b">Protection</td><td>${report.protectionActive ? "Active" : "Needs attention"}</td></tr>
-      </table>
-      <h2>Top reason codes</h2>
-      <ul>${threatRows}</ul>
-      <p style="margin-bottom:0;color:#64748b;font-size:13px">This report uses real storefront-proxy events only. Simulations are excluded.</p>
-    </div>
-  </body>
-</html>`;
-
+export async function sendWeeklySecurityReportEmail({ shop, alertEmail, report }) {
+  const content = renderWeeklyReportEmail({
+    shop,
+    report,
+    // No outgoing dashboard link until the production Admin destination is verified.
+    dashboardUrl: "",
+  });
   return sendEmail({
     to: alertEmail,
     subject: `[BotShield] Weekly security report for ${shop}`,
-    html,
+    ...content,
   });
 }
 
 export async function sendTestIncidentEmail({ shop, alertEmail }) {
-  return sendIncidentEmail({
-    shop,
-    alertEmail,
-    ipAddress: "Test notification",
-    pathVisited: "/",
-    decision: "test",
-    threatLevel: "test",
-    riskScore: 0,
-    reasonCodes: ["TEST_ALERT"],
-    eventId: "TEST",
-    createdAt: new Date().toISOString(),
+  return sendEmail({
+    to: alertEmail,
+    subject: `[BotShield] Test notification for ${shop}`,
+    ...renderTestNotificationEmail({ shop }),
   });
 }

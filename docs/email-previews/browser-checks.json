@@ -1,0 +1,179 @@
+{
+  "renderer": "Chromium (not an actual email client)",
+  "emailClientVerification": "Gmail, Outlook, and Apple Mail not run",
+  "axeExcludedRules": [
+    "region",
+    "landmark-one-main"
+  ],
+  "checks": [
+    {
+      "template": "weekly",
+      "variant": "desktop",
+      "width": 680,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "weekly",
+      "variant": "mobile",
+      "width": 320,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "weekly",
+      "variant": "dark",
+      "width": 680,
+      "colorScheme": "dark",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "weekly",
+      "variant": "images-blocked",
+      "width": 320,
+      "visibleBrandFallback": true,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "alert",
+      "variant": "desktop",
+      "width": 680,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "alert",
+      "variant": "mobile",
+      "width": 320,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "alert",
+      "variant": "dark",
+      "width": 680,
+      "colorScheme": "dark",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "alert",
+      "variant": "images-blocked",
+      "width": 320,
+      "visibleBrandFallback": true,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "test",
+      "variant": "desktop",
+      "width": 680,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "test",
+      "variant": "mobile",
+      "width": 320,
+      "colorScheme": "light",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "test",
+      "variant": "dark",
+      "width": 680,
+      "colorScheme": "dark",
+      "horizontalOverflow": false,
+      "axeViolations": []
+    },
+    {
+      "template": "test",
+      "variant": "images-blocked",
+      "width": 320,
+      "visibleBrandFallback": true,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-long",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-long",
+      "width": 680,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "alert-long",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "alert-long",
+      "width": 680,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-zero",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-zero",
+      "width": 680,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-missing",
+      "width": 320,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "weekly-missing",
+      "width": 680,
+      "horizontalOverflow": false
+    },
+    {
+      "template": "alert-high",
+      "width": 320,
+      "colorScheme": "light",
+      "axeViolations": []
+    },
+    {
+      "template": "alert-high",
+      "width": 320,
+      "colorScheme": "dark",
+      "axeViolations": []
+    },
+    {
+      "template": "alert-low",
+      "width": 320,
+      "colorScheme": "light",
+      "axeViolations": []
+    },
+    {
+      "template": "alert-low",
+      "width": 320,
+      "colorScheme": "dark",
+      "axeViolations": []
+    },
+    {
+      "template": "alert-unknown",
+      "width": 320,
+      "colorScheme": "light",
+      "axeViolations": []
+    },
+    {
+      "template": "alert-unknown",
+      "width": 320,
+      "colorScheme": "dark",
+      "axeViolations": []
+    }
+  ]
+}
