@@ -1,6 +1,7 @@
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 const EMAIL_TIMEOUT_MS = 4_000;
-const DEFAULT_FROM_EMAIL = "BotShield <support@botshieldapp.com>";
+const DEFAULT_FROM_EMAIL = "BotShield Reports <reports@botshieldapp.com>";
+const REPLY_TO_EMAIL = "support@botshieldapp.com";
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
@@ -57,6 +58,7 @@ export async function sendEmail({ to, subject, html, text }) {
       },
       body: JSON.stringify({
         from: providerStatus.fromEmail,
+        reply_to: REPLY_TO_EMAIL,
         to: [recipient],
         subject,
         html,

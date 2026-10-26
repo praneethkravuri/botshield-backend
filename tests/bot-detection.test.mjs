@@ -394,7 +394,7 @@ test("challenge events qualify for merchant email alerts", () => {
   assert.equal(result.send, true);
 });
 
-test("Resend email delivery uses the verified BotShield support sender by default", async () => {
+test("Resend email delivery uses the dedicated reports sender and support Reply-To by default", async () => {
   const originalApiKey = process.env.RESEND_API_KEY;
   const originalFromEmail = process.env.ALERT_FROM_EMAIL;
   const originalFetch = globalThis.fetch;
@@ -420,8 +420,9 @@ test("Resend email delivery uses the verified BotShield support sender by defaul
 
     assert.equal(status.configured, true);
     assert.equal(status.usingDefaultSender, true);
-    assert.equal(status.fromEmail, "BotShield <support@botshieldapp.com>");
-    assert.equal(requestBody.from, "BotShield <support@botshieldapp.com>");
+    assert.equal(status.fromEmail, "BotShield Reports <reports@botshieldapp.com>");
+    assert.equal(requestBody.from, "BotShield Reports <reports@botshieldapp.com>");
+    assert.equal(requestBody.reply_to, "support@botshieldapp.com");
     assert.deepEqual(requestBody.to, ["merchant@example.com"]);
     assert.equal(delivery.sent, true);
     assert.equal(delivery.providerMessageId, "email_test_123");
