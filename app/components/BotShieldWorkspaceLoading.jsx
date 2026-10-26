@@ -9,7 +9,7 @@ export function BotShieldLoadingScreen() {
       <div className="bs-workspace-loading__content">
         <div className="bs-workspace-loading__mark">
           <span className="bs-workspace-loading__glow" aria-hidden="true" />
-          <img src={publicInfo.logoUrl} width="208" height="256" alt="BotShield" fetchPriority="high" />
+          <img src={publicInfo.logoUrl} width="208" height="256" alt="BotShield" />
         </div>
         <p>Preparing your BotShield workspace…</p>
         <span className="bs-workspace-loading__track" aria-hidden="true"><span /></span>
