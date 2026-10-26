@@ -31,7 +31,7 @@ test("weekly content uses the passed metrics and real reporting interval in HTML
   }
   assert.match(email.text, /Oct 19, 2026/);
   assert.match(email.text, /Oct 26, 2026/);
-  assert.match(email.text, /UTC.*end exclusive/);
+  assert.match(email.text, /before Oct 26, 2026, 12:00 · UTC/);
   assert.match(email.text, /Protection: Active/);
   assert.match(email.text, /Known bot user agent: 4/);
   assert.doesNotMatch(visible(email), /money saved|risk reduction|%|revenue prevented/i);
@@ -138,4 +138,26 @@ test("rendering never mutates report data or event details",()=>{
   renderWeeklyReportEmail({shop,report:frozenReport});
   renderSecurityAlertEmail(event);
   assert.equal(JSON.stringify({frozenReport,event}),before);
+});
+
+
+test("report periods preserve exclusive UTC boundaries and accurately distinguish calendar and rolling windows", () => {
+  const cases = [
+    ["2026-10-19T00:00:00Z", "2026-10-27T00:00:00Z", "October 19–26, 2026 · UTC"],
+    ["2026-10-30T00:00:00Z", "2026-11-03T00:00:00Z", "October 30–November 2, 2026 · UTC"],
+    ["2026-12-30T00:00:00Z", "2027-01-03T00:00:00Z", "December 30, 2026–January 2, 2027 · UTC"],
+    ["2026-10-19T00:00:00Z", "2026-10-20T00:00:00Z", "October 19, 2026 · UTC"],
+    ["2026-10-19T12:15:00Z", "2026-10-26T12:15:00Z", "Oct 19, 2026, 12:15 → before Oct 26, 2026, 12:15 · UTC"],
+    ["2026-10-19T12:15:00.123Z", "2026-10-19T12:15:00.456Z", "Oct 19, 2026, 12:15:00.123 → before Oct 19, 2026, 12:15:00.456 · UTC"],
+  ];
+  for (const [periodStart, periodEnd, expected] of cases) {
+    const input = Object.freeze({periodStart, periodEnd});
+    const email = renderWeeklyReportEmail({shop,report:input});
+    assert.ok(visible(email).includes(expected));
+    assert.ok(email.text.includes(expected));
+    assert.doesNotMatch(email.text,/end exclusive/);
+  }
+  for (const [periodStart,periodEnd] of [["2026-10-20T00:00:00Z","2026-10-19T00:00:00Z"],["2026-10-19T00:00:00Z","2026-10-19T00:00:00Z"]]) {
+    assert.doesNotMatch(renderWeeklyReportEmail({report:{periodStart,periodEnd}}).text,/Reporting window/);
+  }
 });
