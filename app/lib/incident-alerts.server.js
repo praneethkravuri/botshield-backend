@@ -1,5 +1,5 @@
 import { getEmailProviderStatus, sendEmail } from "./email.server.js";
-import { buildEmailDashboardUrl, renderSecurityAlertEmail, renderTestNotificationEmail, renderWeeklyReportEmail } from "./merchant-email-templates.js";
+import { renderSecurityAlertEmail, renderTestNotificationEmail, renderWeeklyReportEmail } from "./merchant-email-templates.js";
 
 const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
 
@@ -64,7 +64,8 @@ export function shouldSendIncidentAlert({
 export async function sendIncidentEmail(input) {
   const content = renderSecurityAlertEmail({
     ...input,
-    dashboardUrl: buildEmailDashboardUrl(input.shop, process.env.SHOPIFY_APP_HANDLE),
+    // No outgoing dashboard link until the production Admin destination is verified.
+    dashboardUrl: "",
   });
   return sendEmail({
     to: input.alertEmail,
@@ -77,7 +78,8 @@ export async function sendWeeklySecurityReportEmail({ shop, alertEmail, report }
   const content = renderWeeklyReportEmail({
     shop,
     report,
-    dashboardUrl: buildEmailDashboardUrl(shop, process.env.SHOPIFY_APP_HANDLE),
+    // No outgoing dashboard link until the production Admin destination is verified.
+    dashboardUrl: "",
   });
   return sendEmail({
     to: alertEmail,
@@ -89,8 +91,7 @@ export async function sendWeeklySecurityReportEmail({ shop, alertEmail, report }
 export async function sendTestIncidentEmail({ shop, alertEmail }) {
   return sendEmail({
     to: alertEmail,
-    // Preserve the established subject and delivery contract; the body is test-only.
-    subject: `[BotShield] TEST incident on ${shop}`,
+    subject: `[BotShield] Test notification for ${shop}`,
     ...renderTestNotificationEmail({ shop }),
   });
 }

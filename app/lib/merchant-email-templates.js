@@ -20,14 +20,6 @@ const number = value => new Intl.NumberFormat("en-US").format(value);
 const paragraph = text => `<p class="bs-muted" style="margin:0 0 20px;${font}font-size:15px;line-height:24px;color:${muted};${wrap}">${e(text)}</p>`;
 const heading = text => `<h2 class="bs-ink" style="margin:26px 0 12px;${font}font-size:17px;line-height:24px;color:${ink};">${e(text)}</h2>`;
 
-// Match the existing Shopify Admin app-route convention, using existing config only.
-export function buildEmailDashboardUrl(shop, appHandle) {
-  const store = String(shop || "").trim().toLowerCase().match(/^([a-z0-9][a-z0-9-]*)\.myshopify\.com$/);
-  const handle = String(appHandle || "").trim();
-  if (!store || !/^[a-z0-9][a-z0-9_-]*$/i.test(handle)) return "";
-  return `https://admin.shopify.com/store/${store[1]}/apps/${encodeURIComponent(handle)}/app`;
-}
-
 function safeDashboardUrl(value) {
   try {
     const url = new URL(value);

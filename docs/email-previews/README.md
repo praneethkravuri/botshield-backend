@@ -16,7 +16,7 @@ The [gallery](index.html) can also be opened locally. GitHub may display HTML so
 - Flagship weekly report: passed-in totals, actual reporting window in UTC (end exclusive, matching the existing database query), available protection status, and recorded reason counts. Uses the existing UI reason-label formatter. Missing fields are omitted; known zero activity is displayed as zero. No inferred trends, financial claims, fabricated periods or new calculations.
 - Actual alerts: decision-accurate headline, actual severity treatment, optional risk score, IP/path, timestamp, event ID and recorded reasons. A challenge is never described as a block.
 - Separate test-only body and plain text: no invented telemetry, no call to the real incident renderer, and no event creation. Existing API code and delivery-status metadata updates remain unchanged.
-- Established subjects are preserved, including the legacy `[BotShield] TEST incident on …` subject. Its body is now unmistakably a Test Notification.
+- Real alert and weekly-report subjects remain unchanged. At owner request, the test subject is now `[BotShield] Test notification for {shop}`.
 
 Scheduled and manually requested weekly reports still use the same `sendWeeklySecurityReportEmail` function and therefore the same official design. Alert eligibility, cooldowns, schedules, report calculations, recipients, notification preferences, Resend transport, sender/Reply-To and delivery result contracts are untouched. There are no new dependencies or production environment updates.
 
@@ -30,7 +30,17 @@ The image is the existing `public/botshield-official-logo-transparent.png`, unch
 
 The always-visible BotShield wordmark and image alt text provide a readable fallback when images are blocked. The white logo tile protects the original artwork in the explicit dark-mode styles; no recoloring or filters are applied.
 
-Dashboard CTAs use the existing `SHOPIFY_APP_HANDLE` and authenticated store domain, following the existing Shopify Admin `/store/{store}/apps/{handle}/app` Overview convention. Missing/invalid configuration omits both HTML and plain-text CTAs. No guessed literal production handle, localhost link, marketing substitute or Render login link is used. Fictional preview stores have no verified app installation, so these preview artifacts intentionally omit the CTA. Production handle/destination confirmation and an authenticated click test remain part of pre-release review; the public routing detail was requested from the owner. No environment setting has been changed.
+**Outgoing email dashboard CTAs are deliberately omitted in both HTML and plain text.** Production's public diagnostics confirmed the production BotShield identity/Render URLs and that `SHOPIFY_APP_HANDLE` exists, but disclose only a boolean, not its value. The committed production TOML identifies BotShield (`d4fd10812566b17d9d99ed95e0978ada`), not BotShield Dev. The existing billing helper demonstrates a Shopify Admin routing convention; it does not independently prove the actual production Overview URL.
+
+The unverified URL builder/configuration read was removed from email integration. Outgoing senders explicitly pass no dashboard URL, even if a Dev handle or caller-supplied URL is present. The optional CTA's visual renderer remains intact for a subsequently verified destination. No production configuration was changed.
+
+Outstanding verification: obtain the existing production app handle and an authenticated production BotShield Overview URL, confirm that URL belongs to the production client ID above rather than BotShield Dev, and verify the exact app path/Overview route by opening it in Shopify Admin. No handle or path suffix will be inferred from the display name or boolean diagnostics. Fictional preview stores continue to have no CTA.
+
+### Reporting-period trace
+
+Scheduled/due flow: storefront evaluation → `maybeSendDueWeeklyReport` → `sendWeeklySecurityReport`.
+Manual flow: POST `/api/weekly-report` → `sendWeeklySecurityReport`.
+Both call `buildWeeklySecurityReport`, which computes the actual seven-day query window (`gte: start`, `lt: end`). `buildWeeklyReportFromEvents` serializes those same dates into `periodStart` and `periodEnd`; the report service passes that report unchanged into `sendWeeklySecurityReportEmail` and the shared renderer. A focused regression exercises the actual report builder through mocked delivery and checks the same period in HTML and plain text. No scheduling, query, calculation or date-source code was changed.
 
 ## Compatibility and validation
 
@@ -78,7 +88,7 @@ node --test tests/merchant-email-templates.test.mjs tests/email-sender.test.mjs
 
 ## Recorded checks for this PR
 
-- **476 automated tests passed**, including the existing mocked sender/Reply-To tests and 12 focused template tests.
+- **478 automated tests passed**, including the existing mocked sender/Reply-To tests and 12 focused template tests.
 - Existing style SSR and Overview hydration probes passed.
 - Production build and TypeScript passed.
 - Targeted lint for all changed/new source, tests and preview scripts passed. Full repository lint retains the existing **190 errors / six warnings**, with no new targeted failures; no unrelated cleanup was performed.

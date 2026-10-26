@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { buildEmailDashboardUrl, EMAIL_LOGO_URL, renderWeeklyReportEmail, renderSecurityAlertEmail, renderTestNotificationEmail } from "../app/lib/merchant-email-templates.js";
+import { EMAIL_LOGO_URL, renderWeeklyReportEmail, renderSecurityAlertEmail, renderTestNotificationEmail } from "../app/lib/merchant-email-templates.js";
 
 const shop = "example.myshopify.com";
 const report = { periodStart: "2026-10-19T12:00:00Z", periodEnd: "2026-10-26T12:00:00Z", requestsAnalyzed: 20, blocked: 4, challenged: 2, allowed: 14, protectionActive: true, topReasonCodes: [{ label: "KNOWN_BOT_USER_AGENT", count: 4 }] };
@@ -107,16 +107,14 @@ test("large values retain exact counts, long store identifiers and unusual chara
   assert.match(visible(email),/1,234,567,890,123/);
 });
 
-test("dashboard links use only the existing configured Shopify Admin route, with safe omission",()=>{
-  const url=buildEmailDashboardUrl(shop,'botshield');
-  assert.equal(url,'https://admin.shopify.com/store/example/apps/botshield/app');
+test("optional CTA rendering rejects unsafe destinations; outgoing links require separate production verification",()=>{
+  const url='https://admin.shopify.com/store/example/apps/test-fixture/app';
   const email=renderWeeklyReportEmail({shop,report,dashboardUrl:url});
   assert.equal(body(email).querySelector('a[href^="https:"]').href,url);
   assert.ok(email.text.includes(url));
   for(const bad of ['javascript:alert(1)','http://admin.shopify.com/store/a/apps/b/app','https://localhost/app','https://evil.test','https://admin.shopify.com.evil.test/store/a/apps/b/app']) {
     assert.equal(body(renderSecurityAlertEmail({shop,dashboardUrl:bad})).querySelector('a[href^="http"]'),null);
   }
-  for(const [store,handle] of [[shop,''],[shop,'../dev'],['attacker.example','botshield'],['<img>', 'botshield']]) assert.equal(buildEmailDashboardUrl(store,handle),'');
 });
 
 test("email HTML has inline table layout, image dimensions, no scripts/external CSS/fonts/animation, and optional dark styles",()=>{
