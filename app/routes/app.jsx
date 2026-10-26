@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData, useRouteError } from "react-router";
+import { Outlet, useLoaderData, useRouteError, useLocation, useNavigation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import BotShieldEmbeddedAppProvider, {
   BotShieldAppNavigation,
@@ -9,6 +9,9 @@ import {
 } from "../lib/admin-route-state.server";
 import { isBillingReturnRequest } from "../lib/billing-return.server";
 import { ThemeActivationProvider } from "../components/onboarding/ThemeActivationProvider.jsx";
+import BotShieldWorkspaceLoading, { BotShieldLoadingScreen } from "../components/BotShieldWorkspaceLoading.jsx";
+import { useBotShieldPolarisReady } from "../hooks/use-botshield-polaris-ready.js";
+import { useThemeActivation } from "../components/onboarding/ThemeActivationProvider.jsx";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
@@ -44,7 +47,7 @@ export default function App() {
     <BotShieldEmbeddedAppProvider apiKey={apiKey}>
       <BotShieldAppNavigation />
       <ThemeActivationProvider key={merchantShop || "billing-return"} merchantShop={merchantShop}>
-        <Outlet />
+        <Workspace />
       </ThemeActivationProvider>
     </BotShieldEmbeddedAppProvider>
   );
@@ -58,3 +61,26 @@ export function ErrorBoundary() {
 export const headers = (headersArgs) => {
   return boundary.headers(headersArgs);
 };
+
+// Native fallback for initial client hydration; it performs no authentication work.
+export function HydrateFallback() {
+  return <div className="bs-workspace-loading-layer"><BotShieldLoadingScreen /></div>;
+}
+
+function Workspace() {
+  const { ready, error } = useBotShieldPolarisReady();
+  const activation = useThemeActivation();
+  const location = useLocation();
+  const navigation = useNavigation();
+  // These existing flows own their presentation and bootstrap behavior.
+  if (["/app/onboarding", "/app/billing-return"].includes(location.pathname)) return <Outlet />;
+  return (
+    <BotShieldWorkspaceLoading
+      initializing={!ready || Boolean(activation?.checking || activation?.profile.loading)}
+      error={error}
+      navigating={navigation.state === "loading"}
+    >
+      <Outlet />
+    </BotShieldWorkspaceLoading>
+  );
+}
