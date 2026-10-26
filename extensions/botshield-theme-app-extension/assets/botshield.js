@@ -3,6 +3,11 @@
   var root = document.getElementById("botshield-storefront-root");
   if (!root) return;
 
+  // Theme editing must never challenge, redirect, or record storefront decisions.
+  // Use Shopify editor signals, never a shopper-controlled URL parameter.
+  if (root.dataset.designMode === "true" ||
+      (window.Shopify && window.Shopify.designMode === true)) return;
+
   var currentPath = window.location.pathname || root.dataset.path || "/";
   if (currentPath.indexOf("/apps/botshield/blocked") === 0) return;
 

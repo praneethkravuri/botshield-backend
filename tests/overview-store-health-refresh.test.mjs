@@ -32,7 +32,7 @@ test("Overview refresh status button shows loading and merchant feedback", () =>
   assert.match(overviewSource, /handleRefreshStoreHealth/);
   assert.match(overviewSource, /Connection verified/);
   assert.match(overviewSource, /toast\.error\(result\.error\)/);
-  assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing\}/);
+  assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing \|\| protectionLoading\}/);
   assert.match(overviewSource, /loading=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /Refresh status/);
   assert.match(indexSource, /Couldn't refresh store health\./);

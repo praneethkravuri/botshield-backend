@@ -177,3 +177,62 @@ If release verification fails, stop rollout and use Render's rollback to the las
 - `tests/onboarding.test.mjs`, `tests/overview-store-health-refresh.test.mjs`, `tests/settings-phase2-closeout.test.mjs`: focused tests and revised navigation expectations.
 - `app/dev/onboarding-ssr-probe.mjs`, `scripts/test-onboarding-browser.mjs`, `scripts/dev-onboarding-preview.mjs`: executable hydration, guarded local preview and browser acceptance checks.
 - This report and `docs/screenshots/merchant-onboarding/`: review evidence and release instructions.
+
+### Post–development-store test investigation
+
+Merchant-reported real Shopify testing in Sarah's Candles passed the Theme Editor
+link, save, activation verification, success animation, automatic Overview redirect,
+refresh persistence, and Settings → Connections → Setup guide reopening. These are
+merchant observations; the cloud checks below do not independently reproduce that
+Shopify session.
+
+**Overview flash:** Confirmed presentation bug. The dashboard initialized the embed
+as unavailable/false and derived module health before `/api/settings`, `/api/status`,
+and App Bridge verification completed. Navigation/focus verification also clears
+activation while checking. Overview now explicitly displays “Checking protection
+status” and “Checking protection modules…” until those inputs settle, including the
+React effect that copies provider state. Module badges show Checking and the count
+is withheld. Settled inactive, active, and degraded outcomes remain distinct; no
+protection calculations or enforcement settings are changed. The SSR/hydration
+probe covers unknown, inactive, and active views.
+
+**Theme Editor challenge:** Confirmed missing editor exemption in the theme embed
+bundle. The “Quick security check” string is implemented by
+`extensions/botshield-theme-app-extension/assets/botshield.js`; it requests the
+embed's configured app proxy and can render a challenge or redirect. The editor
+preview was previously treated as an ordinary storefront visit. Both production
+and Dev copies can contain this same script/text, so the reported appearance alone
+cannot establish which installed app served the observed challenge. The checked-in
+canonical embed uses `/apps/botshield/decision`; a Dev overlay must point to its
+isolated Dev proxy. Do not infer origin from the visible BotShield brand.
+
+The bundle now exits before storage access, demo timers, decision fetches, challenge
+UI, or redirects when Shopify's `request.design_mode` Liquid signal or
+`Shopify.designMode` is true. No URL parameter exemption, server-side bypass, scope,
+configuration, database, or live-theme change is introduced. Ordinary storefront
+requests retain the same detection and enforcement path. Executable bundle tests
+cover both editor signals, normal visits, demo timers, and attempted query-string
+opt-outs.
+
+Before release, retest the updated Dev extension in Sarah's Candles. In the Theme
+Editor preview frame's Network panel, inspect the actual loaded extension asset
+URL (its extension identifier can be matched to the Dev app) and any
+`/apps/botshield/decision` versus `/apps/botshield-dev/decision` requests. Capture only
+non-sensitive paths/extension identifiers. This identifies which version is still
+running if a challenge remains. An already installed production extension will
+retain its old behavior until separately released; this draft does not update it.
+Verify the updated Dev preview makes no Dev decision requests or challenge UI,
+then verify an ordinary storefront visit still requests its protection decision.
+Do not disable the production embed or modify production configuration to perform
+this check.
+
+Validation for this follow-up: 458/458 Node tests passed (five new executable
+editor-preview regressions); existing style SSR and expanded Overview hydration
+probes passed; onboarding SSR/hydration passed; production build and TypeScript
+passed; `git diff --check` passed. Targeted ESLint on the three changed application
+JS/JSX files still reports 108 errors and five warnings, exactly matching their
+pre-change baseline (87 errors/three warnings in the dashboard route and 21
+errors/two warnings in the admin component; storefront script clean). No new live
+Shopify/browser session was run by the cloud agent for these fixes. The updated
+Dev extension's editor exemption and ordinary storefront enforcement need merchant
+retesting before release. Production configuration remains unchanged.

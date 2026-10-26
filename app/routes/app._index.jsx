@@ -142,6 +142,8 @@ function DashboardIndex() {
     search: "",
   });
   const [pauseUntil, setPauseUntil] = useState(null);
+  const [protectionSettingsLoaded, setProtectionSettingsLoaded] = useState(false);
+  const [protectionStatusLoaded, setProtectionStatusLoaded] = useState(false);
   const [protectionStatus, setProtectionStatus] = useState({
     shop: "",
     appInstalled: true,
@@ -668,6 +670,8 @@ function DashboardIndex() {
       console.error("Failed to load settings", err);
       recordBackendError("Settings", err);
       if (throwOnError) throw err;
+    } finally {
+      setProtectionSettingsLoaded(true);
     }
   };
 
@@ -692,6 +696,8 @@ function DashboardIndex() {
       recordBackendError("Protection status", err);
       if (throwOnError) throw err;
       return null;
+    } finally {
+      setProtectionStatusLoaded(true);
     }
   };
 
@@ -2740,6 +2746,9 @@ function DashboardIndex() {
     initialSettingsSection: appRouteData.initialSettingsSection ?? "general",
     renderAnchorMs: appRouteData.renderAnchorMs ?? 0,
     protectionStatus,
+    protectionStatusLoading: !protectionSettingsLoaded || !protectionStatusLoaded ||
+      Boolean(themeActivationChecking) ||
+      Boolean(themeActivationState && protectionStatus.themeAppEmbedConnectionState !== themeActivationState),
     protectionPaused,
     protectionReady,
     autoBlock,
