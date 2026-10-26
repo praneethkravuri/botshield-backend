@@ -32,7 +32,7 @@ test("Overview refresh status button shows loading and merchant feedback", () =>
   assert.match(overviewSource, /handleRefreshStoreHealth/);
   assert.match(overviewSource, /Connection verified/);
   assert.match(overviewSource, /toast\.error\(result\.error\)/);
-  assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing \|\| protectionLoading\}/);
+  assert.match(overviewSource, /disabled=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /loading=\{model\.storeHealthRefreshing\}/);
   assert.match(overviewSource, /Refresh status/);
   assert.match(indexSource, /Couldn't refresh store health\./);
@@ -52,8 +52,8 @@ test("Threat activity verify connection refreshes live data when embed is active
   assert.match(threatEmptySection, /storefrontSensorActive/);
   assert.match(threatEmptySection, /handleRefreshStoreHealth/);
   assert.match(threatEmptySection, /Refresh data/);
-  assert.match(threatEmptySection, /Complete setup/);
-  assert.match(threatEmptySection, /actions\.setPage\?\.\("onboarding"\)/);
+  assert.match(threatEmptySection, /Verify connection/);
+  assert.match(threatEmptySection, /actions\.openThemeEditor/);
   assert.doesNotMatch(
     threatEmptySection,
     /<BotShieldActionButton onClick=\{actions\.openThemeEditor\}>/,

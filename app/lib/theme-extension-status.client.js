@@ -6,8 +6,8 @@ import {
 
 export { BOTSHIELD_THEME_EMBED_HANDLE, THEME_EMBED_CONNECTION_STATE };
 
-/** Shopify's App API reports activation for the published theme without extra scopes.
- * https://shopify.dev/docs/api/app-home/latest/apis/authentication-and-data/app-api
+/**
+ * Reads theme app embed activation from Shopify App Bridge (published theme only).
  */
 export async function readThemeAppEmbedStatus() {
   if (typeof window === "undefined") {
@@ -20,7 +20,7 @@ export async function readThemeAppEmbedStatus() {
   }
 
   try {
-    const extensions = await extensionsApi.call(window.shopify.app);
+    const extensions = await extensionsApi();
     return resolveThemeAppEmbedStatus(extensions);
   } catch (error) {
     console.error("Failed to read theme app embed status", error);

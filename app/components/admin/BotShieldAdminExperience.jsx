@@ -84,7 +84,6 @@ import {
   getUiStatus,
 } from "../../lib/ui-status";
 import { getFraudOrdersSetupState } from "../../lib/fraud-orders-setup.js";
-import SetupReminder from "../onboarding/SetupReminder.jsx";
 import ValuePage from "./ValuePage.jsx";
 import { BOTSHIELD_BASIC_MONTHLY_PRICE } from "../../lib/billing-state.js";
 import { EMAIL_PATTERN } from "../../lib/email-validation.js";
@@ -1330,7 +1329,6 @@ function OverviewPage({ model, actions }) {
       toast.error(result.error);
     }
   };
-  const protectionLoading = Boolean(model.protectionStatusLoading);
   const storefrontConnected = hasStorefrontConnection(model);
   const storefrontSensorActive = Boolean(model.protectionStatus?.themeAppEmbedActive);
   const storefrontReportingStatus = getStorefrontReportingStatus(model);
@@ -1503,15 +1501,7 @@ function OverviewPage({ model, actions }) {
     : 1;
   const lastStorefrontDecisionAt = model.protectionStatus?.lastStorefrontDecisionAt;
   const protectionsNeedingAttention = protectionRows.filter((row) => !row.active).length;
-  const protectionState = protectionLoading
-    ? {
-        label: "Checking",
-        title: "Checking protection status",
-        tone: "info",
-        className: "botshield-v2-status--checking",
-        detail: "Loading your protection settings and verifying the theme app embed.",
-      }
-    : model.backendErrors?.length
+  const protectionState = model.backendErrors?.length
       ? {
           label: "Degraded",
           title: "Protection data is degraded",
@@ -1574,7 +1564,7 @@ function OverviewPage({ model, actions }) {
             </div>
             <div aria-label="Active protection modules" className="bo-page-intro-badge">
               <OverviewIcon centered name="shield" />
-              {protectionLoading ? "Checking protection modules…" : `${activeProtections} / ${protectionRows.length} modules active`}
+              {activeProtections} / {protectionRows.length} modules active
             </div>
           </header>
 
@@ -1610,7 +1600,7 @@ function OverviewPage({ model, actions }) {
 
           <section className="botshield-v2-kpi-grid" aria-label="Protection metrics">
             {metrics.map((metric) => (
-              <OverviewMetricCard key={metric.label} {...metric} loading={loading || (protectionLoading && metric.label === "Active protections")} />
+              <OverviewMetricCard key={metric.label} {...metric} loading={loading} />
             ))}
           </section>
 
@@ -1622,7 +1612,7 @@ function OverviewPage({ model, actions }) {
               </div>
               <span className={model.storeHealthRefreshing ? "bo-refresh-spin" : undefined}>
                 <BotShieldActionButton
-                  disabled={model.storeHealthRefreshing || protectionLoading}
+                  disabled={model.storeHealthRefreshing}
                   loading={model.storeHealthRefreshing}
                   variant="tertiary"
                   onClick={() => {
@@ -1630,10 +1620,10 @@ function OverviewPage({ model, actions }) {
                       void handleRefreshStoreHealth();
                       return;
                     }
-                    actions.setPage?.("onboarding");
+                    actions.openThemeEditor?.();
                   }}
                 >
-                  {protectionLoading ? "Checking status…" : storefrontSensorActive ? "Refresh status" : "Complete setup"}
+                  {storefrontSensorActive ? "Refresh status" : "Verify connection"}
                 </BotShieldActionButton>
               </span>
             </div>
@@ -1646,12 +1636,12 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="reporting" />
                 <span>Storefront reporting</span>
-                <strong><i className={`botshield-v2-health-dot ${protectionLoading ? "is-muted" : storefrontReportingStatus.healthy ? "is-healthy" : "is-attention"}`} />{protectionLoading ? "Checking" : storefrontReportingStatus.label}</strong>
+                <strong><i className={`botshield-v2-health-dot ${storefrontReportingStatus.healthy ? "is-healthy" : "is-attention"}`} />{storefrontReportingStatus.label}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="page" />
                 <span>Theme app embed</span>
-                <strong><i className={`botshield-v2-health-dot ${protectionLoading ? "is-muted" : storefrontSensorActive ? "is-healthy" : "is-attention"}`} />{protectionLoading ? "Checking" : storefrontSensorActive ? "Active" : "Needs setup"}</strong>
+                <strong><i className={`botshield-v2-health-dot ${storefrontSensorActive ? "is-healthy" : "is-attention"}`} />{storefrontSensorActive ? "Active" : "Needs setup"}</strong>
               </div>
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="clock" />
@@ -1661,7 +1651,7 @@ function OverviewPage({ model, actions }) {
               <div className="botshield-v2-health-item">
                 <OverviewIcon name="shield" />
                 <span>Protection coverage</span>
-                <strong><i className={`botshield-v2-health-dot ${protectionLoading ? "is-muted" : activeProtections === protectionRows.length ? "is-healthy" : "is-attention"}`} />{protectionLoading ? "Checking" : `${activeProtections} / ${protectionRows.length} active`}</strong>
+                <strong><i className={`botshield-v2-health-dot ${activeProtections === protectionRows.length ? "is-healthy" : "is-attention"}`} />{activeProtections} / {protectionRows.length} active</strong>
               </div>
             </div>
           </section>
@@ -1773,7 +1763,7 @@ function OverviewPage({ model, actions }) {
                     Try refreshing to load recorded storefront decisions again.
                   </BotShieldBanner>
                   <BotShieldActionButton
-                    disabled={model.storeHealthRefreshing || protectionLoading}
+                    disabled={model.storeHealthRefreshing}
                     loading={model.storeHealthRefreshing}
                     onClick={() => {
                       void handleRefreshStoreHealth();
@@ -1837,17 +1827,17 @@ function OverviewPage({ model, actions }) {
                   <h3>Monitoring storefront activity</h3>
                   <p>Allowed, challenged, and blocked decisions will appear as BotShield records real storefront traffic.</p>
                   <BotShieldActionButton
-                    disabled={model.storeHealthRefreshing || protectionLoading}
+                    disabled={model.storeHealthRefreshing}
                     loading={model.storeHealthRefreshing}
                     onClick={() => {
                       if (storefrontSensorActive) {
                         void handleRefreshStoreHealth();
                         return;
                       }
-                      actions.setPage?.("onboarding");
+                      actions.openThemeEditor?.();
                     }}
                   >
-                    {storefrontSensorActive ? "Refresh data" : "Complete setup"}
+                    {storefrontSensorActive ? "Refresh data" : "Verify connection"}
                   </BotShieldActionButton>
                   {lastStorefrontDecisionAt ? (
                     <small>Last decision received <BotShieldHydrationRelativeTime value={lastStorefrontDecisionAt} /></small>
@@ -1923,9 +1913,9 @@ function OverviewPage({ model, actions }) {
                     </div>
                     <div className="botshield-v2-protection-action">
                       <BotShieldStatusBadge
-                        status={protectionLoading ? "info" : row.active ? "active" : "setup_required"}
-                        label={protectionLoading ? "Checking" : row.status}
-                        tone={protectionLoading ? "info" : row.tone}
+                        status={row.active ? "active" : "setup_required"}
+                        label={row.status}
+                        tone={row.tone}
                       />
                       <BotShieldActionButton
                         variant="tertiary"
@@ -6344,6 +6334,7 @@ function SettingsPage({ model, actions }) {
 
   const responseMode = getResponseMode(model);
   const protectionProfile = getProtectionProfile(model);
+  const storefrontConnected = hasStorefrontConnection(model);
   const emailStatus = getEmailStatus({
     configured: model.emailProviderConfigured,
     lastStatus: model.lastAlertStatus,
@@ -6922,14 +6913,15 @@ function SettingsPage({ model, actions }) {
           <SettingsHubRow
             control={
               <BotShieldActionButton
-                onClick={() => actions.setPage("onboarding")}
+                disabled={!model.protectionStatus?.shop}
+                onClick={actions.openThemeEditor}
               >
-                Setup guide
+                {storefrontConnected ? "Open theme editor" : "Connect storefront"}
               </BotShieldActionButton>
             }
             description="Review or enable the BotShield theme app embed in Shopify."
             icon="connection"
-            title="Theme activation"
+            title="Theme editor"
             variant="action"
           />
         </SettingsHubSection>
@@ -7411,10 +7403,7 @@ export default function BotShieldAdminExperience({ model, actions }) {
   const routeContent = (
     <div key={screen}>
       {screen === "dashboard" ? (
-        <>
-          <SetupReminder />
-          <OverviewPage model={model} actions={actions} />
-        </>
+        <OverviewPage model={model} actions={actions} />
       ) : null}
       {screen === "analytics" ? (
         <AnalyticsPage model={model} actions={actions} />

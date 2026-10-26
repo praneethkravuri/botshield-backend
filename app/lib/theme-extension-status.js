@@ -5,7 +5,6 @@ export const THEME_EMBED_CONNECTION_STATE = {
   INACTIVE: "inactive",
   MISSING: "missing",
   UNAVAILABLE: "unavailable",
-  UNUSABLE: "unusable",
 };
 
 export function resolveThemeAppEmbedStatus(extensions) {
@@ -25,27 +24,32 @@ export function resolveThemeAppEmbedStatus(extensions) {
     };
   }
 
+  let sawThemeExtension = false;
+
   for (const extension of extensions) {
     if (extension?.type !== "theme_app_extension") continue;
-    if (!Array.isArray(extension.activations))
-      return resolveThemeAppEmbedStatus(null);
-    for (const block of extension.activations) {
+    sawThemeExtension = true;
+
+    for (const block of extension.activations || []) {
       if (block?.handle !== BOTSHIELD_THEME_EMBED_HANDLE) continue;
-      // Shopify documents app.extensions() as published-theme only. Placement IDs
-      // and Admin API theme access are neither needed nor authoritative here.
-      const states = {
-        active: THEME_EMBED_CONNECTION_STATE.ACTIVE,
-        available: THEME_EMBED_CONNECTION_STATE.INACTIVE,
-        unavailable: THEME_EMBED_CONNECTION_STATE.UNUSABLE,
-      };
-      const state = states[block.status];
-      if (!state) return resolveThemeAppEmbedStatus(null);
+
+      const active = block.status === "active";
       return {
-        themeAppEmbedConnectionState: state,
-        themeAppEmbedActive: state === THEME_EMBED_CONNECTION_STATE.ACTIVE,
-        themeAppEmbedStatus: block.status,
+        themeAppEmbedConnectionState: active
+          ? THEME_EMBED_CONNECTION_STATE.ACTIVE
+          : THEME_EMBED_CONNECTION_STATE.INACTIVE,
+        themeAppEmbedActive: active,
+        themeAppEmbedStatus: block.status || "inactive",
       };
     }
+  }
+
+  if (!sawThemeExtension) {
+    return {
+      themeAppEmbedConnectionState: THEME_EMBED_CONNECTION_STATE.MISSING,
+      themeAppEmbedActive: false,
+      themeAppEmbedStatus: "missing",
+    };
   }
 
   return {
@@ -91,14 +95,6 @@ export function getThemeEmbedConnectionView(protectionStatus = {}) {
           "Shopify does not report a BotShield theme app embed for this app yet.",
         connected: false,
       };
-    case THEME_EMBED_CONNECTION_STATE.UNUSABLE:
-      return {
-        label: "Embed unavailable",
-        tone: "monitor",
-        description:
-          "Shopify reports that the BotShield app embed is not currently usable on the published theme.",
-        connected: false,
-      };
     case THEME_EMBED_CONNECTION_STATE.UNAVAILABLE:
     default:
       return {
@@ -125,12 +121,10 @@ export function buildThemeEditorDeepLink(
 ) {
   const normalizedShop = String(shop || "").trim();
   const normalizedApiKey = String(apiKey || "").trim();
-  if (
-    !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/i.test(normalizedShop) ||
-    !normalizedApiKey
-  )
-    return "";
-  if (!/^[a-zA-Z0-9_-]+$/.test(handle)) return "";
+  if (!normalizedShop || !normalizedApiKey) return "";
 
-  return `https://${normalizedShop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(normalizedApiKey)}/${encodeURIComponent(handle)}`;
+  return `https://${normalizedShop}/admin/themes/current/editor?context=apps&activateAppId=${buildThemeEditorActivateAppId(
+    normalizedApiKey,
+    handle,
+  )}`;
 }
