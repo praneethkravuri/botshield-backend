@@ -1,4 +1,4 @@
-# BotShield merchant email design review
+# BotShield final premium email design review
 
 **Preview only.** All sample stores, dates, counts, IP addresses and events are fictional. No messages were sent. The production app UI and verified sender configuration are unchanged.
 
@@ -13,7 +13,7 @@ The [gallery](index.html) can also be opened locally. GitHub may display HTML so
 ## What changes
 
 - One shared email-only table layout, official logo, navy/blue palette, inline styling, footer and plain-text composition.
-- Flagship weekly report: passed-in totals, actual reporting window in UTC (end exclusive, matching the existing database query), available protection status, and recorded reason counts. Uses the existing UI reason-label formatter. Missing fields are omitted; known zero activity is displayed as zero. No inferred trends, financial claims, fabricated periods or new calculations.
+- Flagship weekly report: passed-in totals, actual reporting window in UTC (calendar dates only for exact midnight boundaries; rolling windows retain their actual times and identify the exclusive cutoff with “before”), available protection status, and recorded reason counts. Uses the existing UI reason-label formatter. Missing fields are omitted; known zero activity is displayed as zero. No inferred trends, financial claims, fabricated periods or new calculations.
 - Actual alerts: decision-accurate headline, actual severity treatment, optional risk score, IP/path, timestamp, event ID and recorded reasons. A challenge is never described as a block.
 - Separate test-only body and plain text: no invented telemetry, no call to the real incident renderer, and no event creation. Existing API code and delivery-status metadata updates remain unchanged.
 - Real alert and weekly-report subjects remain unchanged. At owner request, the test subject is now `[BotShield] Test notification for {shop}`.
@@ -88,11 +88,24 @@ node --test tests/merchant-email-templates.test.mjs tests/email-sender.test.mjs
 
 ## Recorded checks for this PR
 
-- **478 automated tests passed**, including the existing mocked sender/Reply-To tests and 12 focused template tests.
+- **479 automated tests passed**, including the existing mocked sender/Reply-To tests and 13 focused template tests.
 - Existing style SSR and Overview hydration probes passed.
 - Production build and TypeScript passed.
 - Targeted lint for all changed/new source, tests and preview scripts passed. Full repository lint retains the existing **190 errors / six warnings**, with no new targeted failures; no unrelated cleanup was performed.
 - **26 browser checks passed** for light/dark, 320px/desktop, blocked images, long content/large counts, zero/missing data, and severity variants. Email-appropriate Axe checks found zero violations.
 - The full diff leaves `email.server.js`, notification routes, schedules/cooldowns, report calculations, detection, sender/Reply-To configuration, Shopify configuration/extensions, database and production UI unchanged.
 
-No merge, deployment, live merchant email, production environment edit or Shopify app version has been performed for this PR.
+Release authorization covers merging this email-only polish after checks pass. No live email, production environment edit or Shopify app version is part of this release. Deployment is verified separately against the resulting merge SHA.
+
+
+## Final design polish
+
+- Shared navy header, electric-blue top edge, cyan divider, exact unchanged official logo and a permanently visible wordmark.
+- Weekly report: blue/coral/amber/teal card accents, balanced padding, distinct protection panel and roomier recorded-reason rows. Actual counts, decisions and protection status are unchanged.
+- Alert: severity reflects only the passed threat level, with a refined incident-detail panel; challenged events retain the explicit “Challenged” recorded action.
+- Test: short green/blue confirmation treatment, explicitly a delivery test with no incident telemetry.
+- Pure date presentation only: a UTC midnight window ending October 27 exclusively displays “October 19–26, 2026 · UTC”. Cross-month/year ranges preserve the included dates. Rolling/partial windows show actual UTC times and “before” the exact cutoff, including seconds/milliseconds when necessary. HTML and plain text share the same formatter. No query, timestamp or calculation is changed.
+- Static highlights deliberately replace animation: no GIF, extra remote image, tracking asset, JavaScript or CSS animation. Designs remain complete when optional styles/images are unavailable and require no motion.
+- Prior-release Gmail iPhone delivery/appearance was reported by the owner; this updated revision has only Chromium verification. Gmail/Outlook/Apple Mail appearance for this revision remains unverified. No live emails were sent.
+
+Runtime changes are confined to `app/lib/merchant-email-templates.js`. Sender transport, subject lines, caller integration, schedules, preferences, report builders, database, Shopify configuration and all app UI remain unchanged.

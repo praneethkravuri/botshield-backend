@@ -6,7 +6,7 @@ Your week in security.
 
 Store: cedar-and-wick-preview.myshopify.com
 
-Reporting window: Oct 19, 2026, 00:00:00 UTC — Oct 26, 2026, 00:00:00 UTC (end exclusive)
+Reporting window: October 19–25, 2026 · UTC
 
 A summary of recorded storefront activity.
 
