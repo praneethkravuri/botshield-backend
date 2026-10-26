@@ -1,6 +1,6 @@
 # BotShield merchant onboarding — implementation and release review
 
-**Draft PR #10 — ready for owner review, not approved for release.** Published-theme verification now uses Shopify's scope-free App Bridge App API. There is no additional permission prompt, independent theme-ID requirement, or theme Admin API lookup. Real Sarah's Candles testing and owner review of the finished appearance remain required before merge or deployment.
+**Draft PR #10 — final production-readiness review; no release performed.** Published-theme verification uses Shopify's scope-free App Bridge App API. There is no additional permission prompt, independent theme-ID requirement, or theme Admin API lookup. The owner confirmed successful real testing on `sarahs-candles.myshopify.com`, including the published Horizon theme, the loading-state fix, and the Theme Editor exemption. Cloud automation independently checks the implementation; the owner's observations are not represented as cloud-run Shopify tests.
 
 ## What changed
 
@@ -132,12 +132,12 @@ Browser tooling can be installed outside the checkout, for example `npm install 
 
 The runner refuses a non-local base URL. It mocks activation/profile/backend responses and must not be used to claim real Shopify verification.
 
-## Sarah's Candles development-store smoke test — not performed
+## Sarah's Candles development-store smoke test — owner-confirmed results
 
-Use the actual development-store domain in Shopify CLI; the display name “Sarah's Candles” is not hardcoded into the app. Use a development app configuration and test credentials, keeping committed production URLs and secrets unchanged.
+The owner confirmed the core onboarding, activation, completion/refresh, guide reopening, responsive branding, Overview 4/4 active modules, and editor-preview regression checks on `sarahs-candles.myshopify.com`. The owner observed 20 storefront events, four blocked events and zero challenged events. These counts do not independently prove every enforcement scenario. The following is the full smoke-test checklist; unreported cases are not claimed as real-session passes. Keep development configuration and credentials isolated from production.
 
-1. Use the existing app permissions. There must be no extra Shopify permission prompt for theme verification. No Shopify application configuration deployment is required for this change.
-2. Run `shopify app dev --store=<actual-development-store.myshopify.com>` with the development app configuration. Open the authenticated embedded app through Shopify Admin. Check subscription approval and any reauthentication still use the existing flows.
+1. Use the existing app permissions. There must be no extra Shopify permission prompt for theme verification. The production theme bundle changes require a Shopify extension release, with production app configuration and scopes unchanged.
+2. Run `shopify app dev --config shopify.app.botshield-dev.toml --store sarahs-candles.myshopify.com` only in the separate Windows Dev checkout, after confirming that file identifies BotShield Dev. Open the authenticated embedded app through Shopify Admin. Check subscription approval and any reauthentication still use the existing flows.
 3. For initial-visit behavior, use a fresh development shop or clear only that development shop's guide acknowledgment key in its development database. Never clear merchant settings or production data. With the published embed disabled, opening `/app` should offer `/app/onboarding`. Loading should be stable without an Overview flash.
 4. Verify the displayed shop identifier matches Shopify and the theme target says current published theme; a theme name is intentionally omitted. Activate Open Theme Editor: it must open that shop's current published theme, App embeds context, with the BotShield embed selected. Check that the embedded guide remains open in its tab.
 5. Find BotShield under App embeds. Turn it on but do not save; return and verify that opening the editor alone is insufficient. Save, return to BotShield, and check the refreshed status. No tutorial control can change the actual embed status.
@@ -153,9 +153,9 @@ Use the actual development-store domain in Shopify CLI; the display name “Sara
 
 1. Review the corrected PR diff, finished screenshots and scope-free completion flow in Sarah’s Candles. Re-run checks after any further code changes. Obtain explicit owner approval before merging or deploying.
 2. After owner approval, merge the reviewed PR into `main` using normal GitHub checks. Do not bypass checks or force-push. Render's existing GitHub auto-deploy should run its unchanged build/start commands on the Starter service. No new environment variables, domain, service or database migration are needed for the implementation in this PR.
-3. Keep Shopify app configuration and permissions unchanged. This implementation requires only the existing Render GitHub deployment workflow.
+3. Keep Shopify app identity, configuration and permissions unchanged. Render deploys the web backend only. Separately publish the updated production theme extension using the explicit production configuration, after verifying backend health. Follow the staged PowerShell commands below; never publish from a dirty Dev checkout.
 4. Inspect Render's build log and service Live status. Request `/health` at `https://botshield-backend.onrender.com/health` and require two HTTP 200 responses with `ok: true`, `database: "connected"`, and `deployCommit` matching the actual merge commit. A healthy old commit is not deployment confirmation.
-5. Repeat the authenticated Sarah's Candles smoke test on the approved release and inspect errors. Do not claim production success from build output or a mocked session.
+5. Release and confirm the approved production Shopify app version, then repeat the authenticated smoke test on the approved release and inspect errors. Do not claim production success from build output or a mocked session.
 
 ## Rollback
 
@@ -236,3 +236,134 @@ errors/two warnings in the admin component; storefront script clean). No new liv
 Shopify/browser session was run by the cloud agent for these fixes. The updated
 Dev extension's editor exemption and ordinary storefront enforcement need merchant
 retesting before release. Production configuration remains unchanged.
+
+
+## Final review: production isolation and safe release procedure
+
+Reviewed application code: `3c1ddadf3d263f057e650d1686e8b5ff08e302e7`.
+This final report update changes documentation only. The production config,
+OAuth/session implementation, webhook endpoints/HMAC code, billing, detection,
+server enforcement, proxy routes, Prisma schema and dependencies match `main`.
+The public proxy remains `/apps/botshield/`; its upstream is `/proxy/botshield`.
+The app ID is `d4fd10812566b17d9d99ed95e0978ada`, the App URL is
+`https://botshield-backend.onrender.com`, and the callback is
+`https://botshield-backend.onrender.com/auth/callback`. No `read_themes` scope is
+requested. There is no tracked `shopify.app.botshield-dev.toml`, Dev proxy override,
+local test database override, or CLI dev-preview association in this PR/build.
+Existing local-development database defaults and examples already on `main` are
+unchanged; they are not newly copied Windows configuration.
+
+The editor guard reads Shopify's `request.design_mode`/`Shopify.designMode` only.
+It does not exempt URL flags, iframe visitors in general, theme-preview parameters,
+or ordinary shoppers. It adds no server bypass. Like the pre-existing client
+bundle, it is not a security boundary against someone modifying their own browser
+JavaScript. Server decision authentication, signing and detection stay unchanged.
+
+Run these commands only after approval to release the final PR head. An operator
+must have GitHub merge rights, Render deployment visibility and authenticated
+Shopify CLI access to production BotShield before starting. Review and record the
+final head SHA, then set `$reviewedHead` to that exact approved SHA in PowerShell.
+Do not derive approval from whatever head happens to be current later.
+
+```powershell
+gh pr view 10 --repo praneethkravuri/botshield-backend --json headRefOid,isDraft,mergeable,statusCheckRollup
+gh pr ready 10 --repo praneethkravuri/botshield-backend
+gh pr merge 10 --repo praneethkravuri/botshield-backend --merge --match-head-commit $reviewedHead
+$mergeCommit = gh pr view 10 --repo praneethkravuri/botshield-backend --json mergeCommit --jq '.mergeCommit.oid'
+```
+
+Do not bypass required GitHub checks. Wait for Render to deploy `$mergeCommit`
+using the existing service configuration; inspect its deployment logs and Live
+status. Require two successful health checks matching that commit and a connected
+database (run this check twice after deployment):
+
+```powershell
+$health = Invoke-RestMethod 'https://botshield-backend.onrender.com/health'
+if (-not $health.ok -or $health.database -ne 'connected' -or $health.deployCommit -ne $mergeCommit) { throw 'Production health or deployed commit does not match; stop release.' }
+```
+
+Use a **new, clean checkout**, separate from the Windows Dev checkout:
+
+```powershell
+git clone --branch main --single-branch https://github.com/praneethkravuri/botshield-backend.git botshield-production-release
+Set-Location botshield-production-release
+if ((git rev-parse HEAD) -ne $mergeCommit) { throw 'Checkout does not match the verified merge commit.' }
+git status --short
+Get-Content shopify.app.toml
+npm.cmd ci
+npx.cmd --yes --package=@shopify/cli@4.9.4 -- shopify app info --config shopify.app.toml
+```
+
+Confirm the displayed app is production **BotShield**, with the app ID, URLs,
+proxy and scopes above, and not BotShield Dev. Stop on unexpected differences,
+permission requests, extension deletions or extension identity reassociation.
+Do not copy `.env`, `.shopify`, or any Dev TOML into this checkout. Keep all
+credentials private and use the normal local Shopify login if prompted.
+
+Stage a version without making it active, inspect it in Shopify Dev Dashboard,
+then release only that version after its configuration/extension identity is
+confirmed:
+
+```powershell
+$releaseVersion = 'botshield-pr10-' + $mergeCommit.Substring(0, 12)
+npx.cmd --yes --package=@shopify/cli@4.9.4 -- shopify app deploy --config shopify.app.toml --version $releaseVersion --no-release
+# Inspect the staged version and confirm only the intended extension/config snapshot.
+npx.cmd --yes --package=@shopify/cli@4.9.4 -- shopify app release --config shopify.app.toml --version $releaseVersion
+```
+
+Verify that version is Active in the production app dashboard. Then test the
+production embedded onboarding/activation/Overview flow with an authorized merchant
+session, editor refresh without challenge/decision calls from this embed, and
+ordinary storefront allow/challenge/block behavior on appropriate controlled test
+traffic. Do not reset production merchant settings or disable live protection to
+force first-install testing. Existing development-store evidence remains useful
+but is not proof of production deployment. Stop if any deployment/verification
+fails. A Render rollback does not roll back a Shopify app version; record both
+previous versions and use each platform's own rollback if authorized.
+
+### Development preview cleanup (separate Windows Dev checkout only)
+
+Stop the running Dev CLI with Ctrl+C. Confirm
+`shopify.app.botshield-dev.toml` identifies **BotShield Dev**, then clean only that
+app's preview on Sarah's Candles:
+
+```powershell
+npx.cmd --yes --package=@shopify/cli@4.9.4 -- shopify app dev clean --config shopify.app.botshield-dev.toml --store sarahs-candles.myshopify.com
+```
+
+This restores the Dev app's active version for that development store. It does
+not release anything to production and does not necessarily uninstall or disable
+the Dev embed. If no Dev active version exists, inspect the CLI result rather
+than switching to the production config. When testing is finished, optionally
+disable only the **BotShield Dev** embed in the development store, and stop its
+local database container without deleting its volume. Keep production BotShield's
+embed, app installation, database and configuration unchanged. Never use the
+production app config for Dev cleanup.
+
+### Final verification results and decision
+
+**READY for release, subject to authorized deployment and production smoke tests.**
+No confirmed PR-related application blocker remains. The final review reran
+458/458 automated tests, the style SSR and Overview hydration probes, onboarding
+SSR/hydration, production build and TypeScript successfully. All 12 synthetic
+Chromium onboarding scenarios passed. Axe reported zero violations on all three
+steps at desktop (1280px) and mobile (360px). Seven additional local Chromium
+checks passed against the actual storefront bundle: allow, challenge, block,
+query parameters failing to bypass challenges, enforcement with no Shopify
+global, and exemptions for each Shopify editor signal. Synthetic checks use no
+live merchant or production database.
+
+Targeted lint for the onboarding modules, supporting routes/helpers, preview
+scripts and storefront script passed. Repository lint still fails with the known
+190 errors / six warnings; no new diagnostics were introduced by this review.
+There were no application-code changes during this final review, only corrections
+to this release report. The production build scan found no Dev proxy URL, Dev TOML
+filename, Dev root ID, local test port override or Cloudflare tunnel URL. Existing
+tracked development examples/defaults already on `main` remain unchanged.
+
+Remaining limitations: this environment has no authenticated production Shopify
+CLI session or Render dashboard/API connection. Arrange those operational
+prerequisites before merging, because merge triggers the existing Render auto
+deployment. Production onboarding and the live Shopify version have not been
+verified after release; no release has occurred. The owner-confirmed Dev-store
+results above cover the real merchant testing available at review time.
