@@ -53,8 +53,9 @@ test("scheduled/manual weekly report email uses reports sender and support repli
   assertHeaders(body);
   assert.equal(body.subject, "[BotShield] Weekly security report for example.myshopify.com");
   assert.match(body.html, /Requests analyzed/);
-  assert.match(body.html, /<strong>20<\/strong>/);
-  assert.match(body.html, /<strong>Known bot<\/strong>: 4/);
+  assert.match(body.html, /data-email-template="weekly"/);
+  assert.match(body.text, /Requests analyzed: 20/);
+  assert.match(body.text, /Known bot: 4/);
 });
 
 test("security incident alert uses reports sender without changing its destination or subject", async () => {
@@ -67,11 +68,13 @@ test("security incident alert uses reports sender without changing its destinati
   assert.match(body.html, /event-1/);
 });
 
-test("test notification uses the same sender and Reply-To without a separate delivery path", async () => {
+test("test notification uses the same transport with a distinct test-only presentation", async () => {
   const body = await captureDelivery(() => sendTestIncidentEmail({ shop: "example.myshopify.com", alertEmail: "merchant@example.com" }));
   assertHeaders(body);
   assert.equal(body.subject, "[BotShield] TEST incident on example.myshopify.com");
-  assert.match(body.html, /TEST_ALERT/);
+  assert.match(body.html, /Your BotShield notifications are working/);
+  assert.doesNotMatch(body.html, /TEST_ALERT|IP address|Risk score|Event ID/);
+  assert.match(body.text, /This is a test notification/);
 });
 
 test("valid sender override remains supported while replies always go to support", async () => {
