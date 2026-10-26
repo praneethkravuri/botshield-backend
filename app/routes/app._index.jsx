@@ -1,3 +1,5 @@
+import OnboardingGate from "../components/onboarding/OnboardingGate.jsx";
+import { useThemeActivation } from "../components/onboarding/ThemeActivationProvider.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useMatches, useNavigate } from "react-router";
 import { partitionSecurityEvents } from "../lib/event-classification";
@@ -47,6 +49,14 @@ function isPreviousWeek(dateInput, baseDate) {
 }
 
 export default function Index() {
+  return <OnboardingGate><DashboardIndex /></OnboardingGate>;
+}
+
+function DashboardIndex() {
+  const themeActivation = useThemeActivation();
+  const themeActivationState = themeActivation?.state;
+  const themeActivationChecking = themeActivation?.checking;
+  const themeActivationVerified = themeActivation?.verified;
   const location = useLocation();
   const navigate = useNavigate();
   const matches = useMatches();
@@ -132,6 +142,8 @@ export default function Index() {
     search: "",
   });
   const [pauseUntil, setPauseUntil] = useState(null);
+  const [protectionSettingsLoaded, setProtectionSettingsLoaded] = useState(false);
+  const [protectionStatusLoaded, setProtectionStatusLoaded] = useState(false);
   const [protectionStatus, setProtectionStatus] = useState({
     shop: "",
     appInstalled: true,
@@ -658,6 +670,8 @@ export default function Index() {
       console.error("Failed to load settings", err);
       recordBackendError("Settings", err);
       if (throwOnError) throw err;
+    } finally {
+      setProtectionSettingsLoaded(true);
     }
   };
 
@@ -682,24 +696,28 @@ export default function Index() {
       recordBackendError("Protection status", err);
       if (throwOnError) throw err;
       return null;
+    } finally {
+      setProtectionStatusLoaded(true);
     }
   };
 
-  const loadThemeExtensionStatus = async ({ throwOnError = false } = {}) => {
-    try {
-      const embedStatus = await readThemeAppEmbedStatus();
-      setProtectionStatus((previous) => ({
-        ...previous,
-        ...embedStatus,
-      }));
-      return embedStatus;
-    } catch (err) {
-      console.error("Failed to load theme extension status", err);
-      recordBackendError("Theme app embed", err);
-      if (throwOnError) throw err;
-      return null;
-    }
+  const loadThemeExtensionStatus = async () => {
+    if (themeActivation) return themeActivation.check();
+    const embedStatus = await readThemeAppEmbedStatus();
+    setProtectionStatus(previous => ({ ...previous, ...embedStatus }));
+    return embedStatus;
   };
+
+  useEffect(() => {
+    if (!themeActivationState) return;
+    const state = themeActivationChecking || (themeActivationState === "active" && !themeActivationVerified)
+      ? "unavailable" : themeActivationState;
+    setProtectionStatus(previous => ({ ...previous,
+      themeAppEmbedActive: state === "active",
+      themeAppEmbedConnectionState: state,
+      themeAppEmbedStatus: state,
+    }));
+  }, [themeActivationState, themeActivationChecking, themeActivationVerified]);
 
   const loadSecurityPosture = async () => {
     try {
@@ -2728,6 +2746,9 @@ export default function Index() {
     initialSettingsSection: appRouteData.initialSettingsSection ?? "general",
     renderAnchorMs: appRouteData.renderAnchorMs ?? 0,
     protectionStatus,
+    protectionStatusLoading: !protectionSettingsLoaded || !protectionStatusLoaded ||
+      Boolean(themeActivationChecking) ||
+      Boolean(themeActivationState && protectionStatus.themeAppEmbedConnectionState !== themeActivationState),
     protectionPaused,
     protectionReady,
     autoBlock,
@@ -2811,6 +2832,7 @@ export default function Index() {
       "fraud-orders": "/app/fraud-orders",
       value: "/app/value",
       settings: "/app/settings",
+      onboarding: "/app/onboarding",
     };
     let path = pageToView[resolvedPage] || "/app";
     if (nextPage === "billing") {

@@ -188,7 +188,7 @@ const { MemoryRouter } = await import("react-router");
 
 
 
-function embeddedOverviewTree() {
+function embeddedOverviewTree(overrides = {}) {
 
   return React.createElement(
 
@@ -206,7 +206,7 @@ function embeddedOverviewTree() {
 
       React.createElement(BotShieldAdminExperience, {
 
-        model: buildOverviewModel(),
+        model: { ...buildOverviewModel(), ...overrides },
 
         actions: {},
 
@@ -219,6 +219,26 @@ function embeddedOverviewTree() {
 }
 
 
+
+// Unknown data must never be presented as inactive protection.
+const checkingHtml = renderToString(embeddedOverviewTree({
+  protectionStatusLoading: true,
+  protectionReady: false,
+  protectionStatus: { themeAppEmbedActive: false },
+}));
+const checkingText = new JSDOM(checkingHtml).window.document.body.textContent;
+assert.match(checkingText, /Checking protection status/);
+assert.match(checkingText, /Checking protection modules/);
+assert.doesNotMatch(checkingText, /Protection needs attention|0 \/ 4 modules active|Needs setup/);
+const inactiveText = new JSDOM(renderToString(embeddedOverviewTree({
+  protectionStatusLoading: false,
+  protectionReady: false,
+  protectionStatus: { themeAppEmbedActive: false },
+}))).window.document.body.textContent;
+assert.match(inactiveText, /Protection needs attention/);
+const activeText = new JSDOM(renderToString(embeddedOverviewTree())).window.document.body.textContent;
+assert.match(activeText, /Protection is active/);
+assert.match(activeText, /4 \/ 4 modules active/);
 
 const tree = embeddedOverviewTree();
 

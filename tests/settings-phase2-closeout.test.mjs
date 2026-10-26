@@ -69,7 +69,7 @@ test("Settings hub sections expose real handlers for merchant-visible actions", 
   assert.match(settingsSource, /onClick=\{\(\) => selectSection\(section\.id\)\}/);
   assert.match(settingsSource, /onSave={save}/);
   assert.match(settingsSource, /actions\.setPage\("detection"\)/);
-  assert.match(settingsSource, /actions\.openThemeEditor/);
+  assert.match(settingsSource, /actions\.setPage\("onboarding"\)/);
   assert.match(settingsSource, /actions\.runDiagnostic/);
   assert.match(settingsSource, /actions\.runSimulation/);
   assert.match(settingsSource, /actions\.refreshApplicationStatus/);
@@ -106,7 +106,7 @@ test("Settings navigation does not route merchants to retired in-app pages", () 
   );
   for (const page of settingsSetPageCalls) {
     assert.ok(
-      ["detection", "settings", "policy", "analytics", "billing", "alerts-reports"].includes(
+      ["detection", "settings", "policy", "analytics", "billing", "alerts-reports", "onboarding"].includes(
         page,
       ) || approvedMerchantPaths.some((path) => page.includes(path)),
       `Unexpected Settings setPage target: ${page}`,
