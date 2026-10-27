@@ -24,7 +24,7 @@ const results=[];
 try {
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH || '/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  for(const name of ['weekly','alert','test']) {
-  for(const [variant,width,colorScheme] of [['desktop',680,'light'],['mobile',320,'light'],['dark',680,'dark']]) {
+  for(const [variant,width,colorScheme] of [['desktop',680,'light'],['mobile',320,'light'],['dark',680,'dark'],['mobile-dark',320,'dark']]) {
    const context=await browser.newContext({viewport:{width,height:1000},colorScheme});
    const page=await context.newPage();
    await page.route('https://botshield-backend.onrender.com/botshield-official-logo-transparent.png',r=>r.fulfill({contentType:'image/png',body:logo}));
@@ -46,6 +46,26 @@ try {
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:`${root}/${name}-images-blocked.png`,fullPage:true});
   results.push({template:name,variant:'images-blocked',width:320,visibleBrandFallback:true,horizontalOverflow:false});
+  await context.close();
+ }
+ // Simulate a client retaining inline styles but discarding optional enhancements.
+ for (const name of ['weekly','alert','test']) {
+  const context=await browser.newContext({viewport:{width:320,height:1000}});
+  const page=await context.newPage();
+  await page.route('**/*.png',r=>r.fulfill({contentType:'image/png',body:logo}));
+  await page.goto(`${base}/${name}.html`);
+  await page.evaluate(()=>{
+   document.querySelectorAll('style').forEach(el=>el.remove());
+   document.querySelectorAll('[style]').forEach(el=>{
+    el.style.removeProperty('background-image');
+    el.style.removeProperty('box-shadow');
+    el.style.removeProperty('border-radius');
+   });
+  });
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  const axe=await new AxeBuilder({page}).disableRules(['region','landmark-one-main']).analyze();
+  assert.deepEqual(axe.violations,[],`${name}: inline-only solid-color fallback`);
+  results.push({template:name,variant:'inline-only-no-effects',width:320,horizontalOverflow:false,axeViolations:axe.violations});
   await context.close();
  }
  for(const [name,email] of [
