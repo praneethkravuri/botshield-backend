@@ -1,111 +1,58 @@
-# BotShield final premium email design review
+# BotShield editorial merchant emails
 
-**Preview only.** All sample stores, dates, counts, IP addresses and events are fictional. No messages were sent. The production app UI and verified sender configuration are unchanged.
+**Fictional preview data only. Nothing was sent.** The report is designed as an executive briefing, distinct from the application dashboard.
 
-| Template | HTML | Plain text | Desktop | 320px mobile | Dark browser preview | Images blocked |
+| Template | Desktop | Mobile (320px) | Dark | Mobile dark | Images blocked | HTML / text |
 | --- | --- | --- | --- | --- | --- | --- |
-| Weekly Security Report | [HTML](weekly.html) | [Text](weekly.txt) | [Image](weekly-desktop.png) | [Image](weekly-mobile.png) | [Image](weekly-dark.png) | [Image](weekly-images-blocked.png) |
-| Security Alert | [HTML](alert.html) | [Text](alert.txt) | [Image](alert-desktop.png) | [Image](alert-mobile.png) | [Image](alert-dark.png) | [Image](alert-images-blocked.png) |
-| Test Notification | [HTML](test.html) | [Text](test.txt) | [Image](test-desktop.png) | [Image](test-mobile.png) | [Image](test-dark.png) | [Image](test-images-blocked.png) |
+| Weekly Security Report | [Preview](weekly-desktop.png) | [Preview](weekly-mobile.png) | [Preview](weekly-dark.png) | [Preview](weekly-mobile-dark.png) | [Preview](weekly-images-blocked.png) | [HTML](weekly.html) / [Text](weekly.txt) |
+| Real Security Alert | [Preview](alert-desktop.png) | [Preview](alert-mobile.png) | [Preview](alert-dark.png) | [Preview](alert-mobile-dark.png) | [Preview](alert-images-blocked.png) | [HTML](alert.html) / [Text](alert.txt) |
+| Test Notification | [Preview](test-desktop.png) | [Preview](test-mobile.png) | [Preview](test-dark.png) | [Preview](test-mobile-dark.png) | [Preview](test-images-blocked.png) | [HTML](test.html) / [Text](test.txt) |
 
-The [gallery](index.html) can also be opened locally. GitHub may display HTML source instead of rendering email HTML; use the screenshot links for immediate review.
+## Design and scope
 
-## What changes
+The weekly briefing pairs a clean official-logo masthead with a dedicated navy hero, larger editorial headline, store identity and reporting window. A numbered activity section introduces a prominent analyzed total and three independent, full-width statistic surfaces. Every metric has its own table, generous padding, 18px separation, restrained border and optional soft shadow. The weekly palette is neutral with one brand-blue highlight; green is reserved for actual active protection. A separate protection panel, quiet reason table and white footer complete the report.
 
-- One shared email-only table layout, official logo, navy/blue palette, inline styling, footer and plain-text composition.
-- Flagship weekly report: passed-in totals, actual reporting window in UTC (calendar dates only for exact midnight boundaries; rolling windows retain their actual times and identify the exclusive cutoff with “before”), available protection status, and recorded reason counts. Uses the existing UI reason-label formatter. Missing fields are omitted; known zero activity is displayed as zero. No inferred trends, financial claims, fabricated periods or new calculations.
-- Actual alerts: decision-accurate headline, actual severity treatment, optional risk score, IP/path, timestamp, event ID and recorded reasons. A challenge is never described as a block.
-- Separate test-only body and plain text: no invented telemetry, no call to the real incident renderer, and no event creation. Existing API code and delivery-status metadata updates remain unchanged.
-- Real alert and weekly-report subjects remain unchanged. At owner request, the test subject is now `[BotShield] Test notification for {shop}`.
+Alerts use a shorter light introduction, actual severity badge and structured incident details. Test notifications use the same masthead with a simple non-incident confirmation. Real recorded actions and severity remain authoritative.
 
-Scheduled and manually requested weekly reports still use the same `sendWeeklySecurityReportEmail` function and therefore the same official design. Alert eligibility, cooldowns, schedules, report calculations, recipients, notification preferences, Resend transport, sender/Reply-To and delivery result contracts are untouched. There are no new dependencies or production environment updates.
+Static gradient, shadow and highlight treatments are progressive enhancements only. Solid `bgcolor` fallbacks, table spacing, inline text styles and borders remain usable when effects or embedded CSS are removed. There is no animation, GIF, JavaScript, tracking asset, added image, external font, stylesheet or dependency. Outlook may show square corners and no shadow/gradient; the information hierarchy and independent card spacing remain intact.
 
-## Links and image verification
+Runtime changes are confined to `app/lib/merchant-email-templates.js`. Sender/Reply-To, subjects, recipients, Resend transport, preferences, schedules, cooldowns, report calculations, security, database, Shopify configuration, marketing and all application UI remain untouched. Outgoing unverified dashboard CTAs remain omitted in HTML and plain text.
 
-The image is the existing `public/botshield-official-logo-transparent.png`, unchanged. Its public HTTPS URL returned HTTP 200 and the downloaded bytes matched the repository SHA-256:
+## Reporting windows
 
-`https://botshield-backend.onrender.com/botshield-official-logo-transparent.png`
+Date formatting affects presentation only, with the same output in HTML and plain text. Exact UTC-midnight windows display only included calendar dates: October 19 through the exclusive October 27 midnight cutoff displays **October 19–26, 2026 · UTC**. Cross-month/year windows and single-day windows are covered by tests.
 
-`ff132a41a95bc4ebe9ceb4e3342780a62f40707ce7acc32f4407e8db36ddeac1`
+Rolling/partial windows retain exact times (including seconds/milliseconds where present) and a short **cutoff excluded** note. This necessary fallback preserves the existing inclusive-start/exclusive-end query boundaries without implying that partial days were full calendar days. The awkward “before” phrasing is removed. No timestamps, query boundaries or reporting calculations changed.
 
-The always-visible BotShield wordmark and image alt text provide a readable fallback when images are blocked. The white logo tile protects the original artwork in the explicit dark-mode styles; no recoloring or filters are applied.
+Scheduled and manual reports continue through the same `sendWeeklySecurityReport` service and pass the actual report builder's `periodStart` / `periodEnd` to the renderer. Regression tests verify real builder-to-mocked-delivery pass-through, synchronized text/HTML dates and nonmutation.
 
-**Outgoing email dashboard CTAs are deliberately omitted in both HTML and plain text.** Production's public diagnostics confirmed the production BotShield identity/Render URLs and that `SHOPIFY_APP_HANDLE` exists, but disclose only a boolean, not its value. The committed production TOML identifies BotShield (`d4fd10812566b17d9d99ed95e0978ada`), not BotShield Dev. The existing billing helper demonstrates a Shopify Admin routing convention; it does not independently prove the actual production Overview URL.
+## Official logo and sender
 
-The unverified URL builder/configuration read was removed from email integration. Outgoing senders explicitly pass no dashboard URL, even if a Dev handle or caller-supplied URL is present. The optional CTA's visual renderer remains intact for a subsequently verified destination. No production configuration was changed.
+The existing transparent official logo is unchanged, with explicit 39×48 display dimensions preserving its 208×256 proportions, alt text, a white backing tile and always-visible BotShield wordmark.
 
-Outstanding verification: obtain the existing production app handle and an authenticated production BotShield Overview URL, confirm that URL belongs to the production client ID above rather than BotShield Dev, and verify the exact app path/Overview route by opening it in Shopify Admin. No handle or path suffix will be inferred from the display name or boolean diagnostics. Fictional preview stores continue to have no CTA.
+Public URL: https://botshield-backend.onrender.com/botshield-official-logo-transparent.png
 
-### Reporting-period trace
+Previously verified repository/public asset SHA-256: `ff132a41a95bc4ebe9ceb4e3342780a62f40707ce7acc32f4407e8db36ddeac1`.
 
-Scheduled/due flow: storefront evaluation → `maybeSendDueWeeklyReport` → `sendWeeklySecurityReport`.
-Manual flow: POST `/api/weekly-report` → `sendWeeklySecurityReport`.
-Both call `buildWeeklySecurityReport`, which computes the actual seven-day query window (`gte: start`, `lt: end`). `buildWeeklyReportFromEvents` serializes those same dates into `periodStart` and `periodEnd`; the report service passes that report unchanged into `sendWeeklySecurityReportEmail` and the shared renderer. A focused regression exercises the actual report builder through mocked delivery and checks the same period in HTML and plain text. No scheduling, query, calculation or date-source code was changed.
+Unchanged sender: **BotShield Reports <reports@botshieldapp.com>**. Unchanged Reply-To: **support@botshieldapp.com**. No environment-variable or domain/DNS edits.
 
-## Compatibility and validation
+## Validation
 
-Essential styles are inline, with table-based fluid layout, an Outlook conditional fixed-width wrapper, system fonts, explicit image dimensions and useful plain-text alternatives. The only embedded CSS is optional dark-mode enhancement; the light baseline does not depend on it. There is no email JavaScript, animation, external stylesheet or web font. Rounded corners gracefully become square where unsupported.
+- 480 automated tests passed, including 21 focused renderer/mocked sender tests.
+- Production build, TypeScript, existing SSR/hydration probes and targeted lint passed.
+- Global lint retains 190 existing errors / 6 warnings; no unrelated cleanup.
+- 32 Chromium checks cover desktop/mobile light/dark, blocked images, long names, large values, zero/missing data, actual severity variants and inline-only solid-color fallbacks. Email-appropriate Axe checks exclude web-page landmark rules (`region`, `landmark-one-main`). See [recorded results](browser-checks.json).
+- All previews are fictional. No live email or security event was generated.
 
-Browser checks cover desktop/mobile light/dark, blocked images, long names/paths, large numbers, zero activity, missing values, and high/medium/low/unknown severity. [Machine-readable results](browser-checks.json) record the checks. Axe checks exclude web-page landmark rules (`region`, `landmark-one-main`), which are not applicable to these transactional-email tables; the remaining checks include contrast, image names and table semantics.
+**Chromium is not Gmail, Outlook or Apple Mail.** These new designs have not been tested in those clients. Owner-confirmed Gmail iPhone results apply to the previous production design, not this revision. Proprietary forced-dark transformations and Outlook Word-engine appearance remain unverified.
 
-**Chromium is not an email client.** Actual Gmail web/mobile, Outlook (especially Windows Word rendering), Apple Mail and proprietary forced dark-mode transformations have not been tested for these new templates. No live email was sent. Those inbox checks need explicit approval and are required before a production release can be claimed client-verified.
+## Reproduce
 
-## Reproduce locally
-
-Generate the three HTML and plain-text artifacts (this script cannot send email):
+Generate all HTML/plain-text samples without any delivery capability:
 
 ```text
 node scripts/preview-merchant-emails.mjs
-```
-
-With existing external browser tooling available, configure `PLAYWRIGHT_MODULE`, `AXE_MODULE` and optionally `CHROMIUM_PATH`, then run:
-
-```text
-node scripts/test-merchant-email-previews.mjs
-```
-
-The browser script starts its own loopback-only server, uses the unchanged local official image for rendering, writes the screenshots/results here, and shuts down its server. It never imports the delivery helper, credentials, application database or authenticated merchant session.
-
-Run focused template and mocked transport tests:
-
-```text
 node --test tests/merchant-email-templates.test.mjs tests/email-sender.test.mjs
 ```
 
-## Desktop design previews
-
-### Weekly Security Report
-
-![Weekly Security Report — fictional preview only](weekly-desktop.png)
-
-### Security Alert
-
-![Security Alert — fictional preview only](alert-desktop.png)
-
-### Test Notification
-
-![Test Notification — fictional preview only](test-desktop.png)
-
-## Recorded checks for this PR
-
-- **479 automated tests passed**, including the existing mocked sender/Reply-To tests and 13 focused template tests.
-- Existing style SSR and Overview hydration probes passed.
-- Production build and TypeScript passed.
-- Targeted lint for all changed/new source, tests and preview scripts passed. Full repository lint retains the existing **190 errors / six warnings**, with no new targeted failures; no unrelated cleanup was performed.
-- **26 browser checks passed** for light/dark, 320px/desktop, blocked images, long content/large counts, zero/missing data, and severity variants. Email-appropriate Axe checks found zero violations.
-- The full diff leaves `email.server.js`, notification routes, schedules/cooldowns, report calculations, detection, sender/Reply-To configuration, Shopify configuration/extensions, database and production UI unchanged.
-
-Release authorization covers merging this email-only polish after checks pass. No live email, production environment edit or Shopify app version is part of this release. Deployment is verified separately against the resulting merge SHA.
-
-
-## Final design polish
-
-- Shared navy header, electric-blue top edge, cyan divider, exact unchanged official logo and a permanently visible wordmark.
-- Weekly report: blue/coral/amber/teal card accents, balanced padding, distinct protection panel and roomier recorded-reason rows. Actual counts, decisions and protection status are unchanged.
-- Alert: severity reflects only the passed threat level, with a refined incident-detail panel; challenged events retain the explicit “Challenged” recorded action.
-- Test: short green/blue confirmation treatment, explicitly a delivery test with no incident telemetry.
-- Pure date presentation only: a UTC midnight window ending October 27 exclusively displays “October 19–26, 2026 · UTC”. Cross-month/year ranges preserve the included dates. Rolling/partial windows show actual UTC times and “before” the exact cutoff, including seconds/milliseconds when necessary. HTML and plain text share the same formatter. No query, timestamp or calculation is changed.
-- Static highlights deliberately replace animation: no GIF, extra remote image, tracking asset, JavaScript or CSS animation. Designs remain complete when optional styles/images are unavailable and require no motion.
-- Prior-release Gmail iPhone delivery/appearance was reported by the owner; this updated revision has only Chromium verification. Gmail/Outlook/Apple Mail appearance for this revision remains unverified. No live emails were sent.
-
-Runtime changes are confined to `app/lib/merchant-email-templates.js`. Sender transport, subject lines, caller integration, schedules, preferences, report builders, database, Shopify configuration and all app UI remain unchanged.
+For local screenshots/checks, set `PLAYWRIGHT_MODULE`, `AXE_MODULE` and optionally `CHROMIUM_PATH` to existing external tooling, then run `node scripts/test-merchant-email-previews.mjs`. This loopback-only preview script never imports email delivery, credentials or the database.

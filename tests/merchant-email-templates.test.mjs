@@ -27,11 +27,11 @@ test("weekly content uses the passed metrics and real reporting interval in HTML
   for (const [label,value] of [["Requests analyzed",20],["Blocked events",4],["Challenged events",2],["Allowed events",14]]) {
     assert.match(email.text, new RegExp(`${label}: ${value}`));
     const p = [...body(email).querySelectorAll('p')].find(el => el.textContent === label);
-    assert.equal(p.nextElementSibling.textContent, String(value));
+    assert.equal(p.closest("table[data-metric]").querySelector(".bs-ink").textContent, String(value));
   }
   assert.match(email.text, /Oct 19, 2026/);
   assert.match(email.text, /Oct 26, 2026/);
-  assert.match(email.text, /before Oct 26, 2026, 12:00 · UTC/);
+  assert.match(email.text, /Oct 26, 2026, 12:00 · UTC \(cutoff excluded\)/);
   assert.match(email.text, /Protection: Active/);
   assert.match(email.text, /Known bot user agent: 4/);
   assert.doesNotMatch(visible(email), /money saved|risk reduction|%|revenue prevented/i);
@@ -147,8 +147,8 @@ test("report periods preserve exclusive UTC boundaries and accurately distinguis
     ["2026-10-30T00:00:00Z", "2026-11-03T00:00:00Z", "October 30–November 2, 2026 · UTC"],
     ["2026-12-30T00:00:00Z", "2027-01-03T00:00:00Z", "December 30, 2026–January 2, 2027 · UTC"],
     ["2026-10-19T00:00:00Z", "2026-10-20T00:00:00Z", "October 19, 2026 · UTC"],
-    ["2026-10-19T12:15:00Z", "2026-10-26T12:15:00Z", "Oct 19, 2026, 12:15 → before Oct 26, 2026, 12:15 · UTC"],
-    ["2026-10-19T12:15:00.123Z", "2026-10-19T12:15:00.456Z", "Oct 19, 2026, 12:15:00.123 → before Oct 19, 2026, 12:15:00.456 · UTC"],
+    ["2026-10-19T12:15:00Z", "2026-10-26T12:15:00Z", "Oct 19, 2026, 12:15 – Oct 26, 2026, 12:15 · UTC (cutoff excluded)"],
+    ["2026-10-19T12:15:00.123Z", "2026-10-19T12:15:00.456Z", "Oct 19, 2026, 12:15:00.123 – Oct 19, 2026, 12:15:00.456 · UTC (cutoff excluded)"],
   ];
   for (const [periodStart, periodEnd, expected] of cases) {
     const input = Object.freeze({periodStart, periodEnd});
@@ -160,4 +160,20 @@ test("report periods preserve exclusive UTC boundaries and accurately distinguis
   for (const [periodStart,periodEnd] of [["2026-10-20T00:00:00Z","2026-10-19T00:00:00Z"],["2026-10-19T00:00:00Z","2026-10-19T00:00:00Z"]]) {
     assert.doesNotMatch(renderWeeklyReportEmail({report:{periodStart,periodEnd}}).text,/Reporting window/);
   }
+});
+
+
+test("weekly briefing uses independent neutral metric surfaces with progressive static depth", () => {
+  const email=renderWeeklyReportEmail({shop,report});
+  const document=body(email);
+  const cards=[...document.querySelectorAll('table[data-metric]')];
+  assert.equal(cards.length,4);
+  for (const card of cards) {
+    assert.equal(card.getAttribute('bgcolor'),'#ffffff');
+    assert.match(card.getAttribute('style'),/box-shadow:/);
+    assert.match(card.parentElement.getAttribute('style'),/padding:0 0 18px/);
+  }
+  assert.ok(document.querySelector('.bs-hero h1'));
+  assert.match(visible(email),/ACTIVITY BRIEFING/);
+  assert.doesNotMatch(email.html,/bs-accent-red|bs-accent-amber|bs-accent-teal/);
 });
