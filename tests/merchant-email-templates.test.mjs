@@ -31,7 +31,7 @@ test("weekly content uses the passed metrics and real reporting interval in HTML
   }
   assert.match(email.text, /Oct 19, 2026/);
   assert.match(email.text, /Oct 26, 2026/);
-  assert.match(email.text, /Oct 26, 2026, 12:00 · UTC \(cutoff excluded\)/);
+  assert.match(email.text, /Oct 26, 2026, 12:00 · UTC \(end time not included\)/);
   assert.match(email.text, /Protection: Active/);
   assert.match(email.text, /Known bot user agent: 4/);
   assert.doesNotMatch(visible(email), /money saved|risk reduction|%|revenue prevented/i);
@@ -147,8 +147,8 @@ test("report periods preserve exclusive UTC boundaries and accurately distinguis
     ["2026-10-30T00:00:00Z", "2026-11-03T00:00:00Z", "October 30–November 2, 2026 · UTC"],
     ["2026-12-30T00:00:00Z", "2027-01-03T00:00:00Z", "December 30, 2026–January 2, 2027 · UTC"],
     ["2026-10-19T00:00:00Z", "2026-10-20T00:00:00Z", "October 19, 2026 · UTC"],
-    ["2026-10-19T12:15:00Z", "2026-10-26T12:15:00Z", "Oct 19, 2026, 12:15 – Oct 26, 2026, 12:15 · UTC (cutoff excluded)"],
-    ["2026-10-19T12:15:00.123Z", "2026-10-19T12:15:00.456Z", "Oct 19, 2026, 12:15:00.123 – Oct 19, 2026, 12:15:00.456 · UTC (cutoff excluded)"],
+    ["2026-10-19T12:15:00Z", "2026-10-26T12:15:00Z", "Oct 19, 2026, 12:15 – Oct 26, 2026, 12:15 · UTC (end time not included)"],
+    ["2026-10-19T12:15:00.123Z", "2026-10-19T12:15:00.456Z", "Oct 19, 2026, 12:15:00.123 – Oct 19, 2026, 12:15:00.456 · UTC (end time not included)"],
   ];
   for (const [periodStart, periodEnd, expected] of cases) {
     const input = Object.freeze({periodStart, periodEnd});
@@ -176,4 +176,23 @@ test("weekly briefing uses independent neutral metric surfaces with progressive 
   assert.ok(document.querySelector('.bs-hero h1'));
   assert.match(visible(email),/ACTIVITY BRIEFING/);
   assert.doesNotMatch(email.html,/bs-accent-red|bs-accent-amber|bs-accent-teal/);
+});
+
+
+test("all email heroes use paired solid surfaces without gradient or pinned light foregrounds", () => {
+  const samples=[renderWeeklyReportEmail({shop,report}),renderSecurityAlertEmail({shop,decision:'block',threatLevel:'high'}),renderTestNotificationEmail({shop})];
+  for (const email of samples) {
+    const document=body(email);
+    const hero=document.querySelector('.bs-hero, .bs-intro');
+    assert.equal(hero.getAttribute('bgcolor'),'#f1f4f8');
+    assert.equal(hero.style.backgroundColor,'rgb(241, 244, 248)');
+    assert.ok(hero.querySelector('h1.bs-ink'));
+    for (const text of hero.querySelectorAll('p,h1')) {
+      assert.ok(text.matches('.bs-ink,.bs-muted,.bs-link'));
+      assert.doesNotMatch(text.getAttribute('style'),/color:\s*#(?:fff(?:fff)?|a6c8ff|d0def0)(?:;|$)/i);
+    }
+    assert.doesNotMatch(email.html,/linear-gradient|radial-gradient|background-image:|mix-blend-mode|text-fill-color/i);
+    assert.match(email.html,/bs-hero\{background-color:#142134!important/);
+    assert.match(email.html,/bs-ink\{color:#f0f4fc!important/);
+  }
 });
