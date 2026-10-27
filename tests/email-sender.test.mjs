@@ -127,7 +127,7 @@ test("the existing report builder's exact period reaches the common weekly email
   assert.equal(report.periodStart, "2026-10-19T15:23:45.000Z");
   assert.equal(report.periodEnd, "2026-10-26T15:23:45.000Z");
   const body = await captureDelivery(() => sendWeeklySecurityReportEmail({ shop: "example.myshopify.com", alertEmail: "merchant@example.com", report }));
-  const period = "Oct 19, 2026, 15:23:45 – Oct 26, 2026, 15:23:45 · UTC (cutoff excluded)";
+  const period = "Oct 19, 2026, 15:23:45 – Oct 26, 2026, 15:23:45 · UTC (end time not included)";
   assert.ok(body.html.includes(period));
   assert.ok(body.text.includes(period));
   assert.equal(report.periodStart, "2026-10-19T15:23:45.000Z");
